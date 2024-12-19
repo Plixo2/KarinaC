@@ -1,0 +1,25 @@
+import Chair Main
+
+struct Object {
+
+}
+
+fn main() {
+    if true {
+
+    }
+    if false {
+
+    }
+    let o: tests.testIF.Object = Object {}
+    if o is Chair w {
+
+    }
+    if o is Chair {
+
+    }
+    if o is Chair(name: string) {
+        
+    }
+
+}

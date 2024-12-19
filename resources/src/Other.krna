@@ -1,0 +1,30 @@
+
+enum Option<T> {
+    Some(value: T)
+    None
+}
+
+
+struct W<T> {
+    value: string
+    some: T
+
+    impl Writer {
+        fn write(input: string) -> W<string> {
+            return W {
+                value: input,
+                some: "some"
+            }
+        }
+    }
+}
+
+
+interface Writer {
+    fn write(input: string) -> W<string>
+}
+
+
+fn create<T>(value: T) -> T {
+    return "other";
+}

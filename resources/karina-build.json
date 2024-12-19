@@ -1,0 +1,23 @@
+{
+  "build": {
+    "src": "./src",
+    "main": "main.Main",
+    "output": "./out",
+    "verbose": true,
+    "dependencies": {
+      "implementation": [
+        {
+          "group": "com.google.code.gson",
+          "name": "gson",
+          "version": "2.11.0"
+        }
+      ]
+    }
+  },
+  "package": {
+    "name": "Karina Test Project",
+    "version": "0.0.0",
+    "author": "Plixo",
+    "tags": []
+  }
+}

@@ -1,0 +1,35 @@
+import * utils.Control
+
+
+fn testing() {
+    if W is WW w {
+    }
+
+    let toBool = fn(i: int) -> bool {
+        i != 0
+    }
+    let not: fn(bool) -> bool = fn(a) {
+        !a
+    }
+    
+
+    let a = toBool(1)
+    let b = toBool(0)
+    assertEqualsMap<int>(a, toBool)
+    assertEqualsMap(b, curry(toBool, not))
+}
+
+fn curry<A, B, C>(f: fn(A) -> B, g: fn(B) -> C) -> fn(A) -> C {
+    fn(a) { 
+        g(f(a)) 
+    }
+}
+
+fn assertEquals(state: bool)  {
+    
+}
+
+fn assertEqualsMap<T>(value: T, func: fn(T) -> bool) {
+    let result = func(value)
+    assertEquals(result)
+}

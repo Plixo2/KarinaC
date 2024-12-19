@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.karina.lang'
+version = '0.1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.jetbrains:annotations:23.0.0'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation group: 'org.antlr', name: 'antlr4-runtime', version: '4.13.2'
+
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.9.0'
+
+    implementation group: 'org.eclipse.lsp4j', name: 'org.eclipse.lsp4j', version: '0.23.1'
+
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'org.karina.lang.compiler.Main'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
+
+    with jar
+}
+
+task buildLSP(type: Jar) {
+
+    manifest {
+        attributes 'Main-Class': 'org.karina.lang.lsp.Main'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
+
+    with jar
+
+    archiveFileName = 'karina-lsp.jar'
+}
+
+test {
+    useJUnitPlatform()
+}

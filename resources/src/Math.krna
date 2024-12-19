@@ -1,0 +1,6 @@
+
+
+fn sqrt(value: float) -> float {
+   // return value.sqrt();
+   0.0
+}
