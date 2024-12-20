@@ -1,4 +1,6 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.api;
+
+import org.karina.lang.compiler.ObjectPath;
 
 import java.util.List;
 
@@ -7,12 +9,4 @@ public interface FileTreeNode {
     String name();
     List<? extends FileTreeNode> children();
     List<? extends FileNode> leafs();
-
-
-
-    interface FileNode {
-        ObjectPath path();
-        String name();
-        TextSource text();
-    }
 }

@@ -1,49 +1,46 @@
 package org.karina.lang.compiler;
 
+import org.karina.lang.compiler.api.FileTreeNode;
+import org.karina.lang.compiler.api.KarinaCompiler;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KTree;
-import org.karina.lang.compiler.parser.KarinaVisitor;
 import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
-import org.karina.lang.compiler.stages.imports.ItemImporting;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
-/**
- * Main compiler class, handling everything from file loading to code generation.
- * @see FileTreeNode
- * @see KarinaVisitor
- * @see ItemImporting
- */
-public class KarinaC {
+public class KarinaDefaultCompiler implements KarinaCompiler {
+    @Override
+    public boolean compile(FileTreeNode files, DiagnosticCollection collection) {
 
-    void compile(CompileConfig config) throws Log.KarinaException {
+        try {
+            KTree.KPackage parseTree;
+            try (var errorCollection = new ErrorCollector()) {
+                parseTree = parseFiles(files, errorCollection);
+            }
+            var importedTree = importTree(parseTree);
+            var attributedTree = attributeTree(importedTree);
 
-        var fileTree = loadFiles(config.sourceDirectory, config.fileFilter);
+            DebugWriter.write(parseTree, "resources/raw.json");
+            DebugWriter.write(importedTree, "resources/imported.json");
+            DebugWriter.write(attributedTree, "resources/attributed.json");
 
-        KTree.KPackage parseTree;
-        try (var errorCollection = new ErrorCollector()) {
-            parseTree = parseFiles(fileTree, errorCollection);
+            if (Log.hasErrors()) {
+                System.err.println("Errors in log, this should not happen");
+            }
+            return true;
+        } catch (Log.KarinaException ignored) {
+            if (!Log.hasErrors()) {
+                System.out.println("An exception was thrown, but no errors were logged");
+            } else {
+                collection.addAll(Log.getEntries());
+            }
+            return false;
+        } finally {
+            Log.clearLogs();
         }
-        var importedTree = importTree(parseTree);
-        var attributedTree = attributeTree(importedTree);
-
-        DebugWriter.write(parseTree, "resources/raw.json");
-        DebugWriter.write(importedTree, "resources/imported.json");
-        DebugWriter.write(attributedTree, "resources/attributed.json");
-
-    }
-
-    /**
-     * Loads a file tree from the given path.
-     * @see FileTreeNode
-     * @see FileTreeNode.FileNode
-     */
-    private FileTreeNode loadFiles(String path, Predicate<String> fileFilter) {
-        return FileLoader.loadTree(null, path, fileFilter);
     }
 
     /**
@@ -66,15 +63,12 @@ public class KarinaC {
 
     }
 
-    /**
-     * Resolves item in a {@link KTree}.
-     */
     private KTree.KPackage importTree(KTree.KPackage kPackage) {
         return new ImportResolver().importTree(kPackage);
     }
 
-
     private KTree.KPackage attributeTree(KTree.KPackage tree) {
         return new AttributionResolver().attribTree(tree);
     }
+
 }

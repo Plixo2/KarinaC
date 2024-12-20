@@ -53,12 +53,12 @@ public class ItemAttribution {
             build.expr(null);
         }
 
+        build.annotations(function.annotations());
+        build.generics(function.generics());
         return build.build();
     }
 
     static KTree.KStruct attribStruct(KTree.KPackage root, SymbolTable symbolTable, KTree.KStruct struct) {
-
-
         return struct;
     }
 

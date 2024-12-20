@@ -1,9 +1,8 @@
 package org.karina.lang.lsp.features;
 
 import lombok.RequiredArgsConstructor;
-import org.antlr.v4.runtime.misc.IntegerList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.TextSource;
+import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.KarinaCParser;
 import org.karina.lang.compiler.parser.KarinaErrorListener;
 import org.karina.lang.lsp.ErrorHandler;

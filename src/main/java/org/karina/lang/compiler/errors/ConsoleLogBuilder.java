@@ -3,7 +3,6 @@ package org.karina.lang.compiler.errors;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.TextSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,7 +45,7 @@ public class ConsoleLogBuilder implements LogBuilder {
     private void appendRegionFile(Span region) {
 
         region = region.reorder();
-        var path = region.source().resource().errorString();
+        var path = region.source().resource().identifier();
         var column = region.start().column() + 1;
         var line = region.start().line() + 1;
         append("File: ").append(path).append(":").append(line).append(":").append(column);

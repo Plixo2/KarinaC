@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.TextSource;
+import org.karina.lang.compiler.api.TextSource;
 
 import java.util.BitSet;
 

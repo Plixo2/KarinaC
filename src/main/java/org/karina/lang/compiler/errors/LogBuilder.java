@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.errors;
 
 import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.TextSource;
+import org.karina.lang.compiler.api.TextSource;
 
 import java.util.ArrayList;
 import java.util.List;

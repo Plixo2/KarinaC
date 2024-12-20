@@ -109,7 +109,6 @@ public record SymbolTable(
         public SymbolTable build() {
             var items = new HashMap<String, KTree.KTypeItem>();
             var functions = new HashMap<String, KTree.KFunction>();
-            var scopeGenerics = new HashMap<String, KType.GenericType>();
 
             for (var entry : this.items.entrySet()) {
                 var name = entry.getKey();
@@ -123,13 +122,7 @@ public record SymbolTable(
                 functions.put(name, item);
             }
 
-            for (var entry : this.scopeGenerics.entrySet()) {
-                var name = entry.getKey();
-                var item = entry.getValue();
-                scopeGenerics.put(name, item);
-            }
-
-            return new SymbolTable(items, functions, scopeGenerics);
+            return new SymbolTable(items, functions, this.scopeGenerics);
         }
 
         public SymbolTableBuilder copy() {

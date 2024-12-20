@@ -1,13 +1,17 @@
 package org.karina.lang.compiler;
 
+import org.karina.lang.compiler.api.FileNode;
+import org.karina.lang.compiler.api.FileTreeNode;
+import org.karina.lang.compiler.api.TextSource;
+
 import java.util.List;
 
 public record FileTreeNodeImpl(
         ObjectPath path,
         String name,
         List<FileTreeNodeImpl> children,
-        List<FileTreeNode.FileNode> leafs
-) implements FileTreeNode{
+        List<FileNode> leafs
+) implements FileTreeNode {
 
     @Override
     public String toString() {
@@ -32,6 +36,5 @@ public record FileTreeNodeImpl(
 
     }
 
-    public record FileNodeImpl(ObjectPath path, String name, TextSource text) implements
-            FileTreeNode.FileNode {}
+    public record FileNodeImpl(ObjectPath path, String name, TextSource text) implements FileNode {}
 }

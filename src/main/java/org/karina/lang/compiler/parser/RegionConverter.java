@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.SpanOf;
-import org.karina.lang.compiler.TextSource;
+import org.karina.lang.compiler.api.TextSource;
 
 /**
  * Converts an ANTLR {@link org.antlr.v4.runtime.misc.Interval} to a {@link Span}.

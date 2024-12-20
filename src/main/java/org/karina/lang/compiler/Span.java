@@ -1,7 +1,7 @@
 package org.karina.lang.compiler;
 
 
-import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.api.TextSource;
 
 /**
  * Represents a region of text in a given source file.
@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
  * @param end Ending line and column (0-based)
  */
 public record Span(TextSource source, Position start, Position end) {
-
 
     public record Position(int line, int column) {}
 

@@ -1,11 +1,12 @@
 package org.karina.lang.compiler.errors;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.DiagnosticCollection;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.types.FileLoadError;
 import org.karina.lang.compiler.errors.types.ImportError;
-import org.karina.lang.compiler.errors.types.LinkError;
+import org.karina.lang.compiler.errors.types.AttribError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +51,7 @@ public class Log {
     public static final String ERROR_TRACE = COLOR ? GRAY : "";
 
 
-    //Thread safe list of logs
+    //A thread-safe List of logs
     private static final List<LogWithTrace> entries = new CopyOnWriteArrayList<>();
 
     public static void fileError(FileLoadError error) {
@@ -61,7 +62,7 @@ public class Log {
         addError(new Error.SyntaxError(region, message));
     }
 
-    public static void linkError(LinkError error) {
+    public static void attribError(AttribError error) {
         addError(error);
     }
 
@@ -99,12 +100,17 @@ public class Log {
 
     }
 
+    public static List<LogWithTrace> getEntries() {
+        return new ArrayList<>(entries);
+    }
+
+
 
     public static boolean hasErrors() {
         return !entries.isEmpty();
     }
 
-    public static List<org.karina.lang.compiler.errors.types.Error> getLogs() {
+    public static List<Error> getLogs() {
         return entries.stream().map(LogWithTrace::entry).toList();
     }
 
@@ -112,7 +118,27 @@ public class Log {
         entries.clear();
     }
 
-    public record LogWithTrace(@Nullable StackTraceElement[] stack, Error entry) {}
+    public record LogWithTrace(@Nullable StackTraceElement[] stack, Error entry) {
+
+        public String mkString(boolean addTrace) {
+            var builder = new StringBuilder();
+
+            var report = new LogCollector<ConsoleLogBuilder>();
+            var print = report.populate(this.entry, new ConsoleLogBuilder());
+            if (addTrace && this.stack != null) {
+                print.appendStack(this.stack);
+            }
+
+            builder.append(print.name()).append("\n");
+            for (var line : print.lines()) {
+                builder.append("    ").append(line).append("\n");
+            }
+            builder.append("\n");
+
+            return builder.toString();
+        }
+
+    }
 
     public static class KarinaException extends RuntimeException {}
 

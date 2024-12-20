@@ -5,7 +5,7 @@ import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.types.FileLoadError;
 import org.karina.lang.compiler.errors.types.ImportError;
-import org.karina.lang.compiler.errors.types.LinkError;
+import org.karina.lang.compiler.errors.types.AttribError;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,7 +13,6 @@ import java.util.List;
 
 public class LogCollector<T extends LogBuilder> {
     private final List<T> logs = new ArrayList<>();
-
 
     public T populate(Error log, T builder) {
         this.logs.add(builder);
@@ -42,7 +41,7 @@ public class LogCollector<T extends LogBuilder> {
                 var importError = builder.setTitle("Import Error");
                 populateImportError(errorType, importError);
             }
-            case LinkError errorType -> {
+            case AttribError errorType -> {
                 var linkError = builder.setTitle("Type Error");
                 populateLinkError(errorType, linkError);
             }
@@ -50,28 +49,27 @@ public class LogCollector<T extends LogBuilder> {
         return builder;
     }
 
-
-    private void populateLinkError(LinkError errorType, LogBuilder builder) {
+    private void populateLinkError(AttribError errorType, LogBuilder builder) {
         switch (errorType) {
-            case LinkError.FinalAssignment finalAssignment -> {
+            case AttribError.FinalAssignment finalAssignment -> {
                 builder.append("Cannot reassign final symbol '").append(finalAssignment.name()).append("'");
                 builder.setPrimarySource(finalAssignment.region());
             }
-            case LinkError.ScopeFinalityAssignment scopeFinalityAssignment -> {
+            case AttribError.ScopeFinalityAssignment scopeFinalityAssignment -> {
                 builder.append("Cannot reassign a symbol used in a function expression'");
                 builder.append("Variable '").append(scopeFinalityAssignment.name()).append("' is define outside the expression");
                 builder.setPrimarySource(scopeFinalityAssignment.region());
             }
-            case LinkError.DuplicateVariable duplicateVariable -> {
+            case AttribError.DuplicateVariable duplicateVariable -> {
                 builder.append("Variable '").append(duplicateVariable.name()).append("' was already declared");
                 builder.setPrimarySource(duplicateVariable.second());
                 builder.addSecondarySource(duplicateVariable.first());
             }
-            case LinkError.UnknownIdentifier unknownIdentifier -> {
+            case AttribError.UnknownIdentifier unknownIdentifier -> {
                 builder.append("Unknown identifier '").append(unknownIdentifier.name()).append("'");
                 builder.setPrimarySource(unknownIdentifier.region());
             }
-            case LinkError.UnqualifiedSelf unqualifiedSelf -> {
+            case AttribError.UnqualifiedSelf unqualifiedSelf -> {
                 builder.append("Invalid use of 'self' in a static context");
                 builder.setPrimarySource(unqualifiedSelf.region());
                 builder.addSecondarySource(unqualifiedSelf.method());
@@ -151,6 +149,7 @@ public class LogCollector<T extends LogBuilder> {
     }
 
     public static String consoleString(LogCollector<ConsoleLogBuilder> builderConsoleReport) {
+
         var builder = new StringBuilder();
         for (var log : builderConsoleReport.logs) {
             builder.append(log.name()).append("\n");

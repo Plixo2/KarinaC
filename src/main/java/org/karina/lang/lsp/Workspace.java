@@ -3,8 +3,8 @@ package org.karina.lang.lsp;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.DefaultFile;
 import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.TextSource;
 import org.karina.lang.compiler.KarinaCParser;
 import org.karina.lang.lsp.fs.ContentRoot;
 import org.karina.lang.lsp.fs.KarinaFile;
@@ -76,7 +76,7 @@ public class Workspace {
         if (virtualFile == null) {
             return;
         }
-        var textSource = new TextSource.DefaultFile(
+        var textSource = new DefaultFile(
                 virtualFile,
                 text.lines().toList()
         );

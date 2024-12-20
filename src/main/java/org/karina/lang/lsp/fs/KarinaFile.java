@@ -7,7 +7,8 @@ import lombok.experimental.Accessors;
 import org.eclipse.lsp4j.Diagnostic;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.TextSource;
+import org.karina.lang.compiler.api.Resource;
+import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.objects.KTree;
 
 import java.nio.file.Path;
@@ -16,13 +17,13 @@ import java.util.List;
 
 /**
  * Virtual Karina source code file.
- * Also contains diagnostics for the file, that are automatically updated.
- * This File keeps track of the state of the file:
- * Raw: The file cannot be parsed.
- * Typed: The file has been successfully parsed, but not necessarily type checked.
+ * Also contains diagnostics for the file that are automatically updated.
+ * This File keeps track of the file state:
+ * Raw: The file can't be parsed.
+ * Typed: The file has been successfully parsed but not necessarily type-checked.
  */
 @RequiredArgsConstructor
-public final class KarinaFile implements TextSource.AbstractResource {
+public final class KarinaFile implements Resource {
     @Getter
     @Accessors(fluent = true)
     private final String name;
@@ -70,7 +71,7 @@ public final class KarinaFile implements TextSource.AbstractResource {
     }
 
     @Override
-    public String errorString() {
+    public String identifier() {
         return this.path.mkString(".");
     }
 

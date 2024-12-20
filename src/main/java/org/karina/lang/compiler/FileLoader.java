@@ -1,6 +1,8 @@
 package org.karina.lang.compiler;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.api.FileNode;
+import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.errors.types.FileLoadError;
 import org.karina.lang.compiler.errors.Log;
 
@@ -8,11 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 public class FileLoader {
 
@@ -20,7 +20,7 @@ public class FileLoader {
     public static TextSource loadUTF8(String path) throws Log.KarinaException {
         var file = new File(path);
         var lines = loadUTF8File(file);
-        return new TextSource.DefaultFile(new TextSource.FileResource(file), lines);
+        return new DefaultFile(new DefaultFile.FileResource(file), lines);
     }
 
     public static String loadUTF8FiletoString(File file) throws Log.KarinaException {
@@ -113,7 +113,7 @@ public class FileLoader {
     ) {
 
         var children = new ArrayList<FileTreeNodeImpl>();
-        var leafs = new ArrayList<FileTreeNode.FileNode>();
+        var leafs = new ArrayList<FileNode>();
         for (var subFile : files) {
             if (!subFile.exists()) {
                 Log.fileError(new FileLoadError.NotFound(subFile));
@@ -129,7 +129,7 @@ public class FileLoader {
                 children.add(child);
             } else if (subFile.isFile() && filePredicate.test(subFile.getName())) {
                 var lines = loadUTF8File(subFile);
-                var src = new TextSource.DefaultFile(new TextSource.FileResource(subFile), lines);
+                var src = new DefaultFile(new DefaultFile.FileResource(subFile), lines);
                 leafs.add(new FileTreeNodeImpl.FileNodeImpl(childPath, name, src));
             }
         }
@@ -171,12 +171,5 @@ public class FileLoader {
 
     }
 
-    public static List<Path> getFiles(Path directory) {
-        try (Stream<Path> paths = Files.list(directory)) {
-            return paths.toList();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 }

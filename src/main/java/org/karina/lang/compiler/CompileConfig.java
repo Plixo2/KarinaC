@@ -14,28 +14,21 @@ import java.util.function.Predicate;
 
 @AllArgsConstructor
 public class CompileConfig {
-    public static Predicate<String> defaultFilePredicate = new FilePredicate();
     public static Options cliOptions = getOptions();
 
-
-    public Predicate<String> fileFilter;
     public String sourceDirectory;
     public @Nullable String outputPath;
     public boolean printVerbose;
 
-
     public static CompileConfig parseArgs(String[] args) throws ParseException {
-
-        var options = getOptions();
         CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-
+        CommandLine cmd = parser.parse(cliOptions, args);
 
         var sourceDirectory = cmd.getOptionValue("src");
         var outputPath = cmd.getOptionValue("output");
         var verboseOutput = cmd.hasOption("verbose");
 
-        return new CompileConfig(CompileConfig.defaultFilePredicate, sourceDirectory, outputPath, verboseOutput);
+        return new CompileConfig(sourceDirectory, outputPath, verboseOutput);
 
     }
 
@@ -64,7 +57,7 @@ public class CompileConfig {
         var sourceDirectory = src.getAsString();
         var outputPath = object.get("output") == null ? null : object.get("output").getAsString();
         var verbose = object.get("verbose") != null && object.get("verbose").getAsBoolean();
-        return new CompileConfig(new FilePredicate(), sourceDirectory, outputPath, verbose);
+        return new CompileConfig(sourceDirectory, outputPath, verbose);
     }
 
     /**

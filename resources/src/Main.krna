@@ -23,7 +23,11 @@ fn createObjC(i: Stream<Chair>) -> Chair {
 }
 
 
-fn testing() -> Chair = self
+fn testing() -> Chair {
+    Chair {
+        isBroken: false
+    }
+}
 
 
 interface Writer<B> {

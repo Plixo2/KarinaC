@@ -2,10 +2,9 @@ package org.karina.lang.compiler.stages.attrib;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.LinkError;
+import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.w3c.dom.Attr;
 
 public class ExprAttribution {
 
@@ -63,7 +62,7 @@ public class ExprAttribution {
     private static AttribExpr attribReturn(@Nullable KType hint, AttributionContext ctx, KExpr.Return expr) { return of(ctx, expr);}
     private static AttribExpr attribSelf(@Nullable KType hint, AttributionContext ctx, KExpr.Self expr) {
         if (ctx.selfType() == null) {
-            Log.linkError(new LinkError.UnqualifiedSelf(
+            Log.attribError(new AttribError.UnqualifiedSelf(
                     expr.region(), ctx.methodRegion()
             ));
             throw new Log.KarinaException();
@@ -77,8 +76,6 @@ public class ExprAttribution {
     private static AttribExpr attribUnary(@Nullable KType hint, AttributionContext ctx, KExpr.Unary expr) { return of(ctx, expr);}
     private static AttribExpr attribVariableDefinition(@Nullable KType hint, AttributionContext ctx, KExpr.VariableDefinition expr) { return of(ctx, expr);}
     private static AttribExpr attribWhile(@Nullable KType hint, AttributionContext ctx, KExpr.While expr) { return of(ctx, expr);}
-
-
 
 
     public record AttribExpr(KExpr expr, AttributionContext ctx) {}

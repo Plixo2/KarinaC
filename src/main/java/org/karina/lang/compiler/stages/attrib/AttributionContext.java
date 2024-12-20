@@ -5,7 +5,7 @@ import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.Variable;
 import org.karina.lang.compiler.VariableCollection;
 import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.LinkError;
+import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.SymbolTable;
@@ -25,7 +25,7 @@ record AttributionContext(
     AttributionContext addVariable(Variable variable) {
         if (this.collection.contains(variable.name())) {
             var existingVariable = Objects.requireNonNull(this.collection.get(variable.name()));
-            Log.linkError(new LinkError.DuplicateVariable(
+            Log.attribError(new AttribError.DuplicateVariable(
                     existingVariable.region(),
                     variable.region(),
                     variable.name()

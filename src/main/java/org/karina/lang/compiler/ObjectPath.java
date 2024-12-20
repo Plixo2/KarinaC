@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 public record ObjectPath(List<String> elements) {
 
     public ObjectPath {
-        //copy to immutable list
+        //copy to an immutable list
         elements = List.copyOf(elements);
         Objects.requireNonNull(elements);
         if (elements.stream().anyMatch(Objects::isNull)) {

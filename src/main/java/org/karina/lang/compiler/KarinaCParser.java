@@ -1,9 +1,9 @@
 package org.karina.lang.compiler;
 
-import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.parser.KarinaErrorListener;
@@ -25,8 +25,7 @@ public class KarinaCParser {
      * @see KarinaVisitor
      * @see KTree
      */
-    public static KTree.KUnit generateParseTree(TextSource source, String simpleName, ObjectPath path)
-            throws Log.KarinaException {
+    public static KTree.KUnit generateParseTree(TextSource source, String simpleName, ObjectPath path) throws Log.KarinaException {
 
         var errorListener = new KarinaErrorListener(source);
         var unitParser = getParserForUnit(errorListener, source);
@@ -41,13 +40,10 @@ public class KarinaCParser {
                     while (t.getType() != Token.EOF) {
                         t = unitParser.lexer().nextToken();
                     }
-                } catch (Log.KarinaException ignored) {
-
-                }
+                } catch (Log.KarinaException ignored) {}
             }
             throw new Log.KarinaException();
         }
-
     }
 
     /**
@@ -78,6 +74,6 @@ public class KarinaCParser {
 
     }
 
-    public record ReadyUnitParser(KarinaParser parser,KarinaLexer lexer ,CommonTokenStream tokenStream) {}
+    public record ReadyUnitParser(KarinaParser parser, KarinaLexer lexer, CommonTokenStream tokenStream) {}
 
 }

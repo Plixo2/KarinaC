@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.errors;
 
 /**
- * Collect multiple logs, and throw an error when the collector is closed, if any errors occurred.
+ * Collect multiple logs and throw an error when the collector is closed, if any errors occurred.
  * Use a try-with-resources block to ensure that the errors are thrown.
  */
 public class ErrorCollector implements AutoCloseable {
