@@ -8,6 +8,9 @@ import org.karina.lang.lsp.features.TokenProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 
+/**
+ * This class is responsible for defining the capabilities of the server.
+ */
 public class KarinaServerCapabilities {
 
     public InitializeResult initialize() {

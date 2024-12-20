@@ -4,7 +4,9 @@ import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.parser.KarinaVisitor;
+import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
+import org.karina.lang.compiler.stages.imports.ItemImporting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +16,7 @@ import java.util.function.Predicate;
  * Main compiler class, handling everything from file loading to code generation.
  * @see FileTreeNode
  * @see KarinaVisitor
- * @see ImportResolver
+ * @see ItemImporting
  */
 public class KarinaC {
 
@@ -27,9 +29,11 @@ public class KarinaC {
             parseTree = parseFiles(fileTree, errorCollection);
         }
         var importedTree = importTree(parseTree);
+        var attributedTree = attributeTree(importedTree);
 
         DebugWriter.write(parseTree, "resources/raw.json");
         DebugWriter.write(importedTree, "resources/imported.json");
+        DebugWriter.write(attributedTree, "resources/attributed.json");
 
     }
 
@@ -63,11 +67,14 @@ public class KarinaC {
     }
 
     /**
-     * Resolves imports in a {@link KTree}.
+     * Resolves item in a {@link KTree}.
      */
     private KTree.KPackage importTree(KTree.KPackage kPackage) {
         return new ImportResolver().importTree(kPackage);
     }
 
 
+    private KTree.KPackage attributeTree(KTree.KPackage tree) {
+        return new AttributionResolver().attribTree(tree);
+    }
 }

@@ -43,7 +43,7 @@ public class LogCollector<T extends LogBuilder> {
                 populateImportError(errorType, importError);
             }
             case LinkError errorType -> {
-                var linkError = builder.setTitle("Link Error");
+                var linkError = builder.setTitle("Type Error");
                 populateLinkError(errorType, linkError);
             }
         }
@@ -54,11 +54,11 @@ public class LogCollector<T extends LogBuilder> {
     private void populateLinkError(LinkError errorType, LogBuilder builder) {
         switch (errorType) {
             case LinkError.FinalAssignment finalAssignment -> {
-                builder.append("Cannot reassign final variable '").append(finalAssignment.name()).append("'");
+                builder.append("Cannot reassign final symbol '").append(finalAssignment.name()).append("'");
                 builder.setPrimarySource(finalAssignment.region());
             }
             case LinkError.ScopeFinalityAssignment scopeFinalityAssignment -> {
-                builder.append("Cannot reassign a variable used in a function expression'");
+                builder.append("Cannot reassign a symbol used in a function expression'");
                 builder.append("Variable '").append(scopeFinalityAssignment.name()).append("' is define outside the expression");
                 builder.setPrimarySource(scopeFinalityAssignment.region());
             }
@@ -144,7 +144,7 @@ public class LogCollector<T extends LogBuilder> {
                 logBuilder.addSecondarySource(startUnitRegion);
             }
             case ImportError.JavaNotSupported(var region) -> {
-                logBuilder.append("Java imports are not supported yet");
+                logBuilder.append("Java item are not supported yet");
                 logBuilder.setPrimarySource(region);
             }
         }

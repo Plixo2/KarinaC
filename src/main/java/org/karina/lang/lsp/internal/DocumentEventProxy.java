@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/*
+ * Proxy class for the Document service, delegating the actual work to the EventHandler.
+ */
 public class DocumentEventProxy implements TextDocumentService {
 
     @Override

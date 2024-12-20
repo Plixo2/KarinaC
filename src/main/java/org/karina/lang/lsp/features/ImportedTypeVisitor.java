@@ -11,6 +11,10 @@ import org.karina.lang.lsp.EventHandler;
 
 import java.util.List;
 
+/**
+ * Visitor for an imported tree. Keeps track of types and their locations.
+ * Used for GoToDefinition and Hover features.
+ */
 @AllArgsConstructor
 public class ImportedTypeVisitor {
     private final List<SourceLocation> list;
@@ -138,17 +142,11 @@ public class ImportedTypeVisitor {
             case KType.UnprocessedType ignored -> {
                 EventHandler.INSTANCE.errorMessage("Unprocessed type: " + type);
             }
-            case KType.GenericType ignored-> {
-                EventHandler.INSTANCE.errorMessage("Unprocessed type: " + type);
-            }
         }
     }
 
     private void fromExpression(KExpr kExpr) {
-        if (!(kExpr instanceof KExpr.ImportedExpr expr) ) {
-            return;
-        }
-        switch (expr) {
+        switch (kExpr) {
             case KExpr.Assignment assignment -> {
                 fromExpression(assignment.left());
                 fromExpression(assignment.right());
@@ -297,11 +295,11 @@ public class ImportedTypeVisitor {
                 fromExpression(aWhile.condition());
                 fromExpression(aWhile.body());
             }
-            case KExpr.getArrayElement getArrayElement -> {
+            case KExpr.GetArrayElement getArrayElement -> {
                 fromExpression(getArrayElement.left());
                 fromExpression(getArrayElement.index());
             }
-            case KExpr.getMember getMember -> {
+            case KExpr.GetMember getMember -> {
                 fromExpression(getMember.left());
             }
             case KExpr.Self self -> {

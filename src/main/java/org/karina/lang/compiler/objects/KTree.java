@@ -4,11 +4,8 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.json.JsonElement;
-import org.karina.lang.lsp.EventHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +74,7 @@ public final class KTree {
             @NonNull ObjectPath path,
             @Singular List<KImport> kImports,
             @Singular List<KItem> items,
-            @Singular List<SpanOf<ObjectPath>> importedFunctions
+            @Nullable SymbolTable unitScopeSymbolTable
     ) {
 
         public @Nullable KItem findItem(String name) {
@@ -168,7 +165,7 @@ public final class KTree {
     public record KEnumEntry(Span region, SpanOf<String> name, @Singular List<KParameter> parameters) { }
 
 
-    public record KParameter(Span region, SpanOf<String> name, KType type) { }
+    public record KParameter(Span region, SpanOf<String> name, KType type, @Nullable Variable symbol) { }
     public record KAnnotation(Span region, SpanOf<String> name, JsonElement value) { }
 
 }

@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * This class is responsible for handling and dispatching events from the client.
+ * Can also publish messages to the client.
+ */
 public class EventHandler {
     public final LanguageClient theClient;
     public static EventHandler INSTANCE;

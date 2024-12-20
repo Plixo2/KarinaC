@@ -23,6 +23,8 @@ fn createObjC(i: Stream<Chair>) -> Chair {
 }
 
 
+fn testing() -> Chair = self
+
 
 interface Writer<B> {
     fn write(b: B)

@@ -14,6 +14,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Virtual Karina source code file.
+ * Also contains diagnostics for the file, that are automatically updated.
+ * This File keeps track of the state of the file:
+ * Raw: The file cannot be parsed.
+ * Typed: The file has been successfully parsed, but not necessarily type checked.
+ */
 @RequiredArgsConstructor
 public final class KarinaFile implements TextSource.AbstractResource {
     @Getter

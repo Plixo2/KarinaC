@@ -16,7 +16,6 @@ import java.util.BitSet;
 
 /**
  * Parser and Lexer error listener.
- * Use with try-with-resources block.
  */
 public class KarinaErrorListener implements ANTLRErrorListener {
     @Getter

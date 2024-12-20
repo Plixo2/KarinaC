@@ -7,6 +7,10 @@ import org.karina.lang.lsp.EventHandler;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Main language server class, responsible for handling all LSP requests and responses.
+ * Just handles the workspace and document services
+ */
 public class KarinaServer implements LanguageServer, LanguageClientAware {
     LanguageClient theClient;
 

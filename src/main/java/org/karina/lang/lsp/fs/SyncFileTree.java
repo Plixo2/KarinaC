@@ -10,6 +10,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Virtual document tree
+ */
 @AllArgsConstructor
 public class SyncFileTree {
     @Getter

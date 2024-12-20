@@ -9,6 +9,9 @@ import java.util.List;
 
 import static org.karina.lang.lsp.features.TokenProvider.SemanticTokenType.*;
 
+/**
+ * Visitor that extracts semantic tokens from the untyped AST.
+ */
 public class SemanticTokenVisitor extends KarinaParserBaseVisitor<Object> {
 
     @Getter

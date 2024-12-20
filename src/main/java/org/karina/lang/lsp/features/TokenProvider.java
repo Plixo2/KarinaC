@@ -1,6 +1,7 @@
 package org.karina.lang.lsp.features;
 
 import lombok.RequiredArgsConstructor;
+import org.antlr.v4.runtime.misc.IntegerList;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.TextSource;
 import org.karina.lang.compiler.KarinaCParser;
@@ -10,11 +11,14 @@ import org.karina.lang.lsp.ErrorHandler;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Converts a text source into an AST and then into a list of semantic tokens.
+ * This list is then send as semantic tokens to the client.
+ */
 public class TokenProvider {
 
     public @Nullable List<Integer> getTokens(TextSource content) {
         var visitor = new SemanticTokenVisitor();
-
         var tokens = new ArrayList<Integer>();
         var error = ErrorHandler.tryInternal(() -> {
             var errorListener = new KarinaErrorListener(content);
@@ -29,6 +33,9 @@ public class TokenProvider {
 
     }
 
+    /**
+     * Converts absolute token positions into relative positions.
+     */
     private static List<Integer> getDeltaTokens(List<Integer> tokens) {
         assert tokens.size() % 4 == 0;
         var entries = tokens.size() / 4;
@@ -99,7 +106,7 @@ public class TokenProvider {
         FUNCTION("function"),
         METHOD("method"),
         MACRO("macro"),
-        VARIABLE("variable"),
+        VARIABLE("symbol"),
         PARAMETER("parameter"),
         PROPERTY("property"),
         ENUM_MEMBER("enumMember"),

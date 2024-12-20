@@ -3,7 +3,9 @@ package org.karina.lang.lsp;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.karina.lang.lsp.internal.KarinaServer;
 
-
+/**
+ * Main class for the Language Server.
+ */
 public class Main {
     public static void main(String[] args) {
         var server = new KarinaServer();

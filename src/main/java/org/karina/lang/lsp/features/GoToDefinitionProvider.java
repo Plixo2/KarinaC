@@ -4,6 +4,7 @@ import org.eclipse.lsp4j.Location;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
+import org.karina.lang.compiler.stages.imports.ItemImporting;
 import org.karina.lang.lsp.*;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;

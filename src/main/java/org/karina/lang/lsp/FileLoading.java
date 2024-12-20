@@ -19,7 +19,6 @@ import java.util.stream.Stream;
 
 public class FileLoading {
 
-
     public static FileLoadResult<List<Path>> getAllKarinaFiles(Path directory) {
         if (!Files.exists(directory)) {
             return new FileLoadResult.FileLoadNotFound<>(directory);

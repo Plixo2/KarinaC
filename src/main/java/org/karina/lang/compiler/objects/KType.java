@@ -37,7 +37,7 @@ public sealed interface KType {
 
     record ClassType(Span region, SpanOf<ObjectPath> path, List<KType> generics) implements KType {}
 
-    record GenericType(Span region, String name) implements KType {}
+    record GenericType(Span region, String name) {}
     record GenericLink(Span region, GenericType link) implements KType {}
 
     sealed interface PrimitiveType extends KType {

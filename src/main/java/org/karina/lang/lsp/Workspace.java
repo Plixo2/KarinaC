@@ -15,6 +15,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a workspace in the language server.
+ * This keeps a virtual file system and provides methods to interact and manipulate it.
+ * Also keeps track of the configuration of the workspace.
+ * Both are kept in the {@link ContentRoot} class.
+ */
 @AllArgsConstructor
 @Getter
 public class Workspace {

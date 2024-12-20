@@ -7,7 +7,7 @@ import org.karina.lang.compiler.parser.gen.KarinaParser;
 import java.util.List;
 
 /**
- * Used to convert AST type object to the corresponding {@link KType}.
+ * Used to convert an AST type object to the corresponding {@link KType}.
  */
 public class KarinaTypeVisitor {
     private final RegionConverter conv;

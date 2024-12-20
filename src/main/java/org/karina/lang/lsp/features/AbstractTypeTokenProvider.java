@@ -6,6 +6,7 @@ import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
+import org.karina.lang.compiler.stages.imports.ItemImporting;
 import org.karina.lang.lsp.*;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;
@@ -16,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractTypeTokenProvider<T> {
-
 
     public @Nullable T from(
             Workspace workspace, URI uri, Position position, ClientSettings settings) {
@@ -50,7 +50,8 @@ public abstract class AbstractTypeTokenProvider<T> {
 
     protected abstract @Nullable T getType(SyncFileTree root, KarinaFile requestFile, Span.Position position);
 
-    protected @Nullable GoToDefinitionProvider.TypeDefinitionSite tryImportIndividual(ImportResolver resolver, KTree.KPackage root, KarinaFile file, KTree.KUnit unit, Span.Position position) {
+    protected @Nullable GoToDefinitionProvider.TypeDefinitionSite tryImportIndividual(
+            ImportResolver resolver, KTree.KPackage root, KarinaFile file, KTree.KUnit unit, Span.Position position) {
 
         var error = ErrorHandler.mapInternal(() -> {
             var importedUnit = resolver.importUnit(root, unit);

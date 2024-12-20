@@ -10,6 +10,9 @@ import org.karina.lang.lsp.EventHandler;
 import java.net.URI;
 import java.util.ArrayList;
 
+/*
+ * Proxy class for the workspace service, delegating the actual work to the EventHandler.
+ */
 class WorkspaceEventProxy implements WorkspaceService {
 
 

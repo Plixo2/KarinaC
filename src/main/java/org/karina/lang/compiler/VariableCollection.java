@@ -1,6 +1,7 @@
 package org.karina.lang.compiler;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -20,6 +21,14 @@ public class VariableCollection implements Iterable<Variable> {
         var collection = new ArrayList<>(this.variables);
         collection.add(variable);
         return new VariableCollection(collection);
+    }
+
+    public boolean contains(String name) {
+        return this.variables.stream().anyMatch(v -> v.name().equals(name));
+    }
+
+    public @Nullable Variable get(String name) {
+        return this.variables.stream().filter(v -> v.name().equals(name)).findFirst().orElse(null);
     }
 
     @Override

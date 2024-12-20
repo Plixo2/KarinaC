@@ -324,7 +324,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         if (ctx.ID() != null) {
             var name = this.conv.span(ctx.ID());
-            return new KExpr.getMember(region, prev, name);
+            return new KExpr.GetMember(region, prev, name);
         } else if (ctx.expressionList() != null) {
             var expressions = visitExprList(ctx.expressionList());
             List<KType> genHint;
@@ -336,7 +336,7 @@ public class KarinaExprVisitor {
             return new KExpr.Call(region, prev, genHint, expressions);
         } else if (ctx.exprWithBlock() != null) {
             var index = visitExprWithBlock(ctx.exprWithBlock());
-            return new KExpr.getArrayElement(region, prev, index);
+            return new KExpr.GetArrayElement(region, prev, index);
         } else if (ctx.type() != null) {
             var type = this.typeVisitor.visitType(ctx.type());
             return new KExpr.Cast(region, prev, type);
@@ -389,7 +389,7 @@ public class KarinaExprVisitor {
             var text = inner.substring(1, inner.length() - 1);
             return new KExpr.StringExpr(region, text);
         } else if (ctx.SELF() != null) {
-            return new KExpr.Self(region);
+            return new KExpr.Self(region, null);
         } else if (ctx.FALSE() != null) {
             return new KExpr.Boolean(region, false);
         } else if (ctx.TRUE() != null) {

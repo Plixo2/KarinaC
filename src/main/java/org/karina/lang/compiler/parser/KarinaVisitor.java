@@ -52,7 +52,7 @@ public class KarinaVisitor {
         var imports = ctx.import_().stream().map(this::visitImport).toList();
         var region = this.conv.toRegion(ctx.getSourceInterval());
         var items = ctx.item().stream().map(this::visitItem).toList();
-        return new KTree.KUnit(region, this.unitName, this.path, imports, items, List.of());
+        return new KTree.KUnit(region, this.unitName, this.path, imports, items, null);
 
     }
 
@@ -228,7 +228,7 @@ public class KarinaVisitor {
             var region = this.conv.toRegion(ref);
             var name = this.conv.span(ref.ID());
             var type = this.typeVisitor.visitType(ref.type());
-            return new KTree.KParameter(region, name, type);
+            return new KTree.KParameter(region, name, type, null);
         }).toList();
 
     }
