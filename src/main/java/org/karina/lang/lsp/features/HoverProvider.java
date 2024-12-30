@@ -18,6 +18,7 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
             SyncFileTree root, KarinaFile requestFile,
             Span.Position position
     ) {
+
         if (!(requestFile.state() instanceof KarinaFile.KarinaFileState.Typed(var ignored, var typed))) {
             return null;
         }
@@ -39,5 +40,6 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
             return new Hover(markedString, range);
 
         }
+
     }
 }

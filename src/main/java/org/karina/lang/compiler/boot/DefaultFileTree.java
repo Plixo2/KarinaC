@@ -1,15 +1,16 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.boot;
 
+import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.api.FileNode;
 import org.karina.lang.compiler.api.FileTreeNode;
 import org.karina.lang.compiler.api.TextSource;
 
 import java.util.List;
 
-public record FileTreeNodeImpl(
+public record DefaultFileTree(
         ObjectPath path,
         String name,
-        List<FileTreeNodeImpl> children,
+        List<DefaultFileTree> children,
         List<FileNode> leafs
 ) implements FileTreeNode {
 
@@ -36,5 +37,5 @@ public record FileTreeNodeImpl(
 
     }
 
-    public record FileNodeImpl(ObjectPath path, String name, TextSource text) implements FileNode {}
+    public record DefaultFileNode(ObjectPath path, String name, TextSource text) implements FileNode {}
 }

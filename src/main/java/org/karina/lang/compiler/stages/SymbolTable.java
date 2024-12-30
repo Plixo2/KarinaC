@@ -1,9 +1,12 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.stages;
 
+import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.Generic;
+import org.karina.lang.compiler.Pair;
+import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.ImportError;
 import org.karina.lang.compiler.objects.KTree;
-import org.karina.lang.compiler.objects.KType;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,7 +20,7 @@ import java.util.Set;
 public record SymbolTable(
         Map<String, KTree.KTypeItem> items,
         Map<String, KTree.KFunction> functions,
-        Map<String, KType.GenericType> scopeGenerics
+        Map<String, Generic> scopeGenerics
 ) {
 
     public SymbolTable {
@@ -28,17 +31,20 @@ public record SymbolTable(
     }
 
 
-
-    public KTree.KTypeItem getItem(String name) {
+    public @Nullable KTree.KTypeItem getItem(String name) {
         return this.items.get(name);
     }
 
-    public KTree.KFunction getFunction(String name) {
+    public @Nullable KTree.KFunction getFunction(String name) {
         return this.functions.get(name);
     }
 
-    public KType.GenericType getGeneric(String name) {
+    public @Nullable Generic getGeneric(String name) {
         return this.scopeGenerics.get(name);
+    }
+
+    public Set<String> availableFunctionNames() {
+        return this.functions.keySet();
     }
 
     public Set<String> availableTypeNames() {
@@ -53,7 +59,7 @@ public record SymbolTable(
     public static class SymbolTableBuilder {
         private final Map<String, Pair<SpanOf<KTree.KTypeItem>, SymbolLocation>> items = new HashMap<>();
         private final Map<String, Pair<SpanOf<KTree.KFunction>, SymbolLocation>> functions = new HashMap<>();
-        private final Map<String, KType.GenericType> scopeGenerics = new HashMap<>();
+        private final Map<String, Generic> scopeGenerics = new HashMap<>();
 
         public void addItem(SymbolLocation bucket, String name, SpanOf<KTree.KTypeItem> item) {
             if (this.items.containsKey(name)) {
@@ -91,7 +97,7 @@ public record SymbolTable(
             }
         }
 
-        public void addGeneric(String name, KType.GenericType generic) {
+        public void addGeneric(String name, Generic generic) {
             if (this.scopeGenerics.containsKey(name)) {
                 var existingSymbol = this.scopeGenerics.get(name);
                 Log.importError(new ImportError.DuplicateItem(

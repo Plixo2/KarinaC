@@ -7,8 +7,8 @@ import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.SynatxObject;
-import org.karina.lang.compiler.SymbolTable;
+import org.karina.lang.compiler.stages.SymbolTable;
+import org.karina.lang.compiler.TypeImport;
 
 import java.util.*;
 
@@ -70,7 +70,7 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
 
             referredItem = this.table.getItem(head);
         } else {
-            var foundItem = this.root.findItem(name);
+            var foundItem = KTree.findRelativeItem(this.root, name);
             if (foundItem instanceof KTree.KTypeItem typeItem) {
                 referredItem = typeItem;
             } else {
@@ -114,7 +114,7 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
         for (var kImport : unit.kImports()) {
             var importType = kImport.importType();
             switch (importType) {
-                case SynatxObject.TypeImport.All(var region) -> {
+                case TypeImport.All(var region) -> {
                     var importedUnit = root.findUnit(kImport.path().value());
                     if (importedUnit == null) {
                         Log.importError(new ImportError.NoUnitFound(kImport.path(), root));
@@ -122,7 +122,7 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
                     }
                     non_locals.addAll(importedUnit.items().stream().map(ref -> SpanOf.span(region, ref)).toList());
                 }
-                case SynatxObject.TypeImport.Single(SpanOf<String> name) -> {
+                case TypeImport.Single(SpanOf<String> name) -> {
                     var importedUnit = root.findUnit(kImport.path().value());
                     if (importedUnit == null) {
                         Log.importError(new ImportError.NoUnitFound(kImport.path(), root));
@@ -138,11 +138,11 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
                     }
                     non_locals.add(new SpanOf<>(name.region(), item));
                 }
-                case SynatxObject.TypeImport.JavaAlias(SpanOf<String> alias) -> {
+                case TypeImport.JavaAlias(SpanOf<String> alias) -> {
                     Log.importError(new ImportError.JavaNotSupported(alias.region()));
                     throw new Log.KarinaException();
                 }
-                case SynatxObject.TypeImport.JavaClass(var region) -> {
+                case TypeImport.JavaClass(var region) -> {
                     Log.importError(new ImportError.JavaNotSupported(region));
                     throw new Log.KarinaException();
                 }

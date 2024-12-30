@@ -3,9 +3,8 @@ package org.karina.lang.lsp;
 import lombok.AllArgsConstructor;
 import org.eclipse.lsp4j.*;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.errors.LogBuilder;
-import org.karina.lang.compiler.errors.LogCollector;
+import org.karina.lang.compiler.errors.LogFactory;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.lsp.fs.KarinaFile;
@@ -15,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public class ErrorHandler {
@@ -23,6 +21,7 @@ public class ErrorHandler {
 
     //updates all diagnostics in a file
     public void pushErrorsToFile() {
+
         var diagnostics = new HashMap<KarinaFile, List<Diagnostic>>();
         for (var error : this.errors) {
             var diagnosticAndFile = convertError(error);
@@ -36,7 +35,11 @@ public class ErrorHandler {
 
     }
 
+    /*
+     * Returns null when no errors are found
+     */
     public static @Nullable ErrorHandler tryInternal(Runnable runnable) {
+
         try {
             runnable.run();
             return null;
@@ -45,9 +48,11 @@ public class ErrorHandler {
         } finally {
             Log.clearLogs();
         }
+
     }
 
     public static <T> Result<T> mapInternal(Supplier<T> supplier) {
+
         try {
             return new Result.onSuccess<>(supplier.get());
         } catch (Log.KarinaException e) {
@@ -55,6 +60,7 @@ public class ErrorHandler {
         } finally {
             Log.clearLogs();
         }
+
     }
 
 
@@ -67,7 +73,8 @@ public class ErrorHandler {
 
 
     private @Nullable DiagnosticForFile convertError(Error error) {
-        var collector = new LogCollector<DiagnosticLogBuilder>();
+
+        var collector = new LogFactory<DiagnosticLogBuilder>();
 
         var builder = collector.populate(error, new DiagnosticLogBuilder());
 
@@ -95,16 +102,16 @@ public class ErrorHandler {
 
         var formatted = """
                 %s
-                %s
-                
-                """.formatted(message, code);
+                """.formatted(message);
+
+
 
         var diagnostic = new Diagnostic(primaryRange, formatted, DiagnosticSeverity.Error, "Karina");
         diagnostic.setRelatedInformation(relatedInfos);
 
         return new DiagnosticForFile(file, diagnostic);
+
     }
 
-    private record DiagnosticForFile(KarinaFile file, Diagnostic diagnostic) {
-    }
+    private record DiagnosticForFile(KarinaFile file, Diagnostic diagnostic) { }
 }

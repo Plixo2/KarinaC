@@ -1,14 +1,12 @@
 package org.karina.lang.compiler.stages.attrib;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.Variable;
-import org.karina.lang.compiler.VariableCollection;
+import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.SymbolTable;
+import org.karina.lang.compiler.stages.SymbolTable;
 
 import java.util.Objects;
 
@@ -18,13 +16,31 @@ record AttributionContext(
         @Nullable KType selfType,
         Span methodRegion,
         KType returnType,
-        VariableCollection collection,
-        SymbolTable table
+        VariableCollection variables,
+        SymbolTable table,
+        TypeChecking checking
 ) {
 
+    boolean isVoid(KType type) {
+        return this.checking.isVoid(type);
+    }
+
+    @Nullable KType getSuperType(KType a, KType b) {
+        return this.checking.superType(a, b);
+    }
+
+    boolean canAssign(KType left, KType right, boolean mutable) {
+        return this.checking.canAssign(left, right, mutable);
+    }
+
+    void assign(Span region, KType left, KType right) {
+        this.checking.assign(region, left, right);
+    }
+
+
     AttributionContext addVariable(Variable variable) {
-        if (this.collection.contains(variable.name())) {
-            var existingVariable = Objects.requireNonNull(this.collection.get(variable.name()));
+        if (this.variables.contains(variable.name())) {
+            var existingVariable = Objects.requireNonNull(this.variables.get(variable.name()));
             Log.attribError(new AttribError.DuplicateVariable(
                     existingVariable.region(),
                     variable.region(),
@@ -37,9 +53,50 @@ record AttributionContext(
                 this.selfType,
                 this.methodRegion,
                 this.returnType,
-                this.collection.add(variable),
-                this.table
+                this.variables.add(variable),
+                this.table,
+                this.checking
         );
     }
 
+    public KTree.KStruct getStruct(Span region, KType type) {
+
+        if (type instanceof KType.ClassType classType) {
+            var item = KTree.findAbsolutItem(this.root, classType.path().value());
+            if (!(item instanceof KTree.KStruct struct)) {
+                Log.attribError(new AttribError.NotAStruct(
+                        region,
+                        type
+                ));
+                throw new Log.KarinaException();
+            }
+            return struct;
+        } else {
+            Log.attribError(new AttribError.NotAStruct(
+                    region,
+                    type
+            ));
+            throw new Log.KarinaException();
+        }
+
+    }
+//
+//    public void getInterface(Span region, KType type) {
+//        if (type instanceof KType.ClassType classType) {
+//            var item = this.root.findItem(classType.path().value());
+//            if (!(item instanceof KTree.KStruct)) {
+//                Log.attribError(new AttribError.NotAStruct(
+//                        region,
+//                        type
+//                ));
+//                throw new Log.KarinaException();
+//            }
+//        } else {
+//            Log.attribError(new AttribError.NotAStruct(
+//                    region,
+//                    type
+//            ));
+//            throw new Log.KarinaException();
+//        }
+//    }
 }

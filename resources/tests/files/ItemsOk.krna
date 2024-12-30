@@ -1,0 +1,50 @@
+/* OK */
+
+
+
+struct W {
+    value: string
+}
+
+struct StructWithGenerics<T> {
+    value: string
+    some: T
+}
+
+struct WithFunctions {
+    value: string
+
+    fn getString() -> string {
+        return self.value
+    }
+}
+
+interface Interface {
+    fn getString() -> string
+}
+
+interface InterfaceGeneric<W> {
+    fn getString() -> W
+}
+
+interface ImplGeneric {
+
+    impl InterfaceGeneric<EnumObj>
+}
+
+interface InterfaceExt {
+    impl Interface
+}
+
+
+enum EnumObj {
+    Some(value: int)
+    None
+}
+
+
+fn create<T>(value: T) -> T {
+    return value;
+}
+
+fn shortFn(value: W) -> W = value

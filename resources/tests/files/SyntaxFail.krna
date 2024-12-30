@@ -1,0 +1,8 @@
+/* Fail SyntaxError */
+
+
+enum Option<T> {
+    Some(value: T)
+    None
+    ; //Error
+}

@@ -1,18 +1,18 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.boot;
 
 
 import org.apache.commons.cli.ParseException;
+import org.karina.lang.compiler.api.DiagnosticCollection;
 import org.karina.lang.compiler.api.FileTreeNode;
-
-import java.util.function.Predicate;
+import org.karina.lang.compiler.api.KarinaDefaultCompiler;
 
 
 public class Main {
     public static void main(String[] args) throws ParseException {
         var compiler = new KarinaDefaultCompiler();
         var collection = new DiagnosticCollection();
-        var config = CompileConfig.parseArgs(args);
 
+        var config = CompileConfig.parseArgs(args);
         var fileTree = loadFiles(config.sourceDirectory);
         var success = compiler.compile(fileTree, collection);
 
@@ -24,7 +24,6 @@ public class Main {
             }
             System.err.flush();
         }
-
     }
 
     private static FileTreeNode loadFiles(String path) {

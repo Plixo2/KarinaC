@@ -1,5 +1,6 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.errors;
 
+import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.objects.KTree;
 
 import java.util.*;

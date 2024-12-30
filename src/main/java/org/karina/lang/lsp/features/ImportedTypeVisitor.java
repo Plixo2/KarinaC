@@ -1,12 +1,8 @@
 package org.karina.lang.lsp.features;
 
 import lombok.AllArgsConstructor;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KTree;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.SynatxObject;
+import org.karina.lang.compiler.*;
+import org.karina.lang.compiler.objects.*;
 import org.karina.lang.lsp.EventHandler;
 
 import java.util.List;
@@ -27,10 +23,10 @@ public class ImportedTypeVisitor {
                     kImport.path().value()
             );
             switch (kImport.importType()) {
-                case SynatxObject.TypeImport.All all -> {
+                case TypeImport.All all -> {
                     this.list.add(location);
                 }
-                case SynatxObject.TypeImport.Single single -> {
+                case TypeImport.Single single -> {
                     this.list.add(location);
                     this.list.add(new SourceLocation.ImportNameToken(
                             single.region(),
@@ -139,9 +135,13 @@ public class ImportedTypeVisitor {
             case KType.PrimitiveType primitiveType -> {
                 // Nothing to do
             }
+            case KType.Resolvable resolvable -> {
+                // Nothing to do
+            }
             case KType.UnprocessedType ignored -> {
                 EventHandler.INSTANCE.errorMessage("Unprocessed type: " + type);
             }
+
         }
     }
 
@@ -171,10 +171,10 @@ public class ImportedTypeVisitor {
                 }
                 if (branch.branchPattern() != null) {
                     switch (branch.branchPattern()) {
-                        case SynatxObject.BranchPattern.Cast cast -> {
+                        case BranchPattern.Cast cast -> {
                             fromType(cast.type());
                         }
-                        case SynatxObject.BranchPattern.Destruct destruct -> {
+                        case BranchPattern.Destruct destruct -> {
                             fromType(destruct.type());
                             for (var variable : destruct.variables()) {
                                 if (variable.type() != null) {
@@ -199,7 +199,7 @@ public class ImportedTypeVisitor {
             }
             case KExpr.Cast cast -> {
                 fromExpression(cast.expression());
-                fromType(cast.type());
+                fromType(cast.asType());
             }
             case KExpr.Closure closure -> {
                 for (var arg : closure.args()) {
@@ -230,19 +230,15 @@ public class ImportedTypeVisitor {
                 for (var parameter : createObject.parameters()) {
                     fromExpression(parameter.expr());
                 }
-                fromType(createObject.type());
+                fromType(createObject.createType());
             }
             case KExpr.For aFor -> {
                 fromExpression(aFor.iter());
                 fromExpression(aFor.body());
             }
-            case KExpr.InstanceOf instanceOf -> {
-                fromExpression(instanceOf.left());
-                fromType(instanceOf.type());
-            }
-            case KExpr.IsInstance isInstance -> {
-                fromExpression(isInstance.left());
-                fromType(isInstance.type());
+            case KExpr.IsInstanceOf isInstanceOf -> {
+                fromExpression(isInstanceOf.left());
+                fromType(isInstanceOf.isType());
             }
             case KExpr.Literal literal -> {
                 // Nothing to do
@@ -252,13 +248,13 @@ public class ImportedTypeVisitor {
                 for (var pattern : match.cases()) {
                     fromExpression(pattern.expr());
                     switch (pattern) {
-                        case SynatxObject.MatchPattern.Cast cast -> {
+                        case MatchPattern.Cast cast -> {
                             fromType(cast.type());
                         }
-                        case SynatxObject.MatchPattern.Default aDefault -> {
+                        case MatchPattern.Default aDefault -> {
                             // Nothing to do
                         }
-                        case SynatxObject.MatchPattern.Destruct destruct -> {
+                        case MatchPattern.Destruct destruct -> {
                             fromType(destruct.type());
                             for (var variable : destruct.variables()) {
                                 if (variable.type() != null) {

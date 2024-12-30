@@ -250,7 +250,6 @@ public class EventHandler {
                     file.clearDiagnostics();
                 }
             }
-
             if (workspace.getRoot().getContent() == null) {
                 continue;
             }

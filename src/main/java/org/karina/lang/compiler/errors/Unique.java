@@ -1,4 +1,4 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.errors;
 
 import org.jetbrains.annotations.Nullable;
 

@@ -1,0 +1,8 @@
+/* Fail SyntaxError */
+
+
+fn create<T>(value: T) -> int {
+    if true w {
+
+    }
+}

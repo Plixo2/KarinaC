@@ -1,12 +1,8 @@
 package org.karina.lang.compiler.parser;
 
+import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.SpanOf;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.SynatxObject;
+import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.parser.gen.KarinaParser;
 
 import java.math.BigDecimal;
@@ -35,7 +31,7 @@ public class KarinaExprVisitor {
             var name = this.conv.span(varDefContext.ID());
             var type = varDefContext.type() == null ? null : this.typeVisitor.visitType(varDefContext.type());
             var expr = visitExprWithBlock(varDefContext.exprWithBlock());
-            return new KExpr.VariableDefinition(region, name, type, expr);
+            return new KExpr.VariableDefinition(region, name, type, expr, null);
         } else if (ctx.RETURN() != null) {
             var expr = ctx.exprWithBlock() == null ? null : visitExprWithBlock(ctx.exprWithBlock());
             return new KExpr.Return(region, expr);
@@ -65,7 +61,7 @@ public class KarinaExprVisitor {
     public KExpr visitBlock(KarinaParser.BlockContext ctx) {
 
         var expressions = ctx.expression().stream().map(this::visitExpression).toList();
-        return new KExpr.Block(this.conv.toRegion(ctx), expressions);
+        return new KExpr.Block(this.conv.toRegion(ctx), expressions,  null);
 
     }
 
@@ -84,15 +80,20 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         var condition = visitExprWithBlock(ctx.exprWithBlock());
         var thenBlock = visitBlock(ctx.block());
-        SynatxObject.BranchPattern branchPattern = null;
-        if (condition instanceof KExpr.InstanceOf instanceOf) {
+        BranchPattern branchPattern = null;
+        if (condition instanceof KExpr.IsInstanceOf isInstanceOf) {
             if (ctx.ID() != null) {
-                condition = instanceOf.left();
-                branchPattern = new SynatxObject.BranchPattern.Cast(instanceOf.type(), this.conv.span(ctx.ID()));
+                condition = isInstanceOf.left();
+                branchPattern = new BranchPattern.Cast(
+                        isInstanceOf.isType().region(),
+                        isInstanceOf.isType(),
+                        this.conv.span(ctx.ID()),
+                        null
+                );
             } else if (ctx.optTypeList() != null) {
-                condition = instanceOf.left();
+                condition = isInstanceOf.left();
                 var values = visitOptTypeList(ctx.optTypeList());
-                branchPattern = new SynatxObject.BranchPattern.Destruct(instanceOf.type(), values);
+                branchPattern = new BranchPattern.Destruct(isInstanceOf.isType().region(), isInstanceOf.isType(), values);
             }
         } else {
             if (ctx.ID() != null || ctx.optTypeList() != null) {
@@ -116,7 +117,7 @@ public class KarinaExprVisitor {
         } else {
             elseBlock = null;
         }
-        return new KExpr.Branch(region, condition, thenBlock, elseBlock, branchPattern);
+        return new KExpr.Branch(region, condition, thenBlock, elseBlock, branchPattern, null);
 
     }
 
@@ -129,7 +130,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, SynatxObject.BinaryOperator.OR),
+                    SpanOf.span(position, BinaryOperator.OR),
                     visitConditionalOrExpression(ctx.conditionalOrExpression())
             );
         } else {
@@ -147,7 +148,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, SynatxObject.BinaryOperator.AND),
+                    SpanOf.span(position, BinaryOperator.AND),
                     visitConditionalAndExpression(ctx.conditionalAndExpression())
             );
         } else {
@@ -162,13 +163,13 @@ public class KarinaExprVisitor {
         var left = visitRelationalExpression(ctx.relationalExpression());
         if (ctx.equalityExpression() != null) {
             Span position;
-            SynatxObject.BinaryOperator operator;
+            BinaryOperator operator;
             if (ctx.EQUALS() != null) {
                 position = this.conv.toRegion(ctx.EQUALS());
-                operator = SynatxObject.BinaryOperator.EQUAL;
+                operator = BinaryOperator.EQUAL;
             } else {
                 position = this.conv.toRegion(ctx.NOT_EQUALS());
-                operator = SynatxObject.BinaryOperator.NOT_EQUAL;
+                operator = BinaryOperator.NOT_EQUAL;
             }
 
             return new KExpr.Binary(
@@ -188,19 +189,19 @@ public class KarinaExprVisitor {
         var left = visitAdditiveExpression(ctx.additiveExpression());
         if (ctx.relationalExpression() != null) {
             Span position;
-            SynatxObject.BinaryOperator operator;
+            BinaryOperator operator;
             if (ctx.GREATER_EQULAS() != null) {
                 position = this.conv.toRegion(ctx.GREATER_EQULAS());
-                operator = SynatxObject.BinaryOperator.GREATER_THAN_OR_EQUAL;
+                operator = BinaryOperator.GREATER_THAN_OR_EQUAL;
             } else if (ctx.CHAR_GREATER() != null) {
                 position = this.conv.toRegion(ctx.CHAR_GREATER());
-                operator = SynatxObject.BinaryOperator.GREATER_THAN;
+                operator = BinaryOperator.GREATER_THAN;
             } else if (ctx.SMALLER_EQUALS() != null) {
                 position = this.conv.toRegion(ctx.SMALLER_EQUALS());
-                operator = SynatxObject.BinaryOperator.LESS_THAN_OR_EQUAL;
+                operator = BinaryOperator.LESS_THAN_OR_EQUAL;
             } else if (ctx.CHAR_SMALLER() != null) {
                 position = this.conv.toRegion(ctx.CHAR_SMALLER());
-                operator = SynatxObject.BinaryOperator.LESS_THAN;
+                operator = BinaryOperator.LESS_THAN;
             } else {
                 Log.syntaxError(region, "Invalid relational operator");
                 throw new Log.KarinaException();
@@ -224,16 +225,16 @@ public class KarinaExprVisitor {
         var left = visitMultiplicativeExpression(ctx.multiplicativeExpression());
         if (ctx.additiveExpression() != null) {
             Span position;
-            SynatxObject.BinaryOperator operator;
+            BinaryOperator operator;
             if (ctx.CHAR_PLIS() != null) {
                 position = this.conv.toRegion(ctx.CHAR_PLIS());
-                operator = SynatxObject.BinaryOperator.ADD;
+                operator = BinaryOperator.ADD;
             } else if (ctx.CHAR_MINUS() != null) {
                 position = this.conv.toRegion(ctx.CHAR_MINUS());
-                operator = SynatxObject.BinaryOperator.SUBTRACT;
+                operator = BinaryOperator.SUBTRACT;
             } else if (ctx.CHAR_AND() != null) {
                 position = this.conv.toRegion(ctx.CHAR_AND());
-                operator = SynatxObject.BinaryOperator.BIN_AND;
+                operator = BinaryOperator.BIN_AND;
             } else {
                 Log.syntaxError(region, "Invalid relational operator");
                 throw new Log.KarinaException();
@@ -257,16 +258,16 @@ public class KarinaExprVisitor {
         var left = visitUnaryExpression(ctx.unaryExpression());
         if (ctx.multiplicativeExpression() != null) {
             Span position;
-            SynatxObject.BinaryOperator operator;
+            BinaryOperator operator;
             if (ctx.CHAR_R_SLASH() != null) {
                 position = this.conv.toRegion(ctx.CHAR_R_SLASH());
-                operator = SynatxObject.BinaryOperator.DIVIDE;
+                operator = BinaryOperator.DIVIDE;
             } else if (ctx.CHAR_PERCENT() != null) {
                 position = this.conv.toRegion(ctx.CHAR_PERCENT());
-                operator = SynatxObject.BinaryOperator.MODULUS;
+                operator = BinaryOperator.MODULUS;
             } else if (ctx.CHAR_STAR() != null) {
                 position = this.conv.toRegion(ctx.CHAR_STAR());
-                operator = SynatxObject.BinaryOperator.MULTIPLY;
+                operator = BinaryOperator.MULTIPLY;
             } else {
                 Log.syntaxError(region, "Invalid relational operator");
                 throw new Log.KarinaException();
@@ -290,10 +291,10 @@ public class KarinaExprVisitor {
         var left = visitFactor(ctx.factor());
         if (ctx.CHAR_MINUS() != null) {
             var signRegion = this.conv.toRegion(ctx.CHAR_MINUS());
-            return new KExpr.Unary(region, SpanOf.span(signRegion, SynatxObject.UnaryOperator.NEGATE), left);
+            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NEGATE), left);
         } else if (ctx.CHAR_EXCLAMATION() != null) {
             var signRegion = this.conv.toRegion(ctx.CHAR_EXCLAMATION());
-            return new KExpr.Unary(region, SpanOf.span(signRegion, SynatxObject.UnaryOperator.NOT), left);
+            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NOT), left);
         } else {
             return left;
         }
@@ -310,9 +311,9 @@ public class KarinaExprVisitor {
         if (ctx.exprWithBlock() != null) {
             var value = visitExprWithBlock(ctx.exprWithBlock());
             return new KExpr.Assignment(region, left, value);
-        } else if (ctx.instanceOf() != null) {
-            var type = this.typeVisitor.visitType(ctx.instanceOf().type());
-            return new KExpr.InstanceOf(region, left, type);
+        } else if (ctx.isInstanceOf() != null) {
+            var type = this.typeVisitor.visitType(ctx.isInstanceOf().type());
+            return new KExpr.IsInstanceOf(region, left, type);
         } else {
             return left;
         }
@@ -371,7 +372,7 @@ public class KarinaExprVisitor {
                     var initRegion = this.conv.toRegion(ref);
                     var name = this.conv.span(ref.ID());
                     var value = visitExprWithBlock(ref.exprWithBlock());
-                    return new SynatxObject.NamedExpression(initRegion, name, value);
+                    return new NamedExpression(initRegion, name, value);
                 }).toList();
                 var name = this.conv.span(ctx.ID());
                 var path = new ObjectPath(name.value());
@@ -379,10 +380,11 @@ public class KarinaExprVisitor {
                 return new KExpr.CreateObject(
                         region,
                         type,
-                        inits
+                        inits,
+                        null
                 );
             } else {
-                return new KExpr.Literal(region, text);
+                return new KExpr.Literal(region, text, null);
             }
         } else if (ctx.STRING_LITERAL() != null) {
             var inner = ctx.STRING_LITERAL().getText();
@@ -406,12 +408,14 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         var typeHint = ctx.type() == null ? null : this.typeVisitor.visitType(ctx.type());
         var elements = visitExprList(ctx.expressionList());
-        return new KExpr.CreateArray(region, typeHint, elements);
+        return new KExpr.CreateArray(region, typeHint, elements, null);
 
     }
 
     private List<KExpr> visitExprList(KarinaParser.ExpressionListContext ctx) {
+
         return ctx.exprWithBlock().stream().map(this::visitExprWithBlock).toList();
+
     }
 
     private KExpr visitClosure(KarinaParser.ClosureContext ctx) {
@@ -483,33 +487,33 @@ public class KarinaExprVisitor {
 
     }
 
-    private SynatxObject.MatchPattern visitMatchCase(KarinaParser.MatchCaseContext ctx) {
+    private MatchPattern visitMatchCase(KarinaParser.MatchCaseContext ctx) {
 
         var region = this.conv.toRegion(ctx);
         var expr = visitExprWithBlock(ctx.exprWithBlock());
         if (ctx.matchDefault() != null) {
-            return new SynatxObject.MatchPattern.Default(region, expr);
+            return new MatchPattern.Default(region, expr);
         } else {
             var instance = ctx.matchInstance();
             var type = this.typeVisitor.visitStructType(instance.structType());
             if (instance.ID() != null) {
                 var name = this.conv.span(instance.ID());
-                return new SynatxObject.MatchPattern.Cast(region, type, name, expr);
+                return new MatchPattern.Cast(region, type, name, expr);
             } else {
                 var values = visitOptTypeList(instance.optTypeList());
-                return new SynatxObject.MatchPattern.Destruct(region, type, values, expr);
+                return new MatchPattern.Destruct(region, type, values, expr);
             }
         }
 
     }
 
-    private List<SynatxObject.NameAndOptType> visitOptTypeList(KarinaParser.OptTypeListContext ctx) {
+    private List<NameAndOptType> visitOptTypeList(KarinaParser.OptTypeListContext ctx) {
 
         return ctx.optTypeName().stream().map(ref -> {
             var region = this.conv.toRegion(ref);
             var name = this.conv.span(ref.ID());
             var type = ref.type() == null ? null : this.typeVisitor.visitType(ref.type());
-            return new SynatxObject.NameAndOptType(region, name, type);
+            return new NameAndOptType(region, name, type, null);
         }).toList();
 
     }

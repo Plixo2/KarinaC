@@ -558,15 +558,15 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 */
 	void exitMemberInit(KarinaParser.MemberInitContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link KarinaParser#instanceOf}.
+	 * Enter a parse tree produced by {@link KarinaParser#isInstanceOf}.
 	 * @param ctx the parse tree
 	 */
-	void enterInstanceOf(KarinaParser.InstanceOfContext ctx);
+	void enterIsInstanceOf(KarinaParser.IsInstanceOfContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link KarinaParser#instanceOf}.
+	 * Exit a parse tree produced by {@link KarinaParser#isInstanceOf}.
 	 * @param ctx the parse tree
 	 */
-	void exitInstanceOf(KarinaParser.InstanceOfContext ctx);
+	void exitIsInstanceOf(KarinaParser.IsInstanceOfContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KarinaParser#optTypeList}.
 	 * @param ctx the parse tree

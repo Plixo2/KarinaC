@@ -11,15 +11,14 @@ fn main() {
     if false {
 
     }
-    let o: tests.testIF.Object = Object {}
+    let o: Object = Object {
+
+    }
     if o is Chair w {
 
     }
     if o is Chair {
 
-    }
-    if o is Chair(name: string) {
-        
     }
 
 }

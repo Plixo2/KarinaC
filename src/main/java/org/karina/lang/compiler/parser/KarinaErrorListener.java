@@ -23,8 +23,11 @@ public class KarinaErrorListener implements ANTLRErrorListener {
     private boolean hadError = false;
     private final TextSource source;
 
-    public KarinaErrorListener(TextSource source) {
+    private final boolean throwErrors;
+
+    public KarinaErrorListener(TextSource source, boolean throwErrors) {
         this.source = source;
+        this.throwErrors = throwErrors;
     }
 
 
@@ -43,8 +46,11 @@ public class KarinaErrorListener implements ANTLRErrorListener {
             new Span.Position(line - 1, charPositionInLine + 1)
         );
         this.hadError = true;
-        Log.syntaxError(span, msg);
-        throw new Log.KarinaException();
+
+        if (this.throwErrors) {
+            Log.syntaxError(span, msg);
+            throw new Log.KarinaException();
+        }
 
     }
 

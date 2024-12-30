@@ -1,0 +1,10 @@
+/* Fail SyntaxError */
+
+interface Writer {
+
+    fn write(index: int) -> int {
+
+    }
+}
+
+

@@ -10,28 +10,31 @@ public class AttributionResolver {
     }
 
     private KTree.KPackage attribPackage(KTree.KPackage root, KTree.KPackage kPackage) {
+
         var build =  KTree.KPackage.builder();
         build.path(kPackage.path());
         build.name(kPackage.name());
 
-        try (var collector = new ErrorCollector()){
-            collector.collect(() -> {
-                for (var subPackage : kPackage.subPackages()) {
+        try (var collector = new ErrorCollector()) {
+            for (var subPackage : kPackage.subPackages()) {
+                collector.collect(() -> {
                     build.subPackage(attribPackage(root, subPackage));
-                }
-            });
+                });
+            }
 
-            collector.collect(() -> {
-                for (var unit : kPackage.units()) {
+            for (var unit : kPackage.units()) {
+                collector.collect(() -> {
                     build.unit(attribUnit(root, unit));
-                }
-            });
+                });
+            }
         }
 
         return build.build();
+
     }
 
     private KTree.KUnit attribUnit(KTree.KPackage root, KTree.KUnit unit) {
+
         var build = KTree.KUnit.builder();
         build.region(unit.region());
         build.name(unit.name());
@@ -62,6 +65,7 @@ public class AttributionResolver {
         }
 
         return build.build();
+
     }
 
 }

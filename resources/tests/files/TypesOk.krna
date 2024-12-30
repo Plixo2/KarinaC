@@ -1,0 +1,40 @@
+/* OK */
+
+struct W<T> {
+    name: T
+    number: int
+    floating: float
+    boolean: bool
+    short_: short
+    long_: long
+    byte_: byte
+    char_: char
+    text: string
+}
+
+fn arrayOut() -> [int] {
+    <int>[1, 2, 3]
+}
+
+fn arrayIn(arr: [int]) -> void {
+    let d: double = 1.0
+}
+
+fn map(function: fn(int) -> int) {
+    let nested: (fn((int)) -> int) = function
+}
+
+struct FnWithImpl {
+    fnWithImpl: fn(int) -> int impl Consumer
+
+}
+
+interface Consumer {
+    fn consume(input: int) -> int
+}
+
+
+
+fn returnVoid() -> void {
+
+}

@@ -2,15 +2,16 @@ import * utils.Control
 
 
 fn testing() {
-    if W is WW w {
+    let w = 1;
+    if w is WW c {
     }
 
-    let toBool = fn(i: int) -> bool {
-        i != 0
-    }
-    let not: fn(bool) -> bool = fn(a) {
-        !a
-    }
+  //  let toBool = fn(i: int) -> bool {
+   //     i != 0
+  //  }
+  //  let not: fn(bool) -> bool = fn(a) {
+  //      !a
+  //  }
     
 
     let a = toBool(1)
@@ -20,9 +21,9 @@ fn testing() {
 }
 
 fn curry<A, B, C>(f: fn(A) -> B, g: fn(B) -> C) -> fn(A) -> C {
-    fn(a) { 
-        g(f(a)) 
-    }
+   // fn(a) {
+     //   g(f(a))
+    //}
 }
 
 fn assertEquals(state: bool)  {

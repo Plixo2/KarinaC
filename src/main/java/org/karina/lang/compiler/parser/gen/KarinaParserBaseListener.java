@@ -677,13 +677,13 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterInstanceOf(KarinaParser.InstanceOfContext ctx) { }
+	@Override public void enterIsInstanceOf(KarinaParser.IsInstanceOfContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitInstanceOf(KarinaParser.InstanceOfContext ctx) { }
+	@Override public void exitIsInstanceOf(KarinaParser.IsInstanceOfContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

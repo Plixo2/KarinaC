@@ -1,14 +1,11 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.Reference;
-import org.karina.lang.compiler.SpanOf;
-import org.karina.lang.compiler.Unique;
+import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.errors.Unique;
 import org.karina.lang.compiler.errors.types.ImportError;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.SynatxObject;
+import org.karina.lang.compiler.objects.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +29,7 @@ public class ExprImporting {
             case KExpr.For aFor -> importFor(ctx, aFor);
             case KExpr.GetArrayElement getArrayElement -> importGetArrayElement(ctx, getArrayElement);
             case KExpr.GetMember getMember -> importGetMember(ctx, getMember);
-            case KExpr.InstanceOf instanceOf -> importInstanceOf(ctx, instanceOf);
-            case KExpr.IsInstance isInstance -> importIsInstance(ctx, isInstance);
+            case KExpr.IsInstanceOf isInstanceOf -> importInstanceOf(ctx, isInstanceOf);
             case KExpr.Literal literal -> importLiteral(ctx, literal);
             case KExpr.Match match -> importMatch(ctx, match);
             case KExpr.Number number -> importNumber(ctx, number);
@@ -67,7 +63,7 @@ public class ExprImporting {
                 });
             }
         }
-        return new KExpr.Block(expr.region(), expressions);
+        return new KExpr.Block(expr.region(), expressions, null);
     }
 
     private static KExpr importBoolean(ImportContext ctx, KExpr.Boolean expr) {
@@ -83,17 +79,17 @@ public class ExprImporting {
         } else {
             elseArm = importExpr(ctx, expr.elseArm());
         }
-        SynatxObject.BranchPattern branchPattern;
+        BranchPattern branchPattern;
         if (expr.branchPattern() == null) {
             branchPattern = null;
         } else {
             branchPattern = switch (expr.branchPattern()) {
-                case SynatxObject.BranchPattern.Cast(KType type, SpanOf<String> castedName) -> {
+                case BranchPattern.Cast(var region, KType type, SpanOf<String> castedName, var ignored) -> {
                     var resolved = ctx.resolveType(type, true);
-                    yield new SynatxObject.BranchPattern.Cast(resolved, castedName);
+                    yield new BranchPattern.Cast(region, resolved, castedName, null);
                 }
-                case SynatxObject.BranchPattern.Destruct destruct -> {
-                    var variables = new ArrayList<SynatxObject.NameAndOptType>();
+                case BranchPattern.Destruct destruct -> {
+                    var variables = new ArrayList<NameAndOptType>();
                     for (var variable : destruct.variables()) {
                         KType variableType;
                         if (variable.type() == null) {
@@ -101,13 +97,14 @@ public class ExprImporting {
                         } else {
                             variableType = ctx.resolveType(variable.type());
                         }
-                        variables.add(new SynatxObject.NameAndOptType(
+                        variables.add(new NameAndOptType(
                                 variable.region(),
                                 variable.name(),
-                                variableType
+                                variableType,
+                                null
                         ));
                     }
-                    var uniqueVariables = Unique.testUnique(variables, SynatxObject.NameAndOptType::name);
+                    var uniqueVariables = Unique.testUnique(variables, NameAndOptType::name);
                     if (uniqueVariables != null) {
                         Log.importError(new ImportError.DuplicateItem(
                                 uniqueVariables.first().name().region(),
@@ -118,11 +115,11 @@ public class ExprImporting {
                     }
 
                     var resolved = ctx.resolveType(destruct.type(), true);
-                    yield new SynatxObject.BranchPattern.Destruct(resolved, variables);
+                    yield new BranchPattern.Destruct(destruct.region(), resolved, variables);
                 }
             };
         }
-        return new KExpr.Branch(expr.region(), condition, thenArm, elseArm, branchPattern);
+        return new KExpr.Branch(expr.region(), condition, thenArm, elseArm, branchPattern, null);
     }
 
     private static KExpr importBreak(ImportContext ctx, KExpr.Break expr) {
@@ -151,12 +148,12 @@ public class ExprImporting {
 
     private static KExpr importCast(ImportContext ctx, KExpr.Cast expr) {
         var expression = importExpr(ctx, expr.expression());
-        var type = ctx.resolveType(expr.type());
+        var type = ctx.resolveType(expr.asType());
         return new KExpr.Cast(expr.region(), expression, type);
     }
 
     private static KExpr importClosure(ImportContext ctx, KExpr.Closure expr) {
-        List<SynatxObject.NameAndOptType> args;
+        List<NameAndOptType> args;
         var interfaces = new ArrayList<KType>();
         var returnType = Reference.<KType>of();
         var body = Reference.<KExpr>of();
@@ -203,18 +200,18 @@ public class ExprImporting {
         } else {
             hint = ctx.resolveType(expr.hint());
         }
-        return new KExpr.CreateArray(expr.region(), hint, elements);
+        return new KExpr.CreateArray(expr.region(), hint, elements, null);
     }
 
     private static KExpr importCreateObject(ImportContext ctx, KExpr.CreateObject expr) {
-        var createdType = ctx.resolveType(expr.type(), true);
-        var parameters = new ArrayList<SynatxObject.NamedExpression>();
+        var createdType = ctx.resolveType(expr.createType(), true);
+        var parameters = new ArrayList<NamedExpression>();
         try (var collector = new ErrorCollector()){
             for (var parameter : expr.parameters()) {
                 collector.collect(() -> {
                     var name = parameter.name();
                     var value = importExpr(ctx, parameter.expr());
-                    parameters.add(new SynatxObject.NamedExpression(
+                    parameters.add(new NamedExpression(
                             parameter.region(),
                             name,
                             value
@@ -222,7 +219,7 @@ public class ExprImporting {
                 });
             }
         }
-        return new KExpr.CreateObject(expr.region(), createdType, parameters);
+        return new KExpr.CreateObject(expr.region(), createdType, parameters, null);
     }
 
     private static KExpr importFor(ImportContext ctx, KExpr.For expr) {
@@ -232,39 +229,33 @@ public class ExprImporting {
         return new KExpr.For(expr.region(), name, iter, body);
     }
 
-    private static KExpr importIsInstance(ImportContext ctx, KExpr.IsInstance expr) {
-        var left = importExpr(ctx, expr.left());
-        var type = ctx.resolveType(expr.type(), true);
-        return new KExpr.IsInstance(expr.region(), left, type);
-    }
-
     private static KExpr importLiteral(ImportContext ctx, KExpr.Literal expr) {
         return expr;
     }
 
     private static KExpr importMatch(ImportContext ctx, KExpr.Match expr) {
         var value = importExpr(ctx, expr.value());
-        var cases = new ArrayList<SynatxObject.MatchPattern>();
+        var cases = new ArrayList<MatchPattern>();
         try (var collector = new ErrorCollector()) {
             for (var aCase : expr.cases()) {
                 collector.collect(() -> {
                     var newCase = switch (aCase) {
-                        case SynatxObject.MatchPattern.Cast cast -> {
+                        case MatchPattern.Cast cast -> {
                             var type = ctx.resolveType(cast.type(), true);
                             var newName = cast.name();
                             var body = importExpr(ctx, cast.expr());
-                            yield new SynatxObject.MatchPattern.Cast(
+                            yield new MatchPattern.Cast(
                                     cast.region(),
                                     type,
                                     newName,
                                     body
                             );
                         }
-                        case SynatxObject.MatchPattern.Destruct destruct -> {
+                        case MatchPattern.Destruct destruct -> {
                             var body = importExpr(ctx, destruct.expr());
                             var type = ctx.resolveType(destruct.type(), true);
                             var args = ItemImporting.importNameAndOptTypeList(ctx, destruct.variables(), collector);
-                            var uniqueArgs = Unique.testUnique(args, SynatxObject.NameAndOptType::name);
+                            var uniqueArgs = Unique.testUnique(args, NameAndOptType::name);
                             if (uniqueArgs != null) {
                                 Log.importError(new ImportError.DuplicateItem(
                                         uniqueArgs.first().name().region(),
@@ -273,15 +264,15 @@ public class ExprImporting {
                                 ));
                                 throw new Log.KarinaException();
                             }
-                            yield new SynatxObject.MatchPattern.Destruct(
+                            yield new MatchPattern.Destruct(
                                     destruct.region(),
                                     type,
                                     args,
                                     body);
                         }
-                        case SynatxObject.MatchPattern.Default aDefault -> {
+                        case MatchPattern.Default aDefault -> {
                             var body = importExpr(ctx, aDefault.expr());
-                            yield new SynatxObject.MatchPattern.Default(
+                            yield new MatchPattern.Default(
                                     aDefault.region(),
                                     body
                             );
@@ -326,7 +317,7 @@ public class ExprImporting {
             hint = ctx.resolveType(expr.hint());
         }
         var name = expr.name();
-        return new KExpr.VariableDefinition(expr.region(), name, hint, value);
+        return new KExpr.VariableDefinition(expr.region(), name, hint, value, null);
     }
 
     private static KExpr importWhile(ImportContext ctx, KExpr.While expr) {
@@ -346,10 +337,10 @@ public class ExprImporting {
         return new KExpr.GetMember(expr.region(), left, expr.name());
     }
 
-    private static KExpr importInstanceOf(ImportContext ctx, KExpr.InstanceOf expr) {
+    private static KExpr importInstanceOf(ImportContext ctx, KExpr.IsInstanceOf expr) {
         var left = importExpr(ctx, expr.left());
-        var type = ctx.resolveType(expr.type(), true);
-        return new KExpr.InstanceOf(expr.region(), left, type);
+        var type = ctx.resolveType(expr.isType(), true);
+        return new KExpr.IsInstanceOf(expr.region(), left, type);
     }
 
     private static KExpr importSelf(ImportContext ctx, KExpr.Self expr) {

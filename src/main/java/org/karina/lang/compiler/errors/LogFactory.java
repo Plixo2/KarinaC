@@ -1,6 +1,5 @@
 package org.karina.lang.compiler.errors;
 
-import org.karina.lang.compiler.DidYouMean;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.types.FileLoadError;
@@ -11,10 +10,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public class LogCollector<T extends LogBuilder> {
+public class LogFactory<T extends LogBuilder> {
     private final List<T> logs = new ArrayList<>();
 
     public T populate(Error log, T builder) {
+
         this.logs.add(builder);
         switch (log) {
             case FileLoadError error -> {
@@ -42,17 +42,35 @@ public class LogCollector<T extends LogBuilder> {
                 populateImportError(errorType, importError);
             }
             case AttribError errorType -> {
-                var linkError = builder.setTitle("Type Error");
+                var linkError = builder.setTitle("Attribution Error");
                 populateLinkError(errorType, linkError);
             }
         }
         return builder;
+
     }
 
     private void populateLinkError(AttribError errorType, LogBuilder builder) {
+
         switch (errorType) {
+            case AttribError.NotAStruct notAClass -> {
+                builder.setTitle("Not a struct");
+                builder.append("Type '").append(notAClass.type()).append("' is not a struct");
+                builder.setPrimarySource(notAClass.region());
+            }
+            case AttribError.TypeCycle typeCycle -> {
+                builder.setTitle("Type Cycle");
+                builder.append(typeCycle.message());
+                builder.setPrimarySource(typeCycle.region());
+            }
+            case AttribError.TypeMismatch typeMismatch -> {
+                builder.setTitle("Type mismatch");
+                builder.append("Expected: ").append(typeMismatch.expected());
+                builder.append("Found: ").append(typeMismatch.found());
+                builder.setPrimarySource(typeMismatch.region());
+            }
             case AttribError.FinalAssignment finalAssignment -> {
-                builder.append("Cannot reassign final symbol '").append(finalAssignment.name()).append("'");
+                builder.append("Can't reassign final symbol '").append(finalAssignment.name()).append("'");
                 builder.setPrimarySource(finalAssignment.region());
             }
             case AttribError.ScopeFinalityAssignment scopeFinalityAssignment -> {
@@ -65,19 +83,39 @@ public class LogCollector<T extends LogBuilder> {
                 builder.setPrimarySource(duplicateVariable.second());
                 builder.addSecondarySource(duplicateVariable.first());
             }
-            case AttribError.UnknownIdentifier unknownIdentifier -> {
-                builder.append("Unknown identifier '").append(unknownIdentifier.name()).append("'");
-                builder.setPrimarySource(unknownIdentifier.region());
+            case AttribError.UnknownIdentifier(var region, var name, var available) -> {
+                builder.append("Unknown identifier '").append(name).append("'");
+                var suggestions = DidYouMean.suggestions(available, name, 5);
+                if (!suggestions.isEmpty()) {
+                    var quoted = suggestions.stream().map(x -> "'" + x + "'").toList();
+                    builder.append("Did you mean: ").append(quoted);
+                }
+                builder.setPrimarySource(region);
             }
             case AttribError.UnqualifiedSelf unqualifiedSelf -> {
                 builder.append("Invalid use of 'self' in a static context");
                 builder.setPrimarySource(unqualifiedSelf.region());
                 builder.addSecondarySource(unqualifiedSelf.method());
             }
+            case AttribError.NotAInterface notAInterface -> {
+                builder.setTitle("Not a interface");
+                builder.append("Type '").append(notAInterface.type()).append("' is not a interface");
+                builder.setPrimarySource(notAInterface.region());
+            }
+            case AttribError.MissingField missingField -> {
+                builder.append("Missing Field '").append(missingField.name()).append("'");
+                builder.setPrimarySource(missingField.region());
+            }
+            case AttribError.UnknownField unknownField -> {
+                builder.append("Unknown Field '").append(unknownField.name()).append("'");
+                builder.setPrimarySource(unknownField.region());
+            }
         }
+
     }
 
     private void populateImportError(ImportError errorType, LogBuilder logBuilder) {
+
         switch (errorType) {
             case ImportError.NoUnitFound(var path, var root) -> {
                 var target = path.value().mkString(".");
@@ -146,19 +184,7 @@ public class LogCollector<T extends LogBuilder> {
                 logBuilder.setPrimarySource(region);
             }
         }
+
     }
 
-    public static String consoleString(LogCollector<ConsoleLogBuilder> builderConsoleReport) {
-
-        var builder = new StringBuilder();
-        for (var log : builderConsoleReport.logs) {
-            builder.append(log.name()).append("\n");
-            for (var line : log.lines()) {
-                builder.append("    ").append(line).append("\n");
-            }
-            builder.append("\n");
-        }
-
-        return builder.toString();
-    }
 }

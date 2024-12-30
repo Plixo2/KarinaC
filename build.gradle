@@ -21,6 +21,9 @@ dependencies {
 
     implementation group: 'org.eclipse.lsp4j', name: 'org.eclipse.lsp4j', version: '0.23.1'
 
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.11.4'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.11.4'
+
 }
 
 task fatJar(type: Jar) {
@@ -50,4 +53,7 @@ task buildLSP(type: Jar) {
 
 test {
     useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }

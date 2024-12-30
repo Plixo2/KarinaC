@@ -1,0 +1,27 @@
+/* OK */
+
+@Test = {
+    array: [ 1, 2, 3 ],
+    object: {
+        key: "value"
+    },
+    text: "text",
+    boolean: true,
+    "false": false,
+    "null": null,
+
+    number: 1,
+    "float": 1.0,
+    ok: 0x4,
+    "negative": -1,
+    "negative-float": -1.0,
+    "ok": 0x4,
+    hex: 0x4,
+    binary: 0b100
+
+}
+@MarkSingle
+fn create<T>(value: T) -> T {
+    return value;
+}
+

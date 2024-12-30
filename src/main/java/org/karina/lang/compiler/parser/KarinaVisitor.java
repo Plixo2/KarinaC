@@ -2,14 +2,13 @@ package org.karina.lang.compiler.parser;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.karina.lang.compiler.Generic;
+import org.karina.lang.compiler.TypeImport;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.json.*;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KTree;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.SynatxObject;
+import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.parser.gen.KarinaParser;
 
 import java.math.BigDecimal;
@@ -88,12 +87,12 @@ public class KarinaVisitor {
 
         var region = this.conv.toRegion(ctx);
         var name = this.conv.span(ctx.ID());
-        var generics = ctx.genericHintDefinition() == null ? List.<KType.GenericType>of() :
+        var generics = ctx.genericHintDefinition() == null ? List.<Generic>of() :
                 this.visitGenericHintDefinition(ctx.genericHintDefinition());
         var parameters = visitParameters(ctx.parameterList());
         if (isInterface) {
             if (ctx.block() != null || ctx.expression() != null) {
-                Log.syntaxError(region, "Interface function cannot define a body");
+                Log.syntaxError(region, "Interface function can't define a body");
                 throw new Log.KarinaException();
             }
         } else if (ctx.expression() == null && ctx.block() == null) {
@@ -130,7 +129,7 @@ public class KarinaVisitor {
         var name = this.conv.span(ctx.ID());
         var path = this.path.append(name.value());
         var generics = ctx.genericHintDefinition() == null ?
-                List.<KType.GenericType>of():
+                List.<Generic>of():
                 visitGenericHintDefinition(ctx.genericHintDefinition());
         var fields = ctx.field().stream().map(this::visitField).toList();
         var functions = ctx.function()
@@ -165,7 +164,7 @@ public class KarinaVisitor {
 
         var name = this.conv.span(ctx.ID());
         var generics = ctx.genericHintDefinition() == null ?
-                        List.<KType.GenericType>of():
+                        List.<Generic>of():
                         visitGenericHintDefinition(ctx.genericHintDefinition());
         var region = this.conv.toRegion(ctx);
         var path = this.path.append(name.value());
@@ -184,7 +183,7 @@ public class KarinaVisitor {
     private KTree.KInterface visitInterface(KarinaParser.InterfaceContext ctx, List<KTree.KAnnotation> annotations) {
 
         var name = this.conv.span(ctx.ID());
-        var generics = ctx.genericHintDefinition() == null ? List.<KType.GenericType>of() :
+        var generics = ctx.genericHintDefinition() == null ? List.<Generic>of() :
                 visitGenericHintDefinition(ctx.genericHintDefinition());
         var path = this.path.append(name.value());
         var region = this.conv.toRegion(ctx);
@@ -326,23 +325,23 @@ public class KarinaVisitor {
         var nameRegion = ctx.ID() == null ? null : this.conv.span(ctx.ID());
         var importJava = ctx.JAVA_IMPORT() != null;
         var path = visitDotWordChain(ctx.dotWordChain());
-        SynatxObject.TypeImport typeImport;
+        TypeImport typeImport;
         if (importJava) {
             if (importAll) {
                 Log.syntaxError(region, "Invalid import statement");
                 throw new Log.KarinaException();
             } else {
                 if (nameRegion == null) {
-                    typeImport = new SynatxObject.TypeImport.JavaClass(path.region());
+                    typeImport = new TypeImport.JavaClass(path.region());
                 } else {
-                    typeImport = new SynatxObject.TypeImport.JavaAlias(nameRegion);
+                    typeImport = new TypeImport.JavaAlias(nameRegion);
                 }
             }
         } else {
             if (importAll) {
-                typeImport = new SynatxObject.TypeImport.All(this.conv.span(ctx.CHAR_STAR()).region());
+                typeImport = new TypeImport.All(this.conv.span(ctx.CHAR_STAR()).region());
             } else if (nameRegion != null) {
-                typeImport = new SynatxObject.TypeImport.Single(nameRegion);
+                typeImport = new TypeImport.Single(nameRegion);
             } else {
                 Log.syntaxError(region, "Invalid import statement");
                 throw new Log.KarinaException();
@@ -352,11 +351,10 @@ public class KarinaVisitor {
 
     }
 
-
-    private List<KType.GenericType> visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
+    private List<Generic> visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
         return ctx.ID().stream().map(ref -> {
             var region = KarinaVisitor.this.conv.span(ref);
-            return new KType.GenericType(region.region(), region.value());
+            return new Generic(region.region(), region.value());
         }).toList();
     }
 

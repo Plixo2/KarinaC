@@ -5,6 +5,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.boot.DefaultResource;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class DebugWriter {
     public static void write(Object object, String path) {
 
         var builder = new GsonBuilder()
-            .registerTypeAdapter(DefaultFile.class, new NullGsonWriter())
+            .registerTypeAdapter(DefaultResource.class, new NullGsonWriter())
             .registerTypeAdapter(TextSource.class, new NullGsonWriter())
             .registerTypeAdapter(Span.class, new NullGsonWriter());
         var gson = builder.setPrettyPrinting().create();

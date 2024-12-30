@@ -341,11 +341,11 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitMemberInit(KarinaParser.MemberInitContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KarinaParser#instanceOf}.
+	 * Visit a parse tree produced by {@link KarinaParser#isInstanceOf}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitInstanceOf(KarinaParser.InstanceOfContext ctx);
+	T visitIsInstanceOf(KarinaParser.IsInstanceOfContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#optTypeList}.
 	 * @param ctx the parse tree

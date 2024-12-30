@@ -3,9 +3,7 @@ package org.karina.lang.compiler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class VariableCollection implements Iterable<Variable> {
     private final List<Variable> variables;
@@ -17,6 +15,10 @@ public class VariableCollection implements Iterable<Variable> {
         this.variables = new ArrayList<>(collection);
     }
 
+    public Set<String> names() {
+        return new HashSet<>(this.variables.stream().map(Variable::name).toList());
+    }
+
     public VariableCollection add(Variable variable) {
         var collection = new ArrayList<>(this.variables);
         collection.add(variable);
@@ -24,7 +26,7 @@ public class VariableCollection implements Iterable<Variable> {
     }
 
     public boolean contains(String name) {
-        return this.variables.stream().anyMatch(v -> v.name().equals(name));
+        return get(name) != null;
     }
 
     public @Nullable Variable get(String name) {

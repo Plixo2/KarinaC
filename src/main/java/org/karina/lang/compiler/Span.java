@@ -4,7 +4,7 @@ package org.karina.lang.compiler;
 import org.karina.lang.compiler.api.TextSource;
 
 /**
- * Represents a region of text in a given source file.
+ * Represents a region of a text in a given source file.
  * @param source The source file
  * @param start Starting line and column (0-based)
  * @param end Ending line and column (0-based)

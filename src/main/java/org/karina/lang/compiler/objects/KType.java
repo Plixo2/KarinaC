@@ -1,15 +1,22 @@
 package org.karina.lang.compiler.objects;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.Generic;
 import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.errors.types.AttribError;
 
 import java.util.List;
 
 public sealed interface KType {
 
     Span region();
+
 
     enum KPrimitive {
         VOID,
@@ -26,19 +33,91 @@ public sealed interface KType {
 
     record UnprocessedType(Span region, SpanOf<ObjectPath> name, List<KType> generics) implements KType {}
 
-    record ArrayType(Span region, KType elementType) implements KType {}
+    record ArrayType(Span region, KType elementType) implements KType {
+
+        @Override
+        public String toString() {
+            return "[" + this.elementType + "]";
+        }
+    }
 
     record FunctionType(
             Span region,
             List<KType> arguments,
             @Nullable KType returnType,
             List<KType> interfaces
-    ) implements KType {}
+    ) implements KType {
 
-    record ClassType(Span region, SpanOf<ObjectPath> path, List<KType> generics) implements KType {}
+        @Override
+        public String toString() {
+            var returnType = this.returnType == null ? "void" : this.returnType.toString();
+            var impls = this.interfaces.isEmpty() ? "" : " impl " + String.join(", ", this.interfaces.stream().map(KType::toString).toList());
+            return "fn(" + String.join(", ", this.arguments.stream().map(KType::toString).toList()) + ") -> " + returnType + impls;
+        }
+    }
 
-    record GenericType(Span region, String name) {}
-    record GenericLink(Span region, GenericType link) implements KType {}
+    record ClassType(Span region, SpanOf<ObjectPath> path, List<KType> generics) implements KType {
+
+        @Override
+        public String toString() {
+            return this.path.value().toString() + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
+        }
+
+    }
+
+    record GenericLink(Span region, Generic link) implements KType {
+
+        @Override
+        public String toString() {
+            return this.link.name();
+        }
+    }
+
+    @RequiredArgsConstructor
+    final class Resolvable implements KType {
+        @Getter
+        @Accessors(fluent = true)
+        private final Span region;
+
+        private @Nullable KType resolved = null;
+
+        public boolean isResolved() {
+            return this.resolved != null;
+        }
+
+        public @Nullable KType get() {
+            return this.resolved;
+        }
+
+        public void resolve(KType resolved) {
+
+            Resolvable resolvable = resolved instanceof Resolvable resolved1 ? resolved1 : null;
+            while (resolvable != null) {
+                if (resolvable == this) {
+                    Log.attribError(new AttribError.TypeCycle(this.region, "Bad cycle"));
+                    throw new Log.KarinaException();
+                }
+                resolvable = resolvable.get() instanceof Resolvable resolvable1 ? resolvable1 : null;
+            }
+
+
+            if (this.resolved != null) {
+                Log.temp(this.region, "Type already resolved");
+                throw new Log.KarinaException();
+            }
+            this.resolved = resolved;
+        }
+
+        @Override
+        public String toString() {
+            var hash = Integer.toHexString(this.hashCode());
+            if (this.resolved == null) {
+                return "#" + hash + " (unresolved)";
+            } else {
+                return "#" + hash + " (" + this.resolved + ")";
+            }
+        }
+    }
 
     sealed interface PrimitiveType extends KType {
 
@@ -58,16 +137,72 @@ public sealed interface KType {
             };
 
         }
-        record VoidType(Span region) implements PrimitiveType {}
-        record IntType(Span region) implements PrimitiveType {}
-        record FloatType(Span region) implements PrimitiveType {}
-        record BoolType(Span region) implements PrimitiveType {}
-        record StringType(Span region) implements PrimitiveType {}
-        record CharType(Span region) implements PrimitiveType{}
-        record DoubleType(Span region) implements PrimitiveType {}
-        record ByteType(Span region) implements PrimitiveType {}
-        record ShortType(Span region) implements PrimitiveType {}
-        record LongType(Span region) implements PrimitiveType {}
+        record VoidType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record IntType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record FloatType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record BoolType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record StringType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record CharType(Span region) implements PrimitiveType{
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record DoubleType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record ByteType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record ShortType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+        record LongType(Span region) implements PrimitiveType {
+            @Override
+            public String toString() {
+                return mkString();
+            }
+        }
+
+
+        default String mkString() {
+            return this.primitive().toString().toLowerCase();
+        }
+
     }
 
 }

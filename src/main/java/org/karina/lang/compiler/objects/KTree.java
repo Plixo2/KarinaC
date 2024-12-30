@@ -6,11 +6,36 @@ import lombok.Singular;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.json.JsonElement;
+import org.karina.lang.compiler.stages.SymbolTable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public final class KTree {
+
+    public static @Nullable KItem findAbsolutItem(KPackage root, ObjectPath absolut) {
+        if (absolut.isEmpty()) {
+            return null;
+        }
+        var first = absolut.first();
+        if (!first.equals(root.name)) {
+            return null;
+        }
+        return findRelativeItem(root, absolut.tail());
+    }
+
+    public static @Nullable KItem findRelativeItem(KPackage root, ObjectPath relativeToSrc) {
+        if (relativeToSrc.isEmpty()) {
+            return null;
+        }
+        var objectPath = relativeToSrc.everythingButLast();
+        var unit = root.findUnit(objectPath);
+        if (unit == null) {
+            return null;
+        }
+        var itemName = relativeToSrc.last();
+        return unit.findItem(itemName);
+    }
 
     @Builder
     public record KPackage(
@@ -19,20 +44,6 @@ public final class KTree {
             @Singular List<KPackage> subPackages,
             @Singular List<KUnit> units
     ) {
-
-        public KItem findItem(ObjectPath path) {
-            if (path.isEmpty()) {
-                return null;
-            }
-            var objectPath = path.everythingButLast();
-            var unit = findUnit(objectPath);
-            if (unit == null) {
-                return null;
-            }
-            var itemName = path.last();
-            return unit.findItem(itemName);
-        }
-
         public @Nullable KUnit findUnit(ObjectPath path) {
 
             if (path.elements().isEmpty()) {
@@ -54,7 +65,6 @@ public final class KTree {
                 }
             }
             return null;
-
         }
 
         public List<KUnit> getAllUnitsRecursively() {
@@ -93,7 +103,7 @@ public final class KTree {
     @Builder
     public record KImport(
             @NonNull Span region,
-            @NonNull SynatxObject.TypeImport importType,
+            @NonNull TypeImport importType,
             @NonNull SpanOf<ObjectPath> path
     ) {}
 
@@ -102,7 +112,7 @@ public final class KTree {
         List<KAnnotation> annotations();
         SpanOf<String> name();
         ObjectPath path();
-        List<KType.GenericType> generics();
+        List<Generic> generics();
     }
 
     public sealed interface KTypeItem extends KItem permits KInterface, KStruct, KEnum {
@@ -113,7 +123,7 @@ public final class KTree {
             @NonNull Span region,
             @NonNull SpanOf<String> name,
             @NonNull ObjectPath path,
-            @Singular List<KType.GenericType> generics,
+            @Singular List<Generic> generics,
             @Singular List<KAnnotation> annotations,
             @Singular List<KFunction> functions,
             @Singular List<KType> superTypes
@@ -124,7 +134,7 @@ public final class KTree {
             @NonNull Span region,
             @NonNull SpanOf<String> name,
             @NonNull ObjectPath path,
-            @Singular List<KType.GenericType> generics,
+            @Singular List<Generic> generics,
             @Singular List<KAnnotation> annotations,
             @Singular List<KFunction> functions,
             @Singular List<KField> fields,
@@ -136,7 +146,7 @@ public final class KTree {
             @NonNull Span region,
             @NonNull SpanOf<String> name,
             @NonNull ObjectPath path,
-            @Singular List<KType.GenericType> generics,
+            @Singular List<Generic> generics,
             @Singular List<KAnnotation> annotations,
             @Singular List<KEnumEntry> entries
     ) implements KTypeItem {}
@@ -150,7 +160,7 @@ public final class KTree {
             @Singular List<KAnnotation> annotations,
             @Singular List<KParameter> parameters,
             @Nullable KType returnType,
-            @Singular List<KType.GenericType> generics,
+            @Singular List<Generic> generics,
             @Nullable KExpr expr
     ) implements KItem {}
 

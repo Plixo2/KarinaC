@@ -41,3 +41,12 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+resources/attributed.json
+resources/imported.json
+resources/karina/karina.tmLanguage
+resources/karina/package.json
+resources/raw.json
+src/main/resources/grammar_old.txt
+src/main/resources/grammarOld.txt
+src/main/java/org/karina/lang/MutableList.java
+src/main/java/org/karina/lang/ImmutableList.java

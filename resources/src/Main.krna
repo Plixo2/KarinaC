@@ -24,9 +24,6 @@ fn createObjC(i: Stream<Chair>) -> Chair {
 
 
 fn testing() -> Chair {
-    Chair {
-        isBroken: false
-    }
 }
 
 

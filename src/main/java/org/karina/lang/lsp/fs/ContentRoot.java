@@ -16,9 +16,7 @@ public class ContentRoot {
     @Getter
     private @Nullable InitializedContentRoot content;
 
-    public record InitializedContentRoot(ConfigFile configFile, SyncFileTree sourceTree) {
-
-    }
+    public record InitializedContentRoot(ConfigFile configFile, SyncFileTree sourceTree) {}
 
 
 }

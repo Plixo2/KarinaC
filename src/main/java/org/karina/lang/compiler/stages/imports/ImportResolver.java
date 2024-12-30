@@ -1,7 +1,6 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.SpanOf;
-import org.karina.lang.compiler.Unique;
+import org.karina.lang.compiler.errors.Unique;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.ImportError;

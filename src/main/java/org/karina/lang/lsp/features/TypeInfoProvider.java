@@ -13,11 +13,12 @@ import org.karina.lang.lsp.fs.SyncFileTree;
  * Invoked on any change to the virtual file system.
  * Only invoked when the entire file system is in a typed state, so that we can build a
  * KPackage tree from the virtual file tree and then invoke the various stages of the compiler.
- * When an error is found, it is pushed to the respective file.
+ * When an error is found, it is pushed to the respective file, to be pushed to the server.
  */
 public class TypeInfoProvider {
 
     public void updateAll(SyncFileTree sourceTree) {
+
         var root = packageFromVirtualTree(sourceTree);
         var importer = new ImportResolver();
         var attributes = new AttributionResolver();
@@ -37,6 +38,7 @@ public class TypeInfoProvider {
      * A Typed file is a file that has been successfully parsed.
      */
     public static KTree.KPackage packageFromVirtualTree(SyncFileTree tree) {
+
         var build = KTree.KPackage.builder();
         build.name(tree.name());
         build.path(tree.path());
@@ -50,5 +52,6 @@ public class TypeInfoProvider {
         }
 
         return build.build();
+
     }
 }

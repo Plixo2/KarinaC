@@ -1,0 +1,5 @@
+/* Fail SyntaxError */
+
+fn someFN()
+
+

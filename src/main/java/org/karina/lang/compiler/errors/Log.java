@@ -1,7 +1,6 @@
 package org.karina.lang.compiler.errors;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.DiagnosticCollection;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.types.FileLoadError;
@@ -35,6 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  */
 public class Log {
+    /*
     private static final boolean COLOR = false;
     public static final String RESET = COLOR ? "\u001B[0m" : "";
     private static final String RED = "\u001B[31m";
@@ -49,6 +49,7 @@ public class Log {
     public static final String ERROR_TITLE_COLOR = COLOR ? PURPLE : "";
     public static final String ERROR_MESSAGE_COLOR = COLOR ? YELLOW : "";
     public static final String ERROR_TRACE = COLOR ? GRAY : "";
+    */
 
 
     //A thread-safe List of logs
@@ -85,26 +86,9 @@ public class Log {
 
     }
 
-    public static LogCollector<ConsoleLogBuilder> generateReport(boolean verbose) {
-
-        var report = new LogCollector<ConsoleLogBuilder>();
-
-        var copy = new ArrayList<>(entries);
-        for (var withException : copy) {
-            var print = report.populate(withException.entry(), new ConsoleLogBuilder());
-            if (verbose && withException.stack() != null) {
-                print.appendStack(withException.stack());
-            }
-        }
-        return report;
-
-    }
-
     public static List<LogWithTrace> getEntries() {
         return new ArrayList<>(entries);
     }
-
-
 
     public static boolean hasErrors() {
         return !entries.isEmpty();
@@ -121,9 +105,9 @@ public class Log {
     public record LogWithTrace(@Nullable StackTraceElement[] stack, Error entry) {
 
         public String mkString(boolean addTrace) {
-            var builder = new StringBuilder();
 
-            var report = new LogCollector<ConsoleLogBuilder>();
+            var builder = new StringBuilder();
+            var report = new LogFactory<ConsoleLogBuilder>();
             var print = report.populate(this.entry, new ConsoleLogBuilder());
             if (addTrace && this.stack != null) {
                 print.appendStack(this.stack);
@@ -136,6 +120,7 @@ public class Log {
             builder.append("\n");
 
             return builder.toString();
+
         }
 
     }

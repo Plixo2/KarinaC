@@ -6,13 +6,11 @@ struct Array<A> {
     next: Option<Array<A>>
 }
 
-
 fn main<T>(input: Array<string>) {
-
     let a: int = 1000
-    let b = a + 1
+    let b = a + 100
     let array = [1, 2, 3][1]
-    let www: T = -a
+    let www: int = a
     if true {
         
     } else if false {
@@ -34,10 +32,6 @@ fn main<T>(input: Array<string>) {
         }
     }
 
-    let b = {
-        c
-    }
-
     while 100 > bbbb.cc[d](1000) as bool {
         for i in list {
             break
@@ -47,9 +41,9 @@ fn main<T>(input: Array<string>) {
     let func: fn(bool, string, Array<Option<T>>) -> int = fn(a,b,c) {
 
     }
-    let func: fn(bool, string, Array<Option<T>>) -> int = fn(a: string, b, c) -> Array<Option<T>> {
-        a.some[1000] = true && false
-    }
+   // let func2: fn(bool, string, Array<Option<T>>) -> int = fn(a: string, b, c) -> Array<Option<T>> {
+    //    a.some[1000] = true && false
+    //}
 
     let variable: Pair<int, string> = Pair<int, string> {
         first: 1000,
@@ -58,6 +52,9 @@ fn main<T>(input: Array<string>) {
     let array2: Array<WW> = <S<Reader<WW>>> [1, 2, 3]
     let list: [WW] = [1, 2, 3]
 
+    let isWW = w as WW
+    if isWW {
+    }
 
     let some = if b {
         return
@@ -70,8 +67,8 @@ fn main<T>(input: Array<string>) {
 
     }
 
-    let isInstance: bool = w is WW
-    let asInstance: WW = w.b as WW 
+    let asInstance: bool = w is WW
+    let InstanceOf: WW = w.b as WW
 
     if w is WW ww {
 

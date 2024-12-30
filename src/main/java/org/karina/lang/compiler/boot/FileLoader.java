@@ -1,6 +1,7 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.boot;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.api.FileNode;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.errors.types.FileLoadError;
@@ -20,7 +21,7 @@ public class FileLoader {
     public static TextSource loadUTF8(String path) throws Log.KarinaException {
         var file = new File(path);
         var lines = loadUTF8File(file);
-        return new DefaultFile(new DefaultFile.FileResource(file), lines);
+        return new TextSource(new DefaultResource(file), lines);
     }
 
     public static String loadUTF8FiletoString(File file) throws Log.KarinaException {
@@ -73,7 +74,7 @@ public class FileLoader {
     //#endregion
 
     //#region Load File Tree
-    public static FileTreeNodeImpl loadTree(
+    public static DefaultFileTree loadTree(
             @Nullable ObjectPath objectPath,
             String path,
             Predicate<String> filePredicate
@@ -98,21 +99,21 @@ public class FileLoader {
         }
         var files = file.listFiles();
         if (files == null) {
-            Log.fileError(new FileLoadError.IO(file, new IOException("Cannot list files")));
+            Log.fileError(new FileLoadError.IO(file, new IOException("Can't list files")));
             throw new Log.KarinaException();
         }
         return loadTreeFiles(files, objectPath, folderName, filePredicate);
 
     }
 
-    private static FileTreeNodeImpl loadTreeFiles(
+    private static DefaultFileTree loadTreeFiles(
             File[] files,
             ObjectPath objectPath,
             String folderName,
             Predicate<String> filePredicate
     ) {
 
-        var children = new ArrayList<FileTreeNodeImpl>();
+        var children = new ArrayList<DefaultFileTree>();
         var leafs = new ArrayList<FileNode>();
         for (var subFile : files) {
             if (!subFile.exists()) {
@@ -129,11 +130,11 @@ public class FileLoader {
                 children.add(child);
             } else if (subFile.isFile() && filePredicate.test(subFile.getName())) {
                 var lines = loadUTF8File(subFile);
-                var src = new DefaultFile(new DefaultFile.FileResource(subFile), lines);
-                leafs.add(new FileTreeNodeImpl.FileNodeImpl(childPath, name, src));
+                var src = new TextSource(new DefaultResource(subFile), lines);
+                leafs.add(new DefaultFileTree.DefaultFileNode(childPath, name, src));
             }
         }
-        return new FileTreeNodeImpl(objectPath, folderName, children, leafs);
+        return new DefaultFileTree(objectPath, folderName, children, leafs);
 
     }
 

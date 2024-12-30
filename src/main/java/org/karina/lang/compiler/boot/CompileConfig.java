@@ -1,15 +1,11 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.boot;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.AllArgsConstructor;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Predicate;
 
 @AllArgsConstructor

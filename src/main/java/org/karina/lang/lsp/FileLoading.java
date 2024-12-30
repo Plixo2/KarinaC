@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.DefaultFile;
+import org.karina.lang.compiler.boot.DefaultResource;
 import org.karina.lang.compiler.api.Resource;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.lsp.fs.ConfigFile;
@@ -59,13 +59,13 @@ public class FileLoading {
         }
         try {
             var charset = StandardCharsets.UTF_8;
-            Resource fileResource = new DefaultFile.FileResource(file);
+            Resource fileResource = new DefaultResource(file);
             if (karinaFile != null) {
                 fileResource = karinaFile;
             }
 
             var lines = Files.readAllLines(root, charset);
-            return new FileLoadResult.Success<>(new DefaultFile(fileResource, lines));
+            return new FileLoadResult.Success<>(new TextSource(fileResource, lines));
         } catch (IOException e) {
             return new FileLoadResult.IO<>(root, e);
         }

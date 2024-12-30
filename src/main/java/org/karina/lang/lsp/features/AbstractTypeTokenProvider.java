@@ -98,7 +98,7 @@ public abstract class AbstractTypeTokenProvider<T> {
                         }
                     }
                     case ImportedTypeVisitor.SourceLocation.ClassToken(var ignored, var path, var ignored2) -> {
-                        var item = root.findItem(path.tail());
+                        var item = KTree.findAbsolutItem(root, path);
                         if (item != null) {
                             return SpanOf.span(item.region(), definition);
                         }

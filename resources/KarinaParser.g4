@@ -92,7 +92,7 @@ relationalExpression: additiveExpression (('<' | '>' | '<=' | '>=') relationalEx
 additiveExpression: multiplicativeExpression (('+' | '-' | '&') additiveExpression)?;
 multiplicativeExpression: unaryExpression (('*' | '/' | '%') multiplicativeExpression)?;
 unaryExpression: ('-' | '!')? factor;
-factor: object postFix* (('=' exprWithBlock) | instanceOf)?;
+factor: object postFix* (('=' exprWithBlock) | isInstanceOf)?;
 postFix: '.' ID | '.' 'class' | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type;
 object: array | '(' exprWithBlock ')' | NUMBER | ID (genericHint? '{' initList '}')? | STRING_LITERAL | 'self' | 'true' | 'false';
 array: ('<' type '>')? '[' expressionList ']';
@@ -104,7 +104,7 @@ expressionList: (exprWithBlock (',' exprWithBlock)*)?;
 initList: (memberInit (',' memberInit)*)?;
 memberInit: ID ':' exprWithBlock;
 
-instanceOf: 'is' type;
+isInstanceOf: 'is' type;
 
 optTypeList: (optTypeName (',' optTypeName)*)?;
 optTypeName: ID (':' type)?;

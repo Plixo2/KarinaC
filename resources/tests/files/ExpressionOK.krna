@@ -1,0 +1,138 @@
+/* OK */
+
+
+fn create<T>(value: T) -> int {
+
+    let array: [int] = [1, 2, 3, 4, 5]
+
+    for i in array {
+        if i == 3 {
+            return value
+        }
+
+        if i == 4 {
+            return 0
+        } else {
+            return 1
+        }
+    }
+
+    while true {
+        if true {
+            break
+        } else {
+            continue
+        }
+    }
+    let closure = fn(x: int) -> int {
+        x
+    }
+    let closure2 = fn(x: int) {
+            x
+    }
+    let closureImpl = fn(x: int) -> string impl FunctionInterface {
+        "Hello"
+    }
+    let closureImplNoReturn = fn(x: int) impl FunctionInterface {
+            "Hello"
+    }
+    let some: Option<int> = Option.Some(1)
+
+    if true {
+
+    } else if false {
+
+    } else match some {
+        _ -> 0
+    }
+
+    match some {
+        Option(x) -> x
+        _ -> 0b0
+    }
+
+    let getNumber = match some {
+            W x -> x.value
+            Option() -> 0x16BBA
+    }
+
+    let forBranchCase = W { x: 1 }
+
+    if forBranchCase is W w {}
+    if forBranchCase is W(x) {}
+    if forBranchCase is W(x: int) {}
+
+    let newStruct = W { x: 1 }
+    let withOut = newStruct
+
+    let toInfer = O { x: "HI" }
+    let annotated = O<string> { x: "HI" }
+    toInfer = annotated
+    let field = annotated.x
+    let call = annotated.make()
+    let annotatedCall = annotated.generic<int>(1)
+
+
+    let index = 0;
+    let nested = ({
+        let getElement = array[index]
+    })
+
+    let another = (1 + 2) * 3
+
+    annotated = {
+        toInfer
+    }
+
+    let instance = annotated is O
+    let castThing: float = 1 as float
+
+}
+
+fn binary() {
+    let a = 1 + 2
+    let w = 2 * 2
+    let x = 3 / 2
+    let y = 4 - x
+    let z = 5 % 2
+    let b = 1 == 2
+    let c = 1 != 2
+    let d = 1 > 2
+    let e = 1 < 2
+    let f = 1 >= 2
+    let g = 1 <= 2
+    let h = true && false
+    let i = false || true
+
+    let left = "Hello"
+    let right = "World"
+
+    let concat = left & " " & right
+}
+fn unary() {
+    let a = !true
+    let w = 1
+    let x = -w
+    let direct = -1
+}
+
+struct W {
+    x: int
+}
+
+struct O<T> {
+    x: T
+
+    fn make() -> string = "Hello"
+
+    fn generic<U>(value: U) -> U = value
+}
+
+interface FunctionInterface {
+    fn make(x: int) -> string
+}
+
+enum Option<T> {
+    Some(value: T)
+    None
+}

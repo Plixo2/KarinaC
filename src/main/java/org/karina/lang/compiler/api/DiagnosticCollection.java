@@ -1,4 +1,4 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.karina.lang.compiler.errors.Log;
@@ -20,7 +20,7 @@ public class DiagnosticCollection implements Iterable<Log.LogWithTrace> {
     }
 
     public List<Log.LogWithTrace> getTraces() {
-        return this.traces;
+        return new ArrayList<>(this.traces);
     }
 
     @Override

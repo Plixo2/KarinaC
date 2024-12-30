@@ -1,0 +1,8 @@
+/* Fail SyntaxError */
+
+@Test = {
+    number: 0x_
+}
+fn create(){
+
+}

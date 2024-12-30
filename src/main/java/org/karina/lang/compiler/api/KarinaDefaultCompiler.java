@@ -1,7 +1,7 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.api;
 
-import org.karina.lang.compiler.api.FileTreeNode;
-import org.karina.lang.compiler.api.KarinaCompiler;
+import org.karina.lang.compiler.DebugWriter;
+import org.karina.lang.compiler.parser.KarinaUnitParser;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KTree;
@@ -41,17 +41,19 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
         } finally {
             Log.clearLogs();
         }
+
     }
 
     /**
      * Parses a file tree into a {@link KTree}.
+     * @param collector to collect ALL errors while parsing
      */
     private KTree.KPackage parseFiles(FileTreeNode fileTree, ErrorCollector collector) {
 
         List<KTree.KUnit> units = new ArrayList<>();
         for (var files : fileTree.leafs()) {
             collector.collect(() -> {
-                units.add(KarinaCParser.generateParseTree(
+                units.add(KarinaUnitParser.generateParseTree(
                         files.text(),
                         files.name(),
                         files.path()
@@ -63,10 +65,16 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
 
     }
 
+    /*
+     * Imports the tree, resolving all imports, build symbol table
+     */
     private KTree.KPackage importTree(KTree.KPackage kPackage) {
         return new ImportResolver().importTree(kPackage);
     }
 
+    /**
+     * Attributing the tree, resolving all types
+     */
     private KTree.KPackage attributeTree(KTree.KPackage tree) {
         return new AttributionResolver().attribTree(tree);
     }

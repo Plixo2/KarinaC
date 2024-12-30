@@ -1,13 +1,13 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.ErrorCollector;
+import org.karina.lang.compiler.errors.Unique;
 import org.karina.lang.compiler.errors.types.ImportError;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.SynatxObject;
-import org.karina.lang.compiler.SymbolTable;
+import org.karina.lang.compiler.NameAndOptType;
+import org.karina.lang.compiler.stages.SymbolTable;
 
 import java.util.*;
 
@@ -258,8 +258,8 @@ public class ItemImporting {
         return build.build();
     }
 
-    static List<SynatxObject.NameAndOptType> importNameAndOptTypeList(ImportContext ctx, List<SynatxObject.NameAndOptType> list, ErrorCollector collector) {
-        var result = new ArrayList<SynatxObject.NameAndOptType>();
+    static List<NameAndOptType> importNameAndOptTypeList(ImportContext ctx, List<NameAndOptType> list, ErrorCollector collector) {
+        var result = new ArrayList<NameAndOptType>();
         for (var item : list) {
             collector.collect(() -> {
                 KType type;
@@ -268,15 +268,16 @@ public class ItemImporting {
                 } else {
                     type = ctx.resolveType(item.type());
                 }
-                result.add(new SynatxObject.NameAndOptType(
+                result.add(new NameAndOptType(
                         item.region(),
                         item.name(),
-                        type
+                        type,
+                        null
                 ));
             });
         }
         collector.collect(() -> {
-            var uniqueArgs = Unique.testUnique(result, SynatxObject.NameAndOptType::name);
+            var uniqueArgs = Unique.testUnique(result, NameAndOptType::name);
             if (uniqueArgs != null) {
                 Log.importError(new ImportError.DuplicateItem(
                         uniqueArgs.first().name().region(),

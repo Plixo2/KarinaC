@@ -9,12 +9,11 @@ public record ObjectPath(List<String> elements) {
 
     public ObjectPath {
         //copy to an immutable list
-        elements = List.copyOf(elements);
         Objects.requireNonNull(elements);
+        elements = List.copyOf(elements);
         if (elements.stream().anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("Elements must not be null");
         }
-
     }
 
     public ObjectPath(String... elements) {
@@ -40,7 +39,7 @@ public record ObjectPath(List<String> elements) {
     public ObjectPath tail() {
 
         if (this.elements.isEmpty()) {
-            throw new IllegalStateException("Cannot take tail of empty path");
+            throw new IllegalStateException("Can't take tail of empty path");
         }
         return new ObjectPath(this.elements.subList(1, this.elements.size()));
 

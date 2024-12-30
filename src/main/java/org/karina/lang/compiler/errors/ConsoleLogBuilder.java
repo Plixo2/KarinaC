@@ -22,9 +22,11 @@ public class ConsoleLogBuilder implements LogBuilder {
 
     @Override
     public void setPrimarySource(Span region) {
+
         append("");
         appendRegionFile(region);
         appendRegion(region);
+
     }
 
     @Override
@@ -67,11 +69,9 @@ public class ConsoleLogBuilder implements LogBuilder {
             stack = Arrays.copyOfRange(stack, 3, stack.length);
         }
 
-        append(Log.ERROR_TRACE);
         for (var element : stack) {
             append("$TRACE at " + element);
         }
-        append(Log.ERROR_MESSAGE_COLOR);
 
     }
 
