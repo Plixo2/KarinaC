@@ -22,4 +22,4 @@ jobs:
     - name: Gradle Permissions
       run: chmod +x ./gradlew
     - name: test with Gradle
-      run: ./gradlew --scan test
+      run: ./gradlew test --info
