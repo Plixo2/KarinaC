@@ -1,0 +1,40 @@
+import create Other
+import Array utils.Control
+import sqrt Math
+
+fn main(input: Array<string>) {
+
+}
+
+struct Chair {
+    weight: float
+    age: string
+    height: double
+    isBroken: bool
+}
+
+fn createObj(i: Chair) -> Chair {
+    false
+}
+
+
+fn createObjC(i: Stream<Chair>) -> Chair {
+    false
+}
+
+
+fn testing() -> Chair {
+}
+
+
+interface Writer<B> {
+    fn write(b: B)
+    impl Stream<B>
+}
+struct Stream<B> {
+    index: int
+
+    fn write(b: B) {
+        1 + 111
+    }
+}

@@ -7,6 +7,9 @@ import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.SymbolTable;
+import org.karina.lang.compiler.stages.TypeChecking;
+import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.stages.VariableCollection;
 
 import java.util.List;
 

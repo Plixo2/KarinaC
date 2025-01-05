@@ -6,7 +6,7 @@ public enum BinaryOperator {
     MULTIPLY,
     DIVIDE,
     MODULUS,
-    BIN_AND,
+    CONCAT,
     EQUAL,
     NOT_EQUAL,
     LESS_THAN,

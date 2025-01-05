@@ -7,6 +7,9 @@ import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.SymbolTable;
+import org.karina.lang.compiler.stages.TypeChecking;
+import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.stages.VariableCollection;
 
 import java.util.Objects;
 
@@ -27,6 +30,13 @@ record AttributionContext(
 
     @Nullable KType getSuperType(KType a, KType b) {
         return this.checking.superType(a, b);
+    }
+
+    boolean isPrimitive(@Nullable KType type, KType.KPrimitive primitiveType) {
+        if (type instanceof KType.PrimitiveType primitive) {
+            return primitive.primitive() == primitiveType;
+        }
+        return false;
     }
 
     boolean canAssign(KType left, KType right, boolean mutable) {
@@ -80,23 +90,5 @@ record AttributionContext(
         }
 
     }
-//
-//    public void getInterface(Span region, KType type) {
-//        if (type instanceof KType.ClassType classType) {
-//            var item = this.root.findItem(classType.path().value());
-//            if (!(item instanceof KTree.KStruct)) {
-//                Log.attribError(new AttribError.NotAStruct(
-//                        region,
-//                        type
-//                ));
-//                throw new Log.KarinaException();
-//            }
-//        } else {
-//            Log.attribError(new AttribError.NotAStruct(
-//                    region,
-//                    type
-//            ));
-//            throw new Log.KarinaException();
-//        }
-//    }
+
 }

@@ -17,6 +17,14 @@ public sealed interface KType {
 
     Span region();
 
+    default KType unpack() {
+        if (this instanceof Resolvable resolvable) {
+            if (resolvable.get() != null) {
+                return resolvable.get().unpack();
+            }
+        }
+        return this;
+    }
 
     enum KPrimitive {
         VOID,
@@ -31,7 +39,13 @@ public sealed interface KType {
         LONG
     }
 
-    record UnprocessedType(Span region, SpanOf<ObjectPath> name, List<KType> generics) implements KType {}
+    record UnprocessedType(Span region, SpanOf<ObjectPath> name, List<KType> generics) implements KType {
+
+        @Override
+        public String toString() {
+            return "~" + this.name.value().toString() + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
+        }
+    }
 
     record ArrayType(Span region, KType elementType) implements KType {
 
@@ -60,7 +74,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return this.path.value().toString() + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
+            return this.path.value().mkString(".") + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
         }
 
     }
@@ -71,6 +85,7 @@ public sealed interface KType {
         public String toString() {
             return this.link.name();
         }
+
     }
 
     @RequiredArgsConstructor
@@ -100,21 +115,20 @@ public sealed interface KType {
                 resolvable = resolvable.get() instanceof Resolvable resolvable1 ? resolvable1 : null;
             }
 
-
             if (this.resolved != null) {
                 Log.temp(this.region, "Type already resolved");
                 throw new Log.KarinaException();
             }
             this.resolved = resolved;
+
         }
 
         @Override
         public String toString() {
-            var hash = Integer.toHexString(this.hashCode());
             if (this.resolved == null) {
-                return "#" + hash + " (unresolved)";
+                return "?";
             } else {
-                return "#" + hash + " (" + this.resolved + ")";
+                return "? -> " + this.resolved;
             }
         }
     }
@@ -198,6 +212,13 @@ public sealed interface KType {
             }
         }
 
+
+        default boolean isNumeric() {
+            return switch (this.primitive()) {
+                case INT, FLOAT, DOUBLE, LONG, SHORT, CHAR, BYTE -> true;
+                default -> false;
+            };
+        }
 
         default String mkString() {
             return this.primitive().toString().toLowerCase();

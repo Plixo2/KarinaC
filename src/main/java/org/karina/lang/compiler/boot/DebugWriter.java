@@ -1,11 +1,11 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.boot;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.boot.DefaultResource;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,6 +23,17 @@ public class DebugWriter {
             .registerTypeAdapter(TextSource.class, new NullGsonWriter())
             .registerTypeAdapter(Span.class, new NullGsonWriter());
         var gson = builder.setPrettyPrinting().create();
+
+        var file = new java.io.File(path);
+        if (!file.exists()) {
+            try {
+                file.getParentFile().mkdirs();
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         try (var writer = new FileWriter(path)) {
             gson.toJson(object, writer);
         } catch (IOException e) {

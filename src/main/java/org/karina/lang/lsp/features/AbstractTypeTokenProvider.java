@@ -16,6 +16,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Used for hover and goToDefinition features.
+ * Import a single file and get the types from it.
+ * @param <T>
+ */
 public abstract class AbstractTypeTokenProvider<T> {
 
     public @Nullable T from(

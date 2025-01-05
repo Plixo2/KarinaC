@@ -51,7 +51,7 @@ public class ExprImporting {
     private static KExpr importBinary(ImportContext ctx, KExpr.Binary expr) {
         var left = importExpr(ctx, expr.left());
         var right = importExpr(ctx, expr.right());
-        return new KExpr.Binary(expr.region(), left, expr.operator(), right);
+        return new KExpr.Binary(expr.region(), left, expr.operator(), right, null);
     }
 
     private static KExpr importBlock(ImportContext ctx, KExpr.Block expr) {
@@ -143,13 +143,13 @@ public class ExprImporting {
             }
         }
 
-        return new KExpr.Call(expr.region(), left, generics, arguments);
+        return new KExpr.Call(expr.region(), left, generics, arguments, null);
     }
 
     private static KExpr importCast(ImportContext ctx, KExpr.Cast expr) {
         var expression = importExpr(ctx, expr.expression());
         var type = ctx.resolveType(expr.asType());
-        return new KExpr.Cast(expr.region(), expression, type);
+        return new KExpr.Cast(expr.region(), expression, type, null);
     }
 
     private static KExpr importClosure(ImportContext ctx, KExpr.Closure expr) {
@@ -305,7 +305,7 @@ public class ExprImporting {
 
     private static KExpr importUnary(ImportContext ctx, KExpr.Unary expr) {
         var value = importExpr(ctx, expr.value());
-        return new KExpr.Unary(expr.region(), expr.operator(), value);
+        return new KExpr.Unary(expr.region(), expr.operator(), value, null);
     }
 
     private static KExpr importVariableDefinition(ImportContext ctx, KExpr.VariableDefinition expr) {
@@ -329,12 +329,12 @@ public class ExprImporting {
     private static KExpr importGetArrayElement(ImportContext ctx, KExpr.GetArrayElement expr) {
         var left = importExpr(ctx, expr.left());
         var index = importExpr(ctx, expr.index());
-        return new KExpr.GetArrayElement(expr.region(), left, index);
+        return new KExpr.GetArrayElement(expr.region(), left, index, null);
     }
 
     private static KExpr importGetMember(ImportContext ctx, KExpr.GetMember expr) {
         var left = importExpr(ctx, expr.left());
-        return new KExpr.GetMember(expr.region(), left, expr.name());
+        return new KExpr.GetMember(expr.region(), left, expr.name(), null);
     }
 
     private static KExpr importInstanceOf(ImportContext ctx, KExpr.IsInstanceOf expr) {

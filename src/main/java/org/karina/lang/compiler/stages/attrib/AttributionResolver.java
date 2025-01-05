@@ -33,7 +33,7 @@ public class AttributionResolver {
 
     }
 
-    private KTree.KUnit attribUnit(KTree.KPackage root, KTree.KUnit unit) {
+    public KTree.KUnit attribUnit(KTree.KPackage root, KTree.KUnit unit) {
 
         var build = KTree.KUnit.builder();
         build.region(unit.region());

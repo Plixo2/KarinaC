@@ -1,4 +1,4 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.stages;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

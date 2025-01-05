@@ -7,10 +7,7 @@ import org.eclipse.lsp4j.services.LanguageClient;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.Span;
-import org.karina.lang.lsp.features.GoToDefinitionProvider;
-import org.karina.lang.lsp.features.HoverProvider;
-import org.karina.lang.lsp.features.TokenProvider;
-import org.karina.lang.lsp.features.TypeInfoProvider;
+import org.karina.lang.lsp.features.*;
 import org.karina.lang.lsp.fs.ContentRoot;
 import org.karina.lang.lsp.fs.SyncFileTree;
 
@@ -111,7 +108,7 @@ public class EventHandler {
         ));
     }
 
-    private void publishDiagnostics() {
+    public void publishDiagnostics() {
         for (var workspace : this.workspaces) {
             for (var virtualFile : workspace.getAllFiles()) {
                 if (virtualFile.isDirtyDiagnostic()) {
@@ -190,6 +187,7 @@ public class EventHandler {
     }
 
     public List<Integer> onSemanticToken(URI uri) {
+
         var workspaces = getWorkspacesForFile(uri);
         if (workspaces.isEmpty()) {
             return List.of();
@@ -213,6 +211,7 @@ public class EventHandler {
 
             return Objects.requireNonNullElseGet(tokens, List::of);
         }
+
     }
 
     public @Nullable Location getDefinition(URI uri, Position position) {
@@ -231,10 +230,23 @@ public class EventHandler {
             return null;
         } else {
             var workspace = workspaces.getFirst();
-            return new HoverProvider().from(workspace, uri, position, this.settings);
+            var hoverProvider = new HoverProvider();
+            return hoverProvider.from(workspace, uri, position, this.settings);
         }
     }
 
+    public List<InlayHint> onInlayHints(URI uri, Range range) {
+        var workspaces = getWorkspacesForFile(uri);
+        if (workspaces.isEmpty()) {
+            return null;
+        } else {
+            var workspace = workspaces.getFirst();
+
+            var provider = new InlayHintProvider();
+
+            return provider.from(workspace, uri, range, this.settings);
+        }
+    }
 
     //#endregion
 

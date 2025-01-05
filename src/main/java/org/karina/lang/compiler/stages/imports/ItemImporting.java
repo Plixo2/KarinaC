@@ -71,6 +71,7 @@ public class ItemImporting {
                 collector.collect(() -> {
                     build.field(new KTree.KField(
                             field.region(),
+                            field.path(),
                             field.name(),
                             ctx.resolveType(field.type())
                     ));

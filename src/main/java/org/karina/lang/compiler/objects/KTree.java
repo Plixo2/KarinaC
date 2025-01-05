@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.json.JsonElement;
 import org.karina.lang.compiler.stages.SymbolTable;
+import org.karina.lang.compiler.stages.Variable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,70 @@ public final class KTree {
             return null;
         }
         return findRelativeItem(root, absolut.tail());
+    }
+
+    public static @Nullable KFunction findAbsoluteVirtualFunction(KPackage root, ObjectPath path) {
+        if (path.isEmpty()) {
+            return null;
+        }
+        var functionName = path.last();
+        var item = findAbsolutItem(root, path.everythingButLast());
+        if (item == null) {
+            return null;
+        }
+
+        return switch (item) {
+            case KFunction kf -> null;
+            case KEnum ke -> null;
+            case KInterface kInterface -> {
+                for (var function : kInterface.functions()) {
+                    if (function.name().value().equals(functionName)) {
+                        yield function;
+                    }
+                }
+                yield null;
+            }
+            case KStruct kStruct -> {
+                for (var function : kStruct.functions()) {
+                    if (function.name().value().equals(functionName)) {
+                        yield function;
+                    }
+                }
+                for (var implBlock : kStruct.implBlocks()) {
+                    for (var function : implBlock.functions()) {
+                        if (function.name().value().equals(functionName)) {
+                            yield function;
+                        }
+                    }
+                }
+                yield null;
+            }
+        };
+    }
+
+    public static @Nullable KField findAbsoluteField(KPackage root, ObjectPath path) {
+        if (path.isEmpty()) {
+            return null;
+        }
+        var fieldName = path.last();
+        var item = findAbsolutItem(root, path.everythingButLast());
+        if (item == null) {
+            return null;
+        }
+
+        return switch (item) {
+            case KFunction kf -> null;
+            case KEnum ke -> null;
+            case KInterface kInterface -> null;
+            case KStruct kStruct -> {
+                for (var field : kStruct.fields()) {
+                    if (field.name().value().equals(fieldName)) {
+                        yield field;
+                    }
+                }
+                yield null;
+            }
+        };
     }
 
     public static @Nullable KItem findRelativeItem(KPackage root, ObjectPath relativeToSrc) {
@@ -168,7 +233,7 @@ public final class KTree {
     public record KImplBlock(@NonNull Span region, @NonNull KType type, @Singular List<KFunction> functions) { }
 
 
-    public record KField(Span region, SpanOf<String> name, KType type) { }
+    public record KField(Span region, ObjectPath path, SpanOf<String> name, KType type) { }
 
 
     @Builder

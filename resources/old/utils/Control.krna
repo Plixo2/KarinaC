@@ -32,7 +32,7 @@ fn main<T>(input: Array<string>) {
         }
     }
 
-    while 100 > bbbb.cc[d](1000) as bool {
+    while 100 > babel.cc[d](1000) as bool {
         for i in list {
             break
         }

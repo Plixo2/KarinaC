@@ -65,6 +65,7 @@ public class ConsoleLogBuilder implements LogBuilder {
 
     public void appendStack(StackTraceElement[] stack) {
 
+        append("");
         if (stack.length >= 3) {
             stack = Arrays.copyOfRange(stack, 3, stack.length);
         }

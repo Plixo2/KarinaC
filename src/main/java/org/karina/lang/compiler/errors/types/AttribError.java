@@ -26,9 +26,14 @@ public sealed interface AttribError extends Error {
 
     record TypeCycle(Span region, String message) implements AttribError {}
 
-    record NotAStruct(Span region, KType type) implements AttribError {
-    }
+    record NotAStruct(Span region, KType type) implements AttribError { }
 
-    record NotAInterface(Span region, KType type) implements AttribError {
-    }
+    record NotAArray(Span region, KType type) implements AttribError { }
+
+    record NotAInterface(Span region, KType type) implements AttribError { }
+
+    record NotSupportedType(Span region, KType type) implements AttribError { }
+
+    record ParameterCountMismatch(Span region, int expected) implements AttribError {}
+
 }

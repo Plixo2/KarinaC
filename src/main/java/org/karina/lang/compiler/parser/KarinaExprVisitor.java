@@ -131,7 +131,8 @@ public class KarinaExprVisitor {
                     region,
                     left,
                     SpanOf.span(position, BinaryOperator.OR),
-                    visitConditionalOrExpression(ctx.conditionalOrExpression())
+                    visitConditionalOrExpression(ctx.conditionalOrExpression()),
+                    null
             );
         } else {
             return left;
@@ -149,7 +150,8 @@ public class KarinaExprVisitor {
                     region,
                     left,
                     SpanOf.span(position, BinaryOperator.AND),
-                    visitConditionalAndExpression(ctx.conditionalAndExpression())
+                    visitConditionalAndExpression(ctx.conditionalAndExpression()),
+                    null
             );
         } else {
             return left;
@@ -176,7 +178,8 @@ public class KarinaExprVisitor {
                     region,
                     left,
                     SpanOf.span(position, operator),
-                    visitEqualityExpression(ctx.equalityExpression())
+                    visitEqualityExpression(ctx.equalityExpression()),
+                    null
             );
         } else {
             return left;
@@ -211,7 +214,8 @@ public class KarinaExprVisitor {
                     region,
                     left,
                     SpanOf.span(position, operator),
-                    visitRelationalExpression(ctx.relationalExpression())
+                    visitRelationalExpression(ctx.relationalExpression()),
+                    null
             );
         } else {
             return left;
@@ -234,7 +238,7 @@ public class KarinaExprVisitor {
                 operator = BinaryOperator.SUBTRACT;
             } else if (ctx.CHAR_AND() != null) {
                 position = this.conv.toRegion(ctx.CHAR_AND());
-                operator = BinaryOperator.BIN_AND;
+                operator = BinaryOperator.CONCAT;
             } else {
                 Log.syntaxError(region, "Invalid relational operator");
                 throw new Log.KarinaException();
@@ -244,7 +248,8 @@ public class KarinaExprVisitor {
                     region,
                     left,
                     SpanOf.span(position, operator),
-                    visitAdditiveExpression(ctx.additiveExpression())
+                    visitAdditiveExpression(ctx.additiveExpression()),
+                    null
             );
         } else {
             return left;
@@ -277,7 +282,8 @@ public class KarinaExprVisitor {
                     region,
                     left,
                     SpanOf.span(position, operator),
-                    visitMultiplicativeExpression(ctx.multiplicativeExpression())
+                    visitMultiplicativeExpression(ctx.multiplicativeExpression()),
+                    null
             );
         } else {
             return left;
@@ -291,10 +297,10 @@ public class KarinaExprVisitor {
         var left = visitFactor(ctx.factor());
         if (ctx.CHAR_MINUS() != null) {
             var signRegion = this.conv.toRegion(ctx.CHAR_MINUS());
-            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NEGATE), left);
+            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NEGATE), left, null);
         } else if (ctx.CHAR_EXCLAMATION() != null) {
             var signRegion = this.conv.toRegion(ctx.CHAR_EXCLAMATION());
-            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NOT), left);
+            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NOT), left, null);
         } else {
             return left;
         }
@@ -325,7 +331,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         if (ctx.ID() != null) {
             var name = this.conv.span(ctx.ID());
-            return new KExpr.GetMember(region, prev, name);
+            return new KExpr.GetMember(region, prev, name, null);
         } else if (ctx.expressionList() != null) {
             var expressions = visitExprList(ctx.expressionList());
             List<KType> genHint;
@@ -334,13 +340,13 @@ public class KarinaExprVisitor {
             } else {
                 genHint = List.of();
             }
-            return new KExpr.Call(region, prev, genHint, expressions);
+            return new KExpr.Call(region, prev, genHint, expressions, null);
         } else if (ctx.exprWithBlock() != null) {
             var index = visitExprWithBlock(ctx.exprWithBlock());
-            return new KExpr.GetArrayElement(region, prev, index);
+            return new KExpr.GetArrayElement(region, prev, index, null);
         } else if (ctx.type() != null) {
             var type = this.typeVisitor.visitType(ctx.type());
-            return new KExpr.Cast(region, prev, type);
+            return new KExpr.Cast(region, prev, type, null);
         } else {
             Log.syntaxError(region, "Invalid postfix");
             throw new Log.KarinaException();
@@ -356,8 +362,10 @@ public class KarinaExprVisitor {
         } else if (ctx.exprWithBlock() != null) {
             return visitExprWithBlock(ctx.exprWithBlock());
         } else if (ctx.NUMBER() != null) {
-            var decimal = parseNumber(ctx.NUMBER().getText());
-            return new KExpr.Number(region, decimal);
+            var text = ctx.NUMBER().getText();
+            var decimal = parseNumber(text);
+            var decimalStr = text.contains(".") || text.contains("e") || text.contains("E");
+            return new KExpr.Number(region, decimal, decimalStr, null);
         } else if (ctx.ID() != null) {
             var text = ctx.ID().getText();
             if (ctx.initList() != null) {

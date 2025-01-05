@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.api;
 
-import org.karina.lang.compiler.DebugWriter;
+import org.karina.lang.compiler.boot.DebugWriter;
 import org.karina.lang.compiler.parser.KarinaUnitParser;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
@@ -23,9 +23,9 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
             var importedTree = importTree(parseTree);
             var attributedTree = attributeTree(importedTree);
 
-            DebugWriter.write(parseTree, "resources/raw.json");
-            DebugWriter.write(importedTree, "resources/imported.json");
-            DebugWriter.write(attributedTree, "resources/attributed.json");
+//            DebugWriter.write(parseTree, "resources/raw.json");
+//            DebugWriter.write(importedTree, "resources/imported.json");
+//            DebugWriter.write(attributedTree, "resources/attributed.json");
 
             if (Log.hasErrors()) {
                 System.err.println("Errors in log, this should not happen");

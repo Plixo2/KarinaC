@@ -2,6 +2,7 @@ package org.karina.lang.compiler;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.stages.Variable;
 
 import java.util.List;
 

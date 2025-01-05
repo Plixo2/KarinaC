@@ -107,8 +107,24 @@ public class LogFactory<T extends LogBuilder> {
                 builder.setPrimarySource(missingField.region());
             }
             case AttribError.UnknownField unknownField -> {
-                builder.append("Unknown Field '").append(unknownField.name()).append("'");
+                builder.append("Unknown Member '").append(unknownField.name()).append("'");
                 builder.setPrimarySource(unknownField.region());
+            }
+            case AttribError.NotSupportedType notSupportedType -> {
+                builder.setTitle("Unsupported type");
+                builder.append("Type '").append(notSupportedType.type())
+                       .append("' is not supported here");
+                builder.setPrimarySource(notSupportedType.region());
+            }
+            case AttribError.NotAArray notAArray -> {
+                builder.setTitle("Not a array");
+                builder.append("Type '").append(notAArray.type()).append("' is not a array");
+                builder.setPrimarySource(notAArray.region());
+            }
+            case AttribError.ParameterCountMismatch parameterCountMismatch -> {
+                builder.setTitle("Parameter count mismatch");
+                builder.append("Expected ").append(parameterCountMismatch.expected()).append(" parameters");
+                builder.setPrimarySource(parameterCountMismatch.region());
             }
         }
 

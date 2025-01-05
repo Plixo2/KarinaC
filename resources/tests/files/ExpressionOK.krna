@@ -107,7 +107,7 @@ fn binary() {
     let left = "Hello"
     let right = "World"
 
-    let concat = left & " " & right
+  //  let concat = left & " " & right
 }
 fn unary() {
     let a = !true

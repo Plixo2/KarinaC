@@ -21,6 +21,13 @@ public class DocumentEventProxy implements TextDocumentService {
         return CompletableFuture.completedFuture(hover);
     }
 
+    @Override
+    public CompletableFuture<List<InlayHint>> inlayHint(InlayHintParams params) {
+        var uri = EventHandler.INSTANCE.toUri(params.getTextDocument().getUri());
+
+        var hover = EventHandler.INSTANCE.onInlayHints(uri, params.getRange());
+        return CompletableFuture.completedFuture(hover);
+    }
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {

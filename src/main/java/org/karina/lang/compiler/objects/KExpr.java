@@ -3,6 +3,8 @@ package org.karina.lang.compiler.objects;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.stages.symbols.*;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,7 +19,7 @@ public sealed interface KExpr {
             Log.temp(region(), "Type is null for " + this.getClass().getSimpleName());
             throw new Log.KarinaException();
         }
-        return type;
+        return type.unpack();
     }
 
     private static KType getType(KExpr expr) {
@@ -26,6 +28,11 @@ public sealed interface KExpr {
                 return new KType.PrimitiveType.VoidType(expr.region());
             }
             case Binary binary -> {
+                if (binary.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return binary.symbol().type();
             }
             case Block block -> {
                 return block.symbol();
@@ -34,20 +41,32 @@ public sealed interface KExpr {
                 return new KType.PrimitiveType.BoolType(expr.region());
             }
             case Branch branch -> {
-
+                return branch.symbol();
             }
             case Break aBreak -> {
                 return new KType.PrimitiveType.VoidType(expr.region());
             }
             case Call call -> {
+                if (call.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return call.symbol().returnType();
             }
             case Cast cast -> {
+                if (cast.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return cast.symbol().type();
             }
             case Closure closure -> {
             }
             case Continue aContinue -> {
+                return new KType.PrimitiveType.VoidType(expr.region());
             }
             case CreateArray createArray -> {
+                return createArray.symbol();
             }
             case CreateObject createObject -> {
                 return createObject.symbol();
@@ -56,20 +75,34 @@ public sealed interface KExpr {
                 return new KType.PrimitiveType.VoidType(expr.region());
             }
             case GetArrayElement getArrayElement -> {
+                return getArrayElement.valueType();
             }
             case GetMember getMember -> {
+                if (getMember.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return getMember.symbol().type();
             }
             case IsInstanceOf isInstanceOf -> {
                 return new KType.PrimitiveType.BoolType(expr.region());
             }
             case Literal literal -> {
-                return Objects.requireNonNull(literal.symbol()).type();
+                if (literal.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return literal.symbol().type();
             }
             case Match match -> {
 
             }
             case Number number -> {
-                return new KType.PrimitiveType.IntType(expr.region());
+                if (number.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return number.symbol().type();
             }
             case Return aReturn -> {
                 return new KType.PrimitiveType.StringType(expr.region());
@@ -81,6 +114,11 @@ public sealed interface KExpr {
                 return new KType.PrimitiveType.StringType(expr.region());
             }
             case Unary unary -> {
+                if (unary.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return unary.symbol().type();
             }
             case VariableDefinition variableDefinition -> {
                 return new KType.PrimitiveType.VoidType(expr.region());
@@ -101,18 +139,18 @@ public sealed interface KExpr {
     record Return(Span region, @Nullable KExpr value) implements KExpr {}
     record Break(Span region) implements KExpr {}
     record Continue(Span region) implements KExpr {}
-    record Binary(Span region, KExpr left, SpanOf<BinaryOperator> operator, KExpr right) implements KExpr {}
-    record Unary(Span region, SpanOf<UnaryOperator> operator, KExpr value) implements KExpr {}
+    record Binary(Span region, KExpr left, SpanOf<BinaryOperator> operator, KExpr right, @Nullable @Symbol BinOperatorSymbol symbol) implements KExpr {}
+    record Unary(Span region, SpanOf<UnaryOperator> operator, KExpr value, @Nullable @Symbol UnaryOperatorSymbol symbol) implements KExpr {}
     record IsInstanceOf(Span region, KExpr left, KType isType) implements KExpr {}
-    record GetMember(Span region, KExpr left, SpanOf<String> name) implements KExpr {}
-    record Call(Span region, KExpr left, List<KType> generics, List<KExpr> arguments) implements KExpr {}
-    record GetArrayElement(Span region, KExpr left, KExpr index) implements KExpr {}
-    record Cast(Span region, KExpr expression, KType asType) implements KExpr {}
+    record GetMember(Span region, KExpr left, SpanOf<String> name, @Nullable @Symbol MemberSymbol symbol) implements KExpr {}
+    record Call(Span region, KExpr left, List<KType> generics, List<KExpr> arguments, @Nullable @Symbol CallSymbol symbol) implements KExpr {}
+    record GetArrayElement(Span region, KExpr left, KExpr index, @Nullable @Symbol KType valueType) implements KExpr {}
+    record Cast(Span region, KExpr expression, KType asType, @Nullable @Symbol CastSymbol symbol) implements KExpr {}
     record Assignment(Span region, KExpr left, KExpr right) implements KExpr {}
     record CreateArray(Span region, @Nullable KType hint, List<KExpr> elements, @Nullable @Symbol KType symbol) implements KExpr {}
-    record Number(Span region, BigDecimal number) implements KExpr {}
+    record Number(Span region, BigDecimal number, boolean decimalAnnotated, @Nullable @Symbol NumberSymbol symbol) implements KExpr {}
     record Boolean(Span region, boolean value) implements KExpr {}
-    record Literal(Span region, String name, @Nullable Variable symbol) implements KExpr {}
+    record Literal(Span region, String name, @Nullable @Symbol LiteralSymbol symbol) implements KExpr {}
     record Self(Span region, @Nullable @Symbol KType symbol) implements KExpr {}
     record StringExpr(Span region, String value) implements KExpr {}
     record Match(Span region, KExpr value, List<MatchPattern> cases) implements KExpr {}

@@ -1,7 +1,7 @@
-package org.karina.lang.compiler;
+package org.karina.lang.compiler.stages;
 
-import org.antlr.v4.runtime.atn.PredicateTransition;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KTree;
@@ -66,8 +66,22 @@ public record TypeChecking(KTree.KPackage root) {
             }
             case KType.ClassType classType -> {
                 if (right instanceof KType.ClassType rightClassType) {
-                    //TODO check generics
-                    yield classType.path().equals(rightClassType.path());
+                    if (!classType.path().equals(rightClassType.path())) {
+                        yield false;
+                    }
+                    if (rightClassType.generics().size() != classType.generics().size()) {
+                        //should not happen
+                        yield false;
+                    }
+
+                    for (var i = 0; i < rightClassType.generics().size(); i++) {
+                        if (!canAssign(classType.generics().get(i), rightClassType.generics().get(i), mutable)) {
+                            yield false;
+                        }
+                    }
+
+                    yield true;
+
                 } else {
                     yield false;
                 }

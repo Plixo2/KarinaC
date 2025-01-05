@@ -19,7 +19,7 @@ public class TokenProvider {
     public @Nullable List<Integer> getTokens(TextSource content) {
         var visitor = new SemanticTokenVisitor();
         var tokens = new ArrayList<Integer>();
-        var error = ErrorHandler.tryInternal(() -> {
+        var ignored = ErrorHandler.tryInternal(() -> {
             var errorListener = new KarinaErrorListener(content, false);
             var unitParser = KarinaUnitParser.getParserForUnit(errorListener, content);
             visitor.visit(unitParser.parser().unit());

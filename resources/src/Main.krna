@@ -1,40 +1,70 @@
-import create Other
-import Array utils.Control
-import sqrt Math
-
-fn main(input: Array<string>) {
-
-}
-
-struct Chair {
-    weight: float
-    age: string
-    height: double
-    isBroken: bool
-}
-
-fn createObj(i: Chair) -> Chair {
-    false
-}
 
 
-fn createObjC(i: Stream<Chair>) -> Chair {
-    false
-}
+fn main() {
+    let a = [1.0, 2, 3]
+    let f = a[0]
 
-
-fn testing() -> Chair {
-}
-
-
-interface Writer<B> {
-    fn write(b: B)
-    impl Stream<B>
-}
-struct Stream<B> {
-    index: int
-
-    fn write(b: B) {
-        false + 111 
+    let w: Help<int> = Help {
+        a: 1,
+        b: 1,
+        state: true
     }
+    let c = w.b;
+    
+
+    let call: Help<int> = callMe<int>(Help { a: 1, b: 2, state: true })
+    
+    let state_: bool = if call.state {
+        println("Hello World")
+        true
+    } else {
+        println("Bye World")
+        false
+    }
+    
+    let number: double = call.a as double
+
+    let asFloat = number as float
+
+    if number < 10 {
+        
+    }
+
+    if number is int i {
+
+    }
+
+    let state = call.add(number as int, false)
+    
+    if state.b {
+        println("Hello World")
+    } else {
+        println("Bye World")
+    }
+    
+}
+
+fn println(s: string) {
+
+}
+
+fn boolToString(b: bool) -> string = if b { "true" } else { "false" }
+
+fn callMe<T>(i: Help<T>) -> Help<T> {
+    // return i
+}
+
+struct Help<T> {
+    a: int
+    b: T
+    state: bool
+
+    fn add<W>(a: T, b: W) -> Tuple<T, W> {
+       // return Tuple { a: a, b: b }
+    }
+}
+
+struct Tuple<T, U> {
+    a: T
+    b: U
 }

@@ -25,6 +25,8 @@ public class KarinaServerCapabilities {
         folderCapabilities.setChangeNotifications(true);
         workspaceCapabilities.setWorkspaceFolders(folderCapabilities);
 
+        capabilities.setInlayHintProvider(true);
+
         capabilities.setDefinitionProvider(true);
         capabilities.setSemanticTokensProvider(new SemanticTokensWithRegistrationOptions(
                 new SemanticTokensLegend(

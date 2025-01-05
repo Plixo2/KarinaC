@@ -20,6 +20,7 @@ fn testing() {
     assertEqualsMap(b, curry(toBool, not))
 }
 
+
 fn curry<A, B, C>(f: fn(A) -> B, g: fn(B) -> C) -> fn(A) -> C {
    // fn(a) {
      //   g(f(a))

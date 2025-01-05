@@ -131,7 +131,7 @@ public class KarinaVisitor {
         var generics = ctx.genericHintDefinition() == null ?
                 List.<Generic>of():
                 visitGenericHintDefinition(ctx.genericHintDefinition());
-        var fields = ctx.field().stream().map(this::visitField).toList();
+        var fields = ctx.field().stream().map(ref -> visitField(ref, path)).toList();
         var functions = ctx.function()
                            .stream()
                            .map(
@@ -366,12 +366,13 @@ public class KarinaVisitor {
 
     }
 
-    private KTree.KField visitField(KarinaParser.FieldContext ctx) {
+    private KTree.KField visitField(KarinaParser.FieldContext ctx, ObjectPath path) {
 
         var region = this.conv.toRegion(ctx);
         var name = this.conv.span(ctx.ID());
         var type = this.typeVisitor.visitType(ctx.type());
-        return new KTree.KField(region, name, type);
+        var newPath = path.append(name.value());
+        return new KTree.KField(region, newPath, name, type);
 
     }
     //#endregion

@@ -11,7 +11,12 @@ import org.karina.lang.compiler.api.TextSource;
  */
 public record Span(TextSource source, Position start, Position end) {
 
-    public record Position(int line, int column) {}
+    public record Position(int line, int column) {
+
+        public boolean isBefore(Position other) {
+            return this.line < other.line || (this.line == other.line && this.column < other.column);
+        }
+    }
 
     public Span reorder() {
 
@@ -37,8 +42,13 @@ public record Span(TextSource source, Position start, Position end) {
         } else {
             return reordered.start.line() < position.line() && reordered.end.line() > position.line();
         }
-
     }
+
+    public boolean overlaps(Span other) {
+        return !(this.end.isBefore(other.start) || other.end.isBefore(this.start));
+    }
+
+
 
 }
 

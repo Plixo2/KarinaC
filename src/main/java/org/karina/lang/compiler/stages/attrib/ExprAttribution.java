@@ -1,20 +1,23 @@
 package org.karina.lang.compiler.stages.attrib;
 
+import lombok.val;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.BranchPattern;
-import org.karina.lang.compiler.Generic;
-import org.karina.lang.compiler.NamedExpression;
-import org.karina.lang.compiler.Variable;
+import org.karina.lang.compiler.*;
+import org.karina.lang.compiler.errors.types.ImportError;
+import org.karina.lang.compiler.objects.*;
+import org.karina.lang.compiler.stages.Variable;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.stages.symbols.*;
 
 import java.util.*;
 
 public class ExprAttribution {
 
     static AttribExpr attribExpr(@Nullable KType hint, AttributionContext ctx, KExpr expr) {
+        if (hint != null) {
+            hint = hint.unpack();
+        }
         return switch (expr) {
             case KExpr.Assignment assignment -> attribAssignment(hint, ctx, assignment);
             case KExpr.Binary binary -> attribBinary(hint, ctx, binary);
@@ -45,8 +48,57 @@ public class ExprAttribution {
     }
 
     private static AttribExpr attribAssignment(@Nullable KType hint, AttributionContext ctx, KExpr.Assignment expr) { return of(ctx, expr);}
-    private static AttribExpr attribBinary(@Nullable KType hint, AttributionContext ctx, KExpr.Binary expr) { return of(ctx, expr);}
+
+    private static AttribExpr attribBinary(@Nullable KType hint, AttributionContext ctx, KExpr.Binary expr) {
+        var left = attribExpr(hint, ctx, expr.left()).expr();
+        var right = attribExpr(left.type(), ctx, expr.right()).expr();
+
+        var leftType = left.type();
+        var rightType = right.type();
+
+        if (!(leftType instanceof KType.PrimitiveType leftPrimitive)) {
+            Log.attribError(new AttribError.NotSupportedType(left.region(), leftType));
+            throw new Log.KarinaException();
+        }
+        if (!(rightType instanceof KType.PrimitiveType rightPrimitive)) {
+            Log.attribError(new AttribError.NotSupportedType(right.region(), rightType));
+            throw new Log.KarinaException();
+        }
+        if (leftPrimitive.primitive() != rightPrimitive.primitive()) {
+            Log.attribError(new AttribError.TypeMismatch(expr.region(), leftType, rightType));
+            throw new Log.KarinaException();
+        }
+        val op = switch (leftPrimitive.primitive()) {
+            case INT -> BinOperatorSymbol.IntOP.fromOperator(expr.operator());
+            case FLOAT -> BinOperatorSymbol.FloatOP.fromOperator(expr.operator());
+            case BOOL -> BinOperatorSymbol.BoolOP.fromOperator(expr.operator());
+            case DOUBLE -> BinOperatorSymbol.DoubleOP.fromOperator(expr.operator());
+            case LONG -> BinOperatorSymbol.LongOP.fromOperator(expr.operator());
+            case VOID -> {
+                Log.attribError(new AttribError.NotSupportedType(left.region(), leftType));
+                throw new Log.KarinaException();
+            }
+            case STRING, CHAR, SHORT, BYTE -> {
+                Log.temp(expr.operator().region(), "Binary for " + leftPrimitive.primitive() + " not implemented");
+                throw new Log.KarinaException();
+            }
+        };
+        if (op == null) {
+            Log.attribError(new AttribError.NotSupportedType(left.region(), leftType));
+            throw new Log.KarinaException();
+        }
+
+        return of(ctx, new KExpr.Binary(
+                expr.region(),
+                left,
+                expr.operator(),
+                right,
+                op
+        ));
+    }
+
     private static AttribExpr attribBlock(@Nullable KType hint, AttributionContext ctx, KExpr.Block expr) {
+
         var newExpressions = new ArrayList<KExpr>();
         var expressions = expr.expressions();
         var subCtx = ctx;
@@ -69,9 +121,13 @@ public class ExprAttribution {
                 newExpressions,
                 returningType
         ));
+
     }
+
     private static AttribExpr attribBoolean(@Nullable KType hint, AttributionContext ctx, KExpr.Boolean expr) { return of(ctx, expr);}
+
     private static AttribExpr attribBranch(@Nullable KType hint, AttributionContext ctx, KExpr.Branch expr) {
+
         var boolType = new KType.PrimitiveType.BoolType(expr.condition().region());
         var conditionHint =  expr.branchPattern() == null ? boolType : null;
         var condition = attribExpr(conditionHint, ctx, expr.condition()).expr();
@@ -152,13 +208,242 @@ public class ExprAttribution {
                 branchPattern,
                 returnType
         ));
+
     }
+
     private static AttribExpr attribBreak(@Nullable KType hint, AttributionContext ctx, KExpr.Break expr) { return of(ctx, expr);}
-    private static AttribExpr attribCall(@Nullable KType hint, AttributionContext ctx, KExpr.Call expr) { return of(ctx, expr); }
-    private static AttribExpr attribCast(@Nullable KType hint, AttributionContext ctx, KExpr.Cast expr) { return of(ctx, expr);}
+
+    private static AttribExpr attribCall(@Nullable KType hint, AttributionContext ctx, KExpr.Call expr) {
+
+        var left = attribExpr(null, ctx, expr.left()).expr();
+        var genericsAnnotated = !expr.generics().isEmpty();
+        List<KExpr> newArguments;
+        CallSymbol symbol;
+        //OMG PATTERNS
+        if (left instanceof KExpr.Literal(var ignored, var ignored2, LiteralSymbol.StaticFunction staticFunction)) {
+            var referencedFunction = KTree.findAbsolutItem(ctx.root(), staticFunction.path());
+            if (!(referencedFunction instanceof KTree.KFunction function)) {
+                Log.temp(expr.region(), "Function not found");
+                throw new Log.KarinaException();
+            }
+            HashMap<Generic, KType> mapped = new HashMap<>();
+            if (genericsAnnotated) {
+                if (expr.generics().size() != function.generics().size()) {
+                    Log.importError(
+                            new ImportError.GenericCountMismatch(
+                                    expr.region(), function.name().value(),
+                                    function.generics().size(), expr.generics().size()
+                            ));
+                    throw new Log.KarinaException();
+                }
+
+                for (var i = 0; i < function.generics().size(); i++) {
+                    var generic = function.generics().get(i);
+                    var type = expr.generics().get(i);
+                    mapped.put(generic, type);
+                }
+            } else {
+                for (var i = 0; i < function.generics().size(); i++) {
+                    var generic = function.generics().get(i);
+                    var type = new KType.PrimitiveType.Resolvable(expr.region());
+                    mapped.put(generic, type);
+                }
+            }
+            var staticReturnType = function.returnType();
+            if (staticReturnType == null) {
+                staticReturnType = new KType.PrimitiveType.VoidType(expr.region());
+            }
+            var returnType = replaceType(staticReturnType, mapped);
+
+            newArguments = new ArrayList<>();
+            var expected = function.parameters().size();
+            var found = expr.arguments().size();
+            if (found > expected) {
+                var toMany = expr.arguments().get((found - expected) - 1);
+                Log.attribError(new AttribError.ParameterCountMismatch(toMany.region(), expected));
+                throw new Log.KarinaException();
+            } else if (expected > found) {
+                var missing = function.parameters().get((expected - found) - 1);
+                Log.attribError(
+                        new AttribError.MissingField(expr.region(), missing.name().value()));
+                throw new Log.KarinaException();
+            }
+
+            for (var i = 0; i < expected; i++) {
+                var parameter = function.parameters().get(i);
+                var argument = expr.arguments().get(i);
+                var argumentType = replaceType(parameter.type(), mapped);
+                var newArgument = attribExpr(argumentType, ctx, argument).expr();
+                ctx.assign(argument.region(), argumentType, newArgument.type());
+                newArguments.add(newArgument);
+            }
+
+            symbol = new CallSymbol.CallStatic(
+                    staticFunction.path(),
+                    List.copyOf(mapped.values()),
+                    returnType
+            );
+
+
+        } else if (left instanceof KExpr.GetMember(var ignored, var ignored1, var ignored2, MemberSymbol.VirtualFunctionSymbol sym)) {
+            var referencedFunction = KTree.findAbsoluteVirtualFunction(ctx.root(), sym.path());
+            var referencedClass = KTree.findAbsolutItem(ctx.root(), sym.classType().path().value());
+            if (!(referencedFunction instanceof KTree.KFunction function) || !(referencedClass instanceof KTree.KStruct struct)) {
+                Log.temp(expr.region(), "Function not found");
+                throw new Log.KarinaException();
+            }
+            var mapped = new HashMap<Generic, KType>();
+
+            if (genericsAnnotated) {
+                if (expr.generics().size() != function.generics().size()) {
+                    Log.importError(
+                            new ImportError.GenericCountMismatch(
+                                    expr.region(), function.name().value(),
+                                    function.generics().size(), expr.generics().size()
+                            ));
+                    throw new Log.KarinaException();
+                }
+
+                for (var i = 0; i < function.generics().size(); i++) {
+                    var generic = function.generics().get(i);
+                    var type = expr.generics().get(i);
+                    mapped.put(generic, type);
+                }
+            } else {
+                for (var i = 0; i < function.generics().size(); i++) {
+                    var generic = function.generics().get(i);
+                    var type = new KType.PrimitiveType.Resolvable(expr.region());
+                    mapped.put(generic, type);
+                }
+            }
+            for (var i = 0; i < sym.classType().generics().size(); i++) {
+                var generic = struct.generics().get(i);
+                var type = sym.classType().generics().get(i);
+                mapped.put(generic, type);
+            }
+
+
+            var vreturnType = function.returnType();
+            if (vreturnType == null) {
+                vreturnType = new KType.PrimitiveType.VoidType(expr.region());
+            }
+            var returnType = replaceType(vreturnType, mapped);
+
+            newArguments = new ArrayList<>();
+            var expected = function.parameters().size();
+            var found = expr.arguments().size();
+            if (found > expected) {
+                var toMany = expr.arguments().get((found - expected) - 1);
+                Log.attribError(new AttribError.ParameterCountMismatch(toMany.region(), expected));
+                throw new Log.KarinaException();
+            } else if (expected > found) {
+                var missing = function.parameters().get((expected - found) - 1);
+                Log.attribError(
+                        new AttribError.MissingField(expr.region(), missing.name().value()));
+                throw new Log.KarinaException();
+            }
+
+            for (var i = 0; i < expected; i++) {
+                var parameter = function.parameters().get(i);
+                var argument = expr.arguments().get(i);
+                var argumentType = replaceType(parameter.type(), mapped);
+                var newArgument = attribExpr(argumentType, ctx, argument).expr();
+                ctx.assign(argument.region(), argumentType, newArgument.type());
+                newArguments.add(newArgument);
+            }
+
+            symbol = new CallSymbol.CallVirtual(
+                    sym.classType(),
+                    sym.path(),
+                    List.copyOf(mapped.values()),
+                    returnType
+            );
+
+        }
+        else {
+            Log.temp(expr.region(), "Non Statics not Supported");
+            throw new Log.KarinaException();
+        }
+
+
+        return of(ctx, new KExpr.Call(
+                expr.region(),
+                left,
+                expr.generics(),
+                newArguments,
+                symbol
+        ));
+    }
+
+    private static AttribExpr attribCast(@Nullable KType hint, AttributionContext ctx, KExpr.Cast expr) {
+        var left = attribExpr(null, ctx, expr.expression()).expr();
+        var type = left.type();
+        var toType = expr.asType();
+
+        if (!(type instanceof KType.PrimitiveType fromPrimitive)) {
+            Log.temp(left.region(), "Non Numeric Cast");
+            throw new Log.KarinaException();
+        }
+        if (!(toType instanceof KType.PrimitiveType toPrimitive)) {
+            Log.temp(expr.region(), "Non Numeric Cast");
+            throw new Log.KarinaException();
+        }
+        if (fromPrimitive.primitive() == KType.KPrimitive.VOID) {
+            Log.attribError(new AttribError.NotSupportedType(left.region(), type));
+            throw new Log.KarinaException();
+        }
+        if (toPrimitive.primitive() == KType.KPrimitive.VOID) {
+            Log.attribError(new AttribError.NotSupportedType(expr.region(), toType));
+            throw new Log.KarinaException();
+        }
+        if (!fromPrimitive.isNumeric() || !toPrimitive.isNumeric()) {
+            Log.temp(expr.region(), "Non Numeric Cast");
+            throw new Log.KarinaException();
+        }
+
+        return of(ctx, new KExpr.Cast(
+                expr.region(),
+                left,
+                toType,
+                new CastSymbol(fromPrimitive, toPrimitive)
+        ));
+    }
+
     private static AttribExpr attribClosure(@Nullable KType hint, AttributionContext ctx, KExpr.Closure expr) { return of(ctx, expr);}
+
     private static AttribExpr attribContinue(@Nullable KType hint, AttributionContext ctx, KExpr.Continue expr) { return of(ctx, expr);}
-    private static AttribExpr attribCreateArray(@Nullable KType hint, AttributionContext ctx, KExpr.CreateArray expr) { return of(ctx, expr);}
+
+    private static AttribExpr attribCreateArray(@Nullable KType hint, AttributionContext ctx, KExpr.CreateArray expr) {
+
+        KType elementType;
+        if (expr.hint() != null) {
+            elementType = expr.hint();
+        } else {
+            if (hint instanceof KType.ArrayType arrayType) {
+                elementType = arrayType.elementType();
+            } else {
+                elementType = new KType.PrimitiveType.Resolvable(expr.region());
+            }
+        }
+        var newElements = new ArrayList<KExpr>();
+        for (var element : expr.elements()) {
+            var newElement = attribExpr(elementType, ctx, element).expr();
+            ctx.assign(newElement.region(), elementType, newElement.type());
+            newElements.add(newElement);
+        }
+
+        return of(ctx, new KExpr.CreateArray(
+                expr.region(),
+                elementType,
+                newElements,
+                new KType.ArrayType(
+                        expr.region(),
+                        elementType
+                )
+        ));
+
+    }
+
     private static AttribExpr attribCreateObject(@Nullable KType hint, AttributionContext ctx, KExpr.CreateObject expr) {
 
         var struct = ctx.getStruct(expr.createType().region(), expr.createType());
@@ -169,8 +454,8 @@ public class ExprAttribution {
         //generate the new generics for the implementation
         List<KType> newGenerics;
         if (annotatedGenerics) {
-            //We don't have to test of the length of the generics,
-            // this should be already be checked in the import stage
+            //We don't have to test for the length of the generics,
+            // this should already be checked in the import stage
             newGenerics = classType.generics();
         } else {
             var genericCount = struct.generics().size();
@@ -180,7 +465,10 @@ public class ExprAttribution {
             }
         }
 
-
+        if (newGenerics.size() != struct.generics().size()) {
+            Log.temp(expr.region(), "Generics count mismatch, this is a bug");
+            throw new Log.KarinaException();
+        }
         //We map all generics here to the new implementation to replace fields in the struct.
         //The previous step should have already ensured that the size of generics is the same.
         Map<Generic, KType> mapped = new HashMap<>();
@@ -197,7 +485,9 @@ public class ExprAttribution {
                 newGenerics
         );
 
-        //check all parameters
+        //check all Parameters,
+        //check if all names are correct,
+        //and also check the type with the replaced Type (implemented Generics)
         var newParameters = new ArrayList<NamedExpression>();
 
         var openParameters = new ArrayList<>(expr.parameters());
@@ -238,32 +528,171 @@ public class ExprAttribution {
         ));
 
     }
+
     private static AttribExpr attribFor(@Nullable KType hint, AttributionContext ctx, KExpr.For expr) { return of(ctx, expr);}
-    private static AttribExpr attribGetArrayElement(@Nullable KType hint, AttributionContext ctx, KExpr.GetArrayElement expr) { return of(ctx, expr);}
-    private static AttribExpr attribGetMember(@Nullable KType hint, AttributionContext ctx, KExpr.GetMember expr) { return of(ctx, expr);}
-    private static AttribExpr attribInstanceOf(@Nullable KType hint, AttributionContext ctx, KExpr.IsInstanceOf expr) { return of(ctx, expr);}
-    private static AttribExpr attribLiteral(@Nullable KType hint, AttributionContext ctx, KExpr.Literal expr) {
-        if (ctx.variables().contains(expr.name())) {
-            return of(ctx, new KExpr.Literal(
-                    expr.region(),
-                    expr.name(),
-                    ctx.variables().get(expr.name())
-            ));
-        } else if (ctx.table().getFunction(expr.name()) != null) {
-            throw new NullPointerException("Function not implemented");
-        } else {
-            var variableName = ctx.variables().names();
-            var functionNames = ctx.table().availableFunctionNames();
-            var available = new HashSet<>(variableName);
-            available.addAll(functionNames);
-            Log.attribError(new AttribError.UnknownIdentifier(expr.region(), expr.name(), available));
+
+    private static AttribExpr attribGetArrayElement(@Nullable KType hint, AttributionContext ctx, KExpr.GetArrayElement expr) {
+
+        KType arrayHint;
+        arrayHint = Objects.requireNonNullElse(
+                hint,
+                new KType.PrimitiveType.Resolvable(expr.region())
+        );
+        arrayHint = new KType.ArrayType(
+                expr.left().region(),
+                arrayHint
+        );
+
+        var left = attribExpr(arrayHint, ctx, expr.left()).expr();
+        if (!(left.type() instanceof KType.ArrayType arrayType)) {
+            Log.attribError(new AttribError.NotAArray(left.region(), arrayHint));
             throw new Log.KarinaException();
         }
+
+        var index = attribExpr(new KType.PrimitiveType.IntType(expr.index().region()), ctx, expr.index()).expr();
+        ctx.assign(index.region(), new KType.PrimitiveType.IntType(expr.index().region()), index.type());
+
+        return of(ctx, new KExpr.GetArrayElement(
+                expr.region(),
+                left,
+                index,
+                arrayType.elementType()
+        ));
     }
+
+    private static AttribExpr attribGetMember(@Nullable KType hint, AttributionContext ctx, KExpr.GetMember expr) {
+
+        var left = attribExpr(null, ctx, expr.left()).expr();
+
+        var struct = ctx.getStruct(expr.left().region(), left.type());
+        //casting is ok, ctx.getStruct already checks for this
+        var classType = (KType.ClassType) left.type();
+
+        MemberSymbol symbol;
+        var fieldToGet =
+                struct.fields().stream().filter(ref -> ref.name().equals(expr.name())).findFirst();
+        var functionToGet =
+                struct.functions().stream().filter(ref -> ref.name().equals(expr.name())).findFirst();
+
+        if (classType.generics().size() != struct.generics().size()) {
+            Log.temp(expr.region(), "Generics count mismatch, this is a bug");
+            throw new Log.KarinaException();
+        }
+
+        if (fieldToGet.isPresent()) {
+            var field = fieldToGet.get();
+
+            Map<Generic, KType> mapped = new HashMap<>();
+            for (var i = 0; i < classType.generics().size(); i++) {
+                var generic = struct.generics().get(i);
+                var type = classType.generics().get(i);
+                mapped.put(generic, type);
+            }
+            var fieldType = replaceType(field.type(), mapped);
+
+            symbol = new MemberSymbol.FieldSymbol(
+                    fieldType,
+                    field.path()
+            );
+        } else if (functionToGet.isPresent()) {
+            var function = functionToGet.get();
+            symbol = new MemberSymbol.VirtualFunctionSymbol(
+                    expr.region(),
+                    classType,
+                    function.path()
+            );
+        } else {
+            Log.attribError(new AttribError.UnknownField(expr.name().region(), expr.name().value()));
+            throw new Log.KarinaException();
+        }
+
+        return of(ctx, new KExpr.GetMember(
+                expr.region(),
+                left,
+                expr.name(),
+                symbol
+        ));
+    }
+
+    private static AttribExpr attribInstanceOf(@Nullable KType hint, AttributionContext ctx, KExpr.IsInstanceOf expr) { return of(ctx, expr);}
+
+    private static AttribExpr attribLiteral(@Nullable KType hint, AttributionContext ctx, KExpr.Literal expr) {
+
+        LiteralSymbol symbol;
+        if (ctx.variables().contains(expr.name())) {
+            symbol = new LiteralSymbol.VariableReference(expr.region(), ctx.variables().get(expr.name()));
+        } else {
+            var function = ctx.table().getFunction(expr.name());
+            if (function != null) {
+                symbol = new LiteralSymbol.StaticFunction(expr.region(), function.path());
+            } else {
+                var variableName = ctx.variables().names();
+                var functionNames = ctx.table().availableFunctionNames();
+                var available = new HashSet<>(variableName);
+                available.addAll(functionNames);
+                Log.attribError(new AttribError.UnknownIdentifier(expr.region(), expr.name(), available));
+                throw new Log.KarinaException();
+            }
+        }
+        return of(ctx, new KExpr.Literal(
+                expr.region(),
+                expr.name(),
+                symbol
+        ));
+
+    }
+
     private static AttribExpr attribMatch(@Nullable KType hint, AttributionContext ctx, KExpr.Match expr) { return of(ctx, expr);}
-    private static AttribExpr attribNumber(@Nullable KType hint, AttributionContext ctx, KExpr.Number expr) { return of(ctx, expr);}
+
+    private static AttribExpr attribNumber(@Nullable KType hint, AttributionContext ctx, KExpr.Number expr) {
+
+        var number = expr.number();
+        var hasFraction = number.stripTrailingZeros().scale() > 0 || expr.decimalAnnotated();
+        NumberSymbol symbol;
+        if (hasFraction) {
+            if (ctx.isPrimitive(hint, KType.KPrimitive.DOUBLE)) {
+                symbol = new NumberSymbol.DoubleValue(expr.region(), number.doubleValue());
+            } else {
+                symbol = new NumberSymbol.FloatValue(expr.region(), number.floatValue());
+            }
+        } else {
+            if (ctx.isPrimitive(hint, KType.KPrimitive.DOUBLE)) {
+                symbol = new NumberSymbol.DoubleValue(expr.region(), number.longValue());
+            } else if (ctx.isPrimitive(hint, KType.KPrimitive.FLOAT)) {
+                symbol = new NumberSymbol.FloatValue(expr.region(), number.floatValue());
+            } else if (ctx.isPrimitive(hint, KType.KPrimitive.LONG)) {
+                try {
+                    symbol = new NumberSymbol.LongValue(expr.region(), number.longValueExact());
+                } catch(ArithmeticException e1) {
+                    Log.syntaxError(expr.region(), "Number too large for long");
+                    throw new Log.KarinaException();
+                }
+            } else {
+                try {
+                    symbol = new NumberSymbol.IntegerValue(expr.region(), number.intValueExact());
+                } catch(ArithmeticException e1) {
+                    try {
+                        symbol = new NumberSymbol.LongValue(expr.region(), number.longValueExact());
+                    } catch(ArithmeticException e2) {
+                        Log.syntaxError(expr.region(), "Number too large for long");
+                        throw new Log.KarinaException();
+                    }
+                }
+            }
+        }
+        return of(ctx, new KExpr.Number(
+                expr.region(),
+                number,
+                expr.decimalAnnotated(),
+                symbol
+        ));
+
+    }
+
     private static AttribExpr attribReturn(@Nullable KType hint, AttributionContext ctx, KExpr.Return expr) { return of(ctx, expr);}
+
     private static AttribExpr attribSelf(@Nullable KType hint, AttributionContext ctx, KExpr.Self expr) {
+
         if (ctx.selfType() == null) {
             Log.attribError(new AttribError.UnqualifiedSelf(
                     expr.region(), ctx.methodRegion()
@@ -274,9 +703,32 @@ public class ExprAttribution {
                 expr.region(),
                 ctx.selfType()
         ));
+
     }
+
     private static AttribExpr attribStringExpr(@Nullable KType hint, AttributionContext ctx, KExpr.StringExpr expr) { return of(ctx, expr);}
-    private static AttribExpr attribUnary(@Nullable KType hint, AttributionContext ctx, KExpr.Unary expr) { return of(ctx, expr);}
+
+    private static AttribExpr attribUnary(@Nullable KType hint, AttributionContext ctx, KExpr.Unary expr) {
+
+        var value = attribExpr(hint, ctx, expr.value()).expr();
+        if (!(value.type() instanceof KType.PrimitiveType primitive)) {
+            Log.attribError(new AttribError.NotSupportedType(value.region(), value.type()));
+            throw new Log.KarinaException();
+        }
+        var symbol = UnaryOperatorSymbol.fromOperator(primitive.primitive(), expr.operator());
+        if (symbol == null) {
+            Log.attribError(new AttribError.NotSupportedType(value.region(), value.type()));
+            throw new Log.KarinaException();
+        }
+
+        return of(ctx, new KExpr.Unary(
+                expr.region(),
+                expr.operator(),
+                value,
+                symbol
+        ));
+    }
+
     private static AttribExpr attribVariableDefinition(@Nullable KType hint, AttributionContext ctx, KExpr.VariableDefinition expr) {
 
         var valueExpr = attribExpr(expr.hint(), ctx, expr.value()).expr();
@@ -285,13 +737,13 @@ public class ExprAttribution {
         if (varTypeHint == null) {
             varTypeHint = valueExpr.type();
         } else {
-            ctx.assign(expr.region(), varTypeHint, valueExpr.type());
+            ctx.assign(valueExpr.region(), varTypeHint, valueExpr.type());
         }
 
         var symbol = new Variable(
                 expr.name().region(),
                 expr.name().value(),
-                expr.hint(),
+                varTypeHint,
                 true,
                 false
         );
@@ -299,12 +751,13 @@ public class ExprAttribution {
         return of(ctx.addVariable(symbol), new KExpr.VariableDefinition(
                 expr.region(),
                 expr.name(),
-                varTypeHint,
+                expr.hint(),
                 valueExpr,
                 symbol
         ));
 
     }
+
     private static AttribExpr attribWhile(@Nullable KType hint, AttributionContext ctx, KExpr.While expr) {
         var boolType = new KType.PrimitiveType.BoolType(expr.condition().region());
         var condition = attribExpr(boolType, ctx, expr.condition()).expr();
@@ -317,8 +770,8 @@ public class ExprAttribution {
         ));
     }
 
-
     public record AttribExpr(KExpr expr, AttributionContext ctx) {}
+
     private static KExpr expr(AttribExpr expr) {
         return expr.expr;
     }
@@ -331,7 +784,46 @@ public class ExprAttribution {
 
 
     private static KType replaceType(KType original, Map<Generic, KType> generics) {
-        //TODO replace types
-        return original;
+        return switch (original) {
+            case KType.ArrayType(var region, var element) -> {
+                var newElement = replaceType(element, generics);
+                yield new KType.ArrayType(region, newElement);
+            }
+            case KType.ClassType(var region, var path, var classGenerics) -> {
+                var newGenerics = new ArrayList<KType>();
+                for (var generic : classGenerics) {
+                    var newType = replaceType(generic, generics);
+                    newGenerics.add(newType);
+                }
+                yield new KType.ClassType(region, path, newGenerics);
+            }
+            case KType.FunctionType functionType -> {
+                //TODO implement this
+                yield functionType;
+            }
+            case KType.GenericLink genericLink -> {
+                var link = genericLink.link();
+                var newType = generics.get(link);
+                if (newType != null) {
+                    yield newType;
+                } else {
+                    yield genericLink;
+                }
+            }
+            case KType.PrimitiveType primitiveType -> {
+                yield primitiveType;
+            }
+            case KType.Resolvable resolvable -> {
+                var resolved = resolvable.get();
+                if (resolved == null) {
+                    yield resolvable;
+                } else {
+                    yield replaceType(resolved, generics);
+                }
+            }
+            case KType.UnprocessedType unprocessedType -> {
+                yield unprocessedType;
+            }
+        };
     }
 }

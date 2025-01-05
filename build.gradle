@@ -28,7 +28,7 @@ dependencies {
 
 task fatJar(type: Jar) {
     manifest {
-        attributes 'Main-Class': 'org.karina.lang.compiler.Main'
+        attributes 'Main-Class': 'org.karina.lang.compiler.boot.Main'
     }
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }

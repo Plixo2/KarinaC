@@ -1,6 +1,7 @@
 package org.karina.lang.lsp;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.eclipse.lsp4j.*;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.LogBuilder;
@@ -16,6 +17,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 @AllArgsConstructor
+@Getter
 public class ErrorHandler {
     private List<Error> errors;
 
