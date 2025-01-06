@@ -6,18 +6,18 @@ fn testing() {
     if w is WW c {
     }
 
-  //  let toBool = fn(i: int) -> bool {
-   //     i != 0
-  //  }
+   let toBool = fn(i: int) -> bool {
+       i != 0
+   }
   //  let not: fn(bool) -> bool = fn(a) {
   //      !a
   //  }
     
 
-    let a = toBool(1)
-    let b = toBool(0)
-    assertEqualsMap<int>(a, toBool)
-    assertEqualsMap(b, curry(toBool, not))
+    // let a = toBool(1)
+    // let b = toBool(0)
+    // assertEqualsMap<int>(a, toBool)
+    // assertEqualsMap(b, curry(toBool, not))
 }
 
 
@@ -32,6 +32,6 @@ fn assertEquals(state: bool)  {
 }
 
 fn assertEqualsMap<T>(value: T, func: fn(T) -> bool) {
-    let result = func(value)
-    assertEquals(result)
+    // let result = func(value)
+    // assertEquals(result)
 }

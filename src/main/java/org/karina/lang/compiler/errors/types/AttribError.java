@@ -24,7 +24,7 @@ public sealed interface AttribError extends Error {
 
     record TypeMismatch(Span region, KType expected, KType found) implements AttribError {}
 
-    record TypeCycle(Span region, String message) implements AttribError {}
+    record TypeCycle(Span region, String message, List<Span> related, List<String> graph) implements AttribError {}
 
     record NotAStruct(Span region, KType type) implements AttribError { }
 
@@ -36,4 +36,5 @@ public sealed interface AttribError extends Error {
 
     record ParameterCountMismatch(Span region, int expected) implements AttribError {}
 
+    record ControlFlow(Span region, String message) implements AttribError {}
 }

@@ -12,5 +12,6 @@ public sealed interface CallSymbol {
     record CallStatic(ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
 
     record CallVirtual(KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
+    record CallDynamic(KType returnType) implements CallSymbol { }
 
 }

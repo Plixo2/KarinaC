@@ -10,10 +10,10 @@ import org.karina.lang.compiler.objects.KType;
 public record TypeChecking(KTree.KPackage root) {
 
     //Returns a common type of two types
-    public @Nullable KType superType(KType a, KType b) {
-        if (canAssign(a, b, false)) {
+    public @Nullable KType superType(Span checkingRegion, KType a, KType b) {
+        if (canAssign(checkingRegion, a, b, false)) {
             return a;
-        } else if (canAssign(b, a, false)) {
+        } else if (canAssign(checkingRegion, b, a, false)) {
             return b;
         } else {
             return null;
@@ -27,39 +27,41 @@ public record TypeChecking(KTree.KPackage root) {
             return false;
         }
     }
-    public void assign(Span region, KType left, KType right) {
-        if (!canAssign(left, right, false)) {
-            Log.attribError(new AttribError.TypeMismatch(region, left, right));
+    public void assign(Span checkingRegion, KType left, KType right) {
+        if (!canAssign(checkingRegion, left, right, false)) {
+            Log.attribError(new AttribError.TypeMismatch(checkingRegion, left, right));
             throw new Log.KarinaException();
         }
-        canAssign(left, right, true);
+        canAssign(checkingRegion, left, right, true);
     }
 
-    public boolean canAssign(KType left, KType right, boolean mutable) {
+    public boolean canAssign(Span checkingRegion, KType left, KType right, boolean mutable) {
         if (left instanceof KType.Resolvable resolvable) {
             if (resolvable.isResolved()) {
-                return canAssign(resolvable.get(), right, mutable);
+                return canAssign(checkingRegion, resolvable.get(), right, mutable);
             } else {
-                if (mutable) {
-                    resolvable.resolve(right);
+                var canResolve = resolvable.canResolve(checkingRegion, right);
+                if (mutable && canResolve) {
+                    resolvable.tryResolve(right);
                 }
-                return true;
+                return canResolve;
             }
         } else if (right instanceof KType.Resolvable resolvable) {
             if (resolvable.isResolved()) {
-                return canAssign(left, resolvable.get(), mutable);
+                return canAssign(checkingRegion, left, resolvable.get(), mutable);
             } else {
-                if (mutable) {
-                    resolvable.resolve(left);
+                var canResolve = resolvable.canResolve(checkingRegion, left);
+                if (mutable && canResolve) {
+                    resolvable.tryResolve(left);
                 }
-                return true;
+                return canResolve;
             }
         }
 
         return switch (left) {
             case KType.ArrayType arrayType -> {
                 if (right instanceof KType.ArrayType rightArrayType) {
-                    yield canAssign(arrayType.elementType(), rightArrayType.elementType(), mutable);
+                    yield canAssign(checkingRegion, arrayType.elementType(), rightArrayType.elementType(), mutable);
                 } else {
                     yield false;
                 }
@@ -75,7 +77,7 @@ public record TypeChecking(KTree.KPackage root) {
                     }
 
                     for (var i = 0; i < rightClassType.generics().size(); i++) {
-                        if (!canAssign(classType.generics().get(i), rightClassType.generics().get(i), mutable)) {
+                        if (!canAssign(checkingRegion, classType.generics().get(i), rightClassType.generics().get(i), mutable)) {
                             yield false;
                         }
                     }
@@ -92,7 +94,7 @@ public record TypeChecking(KTree.KPackage root) {
                         yield false;
                     }
                     for (int i = 0; i < functionType.arguments().size(); i++) {
-                        if (!canAssign(functionType.arguments().get(i), rightFunctionType.arguments().get(i), mutable)) {
+                        if (!canAssign(checkingRegion, functionType.arguments().get(i), rightFunctionType.arguments().get(i), mutable)) {
                             yield false;
                         }
                     }
@@ -104,7 +106,7 @@ public record TypeChecking(KTree.KPackage root) {
                     if (rightReturnType == null) {
                         rightReturnType = new KType.PrimitiveType.VoidType(rightFunctionType.region());
                     }
-                    yield canAssign(leftReturnType, rightReturnType, mutable);
+                    yield canAssign(checkingRegion, leftReturnType, rightReturnType, mutable);
                 } else {
                     yield false;
                 }

@@ -1,57 +1,137 @@
 
 
 fn main() {
-    let a = [1.0, 2, 3]
-    let f = a[0]
 
-    let w: Help<int> = Help {
-        a: 1,
-        b: 1,
-        state: true
+    let list = ListOf()
+    list.add(1)
+    list.add(2)
+    list.add(3)
+    list.add(4)
+    list.add(5)
+    list.add(6)
+    list.add(7)
+    list.add(8)
+
+    if list.get(0) is int {
+        println(true)
     }
-    let c = w.b;
-    
 
-    let call: Help<int> = callMe<int>(Help { a: 1, b: 2, state: true })
-    
-    let state_: bool = if call.state {
-        println("Hello World")
-        true
-    } else {
-        println("Bye World")
-        false
+    println("is List: ")
+    println(list is Tuple)
+
+    let invalid = asAny<List<int>, Tuple<int, int>>(list)
+
+    if list is List<int> asList {
+        println(asList.size)
     }
+
+    let iterator = list.iterator()
+    while (iterator.hasNext()) {
+        let value = iterator.next()
+
+        println(value)
+    }
+
+
+    0
+}
+
+fn asAny<I, R>(i: I) -> R = i
+
+struct List<T> {
+    storage: [T]
+    capacity: int
+    size: int
     
-    let number: double = call.a as double
+    fn size() -> int {
+        return 0
+    }
 
-    let asFloat = number as float
+    fn get(i: int) -> T {
+        return self.storage[i]
+    }
 
-    if number < 10 {
+    fn set(i: int, v: T) {
+        self.storage[i] = v
+    }
+
+    fn add(v: T) {
+        if self.size == self.capacity {
+            self.capacity = max(self.capacity, 1) * 2
+            let newArray = array<T>(self.capacity)
+            let index = 0;
+
+            while index < self.size {
+                newArray[index] = self.storage[index]
+                index = index + 1
+            }
+
+            self.storage = newArray
+        }
+        self.storage[self.size] = v
+        self.size = self.size + 1
+    }
+
+    fn map<U>(f: fn(T) -> U) -> List<U> {
         
     }
 
-    if number is int i {
-
+    fn filter(f: fn(T) -> bool) -> List<T> {
+        
     }
 
-    let state = call.add(number as int, false)
-    
-    if state.b {
-        println("Hello World")
-    } else {
-        println("Bye World")
+    fn forEach(f: fn(T)) {
+        
     }
-    
+
+    fn contains(f: fn(T) -> bool) -> bool {
+        
+    }
+
+    fn iterator() -> Iterator<T> {
+        let index = [0]
+
+        let next = fn() {
+            let value = self.storage[index[0]]
+            index[0] = index[0] + 1
+            return value
+        }
+
+        let hasNext = fn () index[0] < self.size
+
+        return Iterator { next: next, hasNext: hasNext }
+    }
+
 }
 
-fn println(s: string) {
+struct Iterator<T> {
+    next: fn() -> T
+    hasNext: fn() -> bool
+}
 
+fn max(a: int, b: int) -> int = if a > b { a } else { b }
+fn min(a: int, b: int) -> int = if a < b { a } else { b }
+
+fn ListOf<T>() -> List<T> {
+    return List { storage: array(4), capacity: 4, size: 0 }
+}
+
+@Native
+fn array<T>(size: int) -> [T] = []
+
+@Native
+fn println<T>(v: T) {}
+
+fn getNonSpecial<T>(a: [T]) -> NonSpecial<T> = NonSpecial{ a: a[0] }
+
+struct NonSpecial<T> {
+    a: T
 }
 
 fn boolToString(b: bool) -> string = if b { "true" } else { "false" }
 
 fn callMe<T>(i: Help<T>) -> Help<T> {
-    // return i
+    return i
 }
 
 struct Help<T> {
@@ -60,11 +140,14 @@ struct Help<T> {
     state: bool
 
     fn add<W>(a: T, b: W) -> Tuple<T, W> {
-       // return Tuple { a: a, b: b }
+       return Tuple { a: a, b: b }
     }
 }
 
 struct Tuple<T, U> {
     a: T
     b: U
+
+    fn first() -> T = self.a
+    fn second() -> U = self.b
 }

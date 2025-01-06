@@ -316,7 +316,7 @@ public class KarinaExprVisitor {
         }
         if (ctx.exprWithBlock() != null) {
             var value = visitExprWithBlock(ctx.exprWithBlock());
-            return new KExpr.Assignment(region, left, value);
+            return new KExpr.Assignment(region, left, value, null);
         } else if (ctx.isInstanceOf() != null) {
             var type = this.typeVisitor.visitType(ctx.isInstanceOf().type());
             return new KExpr.IsInstanceOf(region, left, type);
@@ -449,7 +449,8 @@ public class KarinaExprVisitor {
                 args,
                 returnType,
                 interfaces,
-                body
+                body,
+                null
         );
 
     }
@@ -464,7 +465,8 @@ public class KarinaExprVisitor {
                 region,
                 name,
                 iter,
-                body
+                body,
+                null
         );
 
     }

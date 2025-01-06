@@ -11,7 +11,10 @@ import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public sealed interface KType {
 
@@ -24,6 +27,10 @@ public sealed interface KType {
             }
         }
         return this;
+    }
+
+    default boolean isVoid() {
+        return this instanceof PrimitiveType.VoidType;
     }
 
     enum KPrimitive {
@@ -104,31 +111,85 @@ public sealed interface KType {
             return this.resolved;
         }
 
-        public void resolve(KType resolved) {
-
-            Resolvable resolvable = resolved instanceof Resolvable resolved1 ? resolved1 : null;
-            while (resolvable != null) {
-                if (resolvable == this) {
-                    Log.attribError(new AttribError.TypeCycle(this.region, "Bad cycle"));
-                    throw new Log.KarinaException();
-                }
-                resolvable = resolvable.get() instanceof Resolvable resolvable1 ? resolvable1 : null;
+        public boolean canResolve(Span checkingRegion, KType resolved) {
+            if (resolved == this) {
+                return true;
             }
+
+            var dependencies = new ArrayList<TypeDependency>();
+            getDependencies(0, resolved, dependencies);
+            var index = getIndex(this, dependencies);
+            if (index == -1) {
+                return true;
+            }
+
+
+            var linearDependencies = new ArrayList<KType>();
+
+            var dependency = dependencies.get(index);
+            linearDependencies.add(dependency.type());
+
+            var previousLevel = dependency.level();
+            var currentIndex = index;
+
+            while (currentIndex >= 0) {
+                dependency = dependencies.get(currentIndex);
+                if (dependency.level() == previousLevel) {
+                    currentIndex--;
+                    continue;
+                }
+
+                linearDependencies.add(dependency.type());
+                previousLevel = dependency.level();
+
+            }
+            var related = linearDependencies.stream().map(KType::region).toList();
+
+            var readable = String.join(" via ", linearDependencies.stream().map(Object::toString).toList().reversed());
+
+            var graph = new ArrayList<String>();
+
+            for (var i = 0; i < dependencies.size(); i++) {
+                var typeDependency = dependencies.get(i);
+                String suffix = "";
+                if (i == index) {
+                    suffix = " <- Source";
+                } else if (i == 0) {
+                    suffix = " <- Target";
+                }
+
+
+                graph.add("    ".repeat(typeDependency.level()) + typeDependency.type() + suffix);
+            }
+
+
+            var msg = "Lazy Type cycle: " + readable;
+            Log.attribError(new AttribError.TypeCycle(checkingRegion, msg, related, graph));
+            throw new Log.KarinaException();
+        }
+
+        public void tryResolve(KType resolved) {
 
             if (this.resolved != null) {
                 Log.temp(this.region, "Type already resolved");
                 throw new Log.KarinaException();
             }
-            this.resolved = resolved;
+
+            if (resolved != this) {
+                this.resolved = resolved;
+            }
 
         }
 
         @Override
         public String toString() {
+            var code = hashCode() & 0xFFFF;
+            var readable = Integer.toHexString(code).toUpperCase();
             if (this.resolved == null) {
-                return "?";
+                return "?" + readable;
             } else {
-                return "? -> " + this.resolved;
+                return "?" + readable + " as " + this.resolved;
+//                return this.resolved.toString();
             }
         }
     }
@@ -226,4 +287,55 @@ public sealed interface KType {
 
     }
 
+    private static void getDependencies(int level, KType type, List<TypeDependency> dependencies) {
+        switch (type) {
+            case ArrayType arrayType -> {
+                dependencies.add(new TypeDependency(arrayType, level));
+                getDependencies(level + 1, arrayType.elementType(), dependencies);
+            }
+            case ClassType classType -> {
+                dependencies.add(new TypeDependency(classType, level));
+                for (var generic : classType.generics()) {
+                    getDependencies(level + 1, generic, dependencies);
+                }
+            }
+            case FunctionType functionType -> {
+                dependencies.add(new TypeDependency(functionType, level));
+                for (var argument : functionType.arguments()) {
+                    getDependencies(level + 1, argument, dependencies);
+                }
+                if (functionType.returnType() != null) {
+                    getDependencies(level + 1, functionType.returnType(), dependencies);
+                }
+                for (var impl : functionType.interfaces()) {
+                    getDependencies(level + 1, impl, dependencies);
+                }
+            }
+            case GenericLink genericLink -> {
+                dependencies.add(new TypeDependency(genericLink, level));
+            }
+            case PrimitiveType primitiveType -> {
+                dependencies.add(new TypeDependency(primitiveType, level));
+            }
+            case Resolvable resolvable -> {
+                dependencies.add(new TypeDependency(resolvable, level));
+                if (resolvable.get() != null) {
+                    getDependencies(level + 1, resolvable.get(), dependencies);
+                }
+            }
+            case UnprocessedType unprocessedType -> {
+            }
+        }
+    }
+
+    record TypeDependency(KType type, int level) { }
+
+    private static int getIndex(KType type, List<TypeDependency> dependencies) {
+        for (var i = 0; i < dependencies.size(); i++) {
+            if (dependencies.get(i).type() == type) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }

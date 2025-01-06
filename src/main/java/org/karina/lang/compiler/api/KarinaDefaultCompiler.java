@@ -1,5 +1,7 @@
 package org.karina.lang.compiler.api;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.karina.lang.compiler.boot.DebugWriter;
 import org.karina.lang.compiler.parser.KarinaUnitParser;
 import org.karina.lang.compiler.errors.ErrorCollector;
@@ -12,6 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class KarinaDefaultCompiler implements KarinaCompiler {
+    @Getter
+    @Accessors(fluent = true)
+    private KTree.KPackage tree;
+
+
+
     @Override
     public boolean compile(FileTreeNode files, DiagnosticCollection collection) {
 
@@ -22,10 +30,7 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
             }
             var importedTree = importTree(parseTree);
             var attributedTree = attributeTree(importedTree);
-
-//            DebugWriter.write(parseTree, "resources/raw.json");
-//            DebugWriter.write(importedTree, "resources/imported.json");
-//            DebugWriter.write(attributedTree, "resources/attributed.json");
+            this.tree = attributedTree;
 
             if (Log.hasErrors()) {
                 System.err.println("Errors in log, this should not happen");

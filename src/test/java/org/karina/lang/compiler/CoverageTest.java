@@ -51,6 +51,7 @@ public class CoverageTest {
         map.put("UnknownIdentifier", AttribError.UnknownIdentifier.class);
         map.put("NotAStruct", AttribError.NotAStruct.class);
         map.put("NotAInterface", AttribError.NotAInterface.class);
+        map.put("ControlFlow", AttribError.ControlFlow.class);
         map.put("NotAArray", AttribError.NotAArray.class);
         map.put("NotSupportedType", AttribError.NotSupportedType.class);
         map.put("ParameterCountMismatch", AttribError.ParameterCountMismatch.class);

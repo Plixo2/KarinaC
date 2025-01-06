@@ -15,83 +15,68 @@ fn main<T>(input: Array<string>) {
         
     } else if false {
         
-    } else match obj {
-        WW(a: WW) -> {
-            return a
-        }
-        S() -> {
-            return fn() -> bool {
-                false
-            }
-        }
-        Pair id -> {
-            return id
-        }
-        _ -> {
-
-        }
-    }
-
-    while 100 > babel.cc[d](1000) as bool {
-        for i in list {
-            break
-        }
-        continue
-    }
-    let func: fn(bool, string, Array<Option<T>>) -> int = fn(a,b,c) {
+    } else {
 
     }
+
+
+
+    // while 100 > 10.0 as int {
+    //     for i in list {
+    //         break
+    //     }
+    //     continue
+    // }
+    // let func: fn(bool, string, Array<Option<T>>) -> int = fn(aw,bw,cw) {
+    //     0
+    // }
    // let func2: fn(bool, string, Array<Option<T>>) -> int = fn(a: string, b, c) -> Array<Option<T>> {
     //    a.some[1000] = true && false
     //}
 
     let variable: Pair<int, string> = Pair<int, string> {
         first: 1000,
-        second: "hello".substring(0, 1)
+        second: "hello"
     }
-    let array2: Array<WW> = <S<Reader<WW>>> [1, 2, 3]
-    let list: [WW] = [1, 2, 3]
+    let array2 = [1, 2, 3]
 
-    let isWW = w as WW
-    if isWW {
-    }
 
-    let some = if b {
-        return
-    } else if w is WW {
-        return !s
-        -some
-    }
+    // let some = if b {
+    //     return
+    // } else if w is WW {
+    //     return !s
+    //     -some
+    // }
 
-    if w as WW {
+    // if w as WW {
 
-    }
+    // }
 
-    let asInstance: bool = w is WW
-    let InstanceOf: WW = w.b as WW
+    // let asInstance: bool = w is WW
+    // let InstanceOf: WW = w.b as WW
 
-    if w is WW ww {
+    // if w is WW ww {
 
-    }
+    // }
 
-    if w is WW(w: T) {
+    // if w is WW(w: T) {
 
-    }
+    // }
         
-    ww.call()
-    ww[1]
+    // ww.call()
+    // ww[1]
 
     while true {
 
     }
     let str: string = "hello"
-    let obj = WW {
-        a: 1,
-        b: 2
-    }
+    // let obj = WW {
+    //     a: 1,
+    //     b: 2
+    // }
     
 
-    self.here   
+    // self.here   
 
 }
 

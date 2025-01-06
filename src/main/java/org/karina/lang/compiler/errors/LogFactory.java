@@ -61,6 +61,11 @@ public class LogFactory<T extends LogBuilder> {
             case AttribError.TypeCycle typeCycle -> {
                 builder.setTitle("Type Cycle");
                 builder.append(typeCycle.message());
+                builder.append("Graph: ");
+                typeCycle.graph().forEach(builder::append);
+                for (var span : typeCycle.related()) {
+                    builder.addSecondarySource(span);
+                }
                 builder.setPrimarySource(typeCycle.region());
             }
             case AttribError.TypeMismatch typeMismatch -> {
@@ -101,6 +106,11 @@ public class LogFactory<T extends LogBuilder> {
                 builder.setTitle("Not a interface");
                 builder.append("Type '").append(notAInterface.type()).append("' is not a interface");
                 builder.setPrimarySource(notAInterface.region());
+            }
+            case AttribError.ControlFlow controlFlow -> {
+                builder.setTitle("Control Flow");
+                builder.append(controlFlow.message());
+                builder.setPrimarySource(controlFlow.region());
             }
             case AttribError.MissingField missingField -> {
                 builder.append("Missing Field '").append(missingField.name()).append("'");

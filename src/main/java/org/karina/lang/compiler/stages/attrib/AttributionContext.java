@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.stages.attrib;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.Log;
@@ -14,11 +15,12 @@ import org.karina.lang.compiler.stages.VariableCollection;
 import java.util.Objects;
 
 // Method scope is the enclosing method or function expression
-record AttributionContext(
+public record AttributionContext(
         KTree.KPackage root,
-        @Nullable KType selfType,
+        @Nullable Variable selfType,
+        boolean isLoop,
         Span methodRegion,
-        KType returnType,
+        @NotNull KType returnType,
         VariableCollection variables,
         SymbolTable table,
         TypeChecking checking
@@ -28,27 +30,40 @@ record AttributionContext(
         return this.checking.isVoid(type);
     }
 
-    @Nullable KType getSuperType(KType a, KType b) {
-        return this.checking.superType(a, b);
+    @Nullable
+    public KType getSuperType(Span checkingRegion, KType a, KType b) {
+        return this.checking.superType(checkingRegion, a, b);
     }
 
-    boolean isPrimitive(@Nullable KType type, KType.KPrimitive primitiveType) {
+    public boolean isPrimitive(@Nullable KType type, KType.KPrimitive primitiveType) {
         if (type instanceof KType.PrimitiveType primitive) {
             return primitive.primitive() == primitiveType;
         }
         return false;
     }
 
-    boolean canAssign(KType left, KType right, boolean mutable) {
-        return this.checking.canAssign(left, right, mutable);
-    }
+//    public boolean canAssign(KType left, KType right, boolean mutable) {
+//        return this.checking.canAssign(left, right, mutable);
+//    }
 
-    void assign(Span region, KType left, KType right) {
+    public void assign(Span region, KType left, KType right) {
         this.checking.assign(region, left, right);
     }
 
+    public AttributionContext setInLoop(boolean isLoop) {
+        return new AttributionContext(
+                this.root,
+                this.selfType,
+                isLoop,
+                this.methodRegion,
+                this.returnType,
+                this.variables,
+                this.table,
+                this.checking
+        );
+    }
 
-    AttributionContext addVariable(Variable variable) {
+    public AttributionContext addVariable(Variable variable) {
         if (this.variables.contains(variable.name())) {
             var existingVariable = Objects.requireNonNull(this.variables.get(variable.name()));
             Log.attribError(new AttribError.DuplicateVariable(
@@ -61,9 +76,23 @@ record AttributionContext(
         return new AttributionContext(
                 this.root,
                 this.selfType,
+                this.isLoop,
                 this.methodRegion,
                 this.returnType,
                 this.variables.add(variable),
+                this.table,
+                this.checking
+        );
+    }
+
+    public AttributionContext markImmutable(Variable variable) {
+        return new AttributionContext(
+                this.root,
+                this.selfType,
+                this.isLoop,
+                this.methodRegion,
+                this.returnType,
+                this.variables.markImmutable(variable),
                 this.table,
                 this.checking
         );

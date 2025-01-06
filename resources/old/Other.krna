@@ -26,5 +26,5 @@ interface Writer {
 
 
 fn create<T>(value: T) -> T {
-    return "other";
+    return value;
 }

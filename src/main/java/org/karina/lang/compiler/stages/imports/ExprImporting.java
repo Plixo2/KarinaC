@@ -45,7 +45,7 @@ public class ExprImporting {
     private static KExpr importAssignment(ImportContext ctx, KExpr.Assignment expr) {
         var left = importExpr(ctx, expr.left());
         var right = importExpr(ctx, expr.right());
-        return new KExpr.Assignment(expr.region(), left, right);
+        return new KExpr.Assignment(expr.region(), left, right, null);
     }
 
     private static KExpr importBinary(ImportContext ctx, KExpr.Binary expr) {
@@ -178,7 +178,7 @@ public class ExprImporting {
             });
         }
 
-        return new KExpr.Closure(expr.region(), args, returnType.value, interfaces,body.value);
+        return new KExpr.Closure(expr.region(), args, returnType.value, interfaces,body.value, null);
     }
 
     private static KExpr importContinue(ImportContext ctx, KExpr.Continue expr) {
@@ -226,7 +226,7 @@ public class ExprImporting {
         var iter = importExpr(ctx, expr.iter());
         var body = importExpr(ctx, expr.body());
         var name = expr.name();
-        return new KExpr.For(expr.region(), name, iter, body);
+        return new KExpr.For(expr.region(), name, iter, body, null);
     }
 
     private static KExpr importLiteral(ImportContext ctx, KExpr.Literal expr) {

@@ -7,7 +7,7 @@ fn create<T>(value: T) -> int {
 
     for i in array {
         if i == 3 {
-            return value
+            return 0
         }
 
         if i == 4 {

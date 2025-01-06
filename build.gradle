@@ -18,6 +18,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.9.0'
+    //guava
+    implementation "com.google.guava:guava:33.4.0-jre"
 
     implementation group: 'org.eclipse.lsp4j', name: 'org.eclipse.lsp4j', version: '0.23.1'
 

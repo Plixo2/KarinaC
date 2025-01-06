@@ -252,6 +252,7 @@ public class EventHandler {
 
     private void onAnyFileChange() {
         var infoProvider = new TypeInfoProvider();
+        var time = System.currentTimeMillis();
         for (var workspace : this.workspaces) {
             var fullyTyped = workspace.isFullyTyped();
             if (!fullyTyped && !this.settings.excludeErrorFiles) {
@@ -267,6 +268,9 @@ public class EventHandler {
             }
             infoProvider.updateAll(workspace.getRoot().getContent().sourceTree());
         }
+        var delta = System.currentTimeMillis() - time;
+
+        logMessage("Update in " + delta + "ms");
 
         publishDiagnostics();
     }

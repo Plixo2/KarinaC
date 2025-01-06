@@ -7,12 +7,24 @@ import java.util.*;
 
 public class VariableCollection implements Iterable<Variable> {
     private final List<Variable> variables;
+    private final Set<Variable> markedImmutable;
 
     public VariableCollection() {
         this.variables = List.of();
+        this.markedImmutable = Set.of();
     }
-    private VariableCollection(List<Variable> collection) {
-        this.variables = new ArrayList<>(collection);
+
+    private VariableCollection(List<Variable> collection, Set<Variable> markedImmutable) {
+        this.variables = List.copyOf(collection);
+        this.markedImmutable = Set.copyOf(markedImmutable);
+    }
+
+    public boolean isFinal(String name) {
+        var variable = get(name);
+        if (variable == null) {
+            return false;
+        }
+        return this.markedImmutable.contains(variable) || !variable.mutable();
     }
 
     public Set<String> names() {
@@ -22,7 +34,13 @@ public class VariableCollection implements Iterable<Variable> {
     public VariableCollection add(Variable variable) {
         var collection = new ArrayList<>(this.variables);
         collection.add(variable);
-        return new VariableCollection(collection);
+        return new VariableCollection(collection, this.markedImmutable);
+    }
+
+    public VariableCollection markImmutable(Variable variable) {
+        var markedFinal = new HashSet<>(this.markedImmutable);
+        markedFinal.add(variable);
+        return new VariableCollection(this.variables, markedFinal);
     }
 
     public boolean contains(String name) {

@@ -11,6 +11,7 @@ import org.karina.lang.compiler.stages.TypeChecking;
 import org.karina.lang.compiler.stages.Variable;
 import org.karina.lang.compiler.stages.VariableCollection;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ItemAttribution {
@@ -32,10 +33,23 @@ public class ItemAttribution {
         }
         build.returnType(returnType);
 
+        Variable selfSymbol = null;
+        if (selfType != null) {
+            selfSymbol = new Variable(
+                    function.region(),
+                    "self",
+                    selfType,
+                    false,
+                    true
+            );
+        }
+
+
         var typeChecking = new TypeChecking(root);
         var ctx = new AttributionContext(
                 root,
-                selfType,
+                selfSymbol,
+                false,
                 function.region(),
                 returnType,
                 VariableCollection.empty(),
@@ -62,7 +76,7 @@ public class ItemAttribution {
         }
 
         if (function.expr() != null) {
-            var attribExpr = ExprAttribution.attribExpr(returnType, ctx, function.expr());
+            var attribExpr = AttribExpr.attribExpr(returnType, ctx, function.expr());
             build.expr(attribExpr.expr());
         } else {
             build.expr(null);
@@ -83,7 +97,17 @@ public class ItemAttribution {
         build.fields(struct.fields());
 
         var path = struct.path();
-        var selfType = new KType.ClassType(struct.name().region(), SpanOf.span(struct.name().region(),path), List.of());
+        var genericTypes = new ArrayList<KType>();
+
+        for (var generic : struct.generics()) {
+            var genericType = new KType.GenericLink(generic.region(), generic);
+            genericTypes.add(genericType);
+        }
+
+        var selfType = new KType.ClassType(struct.name().region(),
+                SpanOf.span(struct.name().region(),path),
+                genericTypes
+        );
         for (var function : struct.functions()) {
             var attribFunction = attribFunction(root, symbolTable, selfType, function);
             build.function(attribFunction);

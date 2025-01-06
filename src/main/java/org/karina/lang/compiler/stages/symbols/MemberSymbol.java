@@ -6,10 +6,10 @@ import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.objects.Symbol;
 
-public interface MemberSymbol {
+public sealed interface MemberSymbol {
     KType type();
 
-    record FieldSymbol(KType type, ObjectPath fieldPath) implements MemberSymbol {}
+    record FieldSymbol(KType type, ObjectPath fieldPath, String name) implements MemberSymbol {}
     record VirtualFunctionSymbol(Span region, KType.ClassType classType, ObjectPath path) implements MemberSymbol {
 
         @Override

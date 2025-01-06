@@ -18,6 +18,17 @@ public class Variable {
     private final boolean mutable;
     private final boolean parameter;
 
+    //used for capturing
+    private int usageCount = 0;
+
+    public void incrementUsageCount() {
+        this.usageCount++;
+    }
+
+    public int usageCount() {
+        return this.usageCount;
+    }
+
 //    public Variable(Span region, String name, KType type, boolean mutable, boolean parameter) {
 //        this.region = region;
 //        this.name = name;

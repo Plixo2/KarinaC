@@ -11,14 +11,14 @@ fn main() {
     if false {
 
     }
-    let o: Object = Object {
+    let o = Object {
 
     }
     if o is Chair w {
 
     }
-    if o is Chair {
+    // if o is Chair {
 
-    }
+    // }
 
 }
