@@ -151,6 +151,7 @@ public class KarinaVisitor {
                 region,
                 name,
                 path,
+                new StructModifier(),
                 generics,
                 annotations,
                 functions,

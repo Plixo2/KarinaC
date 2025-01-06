@@ -134,6 +134,9 @@ public sealed interface KExpr {
             case While aWhile -> {
                 return new KType.PrimitiveType.VoidType(expr.region());
             }
+            case Throw aThrow -> {
+                return new KType.PrimitiveType.VoidType(expr.region());
+            }
         }
         Log.temp(expr.region(), "Unimplemented type for " + expr.getClass().getSimpleName());
         throw new Log.KarinaException();
@@ -164,6 +167,7 @@ public sealed interface KExpr {
     record Match(Span region, KExpr value, List<MatchPattern> cases) implements KExpr {}
     record CreateObject(Span region, KType createType, List<NamedExpression> parameters, @Nullable @Symbol KType.ClassType symbol) implements KExpr {}
     record Closure(Span region, List<NameAndOptType> args, @Nullable KType returnType, List<KType> interfaces, KExpr body, @Nullable @Symbol ClosureSymbol symbol) implements KExpr {}
+    record Throw(Span region, KExpr value, @Nullable @Symbol KType.ClassType symbol) implements KExpr {}
 
 
 }

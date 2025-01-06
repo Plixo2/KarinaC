@@ -92,7 +92,7 @@ public class CallAttrib extends AttribExpr {
             );
 
 
-        } else if (left instanceof KExpr.GetMember(var ignored, var object, var ignored2, MemberSymbol.VirtualFunctionSymbol sym)) {
+        } else if (left instanceof KExpr.GetMember(var ignored, var object, var name, MemberSymbol.VirtualFunctionSymbol sym)) {
             var referencedFunction = KTree.findAbsoluteVirtualFunction(ctx.root(), sym.path());
             var referencedClass = KTree.findAbsolutItem(ctx.root(), sym.classType().path().value());
             if (!(referencedFunction instanceof KTree.KFunction function) || !(referencedClass instanceof KTree.KStruct struct)) {
@@ -161,6 +161,7 @@ public class CallAttrib extends AttribExpr {
             }
 
             symbol = new CallSymbol.CallVirtual(
+                    name.region(),
                     sym.classType(),
                     sym.path(),
                     List.copyOf(mapped.values()),
@@ -186,7 +187,12 @@ public class CallAttrib extends AttribExpr {
                 newArguments.add(newArgument);
             }
 
-            symbol = new CallSymbol.CallDynamic(functionType.returnType());
+            var returnType = functionType.returnType();
+            if (returnType == null) {
+                returnType = new KType.PrimitiveType.VoidType(expr.region());
+            }
+
+            symbol = new CallSymbol.CallDynamic(returnType);
 
         } else {
             Log.temp(expr.region(), "Invalid call");

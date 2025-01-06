@@ -2,6 +2,7 @@
 
 fn main() {
 
+
     let list = ListOf()
     list.add(1)
     list.add(2)
@@ -11,32 +12,29 @@ fn main() {
     list.add(6)
     list.add(7)
     list.add(8)
+    list.add(9)
 
-    if list.get(0) is int {
-        println(true)
-    }
+    let newList = list.map(fn(v) v).filter(fn(v) v > 5);
+    newList.forEach(fn(v) println(v))
 
-    println("is List: ")
-    println(list is Tuple)
+    println(newList.contains(fn(v) v == 6))
+    println(newList.indexOf(fn(v) v == 4))
+    println(newList.indexOf(fn(v) v == 8))
 
-    let invalid = asAny<List<int>, Tuple<int, int>>(list)
+    let inte = {
+        0 + 1 * 10
+    } 
 
-    if list is List<int> asList {
-        println(asList.size)
-    }
-
-    let iterator = list.iterator()
-    while (iterator.hasNext()) {
-        let value = iterator.next()
-
-        println(value)
-    }
+    println(1 * 2 + 3)
 
 
     0
 }
 
-fn asAny<I, R>(i: I) -> R = i
+
+
+fn cast<I, R>(i: I) -> R = i
+
 
 struct List<T> {
     storage: [T]
@@ -48,10 +46,17 @@ struct List<T> {
     }
 
     fn get(i: int) -> T {
+        if i >= self.size || i < 0 {
+           raise Error { message: "Index out of bounds" }
+        }
+
         return self.storage[i]
     }
 
     fn set(i: int, v: T) {
+        if i >= self.size || i < 0 {
+            raise Error { message: "Index out of bounds" }
+        }
         self.storage[i] = v
     }
 
@@ -59,7 +64,7 @@ struct List<T> {
         if self.size == self.capacity {
             self.capacity = max(self.capacity, 1) * 2
             let newArray = array<T>(self.capacity)
-            let index = 0;
+            let index = 0
 
             while index < self.size {
                 newArray[index] = self.storage[index]
@@ -73,19 +78,60 @@ struct List<T> {
     }
 
     fn map<U>(f: fn(T) -> U) -> List<U> {
-        
+        let index = 0
+        let newList = List { storage: array(self.size), capacity: self.size, size: self.size }
+
+        while index < self.size { 
+            newList.set(index, f(self.storage[index]))
+            index = index + 1
+        }
+        return newList
     }
 
     fn filter(f: fn(T) -> bool) -> List<T> {
-        
+        let index = 0
+        let newList = List { storage: array(self.size), capacity: self.size, size: 0 }
+
+        while index < self.size {
+            if f(self.storage[index]) {
+                newList.add(self.storage[index])
+            }
+            index = index + 1
+        }
+
+        return newList
+
+
     }
 
     fn forEach(f: fn(T)) {
-        
+        let index = 0
+        while index < self.size {
+            f(self.storage[index])
+            index = index + 1
+        }
     }
 
     fn contains(f: fn(T) -> bool) -> bool {
-        
+        let index = 0
+        while index < self.size {
+            if f(self.storage[index]) {
+                return true
+            }
+            index = index + 1
+        }
+        return false
+    }
+
+    fn indexOf(f: fn(T) -> bool) -> int {
+        let index = 0
+        while index < self.size {
+            if f(self.storage[index]) {
+                return index
+            }
+            index = index + 1
+        }
+        return -1
     }
 
     fn iterator() -> Iterator<T> {
@@ -104,6 +150,12 @@ struct List<T> {
 
 }
 
+@Throwable
+struct Error { 
+    message: string
+}
+
+
 struct Iterator<T> {
     next: fn() -> T
     hasNext: fn() -> bool
@@ -117,6 +169,7 @@ fn ListOf<T>() -> List<T> {
 }
 
 @Native
+@Unsafe
 fn array<T>(size: int) -> [T] = []
 
 @Native

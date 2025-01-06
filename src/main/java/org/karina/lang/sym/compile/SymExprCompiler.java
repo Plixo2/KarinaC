@@ -152,6 +152,8 @@ public class SymExprCompiler {
             }
             case KExpr.While aWhile -> {
             }
+            case KExpr.Throw aThrow -> {
+            }
         }
     }
 

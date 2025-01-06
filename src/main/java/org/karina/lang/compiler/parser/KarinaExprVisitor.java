@@ -51,6 +51,8 @@ public class KarinaExprVisitor {
             return new KExpr.Break(region);
         } else if (ctx.CONTINUE() != null) {
             return new KExpr.Continue(region);
+        } else if (ctx.throw_() != null) {
+            return new KExpr.Throw(region, visitExprWithBlock(ctx.throw_().exprWithBlock()), null);
         } else {
             Log.syntaxError(region, "Invalid expression");
             throw new Log.KarinaException();

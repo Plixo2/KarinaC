@@ -18,6 +18,12 @@ public record Span(TextSource source, Position start, Position end) {
         }
     }
 
+    public Span merge(Span other) {
+        var start = this.start.isBefore(other.start) ? this.start : other.start;
+        var end = this.end.isBefore(other.end) ? other.end : this.end;
+        return new Span(this.source, start, end);
+    }
+
     public Span reorder() {
 
         var isOnWrongLine = this.start.line() > this.end.line();

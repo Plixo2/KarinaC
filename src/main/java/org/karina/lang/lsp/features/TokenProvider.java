@@ -69,7 +69,15 @@ public class TokenProvider {
             result.add(length);
             result.add(type);
             //modifier is always 0
-            result.add(0);
+            if (type == SemanticTokenType.VARIABLE.ordinal()) {
+                var decl = 1 << SemanticTokenModifier.DECLARATION.ordinal();
+                var def = 1 << SemanticTokenModifier.DEFINITION.ordinal();
+                var read = 1 << SemanticTokenModifier.READONLY.ordinal();
+
+                result.add(decl | def | read);
+            } else {
+                result.add(0);
+            }
 
             lastLine = line;
             lastCharacter = character;
@@ -102,7 +110,7 @@ public class TokenProvider {
         FUNCTION("function"),
         METHOD("method"),
         MACRO("macro"),
-        VARIABLE("symbol"),
+        VARIABLE("variable"),
         PARAMETER("parameter"),
         PROPERTY("property"),
         ENUM_MEMBER("enumMember"),

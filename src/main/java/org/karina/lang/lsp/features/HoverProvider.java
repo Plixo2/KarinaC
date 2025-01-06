@@ -41,11 +41,16 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
         if (definitionSite != null) {
             var range = EventHandler.regionToRange(definitionSite.referred());
             var code = String.join("\n", LogBuilder.getCodeOfRegion(definitionSite.region(), false));
+            var path = definitionSite.path() == null ? "" : definitionSite.path().mkString(".");
             var markdown = """
+                    Path `%s`
+                    
+                    <br>
+                    
                     ```karina
                     %s
                     ```
-                    """.formatted(code);
+                    """.formatted(path, code);
             var markedString = new MarkupContent(MarkupKind.MARKDOWN, markdown);
             return new Hover(markedString, range);
         } else {
@@ -77,7 +82,7 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
             if (attribLocation == null) {
                 return null;
             } else {
-                return toHover(attribLocation);
+                return toHover(virtualPackageRoot, attribLocation);
             }
         }
 
@@ -101,16 +106,38 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
         return builder.build();
     }
 
-    private Hover toHover(AttribProvider.AttribLocation location) {
+    private Hover toHover(KTree.KPackage root, AttribProvider.AttribLocation location) {
         if (location instanceof AttribProvider.AttribLocation.AttribType(var defined, var type)) {
             var range = EventHandler.regionToRange(defined);
             var text = type.toString();
             var markedString = new MarkupContent(MarkupKind.PLAINTEXT, text);
             return new Hover(markedString, range);
-        } if (location instanceof AttribProvider.AttribLocation.InlayHint(var defined, var ignored, var type)) {
+        } else if (location instanceof AttribProvider.AttribLocation.InlayHint(var defined, var ignored, var type)) {
             var range = EventHandler.regionToRange(defined);
             var text = type.toString();
             var markedString = new MarkupContent(MarkupKind.PLAINTEXT, text);
+            return new Hover(markedString, range);
+        } else if (location instanceof AttribProvider.AttribLocation.Function(var defined, ObjectPath path, var virtual)) {
+            var item = KTree.findAbsolutItem(root, path);
+            if (virtual) {
+                item = KTree.findAbsoluteVirtualFunction(root, path);
+            }
+
+            if (item == null) {
+                return null;
+            }
+            var range = EventHandler.regionToRange(item.region());
+            var code = String.join("\n", LogBuilder.getCodeOfRegion(item.region(), false));
+            var markdown = """
+                    Path `%s`
+                    
+                    <br>
+                    
+                    ```karina
+                    %s
+                    ```
+                    """.formatted(item.path().mkString("."), code);
+            var markedString = new MarkupContent(MarkupKind.MARKDOWN, markdown);
             return new Hover(markedString, range);
         } else {
             return null;
@@ -124,12 +151,18 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
 
         var bestHovered =
                 available.stream().filter(ref -> ref.defined().doesContainPosition(position))
-                         .min(Comparator.comparingInt(a -> specificity(a.defined())));
+                         .min(Comparator.comparingInt(HoverProvider::specificity));
         return bestHovered.orElse(null);
 
     }
 
-    public static int specificity(Span region) {
+    public static int specificity(AttribProvider.AttribLocation location) {
+
+        if (location instanceof AttribProvider.AttribLocation.Function) {
+            return -1;
+        }
+
+        var region = location.defined();
         var deltaLine = Math.abs(region.end().line() - region.start().line());
         var deltaChar = Math.abs(region.end().column() - region.start().column());
 

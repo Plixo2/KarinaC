@@ -301,6 +301,9 @@ public class ImportedTypeVisitor {
             case KExpr.Self self -> {
                 // Nothing to do
             }
+            case KExpr.Throw aThrow -> {
+                fromExpression(aThrow.value());
+            }
         }
     }
 

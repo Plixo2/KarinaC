@@ -48,6 +48,7 @@ public class AttribExpr {
             case KExpr.Unary unary -> UnaryAttrib.attribUnary(hint, ctx, unary);
             case KExpr.VariableDefinition variableDefinition -> VariableDefinitionAttrib.attribVariableDefinition(hint, ctx, variableDefinition);
             case KExpr.While aWhile -> WhileAttrib.attribWhile(hint, ctx, aWhile);
+            case KExpr.Throw aThrow -> ThrowAttrib.attribThrow(hint, ctx, aThrow);
         };
     }
 
@@ -143,6 +144,7 @@ public class AttribExpr {
             //Also include loop control
             case KExpr.Continue aContinue -> true;
             case KExpr.Break aBreak -> true;
+            case KExpr.Throw aThrow -> true;
 
             case KExpr.Boolean aBoolean -> false;
             case KExpr.Assignment assignment -> false;

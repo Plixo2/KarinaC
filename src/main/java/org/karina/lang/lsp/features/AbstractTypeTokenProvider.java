@@ -2,6 +2,7 @@ package org.karina.lang.lsp.features;
 
 import org.eclipse.lsp4j.Position;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.objects.KTree;
@@ -66,13 +67,13 @@ public abstract class AbstractTypeTokenProvider<T> {
             typeVisitor.populateTypeList(importedUnit);
             var locationFound = findLocation(root, list, position);
             if (locationFound != null) {
-                var location = locationFound.region();
-                var referred = locationFound.value();
+                var location = locationFound.location();
+                var referred = locationFound.referred();
                 if (location.source().resource() instanceof KarinaFile target) {
                     if (location.doesContainPosition(position)) {
                         location = new Span(location.source(), location.start(), location.start());
                     }
-                    return new GoToDefinitionProvider.TypeDefinitionSite(target, location, referred);
+                    return new GoToDefinitionProvider.TypeDefinitionSite(target, location, referred, locationFound.path());
                 }
             }
             return null;
@@ -84,7 +85,7 @@ public abstract class AbstractTypeTokenProvider<T> {
         };
     }
 
-    private @Nullable SpanOf<Span> findLocation(
+    private @Nullable LocalLocation findLocation(
             KTree.KPackage root,
             List<ImportedTypeVisitor.SourceLocation> available,
             Span.Position position
@@ -99,24 +100,24 @@ public abstract class AbstractTypeTokenProvider<T> {
                         if (unit != null) {
                             var item = unit.findItem(name);
                             if (item != null) {
-                                return SpanOf.span(item.region(), definition);
+                                return new LocalLocation(item.region(), definition, unitPath);
                             }
                         }
                     }
                     case ImportedTypeVisitor.SourceLocation.ClassToken(var ignored, var path, var ignored2) -> {
                         var item = KTree.findAbsolutItem(root, path);
                         if (item != null) {
-                            return SpanOf.span(item.region(), definition);
+                            return new LocalLocation(item.region(), definition, path);
                         }
                     }
                     case ImportedTypeVisitor.SourceLocation.ImportPathRegion(var ignored, var path) -> {
                         var unit = root.findUnit(path);
                         if (unit != null) {
-                            return SpanOf.span(unit.region(), definition);
+                            return new LocalLocation(unit.region(), definition, path);
                         }
                     }
                     case ImportedTypeVisitor.SourceLocation.GenericLinkToken direct -> {
-                        return SpanOf.span(direct.linked(), definition);
+                        return new LocalLocation(direct.linked(), definition, null);
                     }
                 }
             }
@@ -124,8 +125,10 @@ public abstract class AbstractTypeTokenProvider<T> {
         return null;
     }
 
+    record LocalLocation(Span location, Span referred, @Nullable ObjectPath path) {}
+
 
     //region is linked to where the type is defined
     //referred is linked to the position where the type token is
-    public record TypeDefinitionSite(KarinaFile file, Span region, Span referred) {}
+    public record TypeDefinitionSite(KarinaFile file, Span region, Span referred, @Nullable ObjectPath path) {}
 }

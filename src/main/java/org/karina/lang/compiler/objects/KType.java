@@ -11,10 +11,7 @@ import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public sealed interface KType {
 
@@ -95,11 +92,20 @@ public sealed interface KType {
 
     }
 
-    @RequiredArgsConstructor
     final class Resolvable implements KType {
         @Getter
         @Accessors(fluent = true)
         private final Span region;
+
+        private int hashCode = 0;
+
+        public Resolvable(Span region) {
+            var start = region.start();
+            var end = region.end();
+            this.hashCode = Objects.hash(start, end);
+
+            this.region = region;
+        }
 
         private @Nullable KType resolved = null;
 
@@ -123,32 +129,23 @@ public sealed interface KType {
                 return true;
             }
 
-
             var linearDependencies = new ArrayList<KType>();
-
             var dependency = dependencies.get(index);
             linearDependencies.add(dependency.type());
-
             var previousLevel = dependency.level();
             var currentIndex = index;
-
             while (currentIndex >= 0) {
                 dependency = dependencies.get(currentIndex);
                 if (dependency.level() == previousLevel) {
                     currentIndex--;
                     continue;
                 }
-
                 linearDependencies.add(dependency.type());
                 previousLevel = dependency.level();
-
             }
             var related = linearDependencies.stream().map(KType::region).toList();
-
             var readable = String.join(" via ", linearDependencies.stream().map(Object::toString).toList().reversed());
-
             var graph = new ArrayList<String>();
-
             for (var i = 0; i < dependencies.size(); i++) {
                 var typeDependency = dependencies.get(i);
                 String suffix = "";
@@ -158,11 +155,8 @@ public sealed interface KType {
                     suffix = " <- Target";
                 }
 
-
                 graph.add("    ".repeat(typeDependency.level()) + typeDependency.type() + suffix);
             }
-
-
             var msg = "Lazy Type cycle: " + readable;
             Log.attribError(new AttribError.TypeCycle(checkingRegion, msg, related, graph));
             throw new Log.KarinaException();
@@ -183,7 +177,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            var code = hashCode() & 0xFFFF;
+            var code = this.hashCode & 0xFFFF;
             var readable = Integer.toHexString(code).toUpperCase();
             if (this.resolved == null) {
                 return "?" + readable;

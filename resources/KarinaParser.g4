@@ -66,7 +66,7 @@ block: '{' (expression ';'?)* '}';
 
 exprWithBlock : block | expression;
 
-expression: varDef | closure | 'return' exprWithBlock? | match | if | while | for | conditionalOrExpression | 'break' | 'continue';
+expression: varDef | closure | 'return' exprWithBlock? | match | if | while | for | conditionalOrExpression | 'break' | 'continue' | throw;
 
 varDef: 'let' ID (':' type)? '=' (exprWithBlock);
 
@@ -84,6 +84,8 @@ elseExpr: 'else' (if | block | match);
 
 while: 'while' exprWithBlock block;
 for: 'for' ID 'in' exprWithBlock block;
+
+throw: 'raise' exprWithBlock;
 
 conditionalOrExpression: conditionalAndExpression ('||' conditionalOrExpression)?;
 conditionalAndExpression: equalityExpression ('&&' conditionalAndExpression)?;

@@ -3,6 +3,7 @@ package org.karina.lang.compiler.objects;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.json.JsonElement;
@@ -199,6 +200,7 @@ public final class KTree {
             @NonNull Span region,
             @NonNull SpanOf<String> name,
             @NonNull ObjectPath path,
+            @NotNull StructModifier modifier,
             @Singular List<Generic> generics,
             @Singular List<KAnnotation> annotations,
             @Singular List<KFunction> functions,

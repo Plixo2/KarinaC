@@ -509,6 +509,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterThrow(KarinaParser.ThrowContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitThrow(KarinaParser.ThrowContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterConditionalOrExpression(KarinaParser.ConditionalOrExpressionContext ctx) { }
 	/**
 	 * {@inheritDoc}

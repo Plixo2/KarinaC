@@ -418,6 +418,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 */
 	void exitFor(KarinaParser.ForContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KarinaParser#throw}.
+	 * @param ctx the parse tree
+	 */
+	void enterThrow(KarinaParser.ThrowContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#throw}.
+	 * @param ctx the parse tree
+	 */
+	void exitThrow(KarinaParser.ThrowContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KarinaParser#conditionalOrExpression}.
 	 * @param ctx the parse tree
 	 */

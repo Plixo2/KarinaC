@@ -75,11 +75,18 @@ public interface LogBuilder {
             while (leading < string.length() && Character.isWhitespace(string.charAt(leading))) {
                 leading++;
             }
+            if (leading == string.length()) {
+                continue;
+            }
             minLeading = Math.min(minLeading, leading);
         }
         var result = new ArrayList<String>();
         for (var string : strings) {
-            result.add(string.substring(minLeading));
+            if (minLeading >= string.length()) {
+                result.add("");
+            } else {
+                result.add(string.substring(minLeading));
+            }
         }
         return result;
     }

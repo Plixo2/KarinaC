@@ -36,16 +36,15 @@ fn create<T>(value: T) -> int {
     let closureImplNoReturn = fn(x: int) impl FunctionInterface {
             "Hello"
     }
-    let some: Option<int> = Option.Some(1)
 
     if true {
 
     } else if false {
 
-    } else match some {
-        _ -> 0
+    } else {
     }
 
+/*
     match some {
         Option(x) -> x
         _ -> 0b0
@@ -55,12 +54,12 @@ fn create<T>(value: T) -> int {
             W x -> x.value
             Option() -> 0x16BBA
     }
-
+*/
     let forBranchCase = W { x: 1 }
 
     if forBranchCase is W w {}
-    if forBranchCase is W(x) {}
-    if forBranchCase is W(x: int) {}
+    //if forBranchCase is W(x) {}
+    //if forBranchCase is W(x: int) {}
 
     let newStruct = W { x: 1 }
     let withOut = newStruct

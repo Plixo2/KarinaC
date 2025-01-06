@@ -40,7 +40,7 @@ public class Evaluate {
 
         var function = solver.collection().function("src.Main.main");
 
-        var result = solver.enterFunction(function, null, List.of());
+        var result = solver.eval(function, null, List.of());
         System.out.println("\u001B[35mResult: "  + result +  "\u001B[0m");
 
         System.out.flush();

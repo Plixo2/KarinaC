@@ -92,6 +92,7 @@ public class ItemAttribution {
         build.region(struct.region());
         build.name(struct.name());
         build.path(struct.path());
+        build.modifier(struct.modifier());
         build.generics(struct.generics());
         build.annotations(struct.annotations());
         build.fields(struct.fields());

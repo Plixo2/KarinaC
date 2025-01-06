@@ -2,10 +2,15 @@ package org.karina.lang.lsp.features;
 
 import lombok.AllArgsConstructor;
 import org.karina.lang.compiler.BranchPattern;
+import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.Span;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.stages.symbols.CallSymbol;
+import org.karina.lang.compiler.stages.symbols.LiteralSymbol;
+import org.karina.lang.compiler.stages.symbols.MemberSymbol;
+import org.karina.lang.lsp.EventHandler;
 
 import java.util.List;
 
@@ -95,6 +100,9 @@ public class AttribProvider {
                 for (var arg : call.arguments()) {
                     populateExpr(arg);
                 }
+                if (call.symbol() instanceof CallSymbol.CallVirtual callVirtual) {
+                    addFunction(callVirtual.nameRegion(), callVirtual.path(), true);
+                }
             }
             case KExpr.Cast cast -> {
                 populateExpr(cast.expression());
@@ -131,6 +139,9 @@ public class AttribProvider {
                 populateExpr(isInstanceOf.left());
             }
             case KExpr.Literal literal -> {
+                if (literal.symbol() instanceof LiteralSymbol.StaticFunction(Span region, ObjectPath path)) {
+                    addFunction(region, path, false);
+                }
                 // nothing to do
             }
             case KExpr.Match match -> {
@@ -171,6 +182,9 @@ public class AttribProvider {
                 populateExpr(aWhile.condition());
                 populateExpr(aWhile.body());
             }
+            case KExpr.Throw aThrow -> {
+                populateExpr(aThrow.value());
+            }
         }
     }
 
@@ -186,10 +200,17 @@ public class AttribProvider {
         }
     }
 
+    private void addFunction(Span region, ObjectPath path, boolean virtual) {
+        if (this.rangePredicate.overlaps(region)) {
+            this.list.add(new AttribLocation.Function(region, path, virtual));
+        }
+    }
+
 
     public sealed interface AttribLocation {
         Span defined();
         record AttribType(Span defined, KType type) implements AttribLocation {}
         record InlayHint(Span defined, String text, KType type) implements AttribLocation {}
+        record Function(Span defined, ObjectPath path, boolean virtual) implements AttribLocation {}
     }
 }

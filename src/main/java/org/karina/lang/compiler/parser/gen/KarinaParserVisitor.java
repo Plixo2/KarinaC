@@ -257,6 +257,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFor(KarinaParser.ForContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KarinaParser#throw}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitThrow(KarinaParser.ThrowContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KarinaParser#conditionalOrExpression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

@@ -48,8 +48,8 @@ public class SemanticTokenVisitor extends KarinaParserBaseVisitor<Object> {
     @Override
     public Object visitObject(KarinaParser.ObjectContext ctx) {
         var initList = ctx.initList();
+        var id = ctx.ID();
         if (initList != null) {
-            var id = ctx.ID();
             if (id != null) {
                 var token = id.getSymbol();
                 var line = token.getLine() - 1;
@@ -57,6 +57,12 @@ public class SemanticTokenVisitor extends KarinaParserBaseVisitor<Object> {
                 var length = token.getText().length();
                 insertType(line, character, length, CLASS);
             }
+        } else if (id != null) {
+            var token = id.getSymbol();
+            var line = token.getLine() - 1;
+            var character = token.getCharPositionInLine();
+            var length = token.getText().length();
+            insertType(line, character, length, VARIABLE);
         }
 
         return super.visitObject(ctx);
@@ -98,7 +104,7 @@ public class SemanticTokenVisitor extends KarinaParserBaseVisitor<Object> {
             var line = token.getLine() - 1;
             var character = token.getCharPositionInLine();
             var length = token.getText().length();
-            insertType(line, character, length, PROPERTY);
+            insertType(line, character, length, PARAMETER);
         }
 
         return super.visitFor(ctx);
@@ -228,6 +234,73 @@ public class SemanticTokenVisitor extends KarinaParserBaseVisitor<Object> {
             }
         }
         return super.visitStructType(ctx);
+    }
+
+    @Override
+    public Object visitFactor(KarinaParser.FactorContext ctx) {
+
+
+        if (ctx.exprWithBlock() != null) {
+            visitExprWithBlock(ctx.exprWithBlock());
+        }
+        if (ctx.isInstanceOf() != null) {
+            visitIsInstanceOf(ctx.isInstanceOf());
+        }
+
+        boolean skipObj = false;
+        var postFix = ctx.postFix();
+        if (postFix != null) {
+            if (ctx.object() != null) {
+                if (ctx.object().ID() != null && ctx.object().initList() == null) {
+                    if (!postFix.isEmpty()) {
+                        if (postFix.getFirst().expressionList() != null) {
+                            var id = ctx.object().ID();
+                            var token = id.getSymbol();
+                            var line = token.getLine() - 1;
+                            var character = token.getCharPositionInLine();
+                            var length = token.getText().length();
+                            insertType(line, character, length, METHOD);
+                            skipObj = true;
+                        }
+                    }
+                }
+            }
+
+            for (var i = 0; i < postFix.size(); i++) {
+
+                var current = postFix.get(i);
+                var hasNext = i + 1 < postFix.size();
+
+                if (hasNext) {
+                    var next = postFix.get(i + 1);
+
+                    if (next.expressionList() != null) {
+                        var id = current.ID();
+                        if (id != null) {
+                            var token = id.getSymbol();
+                            var line = token.getLine() - 1;
+                            var character = token.getCharPositionInLine();
+                            var length = token.getText().length();
+                            insertType(line, character, length, METHOD);
+                        }
+                    } else {
+                        visitPostFix(current);
+                    }
+
+                } else {
+                    visitPostFix(current);
+                }
+
+            }
+        }
+
+        if (!skipObj) {
+            if (ctx.object() != null) {
+                visitObject(ctx.object());
+            }
+        }
+
+        return null;
     }
 
     @Override

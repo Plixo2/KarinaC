@@ -39,7 +39,13 @@ public class ExprImporting {
             case KExpr.Unary unary -> importUnary(ctx, unary);
             case KExpr.VariableDefinition variableDefinition -> importVariableDefinition(ctx, variableDefinition);
             case KExpr.While aWhile -> importWhile(ctx, aWhile);
+            case KExpr.Throw aThrow -> importThrow(ctx, aThrow);
         };
+    }
+
+    private static KExpr importThrow(ImportContext ctx, KExpr.Throw expr) {
+        var value = importExpr(ctx, expr.value());
+        return new KExpr.Throw(expr.region(), value, null);
     }
 
     private static KExpr importAssignment(ImportContext ctx, KExpr.Assignment expr) {

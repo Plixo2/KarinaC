@@ -3,6 +3,7 @@ package org.karina.lang.eval;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import org.karina.lang.compiler.BranchPattern;
 import org.karina.lang.compiler.NameAndOptType;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
@@ -20,7 +21,16 @@ import java.util.*;
 public class Solver {
     private final FunctionCollection collection;
 
-    public Object enterFunction(FunctionCollection.RuntimeFunction function, Object self, List<Object> args) {
+    public Object eval(FunctionCollection.RuntimeFunction function, Object self, List<Object> args) {
+        try {
+            return enterFunction(function, self, args);
+        } catch(EvalException e) {
+            e.printStackTrace();
+            return e.object();
+        }
+    }
+
+    private Object enterFunction(FunctionCollection.RuntimeFunction function, Object self, List<Object> args) {
         var environment = new Environment(self);
 
         try {
@@ -138,11 +148,20 @@ public class Solver {
                 yield aBoolean.value();
             }
             case KExpr.Branch branch -> {
-                if (branch.branchPattern() != null) {
-                    throw new NullPointerException("Not implemented");
-                }
                 var eval = eval(branch.condition(), env);
-                if ((boolean) eval) {
+                boolean condition;
+                if (branch.branchPattern() != null) {
+                    if (!(branch.branchPattern() instanceof BranchPattern.Cast cast)) {
+                        throw new NullPointerException("Not implemented");
+                    }
+                    condition = checkCast(eval, cast.type());
+                    env.set(cast.symbol(), eval);
+
+                } else {
+                    condition = (boolean) eval;
+                }
+
+                if (condition) {
                     yield eval(branch.thenArm(), env);
                 } else if (branch.elseArm() != null) {
                     yield eval(branch.elseArm(), env);
@@ -264,31 +283,7 @@ public class Solver {
             case KExpr.IsInstanceOf isInstanceOf -> {
                 var obj = eval(isInstanceOf.left(), env);
 
-                yield switch (isInstanceOf.isType()) {
-                    case KType.ArrayType arrayType -> false;
-                    case KType.ClassType classType -> {
-                        if (obj instanceof HashMap<?,?> map) {
-                            Object $type = map.get("$type");
-                            if ($type == null) {
-                                yield false;
-                            }
-                            yield $type.equals(classType.path().value());
-                        } else {
-                            yield false;
-                        }
-                    }
-                    case KType.FunctionType functionType -> false;
-                    case KType.GenericLink genericLink -> false;
-                    case KType.PrimitiveType primitiveType -> {
-                        yield switch (primitiveType) {
-                            case KType.PrimitiveType.BoolType booleanType -> obj instanceof Boolean;
-                            case KType.PrimitiveType.StringType stringType -> obj instanceof String;
-                            default -> primitiveType.isNumeric() && obj instanceof BigDecimal;
-                        };
-                    }
-                    case KType.Resolvable resolvable -> false;
-                    case KType.UnprocessedType unprocessedType -> false;
-                };
+                yield checkCast(obj, isInstanceOf.isType());
             }
             case KExpr.Literal literal -> {
                 assert literal.symbol() != null;
@@ -353,8 +348,43 @@ public class Solver {
                 yield null;
 
             }
+            case KExpr.Throw aThrow -> {
+                var value = eval(aThrow.value(), env);
+                assert value != null;
+                throw new EvalException(value);
+            }
         };
     }
+
+    private boolean checkCast(Object object, KType cast) {
+
+        return switch (cast) {
+            case KType.ArrayType arrayType -> false;
+            case KType.ClassType classType -> {
+                if (object instanceof HashMap<?,?> map) {
+                    Object $type = map.get("$type");
+                    if ($type == null) {
+                        yield false;
+                    }
+                    yield $type.equals(classType.path().value());
+                } else {
+                    yield false;
+                }
+            }
+            case KType.FunctionType functionType -> false;
+            case KType.GenericLink genericLink -> false;
+            case KType.PrimitiveType primitiveType -> {
+                yield switch (primitiveType) {
+                    case KType.PrimitiveType.BoolType booleanType -> object instanceof Boolean;
+                    case KType.PrimitiveType.StringType stringType -> object instanceof String;
+                    default -> primitiveType.isNumeric() && object instanceof BigDecimal;
+                };
+            }
+            case KType.Resolvable resolvable -> false;
+            case KType.UnprocessedType unprocessedType -> false;
+        };
+    }
+
 
 
 
@@ -385,4 +415,5 @@ public class Solver {
         return new Solver(collection);
 
     }
+
 }

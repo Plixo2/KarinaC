@@ -305,6 +305,13 @@ public class KarinaParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> impl
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitThrow(KarinaParser.ThrowContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitConditionalOrExpression(KarinaParser.ConditionalOrExpressionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
