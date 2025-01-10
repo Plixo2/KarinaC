@@ -1,0 +1,1609 @@
+{
+  "path": {
+    "elements": [
+      "src"
+    ]
+  },
+  "name": "src",
+  "subPackages": [],
+  "units": [
+    {
+      "region": {},
+      "name": "enumCases",
+      "path": {
+        "elements": [
+          "src",
+          "enumCases"
+        ]
+      },
+      "kImports": [],
+      "items": [
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "test"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "test"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [],
+          "returnType": {
+            "region": {}
+          },
+          "generics": [],
+          "expr": {
+            "region": {},
+            "expressions": [
+              {
+                "region": {},
+                "left": {
+                  "region": {},
+                  "name": "assert"
+                },
+                "generics": [],
+                "arguments": [
+                  {
+                    "region": {},
+                    "value": true
+                  },
+                  {
+                    "region": {},
+                    "value": "Boolean true is true"
+                  }
+                ]
+              },
+              {
+                "region": {},
+                "left": {
+                  "region": {},
+                  "name": "assertFalse"
+                },
+                "generics": [],
+                "arguments": [
+                  {
+                    "region": {},
+                    "value": false
+                  }
+                ]
+              },
+              {
+                "region": {},
+                "left": {
+                  "region": {},
+                  "name": "assertFalse"
+                },
+                "generics": [],
+                "arguments": [
+                  {
+                    "region": {},
+                    "left": {
+                      "region": {},
+                      "number": 10,
+                      "decimalAnnotated": false
+                    },
+                    "operator": {
+                      "region": {},
+                      "value": "LESS_THAN"
+                    },
+                    "right": {
+                      "region": {},
+                      "number": 5,
+                      "decimalAnnotated": false
+                    }
+                  }
+                ]
+              },
+              {
+                "region": {},
+                "left": {
+                  "region": {},
+                  "name": "assertTrue"
+                },
+                "generics": [],
+                "arguments": [
+                  {
+                    "region": {},
+                    "left": {
+                      "region": {},
+                      "number": 10,
+                      "decimalAnnotated": false
+                    },
+                    "operator": {
+                      "region": {},
+                      "value": "GREATER_THAN"
+                    },
+                    "right": {
+                      "region": {},
+                      "number": 5,
+                      "decimalAnnotated": false
+                    }
+                  }
+                ]
+              },
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": "wrapped"
+                },
+                "value": {
+                  "region": {},
+                  "left": {
+                    "region": {},
+                    "name": "some"
+                  },
+                  "generics": [],
+                  "arguments": [
+                    {
+                      "region": {},
+                      "number": 10,
+                      "decimalAnnotated": false
+                    }
+                  ]
+                }
+              },
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": "unwrapped"
+                },
+                "value": {
+                  "region": {},
+                  "left": {
+                    "region": {},
+                    "name": "unwrap"
+                  },
+                  "generics": [],
+                  "arguments": [
+                    {
+                      "region": {},
+                      "name": "wrapped"
+                    }
+                  ]
+                }
+              },
+              {
+                "region": {},
+                "left": {
+                  "region": {},
+                  "name": "assert"
+                },
+                "generics": [],
+                "arguments": [
+                  {
+                    "region": {},
+                    "left": {
+                      "region": {},
+                      "name": "unwrapped"
+                    },
+                    "operator": {
+                      "region": {},
+                      "value": "EQUAL"
+                    },
+                    "right": {
+                      "region": {},
+                      "number": 10,
+                      "decimalAnnotated": false
+                    }
+                  },
+                  {
+                    "region": {},
+                    "value": "Unwrapped value should be 10"
+                  }
+                ]
+              },
+              {
+                "region": {},
+                "left": {
+                  "region": {},
+                  "name": "assertFalse"
+                },
+                "generics": [],
+                "arguments": [
+                  {
+                    "region": {},
+                    "left": {
+                      "region": {},
+                      "name": "wrapped"
+                    },
+                    "isType": {
+                      "region": {},
+                      "name": {
+                        "region": {},
+                        "value": {
+                          "elements": [
+                            "None"
+                          ]
+                        }
+                      },
+                      "generics": []
+                    }
+                  }
+                ]
+              },
+              {
+                "region": {},
+                "left": {
+                  "region": {},
+                  "name": "assertTrue"
+                },
+                "generics": [],
+                "arguments": [
+                  {
+                    "region": {},
+                    "left": {
+                      "region": {},
+                      "name": "wrapped"
+                    },
+                    "isType": {
+                      "region": {},
+                      "name": {
+                        "region": {},
+                        "value": {
+                          "elements": [
+                            "Some"
+                          ]
+                        }
+                      },
+                      "generics": [
+                        {
+                          "region": {}
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "region": {},
+                "value": true
+              }
+            ]
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "assertFalse"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "assertFalse"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "condition"
+              },
+              "type": {
+                "region": {}
+              }
+            }
+          ],
+          "generics": [],
+          "expr": {
+            "region": {},
+            "expressions": [
+              {
+                "region": {},
+                "condition": {
+                  "region": {},
+                  "name": "condition"
+                },
+                "thenArm": {
+                  "region": {},
+                  "expressions": [
+                    {
+                      "region": {},
+                      "value": {
+                        "region": {},
+                        "createType": {
+                          "region": {},
+                          "name": {
+                            "region": {},
+                            "value": {
+                              "elements": [
+                                "Error"
+                              ]
+                            }
+                          },
+                          "generics": []
+                        },
+                        "parameters": [
+                          {
+                            "region": {},
+                            "name": {
+                              "region": {},
+                              "value": "message"
+                            },
+                            "expr": {
+                              "region": {},
+                              "value": "Assertion failed"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "assertTrue"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "assertTrue"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "condition"
+              },
+              "type": {
+                "region": {}
+              }
+            }
+          ],
+          "generics": [],
+          "expr": {
+            "region": {},
+            "expressions": [
+              {
+                "region": {},
+                "condition": {
+                  "region": {},
+                  "operator": {
+                    "region": {},
+                    "value": "NOT"
+                  },
+                  "value": {
+                    "region": {},
+                    "name": "condition"
+                  }
+                },
+                "thenArm": {
+                  "region": {},
+                  "expressions": [
+                    {
+                      "region": {},
+                      "value": {
+                        "region": {},
+                        "createType": {
+                          "region": {},
+                          "name": {
+                            "region": {},
+                            "value": {
+                              "elements": [
+                                "Error"
+                              ]
+                            }
+                          },
+                          "generics": []
+                        },
+                        "parameters": [
+                          {
+                            "region": {},
+                            "name": {
+                              "region": {},
+                              "value": "message"
+                            },
+                            "expr": {
+                              "region": {},
+                              "value": "Assertion failed"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "assert"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "assert"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "condition"
+              },
+              "type": {
+                "region": {}
+              }
+            },
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "message"
+              },
+              "type": {
+                "region": {}
+              }
+            }
+          ],
+          "generics": [],
+          "expr": {
+            "region": {},
+            "expressions": [
+              {
+                "region": {},
+                "condition": {
+                  "region": {},
+                  "operator": {
+                    "region": {},
+                    "value": "NOT"
+                  },
+                  "value": {
+                    "region": {},
+                    "name": "condition"
+                  }
+                },
+                "thenArm": {
+                  "region": {},
+                  "expressions": [
+                    {
+                      "region": {},
+                      "value": {
+                        "region": {},
+                        "createType": {
+                          "region": {},
+                          "name": {
+                            "region": {},
+                            "value": {
+                              "elements": [
+                                "Error"
+                              ]
+                            }
+                          },
+                          "generics": []
+                        },
+                        "parameters": [
+                          {
+                            "region": {},
+                            "name": {
+                              "region": {},
+                              "value": "message"
+                            },
+                            "expr": {
+                              "region": {},
+                              "name": "message"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "Error"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "Error"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isThrowable": false
+          },
+          "generics": [],
+          "annotations": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "Throwable"
+              },
+              "value": {
+                "region": {},
+                "value": true
+              }
+            }
+          ],
+          "functions": [],
+          "fields": [
+            {
+              "region": {},
+              "path": {
+                "elements": [
+                  "src",
+                  "enumCases",
+                  "Error",
+                  "message"
+                ]
+              },
+              "name": {
+                "region": {},
+                "value": "message"
+              },
+              "type": {
+                "region": {}
+              }
+            }
+          ],
+          "implBlocks": []
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "Option"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "Option"
+            ]
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            }
+          ],
+          "annotations": [],
+          "functions": [],
+          "superTypes": [],
+          "permittedStructs": [
+            {
+              "elements": [
+                "src",
+                "enumCases",
+                "Some"
+              ]
+            },
+            {
+              "elements": [
+                "src",
+                "enumCases",
+                "None"
+              ]
+            }
+          ]
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "Some"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "Some"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isThrowable": false
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            }
+          ],
+          "annotations": [],
+          "functions": [],
+          "fields": [
+            {
+              "region": {},
+              "path": {
+                "elements": [
+                  "src",
+                  "enumCases",
+                  "Some",
+                  "value"
+                ]
+              },
+              "name": {
+                "region": {},
+                "value": "value"
+              },
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            }
+          ],
+          "implBlocks": [
+            {
+              "region": {},
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "enumCases",
+                      "Option"
+                    ]
+                  }
+                },
+                "generics": [
+                  {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "T"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  }
+                ]
+              },
+              "functions": []
+            }
+          ]
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "None"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "None"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isThrowable": false
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            }
+          ],
+          "annotations": [],
+          "functions": [],
+          "fields": [],
+          "implBlocks": [
+            {
+              "region": {},
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "enumCases",
+                      "Option"
+                    ]
+                  }
+                },
+                "generics": [
+                  {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "T"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  }
+                ]
+              },
+              "functions": []
+            }
+          ]
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "some"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "some"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "v"
+              },
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            }
+          ],
+          "returnType": {
+            "region": {},
+            "name": {
+              "region": {},
+              "value": {
+                "elements": [
+                  "Option"
+                ]
+              }
+            },
+            "generics": [
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            ]
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            }
+          ],
+          "expr": {
+            "region": {},
+            "createType": {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": {
+                  "elements": [
+                    "Some"
+                  ]
+                }
+              },
+              "generics": []
+            },
+            "parameters": [
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": "value"
+                },
+                "expr": {
+                  "region": {},
+                  "name": "v"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "none"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "none"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [],
+          "returnType": {
+            "region": {},
+            "name": {
+              "region": {},
+              "value": {
+                "elements": [
+                  "Option"
+                ]
+              }
+            },
+            "generics": [
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            ]
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            }
+          ],
+          "expr": {
+            "region": {},
+            "createType": {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": {
+                  "elements": [
+                    "None"
+                  ]
+                }
+              },
+              "generics": []
+            },
+            "parameters": []
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "unwrap"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "unwrap"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "option"
+              },
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "Option"
+                    ]
+                  }
+                },
+                "generics": [
+                  {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "T"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  }
+                ]
+              }
+            }
+          ],
+          "returnType": {
+            "region": {},
+            "name": {
+              "region": {},
+              "value": {
+                "elements": [
+                  "T"
+                ]
+              }
+            },
+            "generics": []
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            }
+          ],
+          "expr": {
+            "region": {},
+            "expressions": [
+              {
+                "region": {},
+                "condition": {
+                  "region": {},
+                  "left": {
+                    "region": {},
+                    "name": "option"
+                  },
+                  "isType": {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "None"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  }
+                },
+                "thenArm": {
+                  "region": {},
+                  "expressions": [
+                    {
+                      "region": {},
+                      "value": {
+                        "region": {},
+                        "createType": {
+                          "region": {},
+                          "name": {
+                            "region": {},
+                            "value": {
+                              "elements": [
+                                "Error"
+                              ]
+                            }
+                          },
+                          "generics": []
+                        },
+                        "parameters": [
+                          {
+                            "region": {},
+                            "name": {
+                              "region": {},
+                              "value": "message"
+                            },
+                            "expr": {
+                              "region": {},
+                              "value": "Option is None"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "elseArm": {
+                  "region": {},
+                  "condition": {
+                    "region": {},
+                    "name": "option"
+                  },
+                  "thenArm": {
+                    "region": {},
+                    "expressions": [
+                      {
+                        "region": {},
+                        "value": {
+                          "region": {},
+                          "left": {
+                            "region": {},
+                            "name": "s"
+                          },
+                          "name": {
+                            "region": {},
+                            "value": "value"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "branchPattern": {
+                    "region": {},
+                    "type": {
+                      "region": {},
+                      "name": {
+                        "region": {},
+                        "value": {
+                          "elements": [
+                            "Some"
+                          ]
+                        }
+                      },
+                      "generics": [
+                        {
+                          "region": {}
+                        }
+                      ]
+                    },
+                    "castedName": {
+                      "region": {},
+                      "value": "s"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "Result"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "Result"
+            ]
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            },
+            {
+              "region": {},
+              "name": "E"
+            }
+          ],
+          "annotations": [],
+          "functions": [],
+          "superTypes": [],
+          "permittedStructs": [
+            {
+              "elements": [
+                "src",
+                "enumCases",
+                "Ok"
+              ]
+            },
+            {
+              "elements": [
+                "src",
+                "enumCases",
+                "Err"
+              ]
+            }
+          ]
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "Ok"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "Ok"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isThrowable": false
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            },
+            {
+              "region": {},
+              "name": "E"
+            }
+          ],
+          "annotations": [],
+          "functions": [],
+          "fields": [
+            {
+              "region": {},
+              "path": {
+                "elements": [
+                  "src",
+                  "enumCases",
+                  "Ok",
+                  "v"
+                ]
+              },
+              "name": {
+                "region": {},
+                "value": "v"
+              },
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            }
+          ],
+          "implBlocks": [
+            {
+              "region": {},
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "enumCases",
+                      "Result"
+                    ]
+                  }
+                },
+                "generics": [
+                  {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "T"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  },
+                  {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "E"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  }
+                ]
+              },
+              "functions": []
+            }
+          ]
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "Err"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "Err"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isThrowable": false
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            },
+            {
+              "region": {},
+              "name": "E"
+            }
+          ],
+          "annotations": [],
+          "functions": [],
+          "fields": [
+            {
+              "region": {},
+              "path": {
+                "elements": [
+                  "src",
+                  "enumCases",
+                  "Err",
+                  "e"
+                ]
+              },
+              "name": {
+                "region": {},
+                "value": "e"
+              },
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "E"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            }
+          ],
+          "implBlocks": [
+            {
+              "region": {},
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "enumCases",
+                      "Result"
+                    ]
+                  }
+                },
+                "generics": [
+                  {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "T"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  },
+                  {
+                    "region": {},
+                    "name": {
+                      "region": {},
+                      "value": {
+                        "elements": [
+                          "E"
+                        ]
+                      }
+                    },
+                    "generics": []
+                  }
+                ]
+              },
+              "functions": []
+            }
+          ]
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "ok"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "ok"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "v"
+              },
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            }
+          ],
+          "returnType": {
+            "region": {},
+            "name": {
+              "region": {},
+              "value": {
+                "elements": [
+                  "Result"
+                ]
+              }
+            },
+            "generics": [
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              },
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "E"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            ]
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            },
+            {
+              "region": {},
+              "name": "E"
+            }
+          ],
+          "expr": {
+            "region": {},
+            "createType": {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": {
+                  "elements": [
+                    "Ok"
+                  ]
+                }
+              },
+              "generics": []
+            },
+            "parameters": [
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": "v"
+                },
+                "expr": {
+                  "region": {},
+                  "name": "v"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "region": {},
+          "name": {
+            "region": {},
+            "value": "err"
+          },
+          "path": {
+            "elements": [
+              "src",
+              "enumCases",
+              "err"
+            ]
+          },
+          "modifier": {
+            "isPrivate": false,
+            "isStatic": false
+          },
+          "annotations": [],
+          "parameters": [
+            {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": "e"
+              },
+              "type": {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "E"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            }
+          ],
+          "returnType": {
+            "region": {},
+            "name": {
+              "region": {},
+              "value": {
+                "elements": [
+                  "Result"
+                ]
+              }
+            },
+            "generics": [
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "T"
+                    ]
+                  }
+                },
+                "generics": []
+              },
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": {
+                    "elements": [
+                      "E"
+                    ]
+                  }
+                },
+                "generics": []
+              }
+            ]
+          },
+          "generics": [
+            {
+              "region": {},
+              "name": "T"
+            },
+            {
+              "region": {},
+              "name": "E"
+            }
+          ],
+          "expr": {
+            "region": {},
+            "createType": {
+              "region": {},
+              "name": {
+                "region": {},
+                "value": {
+                  "elements": [
+                    "Err"
+                  ]
+                }
+              },
+              "generics": []
+            },
+            "parameters": [
+              {
+                "region": {},
+                "name": {
+                  "region": {},
+                  "value": "e"
+                },
+                "expr": {
+                  "region": {},
+                  "name": "e"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

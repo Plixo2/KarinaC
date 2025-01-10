@@ -2,6 +2,7 @@ package org.karina.lang.compiler.api;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.boot.DebugWriter;
 import org.karina.lang.compiler.parser.KarinaUnitParser;
 import org.karina.lang.compiler.errors.ErrorCollector;
@@ -9,6 +10,7 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
+import org.karina.lang.compiler.stages.sugar.SugarResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.List;
 public class KarinaDefaultCompiler implements KarinaCompiler {
     @Getter
     @Accessors(fluent = true)
-    private KTree.KPackage tree;
+    private @Nullable KTree.KPackage tree;
 
 
 
@@ -28,7 +30,10 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
             try (var errorCollection = new ErrorCollector()) {
                 parseTree = parseFiles(files, errorCollection);
             }
-            var importedTree = importTree(parseTree);
+            var desugaredTree = desugarTree(parseTree);
+            DebugWriter.write(desugaredTree, "resources/sugar.json");
+
+            var importedTree = importTree(desugaredTree);
             var attributedTree = attributeTree(importedTree);
             this.tree = attributedTree;
 
@@ -70,16 +75,17 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
 
     }
 
-    /*
-     * Imports the tree, resolving all imports, build symbol table
-     */
+
     private KTree.KPackage importTree(KTree.KPackage kPackage) {
         return new ImportResolver().importTree(kPackage);
     }
 
-    /**
-     * Attributing the tree, resolving all types
-     */
+
+    private KTree.KPackage desugarTree(KTree.KPackage root) throws Log.KarinaException {
+        return new SugarResolver().desugarTree(root);
+    }
+
+
     private KTree.KPackage attributeTree(KTree.KPackage tree) {
         return new AttributionResolver().attribTree(tree);
     }

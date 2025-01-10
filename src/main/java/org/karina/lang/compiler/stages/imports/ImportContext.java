@@ -21,10 +21,10 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
         return resolveType(type, false);
     }
 
-    KType resolveType(KType type, boolean canInferGenerics) {
+    KType resolveType(KType type, boolean mustInferGenerics) {
         switch (type) {
             case KType.UnprocessedType(var region, var name, var generics) -> {
-                return resolveUnprocessed(region, name, generics, canInferGenerics);
+                return resolveUnprocessed(region, name, generics, mustInferGenerics);
             }
             case KType.ArrayType arrayType -> {
                 return new KType.ArrayType(
@@ -48,7 +48,7 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
         }
     }
 
-    private KType resolveUnprocessed(Span region, SpanOf<ObjectPath> path, List<KType> generics, boolean canInferGenerics) {
+    private KType resolveUnprocessed(Span region, SpanOf<ObjectPath> path, List<KType> generics, boolean mustInferGenerics) {
         KTree.KTypeItem referredItem;
         var name = path.value();
         var head = name.first();
@@ -82,13 +82,13 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
             //#region Error
             var names = this.table.availableTypeNames();
 
-            Log.importError(new ImportError.UnknownImportType(region, name.last(), names, this.root));
+            Log.importError(new ImportError.UnknownImportType(region, name.toString(), names, this.root));
             throw new Log.KarinaException();
             //#endregion
         }
 
         var resolvedGenerics = generics.stream().map(this::resolveType).toList();
-        var checkGenerics = !resolvedGenerics.isEmpty()  || !canInferGenerics;
+        var checkGenerics = !resolvedGenerics.isEmpty()  || !mustInferGenerics;
         if (checkGenerics && resolvedGenerics.size() != referredItem.generics().size()) {
             Log.importError(
                     new ImportError.GenericCountMismatch(
@@ -100,6 +100,14 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
             );
             throw new Log.KarinaException();
         }
+        if (mustInferGenerics && !generics.isEmpty()) {
+            var areAllAny = resolvedGenerics.stream().allMatch(ref -> ref instanceof KType.AnyClass);
+            if (!areAllAny) {
+                Log.temp(region, "Generics must be inferred, they cannot be checked at runtime");
+                throw new Log.KarinaException();
+            }
+        }
+
         var namedPosition = SpanOf.span(path.region(), referredItem.path());
         return new KType.ClassType(region, namedPosition, resolvedGenerics);
 

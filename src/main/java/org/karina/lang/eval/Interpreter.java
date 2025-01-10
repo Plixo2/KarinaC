@@ -18,7 +18,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @Getter
 @Accessors(fluent = true)
-public class Solver {
+public class Interpreter {
     private final FunctionCollection collection;
 
     public Object eval(FunctionCollection.RuntimeFunction function, Object self, List<Object> args) {
@@ -71,13 +71,16 @@ public class Solver {
                 assert assignment.symbol() != null;
                 switch (assignment.symbol()) {
                     case AssignmentSymbol.ArrayElement arrayElement -> {
-                        var array = (List<Object>) eval(arrayElement.array(), env);
-                        var index = ((BigDecimal) eval(arrayElement.index(), env)).intValue();
+                        var array = (Object[]) eval(arrayElement.array(), env);
                         assert array != null;
-                        array.set(index, eval(assignment.right(), env));
+                        var indexObj = eval(arrayElement.index(), env);
+                        assert indexObj != null;
+                        var index = ((BigDecimal) indexObj).intValue();
+                        array[index] = eval(assignment.right(), env);
                     }
                     case AssignmentSymbol.Field field -> {
                         var obj = (HashMap<String,Object>) eval(field.object(), env);
+                        assert obj != null;
                         obj.put(field.name(), eval(assignment.right(), env));
                     }
                     case AssignmentSymbol.LocalVariable localVariable -> {
@@ -90,7 +93,8 @@ public class Solver {
             case KExpr.Binary binary -> {
                 var left = eval(binary.left(), env);
                 var right = eval(binary.right(), env);
-
+                assert left != null;
+                assert right != null;
                 yield switch (binary.operator().value()) {
                     case ADD -> {
                         yield ((BigDecimal) left).add((BigDecimal) right);
@@ -149,6 +153,7 @@ public class Solver {
             }
             case KExpr.Branch branch -> {
                 var eval = eval(branch.condition(), env);
+                assert eval != null;
                 boolean condition;
                 if (branch.branchPattern() != null) {
                     if (!(branch.branchPattern() instanceof BranchPattern.Cast cast)) {
@@ -227,7 +232,7 @@ public class Solver {
                     obj[i] = eval(createArray.elements().get(i), env);
                 }
 
-                yield new ArrayList<>(List.of(obj));
+                yield obj;
             }
             case KExpr.CreateObject createObject -> {
 
@@ -245,7 +250,8 @@ public class Solver {
             }
             case KExpr.For aFor -> {
 
-                var array = (List<Object>) eval(aFor.iter(), env);
+                var array = (Object[]) eval(aFor.iter(), env);
+                assert array != null;
 
                 for (var o : array) {
                     env.set(aFor.symbol(), o);
@@ -264,15 +270,19 @@ public class Solver {
                 yield null;
             }
             case KExpr.GetArrayElement getArrayElement -> {
-                var array = (List<Object>) eval(getArrayElement.left(), env);
-                var index = ((BigDecimal) eval(getArrayElement.index(), env)).intValue();
-                yield array.get(index);
+                var array = (Object[]) eval(getArrayElement.left(), env);
+                assert array != null;
+                var indexVal = (BigDecimal) eval(getArrayElement.index(), env);
+                assert indexVal != null;
+                var index = indexVal.intValue();
+                yield array[index];
             }
             case KExpr.GetMember getMember -> {
                 assert getMember.symbol() != null;
                 yield switch (getMember.symbol()) {
                     case MemberSymbol.FieldSymbol fieldSymbol -> {
                         var obj = (HashMap<?, ?>) eval(getMember.left(), env);
+                        assert obj != null;
                         yield obj.get(fieldSymbol.name());
                     }
                     case MemberSymbol.VirtualFunctionSymbol virtualFunctionSymbol -> {
@@ -282,7 +292,6 @@ public class Solver {
             }
             case KExpr.IsInstanceOf isInstanceOf -> {
                 var obj = eval(isInstanceOf.left(), env);
-
                 yield checkCast(obj, isInstanceOf.isType());
             }
             case KExpr.Literal literal -> {
@@ -317,11 +326,13 @@ public class Solver {
             }
             case KExpr.Unary unary -> {
                 assert unary.symbol() != null;
+                var eval = eval(unary.value(), env);
+                assert eval != null;
                 yield switch (unary.symbol()) {
                     case UnaryOperatorSymbol.NegateOP negateOP ->
-                            ((BigDecimal) eval(unary.value(), env)).negate();
+                            ((BigDecimal) eval).negate();
                     case UnaryOperatorSymbol.NotOP notOP ->
-                            !((boolean) eval(unary.value(), env));
+                            !((boolean) eval);
                 };
             }
             case KExpr.VariableDefinition variableDefinition -> {
@@ -329,7 +340,9 @@ public class Solver {
                 yield null;
             }
             case KExpr.While aWhile -> {
-                boolean condition = (boolean) eval(aWhile.condition(), env);
+                var eval = eval(aWhile.condition(), env);
+                assert eval != null;
+                boolean condition = (boolean) eval;
 
                 while (condition) {
                     try {
@@ -343,7 +356,9 @@ public class Solver {
                             throw flow;
                         }
                     }
-                    condition = (boolean) eval(aWhile.condition(), env);
+                    var rest = eval(aWhile.condition(), env);
+                    assert rest != null;
+                    condition = (boolean) rest;
                 }
                 yield null;
 
@@ -354,6 +369,30 @@ public class Solver {
                 throw new EvalException(value);
             }
         };
+    }
+
+    public static String toString(Object object) {
+        if (object == null) {
+            return "null";
+        }
+
+        if (object.getClass().isArray()) {
+            return Arrays.toString((Object[]) object);
+        } else if (object instanceof HashMap<?,?> map) {
+            var builder = new StringBuilder();
+            builder.append("{");
+            for (var entry : map.entrySet()) {
+                builder.append(entry.getKey());
+                builder.append(": ");
+                builder.append(toString(entry.getValue()));
+                builder.append(", ");
+            }
+            builder.append("}");
+            return builder.toString();
+        } else {
+            return object.toString();
+        }
+
     }
 
     private boolean checkCast(Object object, KType cast) {
@@ -382,13 +421,14 @@ public class Solver {
             }
             case KType.Resolvable resolvable -> false;
             case KType.UnprocessedType unprocessedType -> false;
+            case KType.AnyClass anyClass -> false;
         };
     }
 
 
 
 
-    public static Solver fromTree(KTree.KPackage kPackage) {
+    public static Interpreter fromTree(KTree.KPackage kPackage) {
         var functions = new ArrayList<KTree.KFunction>();
         for (var kUnit : kPackage.getAllUnitsRecursively()) {
             for (var item : kUnit.items()) {
@@ -412,7 +452,7 @@ public class Solver {
             collection.putFunction(function.path(), func);
         }
 
-        return new Solver(collection);
+        return new Interpreter(collection);
 
     }
 

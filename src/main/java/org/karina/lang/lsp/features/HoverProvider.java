@@ -10,6 +10,7 @@ import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
 import org.karina.lang.compiler.stages.imports.ItemImporting;
+import org.karina.lang.compiler.stages.sugar.SugarResolver;
 import org.karina.lang.lsp.ErrorHandler;
 import org.karina.lang.lsp.EventHandler;
 import org.karina.lang.lsp.fs.KarinaFile;
@@ -35,9 +36,8 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
             return null;
         }
         var virtualPackageRoot = TypeInfoProvider.packageFromVirtualTree(root);
-        var resolver = new ImportResolver();
         var definitionSite =
-                tryImportIndividual(resolver, virtualPackageRoot, requestFile, typed, position);
+                tryImportIndividual(virtualPackageRoot, requestFile, typed, position);
         if (definitionSite != null) {
             var range = EventHandler.regionToRange(definitionSite.referred());
             var code = String.join("\n", LogBuilder.getCodeOfRegion(definitionSite.region(), false));
@@ -55,13 +55,16 @@ public class HoverProvider extends AbstractTypeTokenProvider<Hover> {
             return new Hover(markedString, range);
         } else {
             //Advanced hover
+            var sugarResolver = new SugarResolver();
             var importer = new ImportResolver();
             var attributes = new AttributionResolver();
 
             var result = ErrorHandler.mapInternal(() -> {
-                var imported = importer.importUnit(virtualPackageRoot, typed);
-                var replacedTree = replaceUnit(virtualPackageRoot, imported.path(), imported);
-                return attributes.attribUnit(replacedTree, imported);
+                var desugared = sugarResolver.desugarUnit(virtualPackageRoot, typed);
+                var replacedTreeSugar = HoverProvider.replaceUnit(virtualPackageRoot, desugared.path(), desugared);
+                var imported = importer.importUnit(replacedTreeSugar, desugared);
+                var replacedTreeImport = HoverProvider.replaceUnit(replacedTreeSugar, imported.path(), imported);
+                return attributes.attribUnit(replacedTreeImport, imported);
             });
 
             if (!(result instanceof ErrorHandler.Result.onSuccess<KTree.KUnit>(var unit))) {

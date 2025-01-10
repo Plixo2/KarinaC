@@ -15,25 +15,53 @@ fn main() {
     list.add(9)
 
     let newList = list.map(fn(v) v).filter(fn(v) v > 5);
-    newList.forEach(fn(v) println(v))
+    //newList.forEach(fn(v) println(v))
 
-    println(newList.contains(fn(v) v == 6))
-    println(newList.indexOf(fn(v) v == 4))
-    println(newList.indexOf(fn(v) v == 8))
+    //  println(newList.contains(fn(v) v == 6))
+    //  println(newList.indexOf(fn(v) v == 4))
+    //   println(newList.indexOf(fn(v) v == 8))
 
-    let inte = {
-        0 + 1 * 10
-    } 
+    //  println("------")
+    //let s: Option<int> = Some { value: 5 }
 
-    println(1 * 2 + 3)
+    let value = some(5)
+    if value is Some<?> s {
+        let w = s.value * 2
+        println(w)
+    } else if value is None<?> n {
+        let w = n;
 
+    }
+
+    write(Car { color: "red" })
+
+    println(orElse(Some { value: 5 }, 10))
+    println(orElse(None {}, 10))
+
+    println(none() is Some<?>)
+    println(some(5) is Some<?>)
 
     0
 }
 
+struct Car {
+    color: string
+
+    impl Serializable {
+    }
+}
+interface Serializable {
+
+}
+
+fn write(s: Serializable) {
+    println("Writing")
+}
+
+fn orElse<T>(o: Option<int>, t: T) -> int = if o is Some s { s.value } else { t }
 
 
-fn cast<I, R>(i: I) -> R = i
+fn toAny<T>(t: T) -> ? = t
 
 
 struct List<T> {
@@ -41,16 +69,14 @@ struct List<T> {
     capacity: int
     size: int
     
-    fn size() -> int {
-        return 0
-    }
+    fn size() -> int = self.size
 
-    fn get(i: int) -> T {
+    fn get(i: int) -> Option<T> {
         if i >= self.size || i < 0 {
-           raise Error { message: "Index out of bounds" }
+           none()
         }
 
-        return self.storage[i]
+        some(self.storage[i])
     }
 
     fn set(i: int, v: T) {
@@ -85,7 +111,7 @@ struct List<T> {
             newList.set(index, f(self.storage[index]))
             index = index + 1
         }
-        return newList
+        newList
     }
 
     fn filter(f: fn(T) -> bool) -> List<T> {
@@ -99,9 +125,7 @@ struct List<T> {
             index = index + 1
         }
 
-        return newList
-
-
+        newList
     }
 
     fn forEach(f: fn(T)) {
@@ -120,18 +144,18 @@ struct List<T> {
             }
             index = index + 1
         }
-        return false
+        false
     }
 
-    fn indexOf(f: fn(T) -> bool) -> int {
+    fn indexOf(f: fn(T) -> bool) -> Option<int> {
         let index = 0
         while index < self.size {
             if f(self.storage[index]) {
-                return index
+                return some(index)
             }
             index = index + 1
         }
-        return -1
+        none()
     }
 
     fn iterator() -> Iterator<T> {
@@ -145,10 +169,45 @@ struct List<T> {
 
         let hasNext = fn () index[0] < self.size
 
-        return Iterator { next: next, hasNext: hasNext }
+        Iterator { next: next, hasNext: hasNext }
+    }
+
+    fn asArray() -> [T] {
+        let newArray = array(self.size)
+        let index = 0
+        while index < self.size {
+            newArray[index] = self.storage[index]
+            index = index + 1
+        }
+        newArray
     }
 
 }
+
+enum Option<T> {
+    Some(value: T)
+    None
+}
+
+fn some<T>(v: T) -> Option<T> = Some { value: v }
+fn none<T>() -> Option<T> = None {}
+
+
+enum Result<T, E> {
+    Ok(v: T)
+    Err(e: E)
+}
+
+fn ok<T, E>(v: T) -> Result<T, E> = Ok { v: v }
+fn err<T, E>(e: E) -> Result<T, E> = Err { e: e }
+
+
+
+struct Region {
+    start: int
+    end: int
+}
+
 
 @Throwable
 struct Error { 
@@ -175,17 +234,6 @@ fn array<T>(size: int) -> [T] = []
 @Native
 fn println<T>(v: T) {}
 
-fn getNonSpecial<T>(a: [T]) -> NonSpecial<T> = NonSpecial{ a: a[0] }
-
-struct NonSpecial<T> {
-    a: T
-}
-
-fn boolToString(b: bool) -> string = if b { "true" } else { "false" }
-
-fn callMe<T>(i: Help<T>) -> Help<T> {
-    return i
-}
 
 struct Help<T> {
     a: int

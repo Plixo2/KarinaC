@@ -11,6 +11,16 @@ import java.util.List;
 public class DiagnosticCollection implements Iterable<Log.LogWithTrace> {
     private final List<Log.LogWithTrace> traces = new ArrayList<>();
 
+    public static void printDiagnostic(DiagnosticCollection collection, boolean printVerbose) {
+            System.out.println("\u001B[31mCompilation failed\u001B[0m");
+            System.out.flush();
+            System.err.println();
+            for (var log : collection) {
+                System.err.println(log.mkString(printVerbose));
+            }
+            System.err.flush();
+    }
+
     public void addAll(Collection<Log.LogWithTrace> logs) {
         this.traces.addAll(logs);
     }

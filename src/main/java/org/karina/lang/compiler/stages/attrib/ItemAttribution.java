@@ -25,6 +25,7 @@ public class ItemAttribution {
         var build = KTree.KFunction.builder();
         build.region(function.region());
         build.name(function.name());
+        build.modifier(function.modifier());
         build.path(function.path());
 
         KType returnType = function.returnType();

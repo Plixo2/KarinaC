@@ -28,6 +28,10 @@ public class LogFactory<T extends LogBuilder> {
                 invalidState.append("Class: ").append(aClass.getSimpleName());
                 invalidState.setPrimarySource(region);
             }
+            case Error.ParseError(var msg) -> {
+                var parseError = builder.setTitle("Parse Error");
+                parseError.append(msg);
+            }
             case Error.SyntaxError(var region, var msg) -> {
                 var syntaxError = builder.setTitle("Syntax Error");
                 syntaxError.append(msg);

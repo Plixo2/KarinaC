@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.boot;
 
+import org.apache.commons.cli.ParseException;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.DiagnosticCollection;
 import org.karina.lang.compiler.api.FileTreeNode;
@@ -21,17 +22,39 @@ public class BootHelper {
         System.out.println(welcome_small);
     }
 
-
-    public static void printDiagnostic(DiagnosticCollection collection, boolean printVerbose) {
-        System.out.println("\u001B[31mCompilation failed\u001B[0m");
-        System.out.flush();
-        System.err.println();
-        for (var log : collection) {
-            System.err.println(log.mkString(printVerbose));
+    public static void exitOnNull(Object object, DiagnosticCollection collection, boolean verbose) {
+        if (object == null) {
+            DiagnosticCollection.printDiagnostic(collection, false);
+            System.exit(1);
         }
-        System.err.flush();
     }
 
+
+    public static @Nullable CompileConfig loadCfg(String[] args, DiagnosticCollection collection){
+
+        try {
+            try {
+                var parsed = CompileConfig.parseArgs(args);
+                if (Log.hasErrors()) {
+                    System.err.println("Errors in log, this should not happen");
+                }
+                return parsed;
+            } catch(ParseException e) {
+                Log.cliParseError(e.getMessage());
+                throw new Log.KarinaException();
+            }
+        } catch (Log.KarinaException ignored) {
+            if (!Log.hasErrors()) {
+                System.out.println("An exception was thrown, but no errors were logged");
+            } else {
+                collection.addAll(Log.getEntries());
+            }
+            return null;
+        } finally {
+            Log.clearLogs();
+        }
+
+    }
 
     public static @Nullable FileTreeNode loadFiles(String path, DiagnosticCollection collection) {
 

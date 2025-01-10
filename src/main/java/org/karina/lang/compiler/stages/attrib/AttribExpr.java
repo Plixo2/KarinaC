@@ -59,7 +59,7 @@ public class AttribExpr {
         return attribExpr;
     }
 
-    protected static KType replaceType(KType original, Map<Generic, KType> generics) {
+    public static KType replaceType(KType original, Map<Generic, KType> generics) {
         return switch (original) {
             case KType.ArrayType(var region, var element) -> {
                 var newElement = replaceType(element, generics);
@@ -120,6 +120,7 @@ public class AttribExpr {
             case KType.UnprocessedType unprocessedType -> {
                 yield unprocessedType;
             }
+            case KType.AnyClass anyClass -> anyClass;
         };
     }
 

@@ -35,6 +35,7 @@ type: 'void'
     | 'float'
     | 'bool'
     | 'string'
+    | '?'
     | structType
     | arrayType
     | functionType

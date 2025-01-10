@@ -111,6 +111,7 @@ public class KarinaVisitor {
                 region,
                 name,
                 objectPath,
+                new FunctionModifier(),
                 annotations,
                 parameters,
                 returnType,
@@ -205,7 +206,8 @@ public class KarinaVisitor {
                 generics,
                 annotations,
                 functions,
-                superTypes
+                superTypes,
+                List.of()
         );
 
     }

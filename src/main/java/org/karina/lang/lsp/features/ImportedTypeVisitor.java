@@ -142,6 +142,9 @@ public class ImportedTypeVisitor {
                 EventHandler.INSTANCE.errorMessage("Unprocessed type: " + type);
             }
 
+            case KType.AnyClass anyClass -> {
+                // Nothing to do
+            }
         }
     }
 

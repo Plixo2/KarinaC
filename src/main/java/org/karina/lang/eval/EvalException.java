@@ -9,6 +9,7 @@ public class EvalException extends RuntimeException {
     private Object object;
 
     public EvalException(Object object) {
-        super(object.toString());
+        super(Interpreter.toString(object));
     }
+
 }

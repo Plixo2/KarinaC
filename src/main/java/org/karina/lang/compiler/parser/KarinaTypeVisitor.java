@@ -49,7 +49,10 @@ public class KarinaTypeVisitor {
             return visitFunctionType(ctx.functionType());
         } else if (ctx.type() != null) {
             return visitType(ctx.type());
-        }   else {
+        } else if (ctx.CHAR_QUESTION() != null) {
+            return new KType.AnyClass(region);
+        }
+        else {
             Log.syntaxError(region, "Invalid type");
             throw new Log.KarinaException();
         }

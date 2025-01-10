@@ -9,6 +9,7 @@ import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
+import org.karina.lang.compiler.stages.sugar.SugarResolver;
 import org.karina.lang.lsp.*;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;
@@ -58,13 +59,16 @@ public class InlayHintProvider {
             return List.of();
         }
         var virtualPackageRoot = TypeInfoProvider.packageFromVirtualTree(root);
+        var sugarResolver = new SugarResolver();
         var importer = new ImportResolver();
         var attributes = new AttributionResolver();
 
         var result = ErrorHandler.mapInternal(() -> {
-            var imported = importer.importUnit(virtualPackageRoot, typed);
-            var replacedTree = HoverProvider.replaceUnit(virtualPackageRoot, imported.path(), imported);
-            return attributes.attribUnit(replacedTree, imported);
+            var desugared = sugarResolver.desugarUnit(virtualPackageRoot, typed);
+            var replacedTreeSugar = HoverProvider.replaceUnit(virtualPackageRoot, desugared.path(), desugared);
+            var imported = importer.importUnit(replacedTreeSugar, desugared);
+            var replacedTreeImport = HoverProvider.replaceUnit(replacedTreeSugar, imported.path(), imported);
+            return attributes.attribUnit(replacedTreeImport, imported);
         });
 
         if (!(result instanceof ErrorHandler.Result.onSuccess<KTree.KUnit>(var unit))) {
@@ -154,6 +158,9 @@ public class InlayHintProvider {
             }
             case KType.UnprocessedType unprocessedType -> {
                 return unprocessedType.toString();
+            }
+            case KType.AnyClass anyClass -> {
+                return "?";
             }
         }
     }

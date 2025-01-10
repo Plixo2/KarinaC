@@ -8,6 +8,7 @@ import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
 import org.karina.lang.compiler.stages.imports.ItemImporting;
+import org.karina.lang.compiler.stages.sugar.SugarResolver;
 import org.karina.lang.lsp.*;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;
@@ -57,11 +58,11 @@ public abstract class AbstractTypeTokenProvider<T> {
 
     protected abstract @Nullable T getType(SyncFileTree root, KarinaFile requestFile, Span.Position position);
 
-    protected @Nullable GoToDefinitionProvider.TypeDefinitionSite tryImportIndividual(
-            ImportResolver resolver, KTree.KPackage root, KarinaFile file, KTree.KUnit unit, Span.Position position) {
+    protected @Nullable GoToDefinitionProvider.TypeDefinitionSite tryImportIndividual(KTree.KPackage root, KarinaFile file, KTree.KUnit unit, Span.Position position) {
 
         var error = ErrorHandler.mapInternal(() -> {
-            var importedUnit = resolver.importUnit(root, unit);
+            var desugared = new SugarResolver().desugarUnit(root, unit);
+            var importedUnit = new ImportResolver().importUnit(root, desugared);
             var list = new ArrayList<ImportedTypeVisitor.SourceLocation>();
             var typeVisitor = new ImportedTypeVisitor(list);
             typeVisitor.populateTypeList(importedUnit);

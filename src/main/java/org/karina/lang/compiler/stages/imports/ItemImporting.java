@@ -170,6 +170,7 @@ public class ItemImporting {
         build.region(function.region());
         build.name(function.name());
         build.path(function.path());
+        build.modifier(function.modifier());
         build.annotations(function.annotations());
         build.generics(function.generics());
 
@@ -251,7 +252,8 @@ public class ItemImporting {
 
         var ctx = new ImportContext(root, ctxBuilder.build());
 
-        build.type(ctx.resolveType(implBlock.type()));
+        var type = ctx.resolveType(implBlock.type());
+        build.type(type);
 
         for (var function : implBlock.functions()) {
             build.function(importFunction(root, ctxBuilder.copy(), function));

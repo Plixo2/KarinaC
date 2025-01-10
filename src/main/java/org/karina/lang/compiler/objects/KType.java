@@ -83,6 +83,13 @@ public sealed interface KType {
 
     }
 
+    record AnyClass(Span region) implements KType {
+        @Override
+        public String toString() {
+            return "Any";
+        }
+    }
+
     record GenericLink(Span region, Generic link) implements KType {
 
         @Override
@@ -187,6 +194,7 @@ public sealed interface KType {
             }
         }
     }
+
 
     sealed interface PrimitiveType extends KType {
 
@@ -316,6 +324,8 @@ public sealed interface KType {
                 if (resolvable.get() != null) {
                     getDependencies(level + 1, resolvable.get(), dependencies);
                 }
+            }
+            case AnyClass anyClass -> {
             }
             case UnprocessedType unprocessedType -> {
             }

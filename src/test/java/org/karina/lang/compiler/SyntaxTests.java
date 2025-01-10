@@ -16,7 +16,7 @@ import org.karina.lang.compiler.errors.types.ImportError;
 import java.io.File;
 import java.util.*;
 
-public class CoverageTest {
+public class SyntaxTests {
     private static final String TEST_DIR = "resources/tests/files/";
 
     private static Map<String, Class<? extends Error>> map = new HashMap<>();
@@ -60,8 +60,8 @@ public class CoverageTest {
         map.put("MissingField", AttribError.MissingField.class);
         map.put("UnknownField", AttribError.UnknownField.class);
 
-        CoverageTest.map = new HashMap<>();
-        map.forEach((key, value) -> CoverageTest.map.put(key.toLowerCase(), value));
+        SyntaxTests.map = new HashMap<>();
+        map.forEach((key, value) -> SyntaxTests.map.put(key.toLowerCase(), value));
     }
 
     @Test
@@ -94,7 +94,9 @@ public class CoverageTest {
 
     }
 
-    private void testSingleFile(TestFile file) {
+
+
+    private static void testSingleFile(TestFile file) {
         if (file.source.lines().isEmpty()) {
             throw new AssertionError("Empty file: " + file.name);
         }
@@ -108,10 +110,9 @@ public class CoverageTest {
                 file.expect();
             }
         }
-
     }
 
-    private TestType getTestType(String line, String name)  {
+    private static TestType getTestType(String line, String name)  {
         var stripped = line.strip();
         if (!stripped.startsWith("/*") || !stripped.endsWith("*/")) {
             throw new AssertionError("Expected type not found in file: " + name);
@@ -129,12 +130,12 @@ public class CoverageTest {
 
     }
 
-    private sealed interface TestType {
+    public sealed interface TestType {
         record Ok() implements TestType {}
         record Error(Class<?> errorClass) implements TestType {}
     }
 
-    private Class<? extends Error> errorClasFromName(String name) {
+    public static Class<? extends Error> errorClasFromName(String name) {
         var lowerCase = name.toLowerCase();
         if (map.containsKey(lowerCase)) {
             return map.get(lowerCase);
@@ -149,7 +150,7 @@ public class CoverageTest {
     }
 
 
-    private static List<File> loadSingleFiles(String testDir) {
+    public static List<File> loadSingleFiles(String testDir) {
         var files = new ArrayList<File>();
 
         var file1 = new File(testDir);

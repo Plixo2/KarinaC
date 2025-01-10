@@ -14,13 +14,11 @@ public class Main {
         var compiler = new KarinaDefaultCompiler();
         var collection = new DiagnosticCollection();
 
-        var config = CompileConfig.parseArgs(args);
+        var config = BootHelper.loadCfg(args, collection);
+        BootHelper.exitOnNull(config, collection, false);
+        assert config != null;
         var fileTree = BootHelper.loadFiles(config.sourceDirectory, collection);
-        if (fileTree == null) {
-            BootHelper.printDiagnostic(collection, config.printVerbose);
-            System.exit(1);
-            return;
-        }
+        BootHelper.exitOnNull(fileTree, collection, config.printVerbose);
         BootHelper.printFileTree(fileTree);
 
         var success = compiler.compile(fileTree, collection);
@@ -29,7 +27,7 @@ public class Main {
             System.out.println("\u001B[33mCompilation successful\u001B[0m");
             System.out.flush();
         } else {
-            BootHelper.printDiagnostic(collection, config.printVerbose);
+            DiagnosticCollection.printDiagnostic(collection, config.printVerbose);
             System.exit(1);
         }
 

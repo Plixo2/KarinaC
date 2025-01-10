@@ -6,6 +6,8 @@ import org.karina.lang.compiler.boot.DefaultFileTree;
 import org.karina.lang.compiler.api.DiagnosticCollection;
 import org.karina.lang.compiler.api.KarinaDefaultCompiler;
 import org.karina.lang.compiler.errors.types.Error;
+import org.karina.lang.eval.SimpleLibrary;
+import org.karina.lang.eval.Interpreter;
 
 import java.util.List;
 
@@ -33,41 +35,10 @@ public class TestFile {
         var success = compiler.compile(fileTree, collection);
 
         if (!success) {
-            for (var log : collection) {
-                System.err.println(log.mkString(true));
-            }
-            System.err.flush();
+            DiagnosticCollection.printDiagnostic(collection, true);
             throw new AssertionError("Expected success for '" + this.name + "'");
         }
     }
-
-//    public void expectError() {
-//        expectError("");
-//    }
-//
-//    public void expectError(String msg) {
-//        var compiler = new KarinaDefaultCompiler();
-//        var collection = new DiagnosticCollection();
-//
-//        var basePath = new ObjectPath("src");
-//        var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
-//        var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-//        var success = compiler.compile(fileTree, collection);
-//
-//        if (success) {
-//            throw new AssertionError("Expected Fail for '" + this.name + "'");
-//        } else {
-//            if (msg.isEmpty()) {
-//                return;
-//            }
-//            for (var log : collection) {
-//               if (log.mkString(true).contains(msg)) {
-//                   return;
-//               }
-//            }
-//            throw new AssertionError("Expected Fail for '" + this.name + "' with '" + msg + "'");
-//        }
-//    }
 
     public <T> void expectError(Class<T> errorType) {
         expectError(errorType, "");
@@ -106,6 +77,30 @@ public class TestFile {
                             " but got " + (lastError == null ? "no errors" : lastError.getClass().getSimpleName());
             throw new AssertionError(message);
         }
+    }
+
+    public Object run(String function) {
+        var compiler = new KarinaDefaultCompiler();
+        var collection = new DiagnosticCollection();
+
+        var basePath = new ObjectPath("src");
+        var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
+        var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
+        var success = compiler.compile(fileTree, collection);
+
+        if (!success) {
+            DiagnosticCollection.printDiagnostic(collection, true);
+            throw new AssertionError("Expected success for '" + this.name + "'");
+        }
+
+        assert compiler.tree() != null;
+        var solver = Interpreter.fromTree(compiler.tree());
+        var testLibrary = new TestLibrary();
+        testLibrary.addToInterpreter(solver);
+
+        var foundFunction = solver.collection().function(function);
+
+        return solver.eval(foundFunction, null, List.of());
     }
 
     private record TestResource(String name) implements Resource {

@@ -50,6 +50,10 @@ public record AttributionContext(
         this.checking.assign(region, left, right);
     }
 
+    public boolean canAssign(Span region, KType left, KType right, boolean mutable) {
+        return this.checking.canAssign(region, left, right, mutable);
+    }
+
     public AttributionContext setInLoop(boolean isLoop) {
         return new AttributionContext(
                 this.root,

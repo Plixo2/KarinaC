@@ -75,6 +75,10 @@ public class Log {
         addError(new Error.TemporaryErrorRegion(region, msg));
     }
 
+    public static void cliParseError(String message) {
+        addError(new Error.ParseError(message));
+    }
+
     public static void invalidState(Span region, Class<?> aClass, String expectedState) {
         addError(new Error.InvalidState(region, aClass, expectedState));
     }

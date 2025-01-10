@@ -4,10 +4,13 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.BranchPattern;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
+import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.Variable;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+
+import java.util.ArrayList;
 
 public class BranchAttrib extends AttribExpr {
     public static AttribExpr attribBranch(
@@ -21,17 +24,49 @@ public class BranchAttrib extends AttribExpr {
         BranchPattern branchPattern;
         switch (expr.branchPattern()) {
             case BranchPattern.Cast cast -> {
+                var isType = cast.type();
+
+                //replace all generics with AnyClass
+                if (isType instanceof KType.ClassType classType) {
+                    var item = KTree.findAbsolutItem(ctx.root(), classType.path().value());
+                    if (item instanceof KTree.KStruct typeItem) {
+                        var newGenerics = new ArrayList<KType>();
+                        for (var i = 0; i < typeItem.generics().size(); i++) {
+                            newGenerics.add(new KType.Resolvable(isType.region()));
+                        }
+                        isType = new KType.ClassType(
+                                isType.region(),
+                                classType.path(),
+                                newGenerics
+                        );
+                        //for inference only
+                        var ignored = ctx.canAssign(isType.region(), condition.type(), isType, true);
+                        //if not inferred, resolve to base case
+                        for (var newGeneric : newGenerics) {
+                            var type = (KType.Resolvable) newGeneric;
+                            if (!type.isResolved()) {
+                                type.tryResolve(new KType.AnyClass(isType.region()));
+                            }
+                        }
+                    } else {
+                        //should not happen
+                        Log.temp(expr.region(), "Type not found");
+                        throw new Log.KarinaException();
+                    }
+                }
+
+
                 var newSymbol = new Variable(
                         cast.castedName().region(),
                         cast.castedName().value(),
-                        cast.type(),
+                        isType,
                         false,
                         false
                 );
                 thenContext = thenContext.addVariable(newSymbol);
                 branchPattern = new BranchPattern.Cast(
                         cast.region(),
-                        cast.type(),
+                        isType,
                         cast.castedName(),
                         newSymbol
                 );

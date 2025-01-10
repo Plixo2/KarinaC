@@ -5,15 +5,15 @@ import lombok.experimental.Accessors;
 
 @Getter
 @Accessors(fluent = true)
-public class StructModifier {
+public class FunctionModifier {
     private boolean isPrivate = false;
-    private boolean isThrowable = false;
+    private boolean isStatic = false;
 
-    public StructModifier(boolean isPrivate, boolean isThrowable) {
+    public FunctionModifier(boolean isPrivate, boolean isStatic) {
         this.isPrivate = isPrivate;
-        this.isThrowable = isThrowable;
+        this.isStatic = isStatic;
     }
 
-    public StructModifier() {
+    public FunctionModifier() {
     }
 }

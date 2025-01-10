@@ -192,7 +192,8 @@ public final class KTree {
             @Singular List<Generic> generics,
             @Singular List<KAnnotation> annotations,
             @Singular List<KFunction> functions,
-            @Singular List<KType> superTypes
+            @Singular List<KType> superTypes,
+            @Singular List<ObjectPath> permittedStructs
     ) implements KTypeItem {}
 
     @Builder
@@ -224,6 +225,7 @@ public final class KTree {
             @NonNull Span region,
             @NonNull SpanOf<String> name,
             @NonNull ObjectPath path,
+            @NotNull FunctionModifier modifier,
             @Singular List<KAnnotation> annotations,
             @Singular List<KParameter> parameters,
             @Nullable KType returnType,
@@ -242,7 +244,7 @@ public final class KTree {
     public record KEnumEntry(Span region, SpanOf<String> name, @Singular List<KParameter> parameters) { }
 
 
-    public record KParameter(Span region, SpanOf<String> name, KType type, @Nullable Variable symbol) { }
+    public record KParameter(Span region, SpanOf<String> name, KType type, @Nullable @Symbol Variable symbol) { }
     public record KAnnotation(Span region, SpanOf<String> name, JsonElement value) { }
 
 }
