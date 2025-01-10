@@ -91,7 +91,7 @@ public class ExprImporting {
         } else {
             branchPattern = switch (expr.branchPattern()) {
                 case BranchPattern.Cast(var region, KType type, SpanOf<String> castedName, var ignored) -> {
-                    var resolved = ctx.resolveType(type, true);
+                    var resolved = ctx.resolveType(type, true, false);
                     yield new BranchPattern.Cast(region, resolved, castedName, null);
                 }
                 case BranchPattern.Destruct destruct -> {
@@ -120,7 +120,7 @@ public class ExprImporting {
                         throw new Log.KarinaException();
                     }
 
-                    var resolved = ctx.resolveType(destruct.type(), true);
+                    var resolved = ctx.resolveType(destruct.type(), true, false);
                     yield new BranchPattern.Destruct(destruct.region(), resolved, variables);
                 }
             };
@@ -210,7 +210,7 @@ public class ExprImporting {
     }
 
     private static KExpr importCreateObject(ImportContext ctx, KExpr.CreateObject expr) {
-        var createdType = ctx.resolveType(expr.createType(), true);
+        var createdType = ctx.resolveType(expr.createType(), false, true);
         var parameters = new ArrayList<NamedExpression>();
         try (var collector = new ErrorCollector()){
             for (var parameter : expr.parameters()) {
@@ -247,7 +247,7 @@ public class ExprImporting {
                 collector.collect(() -> {
                     var newCase = switch (aCase) {
                         case MatchPattern.Cast cast -> {
-                            var type = ctx.resolveType(cast.type(), true);
+                            var type = ctx.resolveType(cast.type(), true, false);
                             var newName = cast.name();
                             var body = importExpr(ctx, cast.expr());
                             yield new MatchPattern.Cast(
@@ -259,7 +259,7 @@ public class ExprImporting {
                         }
                         case MatchPattern.Destruct destruct -> {
                             var body = importExpr(ctx, destruct.expr());
-                            var type = ctx.resolveType(destruct.type(), true);
+                            var type = ctx.resolveType(destruct.type(), true, false);
                             var args = ItemImporting.importNameAndOptTypeList(ctx, destruct.variables(), collector);
                             var uniqueArgs = Unique.testUnique(args, NameAndOptType::name);
                             if (uniqueArgs != null) {
@@ -345,7 +345,7 @@ public class ExprImporting {
 
     private static KExpr importInstanceOf(ImportContext ctx, KExpr.IsInstanceOf expr) {
         var left = importExpr(ctx, expr.left());
-        var type = ctx.resolveType(expr.isType(), true);
+        var type = ctx.resolveType(expr.isType(), true, false);
         return new KExpr.IsInstanceOf(expr.region(), left, type);
     }
 

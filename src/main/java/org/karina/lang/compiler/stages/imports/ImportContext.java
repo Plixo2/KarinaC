@@ -18,13 +18,13 @@ import java.util.*;
 record ImportContext(KTree.KPackage root, SymbolTable table) {
 
     KType resolveType(KType type) {
-        return resolveType(type, false);
+        return resolveType(type, false, false);
     }
 
-    KType resolveType(KType type, boolean mustInferGenerics) {
+    KType resolveType(KType type, boolean mustInferGenerics, boolean canInfer) {
         switch (type) {
             case KType.UnprocessedType(var region, var name, var generics) -> {
-                return resolveUnprocessed(region, name, generics, mustInferGenerics);
+                return resolveUnprocessed(region, name, generics, mustInferGenerics, canInfer);
             }
             case KType.ArrayType arrayType -> {
                 return new KType.ArrayType(
@@ -48,7 +48,8 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
         }
     }
 
-    private KType resolveUnprocessed(Span region, SpanOf<ObjectPath> path, List<KType> generics, boolean mustInferGenerics) {
+    private KType resolveUnprocessed(Span region, SpanOf<ObjectPath> path, List<KType> generics, boolean mustInferGenerics, boolean canInfer) {
+
         KTree.KTypeItem referredItem;
         var name = path.value();
         var head = name.first();
@@ -88,7 +89,7 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
         }
 
         var resolvedGenerics = generics.stream().map(this::resolveType).toList();
-        var checkGenerics = !resolvedGenerics.isEmpty()  || !mustInferGenerics;
+        var checkGenerics = !resolvedGenerics.isEmpty()  || !(canInfer || mustInferGenerics);
         if (checkGenerics && resolvedGenerics.size() != referredItem.generics().size()) {
             Log.importError(
                     new ImportError.GenericCountMismatch(

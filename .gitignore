@@ -50,3 +50,4 @@ src/main/resources/grammar_old.txt
 src/main/resources/grammarOld.txt
 src/main/java/org/karina/lang/MutableList.java
 src/main/java/org/karina/lang/ImmutableList.java
+resources/sugar.json
