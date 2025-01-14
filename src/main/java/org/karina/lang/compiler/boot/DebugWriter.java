@@ -4,7 +4,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.api.TextSource;
 
 import java.io.FileWriter;

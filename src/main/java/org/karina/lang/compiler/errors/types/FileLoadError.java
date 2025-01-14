@@ -1,8 +1,5 @@
 package org.karina.lang.compiler.errors.types;
 
-import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Span;
-
 import java.io.File;
 
 public sealed interface FileLoadError extends Error {

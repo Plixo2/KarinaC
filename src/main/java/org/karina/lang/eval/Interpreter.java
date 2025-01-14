@@ -3,14 +3,14 @@ package org.karina.lang.eval;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.BranchPattern;
-import org.karina.lang.compiler.NameAndOptType;
-import org.karina.lang.compiler.ObjectPath;
+import org.karina.lang.compiler.symbols.*;
+import org.karina.lang.compiler.utils.BranchPattern;
+import org.karina.lang.compiler.utils.NameAndOptType;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.Variable;
-import org.karina.lang.compiler.stages.symbols.*;
+import org.karina.lang.compiler.utils.Variable;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -80,7 +80,7 @@ public class Interpreter {
                         array[index] = eval(assignment.right(), env);
                     }
                     case AssignmentSymbol.Field field -> {
-                        var obj = (HashMap<String,Object>) eval(field.object(), env);
+                        var obj = (HashMap<String, Object>) eval(field.object(), env);
                         assert obj != null;
                         obj.put(field.name(), eval(assignment.right(), env));
                     }
@@ -203,7 +203,7 @@ public class Interpreter {
                     }
                     case CallSymbol.CallInterface callInterface -> {
                         var self = eval(call.left(), env);
-                        if (!(self instanceof Map map)) {
+                        if (!(self instanceof Map<?, ?> map)) {
                             throw new NullPointerException("Not a map: " + toString(self));
                         }
                         var object = map.get("$type");

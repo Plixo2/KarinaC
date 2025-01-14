@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.boot;
 
-import org.karina.lang.compiler.ObjectPath;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.api.FileNode;
 import org.karina.lang.compiler.api.FileTreeNode;
 import org.karina.lang.compiler.api.TextSource;

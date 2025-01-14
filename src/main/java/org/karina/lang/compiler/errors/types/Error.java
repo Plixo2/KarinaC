@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.errors.types;
 
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Span;
 
 public sealed interface Error
         permits AttribError, Error.InvalidState, Error.ParseError, Error.SyntaxError,

@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.errors;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.types.FileLoadError;
 import org.karina.lang.compiler.errors.types.ImportError;

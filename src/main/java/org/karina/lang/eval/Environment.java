@@ -3,7 +3,7 @@ package org.karina.lang.eval;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.utils.Variable;
 
 import java.util.HashMap;
 import java.util.Map;

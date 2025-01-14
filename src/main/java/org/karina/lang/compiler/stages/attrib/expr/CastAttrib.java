@@ -7,7 +7,7 @@ import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.symbols.CastSymbol;
+import org.karina.lang.compiler.symbols.CastSymbol;
 
 public class CastAttrib extends AttribExpr {
 

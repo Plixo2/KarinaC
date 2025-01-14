@@ -2,13 +2,12 @@ package org.karina.lang.lsp.features;
 
 import org.eclipse.lsp4j.Position;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.stages.KarinaStage;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
-import org.karina.lang.compiler.stages.imports.ItemImporting;
-import org.karina.lang.compiler.stages.sugar.SugarResolver;
+import org.karina.lang.compiler.stages.preprocess.Preprocessor;
 import org.karina.lang.lsp.*;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;
@@ -61,8 +60,8 @@ public abstract class AbstractTypeTokenProvider<T> {
     protected @Nullable GoToDefinitionProvider.TypeDefinitionSite tryImportIndividual(KTree.KPackage root, KarinaFile file, KTree.KUnit unit, Span.Position position) {
 
         var error = ErrorHandler.mapInternal(() -> {
-            var desugared = new SugarResolver().desugarUnit(root, unit);
-            var importedUnit = new ImportResolver().importUnit(root, desugared);
+            var desugared = KarinaStage.preProcessUnit(root, unit);
+            var importedUnit = KarinaStage.importUnit(root, desugared);
             var list = new ArrayList<ImportedTypeVisitor.SourceLocation>();
             var typeVisitor = new ImportedTypeVisitor(list);
             typeVisitor.populateTypeList(importedUnit);

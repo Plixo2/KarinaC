@@ -1,13 +1,12 @@
 package org.karina.lang.compiler.objects;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Generic;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.SpanOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 

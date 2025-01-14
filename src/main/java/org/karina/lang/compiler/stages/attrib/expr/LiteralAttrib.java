@@ -6,10 +6,9 @@ import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.Variable;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.symbols.LiteralSymbol;
+import org.karina.lang.compiler.symbols.LiteralSymbol;
 
 import java.util.HashSet;
 

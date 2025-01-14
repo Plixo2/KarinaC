@@ -2,7 +2,7 @@ package org.karina.lang.compiler.errors;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Span;
 
 import java.util.ArrayList;
 import java.util.Arrays;

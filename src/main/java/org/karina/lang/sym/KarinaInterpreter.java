@@ -1,16 +1,13 @@
 package org.karina.lang.sym;
 
 import com.google.common.hash.HashCode;
-import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.google.common.primitives.Longs;
 import lombok.AllArgsConstructor;
-import org.karina.lang.compiler.ObjectPath;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.objects.KTree;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 @AllArgsConstructor
 public class KarinaInterpreter {

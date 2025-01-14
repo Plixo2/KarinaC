@@ -12,7 +12,7 @@ public class ImportResolver {
         return importPackage(root, root);
     }
 
-    KTree.KPackage importPackage(KTree.KPackage root, KTree.KPackage pkg) {
+    private KTree.KPackage importPackage(KTree.KPackage root, KTree.KPackage pkg) {
 
         var build = KTree.KPackage.builder();
         build.name(pkg.name());

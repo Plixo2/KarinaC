@@ -23,9 +23,9 @@ public class Evaluate {
         BootHelper.exitOnNull(fileTree, collection, config.printVerbose);
         BootHelper.printFileTree(fileTree);
 
-        var success = compiler.compile(fileTree, collection);
+        var solver = compiler.compile(fileTree, collection, Interpreter::fromTree);
 
-        if (!success) {
+        if (solver == null) {
             DiagnosticCollection.printDiagnostic(collection, config.printVerbose);
             System.exit(1);
         }
@@ -33,8 +33,6 @@ public class Evaluate {
         System.out.println("\u001B[33mCompilation successful\u001B[0m");
         System.out.println();
 
-        assert compiler.tree() != null;
-        var solver = Interpreter.fromTree(compiler.tree());
 
         var library = new SimpleLibrary();
         library.addToInterpreter(solver);

@@ -8,7 +8,7 @@ import org.karina.lang.compiler.api.KarinaDefaultCompiler;
 
 
 public class Main {
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) {
         BootHelper.printWelcome();
 
         var compiler = new KarinaDefaultCompiler();
@@ -21,9 +21,9 @@ public class Main {
         BootHelper.exitOnNull(fileTree, collection, config.printVerbose);
         BootHelper.printFileTree(fileTree);
 
-        var success = compiler.compile(fileTree, collection);
+        var success = compiler.compile(fileTree, collection, ref -> true);
 
-        if (success) {
+        if (Boolean.TRUE.equals(success)) {
             System.out.println("\u001B[33mCompilation successful\u001B[0m");
             System.out.flush();
         } else {

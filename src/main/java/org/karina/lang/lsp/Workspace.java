@@ -3,9 +3,9 @@ package org.karina.lang.lsp;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.ObjectPath;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.parser.KarinaUnitParser;
+import org.karina.lang.compiler.stages.parser.KarinaUnitParser;
 import org.karina.lang.lsp.fs.ContentRoot;
 import org.karina.lang.lsp.fs.KarinaFile;
 

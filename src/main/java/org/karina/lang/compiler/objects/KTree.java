@@ -5,10 +5,10 @@ import lombok.NonNull;
 import lombok.Singular;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.json.JsonElement;
-import org.karina.lang.compiler.stages.SymbolTable;
-import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.utils.SymbolTable;
+import org.karina.lang.compiler.utils.Variable;
+import org.karina.lang.compiler.utils.*;
 
 import java.util.ArrayList;
 import java.util.List;

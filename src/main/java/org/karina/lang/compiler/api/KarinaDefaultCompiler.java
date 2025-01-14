@@ -3,49 +3,47 @@ package org.karina.lang.compiler.api;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.boot.DebugWriter;
-import org.karina.lang.compiler.parser.KarinaUnitParser;
+import org.karina.lang.compiler.stages.KarinaStage;
+import org.karina.lang.compiler.stages.parser.KarinaUnitParser;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
-import org.karina.lang.compiler.stages.sugar.SugarResolver;
+import org.karina.lang.compiler.stages.preprocess.Preprocessor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class KarinaDefaultCompiler implements KarinaCompiler {
-    @Getter
-    @Accessors(fluent = true)
-    private @Nullable KTree.KPackage tree;
-
 
 
     @Override
-    public boolean compile(FileTreeNode files, DiagnosticCollection collection) {
+    public <T> @Nullable T compile(FileTreeNode files, DiagnosticCollection collection, @Nullable Backend<T> backend) {
 
         try {
             KTree.KPackage parseTree;
             try (var errorCollection = new ErrorCollector()) {
                 parseTree = parseFiles(files, errorCollection);
             }
-            var desugaredTree = desugarTree(parseTree);
-            var importedTree = importTree(desugaredTree);
-            var attributedTree = attributeTree(importedTree);
-            this.tree = attributedTree;
+            var desugaredTree = KarinaStage.preProcessTree(parseTree);
+            var importedTree = KarinaStage.importTree(desugaredTree);
+            var attribTree = KarinaStage.attribTree(importedTree);
+            if (backend != null) {
+                return backend.accept(attribTree);
+            }
 
             if (Log.hasErrors()) {
                 System.err.println("Errors in log, this should not happen");
             }
-            return true;
+            return null;
         } catch (Log.KarinaException ignored) {
             if (!Log.hasErrors()) {
                 System.out.println("An exception was thrown, but no errors were logged");
             } else {
                 collection.addAll(Log.getEntries());
             }
-            return false;
+            return null;
         } finally {
             Log.clearLogs();
         }
@@ -73,19 +71,5 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
 
     }
 
-
-    private KTree.KPackage importTree(KTree.KPackage kPackage) {
-        return new ImportResolver().importTree(kPackage);
-    }
-
-
-    private KTree.KPackage desugarTree(KTree.KPackage root) throws Log.KarinaException {
-        return new SugarResolver().desugarTree(root);
-    }
-
-
-    private KTree.KPackage attributeTree(KTree.KPackage tree) {
-        return new AttributionResolver().attribTree(tree);
-    }
 
 }

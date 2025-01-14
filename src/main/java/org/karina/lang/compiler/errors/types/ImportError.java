@@ -1,7 +1,9 @@
 package org.karina.lang.compiler.errors.types;
 
-import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.objects.KTree;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.SpanOf;
 
 import java.util.Set;
 

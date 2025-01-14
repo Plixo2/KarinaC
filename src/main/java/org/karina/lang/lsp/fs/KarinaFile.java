@@ -6,7 +6,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.eclipse.lsp4j.Diagnostic;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.ObjectPath;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.api.Resource;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.objects.KTree;

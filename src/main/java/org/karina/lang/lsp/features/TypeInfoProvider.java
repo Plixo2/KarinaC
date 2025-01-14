@@ -1,10 +1,10 @@
 package org.karina.lang.lsp.features;
 
 import org.karina.lang.compiler.objects.KTree;
+import org.karina.lang.compiler.stages.KarinaStage;
 import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
-import org.karina.lang.compiler.stages.imports.ItemImporting;
-import org.karina.lang.compiler.stages.sugar.SugarResolver;
+import org.karina.lang.compiler.stages.preprocess.Preprocessor;
 import org.karina.lang.lsp.ErrorHandler;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;
@@ -21,14 +21,11 @@ public class TypeInfoProvider {
     public void updateAll(SyncFileTree sourceTree) {
 
         var root = packageFromVirtualTree(sourceTree);
-        var importer = new ImportResolver();
-        var sugar = new SugarResolver();
-        var attributes = new AttributionResolver();
 
         var error = ErrorHandler.tryInternal(() -> {
-            var desugared = sugar.desugarTree(root);
-            var imported = importer.importTree(desugared);
-            var attrib = attributes.attribTree(imported);
+            var desugared = KarinaStage.preProcessTree(root);
+            var imported = KarinaStage.importTree(desugared);
+            var attrib = KarinaStage.attribTree(imported);
         });
         if (error != null) {
             error.pushErrorsToFile();

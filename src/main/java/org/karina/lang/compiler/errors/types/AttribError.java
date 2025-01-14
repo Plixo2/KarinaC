@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.errors.types;
 
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.objects.KType;
 
 import java.util.List;

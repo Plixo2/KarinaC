@@ -1,8 +1,8 @@
 package org.karina.lang.eval;
 
-import org.karina.lang.compiler.ObjectPath;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.utils.Variable;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;

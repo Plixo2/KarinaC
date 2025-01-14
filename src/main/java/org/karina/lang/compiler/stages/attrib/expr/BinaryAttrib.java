@@ -8,7 +8,7 @@ import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.symbols.BinOperatorSymbol;
+import org.karina.lang.compiler.symbols.BinOperatorSymbol;
 
 public class BinaryAttrib extends AttribExpr {
     public static AttribExpr attribBinary(

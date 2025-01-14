@@ -3,13 +3,9 @@ package org.karina.lang.sym.compile;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
-import org.karina.lang.compiler.stages.symbols.BinOperatorSymbol;
-import org.karina.lang.compiler.stages.symbols.LiteralSymbol;
-import org.karina.lang.compiler.stages.symbols.NumberSymbol;
+import org.karina.lang.compiler.symbols.BinOperatorSymbol;
+import org.karina.lang.compiler.symbols.NumberSymbol;
 import org.karina.lang.sym.Instruction;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SymExprCompiler {
 

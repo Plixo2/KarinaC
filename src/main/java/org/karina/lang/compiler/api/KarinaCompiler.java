@@ -1,5 +1,5 @@
 package org.karina.lang.compiler.api;
 
 public interface KarinaCompiler {
-    boolean compile(FileTreeNode files, DiagnosticCollection collection);
+    <T> T compile(FileTreeNode files, DiagnosticCollection collection, Backend<T> backend);
 }

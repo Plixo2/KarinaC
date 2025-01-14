@@ -6,7 +6,7 @@ import org.karina.lang.compiler.boot.DefaultFileTree;
 import org.karina.lang.compiler.api.DiagnosticCollection;
 import org.karina.lang.compiler.api.KarinaDefaultCompiler;
 import org.karina.lang.compiler.errors.types.Error;
-import org.karina.lang.eval.SimpleLibrary;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.eval.Interpreter;
 
 import java.util.List;
@@ -32,9 +32,9 @@ public class TestFile {
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var success = compiler.compile(fileTree, collection);
+        var success = compiler.compile(fileTree, collection, ref -> true);
 
-        if (!success) {
+        if (!Boolean.TRUE.equals(success)) {
             DiagnosticCollection.printDiagnostic(collection, true);
             throw new AssertionError("Expected success for '" + this.name + "'");
         }
@@ -51,9 +51,9 @@ public class TestFile {
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var success = compiler.compile(fileTree, collection);
+        var success = compiler.compile(fileTree, collection, ref -> true);
 
-        if (success) {
+        if (Boolean.TRUE.equals(success)) {
             throw new AssertionError("Expected Fail for '" + this.name + "'");
         } else {
             Error lastError = null;
@@ -86,21 +86,20 @@ public class TestFile {
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var success = compiler.compile(fileTree, collection);
+        var result = compiler.compile(fileTree, collection, tree -> {
+            var solver = Interpreter.fromTree(tree);
+            var testLibrary = new TestLibrary();
+            testLibrary.addToInterpreter(solver);
 
-        if (!success) {
+            return solver;
+        });
+
+        if (result == null) {
             DiagnosticCollection.printDiagnostic(collection, true);
             throw new AssertionError("Expected success for '" + this.name + "'");
         }
-
-        assert compiler.tree() != null;
-        var solver = Interpreter.fromTree(compiler.tree());
-        var testLibrary = new TestLibrary();
-        testLibrary.addToInterpreter(solver);
-
-        var foundFunction = solver.collection().function(function);
-
-        return solver.eval(foundFunction, null, List.of());
+        var foundFunction = result.collection().function(function);
+        return result.eval(foundFunction, null, List.of());
     }
 
     private record TestResource(String name) implements Resource {

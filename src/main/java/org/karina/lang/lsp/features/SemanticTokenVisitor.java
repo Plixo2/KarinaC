@@ -1,9 +1,8 @@
 package org.karina.lang.lsp.features;
 
 import lombok.Getter;
-import org.antlr.v4.runtime.tree.TerminalNode;
-import org.karina.lang.compiler.parser.gen.KarinaParser;
-import org.karina.lang.compiler.parser.gen.KarinaParserBaseVisitor;
+import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
+import org.karina.lang.compiler.stages.parser.gen.KarinaParserBaseVisitor;
 
 import java.util.ArrayList;
 import java.util.List;

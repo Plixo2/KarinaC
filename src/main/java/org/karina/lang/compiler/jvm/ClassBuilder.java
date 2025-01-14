@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.jvm;
 
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.SpanOf;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;

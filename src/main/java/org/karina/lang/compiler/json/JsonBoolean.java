@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.json;
 
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Span;
 
 public record JsonBoolean(Span region, boolean value) implements JsonPrimitive {
 

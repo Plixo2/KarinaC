@@ -1,11 +1,11 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.Unique;
 import org.karina.lang.compiler.errors.types.ImportError;
 import org.karina.lang.compiler.objects.*;
+import org.karina.lang.compiler.utils.*;
 
 import java.util.ArrayList;
 import java.util.List;

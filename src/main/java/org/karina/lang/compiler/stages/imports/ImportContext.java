@@ -2,13 +2,13 @@ package org.karina.lang.compiler.stages.imports;
 
 import org.karina.lang.compiler.errors.types.ImportError;
 import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.SpanOf;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.SymbolTable;
-import org.karina.lang.compiler.TypeImport;
+import org.karina.lang.compiler.utils.SymbolTable;
+import org.karina.lang.compiler.utils.TypeImport;
 
 import java.util.*;
 

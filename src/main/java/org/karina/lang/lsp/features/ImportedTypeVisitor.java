@@ -1,8 +1,8 @@
 package org.karina.lang.lsp.features;
 
 import lombok.AllArgsConstructor;
-import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.objects.*;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.lsp.EventHandler;
 
 import java.util.List;

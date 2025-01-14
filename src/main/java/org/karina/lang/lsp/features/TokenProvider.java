@@ -3,8 +3,8 @@ package org.karina.lang.lsp.features;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.parser.KarinaUnitParser;
-import org.karina.lang.compiler.parser.KarinaErrorListener;
+import org.karina.lang.compiler.stages.parser.KarinaUnitParser;
+import org.karina.lang.compiler.stages.parser.KarinaErrorListener;
 import org.karina.lang.lsp.ErrorHandler;
 
 import java.util.ArrayList;

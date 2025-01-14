@@ -1,19 +1,16 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
-import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.Symbol;
-import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.symbols.AssignmentSymbol;
-import org.karina.lang.compiler.stages.symbols.LiteralSymbol;
-import org.karina.lang.compiler.stages.symbols.MemberSymbol;
+import org.karina.lang.compiler.symbols.AssignmentSymbol;
+import org.karina.lang.compiler.symbols.LiteralSymbol;
+import org.karina.lang.compiler.symbols.MemberSymbol;
 
 public class AssignmentAttrib extends AttribExpr {
 

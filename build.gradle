@@ -44,7 +44,7 @@ dependencies {
 
 }
 
-task fatJar(type: Jar) {
+tasks.register('fatJar', Jar) {
     manifest {
         attributes 'Main-Class': 'org.karina.lang.compiler.boot.Main'
     }
@@ -55,7 +55,7 @@ task fatJar(type: Jar) {
     with jar
 }
 
-task buildLSP(type: Jar) {
+tasks.register('buildLSP', Jar) {
 
     manifest {
         attributes 'Main-Class': 'org.karina.lang.lsp.Main'

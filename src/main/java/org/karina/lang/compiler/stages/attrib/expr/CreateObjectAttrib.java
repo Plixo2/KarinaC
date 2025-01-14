@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Generic;
-import org.karina.lang.compiler.NamedExpression;
+import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.utils.NamedExpression;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;

@@ -2,12 +2,12 @@ package org.karina.lang.lsp.features;
 
 import org.eclipse.lsp4j.Location;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.stages.KarinaStage;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.stages.attrib.AttributionResolver;
 import org.karina.lang.compiler.stages.imports.ImportResolver;
-import org.karina.lang.compiler.stages.imports.ItemImporting;
-import org.karina.lang.compiler.stages.sugar.SugarResolver;
+import org.karina.lang.compiler.stages.preprocess.Preprocessor;
 import org.karina.lang.lsp.*;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;
@@ -32,16 +32,13 @@ public class GoToDefinitionProvider extends AbstractTypeTokenProvider<Location> 
         } else {
             //advanced goto
 
-            var importer = new ImportResolver();
-            var attributes = new AttributionResolver();
-            var sugarResolver = new SugarResolver();
 
             var result = ErrorHandler.mapInternal(() -> {
-                var desugared = sugarResolver.desugarUnit(virtualPackageRoot, typed);
+                var desugared = KarinaStage.preProcessUnit(virtualPackageRoot, typed);
                 var replacedTreeSugar = HoverProvider.replaceUnit(virtualPackageRoot, desugared.path(), desugared);
-                var imported = importer.importUnit(replacedTreeSugar, desugared);
+                var imported = KarinaStage.importUnit(replacedTreeSugar, desugared);
                 var replacedTreeImport = HoverProvider.replaceUnit(replacedTreeSugar, imported.path(), imported);
-                return attributes.attribUnit(replacedTreeImport, imported);
+                return KarinaStage.attribUnit(replacedTreeImport, imported);
             });
 
             if (!(result instanceof ErrorHandler.Result.onSuccess<KTree.KUnit>(var unit))) {

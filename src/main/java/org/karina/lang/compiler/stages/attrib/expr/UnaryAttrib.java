@@ -8,7 +8,7 @@ import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.objects.UnaryOperator;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.symbols.UnaryOperatorSymbol;
+import org.karina.lang.compiler.symbols.UnaryOperatorSymbol;
 
 public class UnaryAttrib extends AttribExpr {
     public static AttribExpr attribUnary(

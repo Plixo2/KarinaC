@@ -3,7 +3,7 @@ package org.karina.lang.lsp.fs;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.ObjectPath;
+import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.lsp.EventHandler;
 
 import java.nio.file.Path;

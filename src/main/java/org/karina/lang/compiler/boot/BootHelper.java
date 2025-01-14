@@ -24,7 +24,7 @@ public class BootHelper {
 
     public static void exitOnNull(Object object, DiagnosticCollection collection, boolean verbose) {
         if (object == null) {
-            DiagnosticCollection.printDiagnostic(collection, false);
+            DiagnosticCollection.printDiagnostic(collection, verbose);
             System.exit(1);
         }
     }
@@ -112,7 +112,7 @@ public class BootHelper {
             } else {
                 buffer.append(childrenPrefix).append("\\__ ");
             }
-            buffer.append(next.name() + ".krna");
+            buffer.append(next.name()).append(".krna");
             buffer.append('\n');
         }
 

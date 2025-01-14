@@ -1,7 +1,7 @@
 package org.karina.lang.sym.compile;
 
 import lombok.RequiredArgsConstructor;
-import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.sym.Instruction;
 
 import java.util.ArrayList;

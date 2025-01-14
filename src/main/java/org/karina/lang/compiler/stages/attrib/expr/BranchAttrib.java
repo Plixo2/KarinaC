@@ -1,12 +1,12 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.BranchPattern;
+import org.karina.lang.compiler.utils.BranchPattern;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 

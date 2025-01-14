@@ -3,7 +3,7 @@ package org.karina.lang.lsp;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.errors.LogBuilder;
 
 import java.util.ArrayList;

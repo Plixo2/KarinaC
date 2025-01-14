@@ -1,16 +1,16 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.NameAndOptType;
-import org.karina.lang.compiler.SpanOf;
+import org.karina.lang.compiler.utils.NameAndOptType;
+import org.karina.lang.compiler.utils.SpanOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.Variable;
+import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.symbols.ClosureSymbol;
+import org.karina.lang.compiler.symbols.ClosureSymbol;
 
 import java.util.ArrayList;
 import java.util.HashMap;

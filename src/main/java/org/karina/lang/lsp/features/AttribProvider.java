@@ -1,16 +1,14 @@
 package org.karina.lang.lsp.features;
 
 import lombok.AllArgsConstructor;
-import org.karina.lang.compiler.BranchPattern;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.BranchPattern;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.symbols.CallSymbol;
-import org.karina.lang.compiler.stages.symbols.LiteralSymbol;
-import org.karina.lang.compiler.stages.symbols.MemberSymbol;
-import org.karina.lang.lsp.EventHandler;
+import org.karina.lang.compiler.symbols.CallSymbol;
+import org.karina.lang.compiler.symbols.LiteralSymbol;
 
 import java.util.List;
 

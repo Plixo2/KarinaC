@@ -3,7 +3,7 @@ package org.karina.lang.compiler.stages.attrib;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Generic;
+import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.expr.*;

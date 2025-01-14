@@ -1,9 +1,9 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.Generic;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.Span;
+import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
@@ -11,8 +11,8 @@ import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.AttribExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.symbols.LiteralSymbol;
-import org.karina.lang.compiler.stages.symbols.MemberSymbol;
+import org.karina.lang.compiler.symbols.LiteralSymbol;
+import org.karina.lang.compiler.symbols.MemberSymbol;
 
 import java.util.HashMap;
 import java.util.Map;

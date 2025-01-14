@@ -1,10 +1,10 @@
 package org.karina.lang.compiler.objects;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.stages.Variable;
-import org.karina.lang.compiler.stages.symbols.*;
+import org.karina.lang.compiler.utils.Variable;
+import org.karina.lang.compiler.symbols.*;
+import org.karina.lang.compiler.utils.*;
 
 import java.math.BigDecimal;
 import java.util.List;
