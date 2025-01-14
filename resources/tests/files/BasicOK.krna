@@ -11,7 +11,7 @@ struct W<T> {
     some: T
 
     impl Writer {
-        fn write(input: string) -> W<string> {
+        fn write(self, input: string) -> W<string> {
             return W {
                 value: input,
                 some: "some"
@@ -22,7 +22,7 @@ struct W<T> {
 
 
 interface Writer {
-    fn write(input: string) -> W<string>
+    fn write(self, input: string) -> W<string>
 }
 
 

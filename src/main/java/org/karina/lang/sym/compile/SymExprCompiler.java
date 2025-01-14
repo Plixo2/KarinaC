@@ -104,15 +104,15 @@ public class SymExprCompiler {
             }
             case KExpr.Literal literal -> {
                 assert literal.symbol() != null;
-                switch (literal.symbol()) {
-                    case LiteralSymbol.StaticFunction staticFunction -> {
-                        throw new NullPointerException("Invalid use of static method");
-                    }
-                    case LiteralSymbol.VariableReference variableReference -> {
-                        var index = ctx.variableIndex(variableReference.variable());
-                        ctx.add(new Instruction.LoadVariable(index));
-                    }
-                }
+//                switch (literal.symbol()) {
+//                    case LiteralSymbol.StaticFunction staticFunction -> {
+//                        throw new NullPointerException("Invalid use of static method");
+//                    }
+//                    case LiteralSymbol.VariableReference variableReference -> {
+//                        var index = ctx.variableIndex(variableReference.variable());
+//                        ctx.add(new Instruction.LoadVariable(index));
+//                    }
+//                }
             }
             case KExpr.Match match -> {
             }

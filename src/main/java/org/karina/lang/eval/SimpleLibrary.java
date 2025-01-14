@@ -18,6 +18,12 @@ public class SimpleLibrary extends Library {
                 var func = new FunctionCollection.RuntimeFunction.JavaFunction(method);
                 interpreter.collection().putFunction("src.Main.println", func);
             }
+
+            {
+                var method = SimpleLibrary.class.getMethod("getTime");
+                var func = new FunctionCollection.RuntimeFunction.JavaFunction(method);
+                interpreter.collection().putFunction("src.Main.getTime", func);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -34,6 +40,10 @@ public class SimpleLibrary extends Library {
 
     public static void println(Object obj) {
         System.out.println(Interpreter.toString(obj));
+    }
+
+    public static BigDecimal getTime() {
+        return new BigDecimal(System.currentTimeMillis());
     }
 
 }

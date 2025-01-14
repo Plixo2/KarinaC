@@ -2,11 +2,8 @@ package org.karina.lang.compiler.parser;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.karina.lang.compiler.Generic;
-import org.karina.lang.compiler.TypeImport;
+import org.karina.lang.compiler.*;
 import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.ObjectPath;
-import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.json.*;
 import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.parser.gen.KarinaParser;
@@ -89,15 +86,17 @@ public class KarinaVisitor {
         var name = this.conv.span(ctx.ID());
         var generics = ctx.genericHintDefinition() == null ? List.<Generic>of() :
                 this.visitGenericHintDefinition(ctx.genericHintDefinition());
-        var parameters = visitParameters(ctx.parameterList());
-        if (isInterface) {
-            if (ctx.block() != null || ctx.expression() != null) {
-                Log.syntaxError(region, "Interface function can't define a body");
+        Span definesSelf = null;
+        if (ctx.selfParameterList().SELF() != null) {
+            definesSelf = this.conv.toRegion(ctx.selfParameterList().SELF());
+        }
+
+        var parameters = visitParametersSelf(ctx.selfParameterList());
+        if (!isInterface) {
+            if (ctx.expression() == null && ctx.block() == null) {
+                Log.syntaxError(region, "Function must have a body");
                 throw new Log.KarinaException();
             }
-        } else if (ctx.expression() == null && ctx.block() == null) {
-            Log.syntaxError(region, "Function must have a body");
-            throw new Log.KarinaException();
         }
         var returnType = ctx.type() == null ? null : this.typeVisitor.visitType(ctx.type());
         KExpr expression = null;
@@ -111,6 +110,7 @@ public class KarinaVisitor {
                 region,
                 name,
                 objectPath,
+                definesSelf,
                 new FunctionModifier(),
                 annotations,
                 parameters,
@@ -225,6 +225,17 @@ public class KarinaVisitor {
     }
 
     private List<KTree.KParameter> visitParameters(KarinaParser.ParameterListContext ctx) {
+
+        return ctx.parameter().stream().map(ref -> {
+            var region = this.conv.toRegion(ref);
+            var name = this.conv.span(ref.ID());
+            var type = this.typeVisitor.visitType(ref.type());
+            return new KTree.KParameter(region, name, type, null);
+        }).toList();
+
+    }
+
+    private List<KTree.KParameter> visitParametersSelf(KarinaParser.SelfParameterListContext ctx) {
 
         return ctx.parameter().stream().map(ref -> {
             var region = this.conv.toRegion(ref);

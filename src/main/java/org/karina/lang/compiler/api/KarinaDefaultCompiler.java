@@ -31,8 +31,6 @@ public class KarinaDefaultCompiler implements KarinaCompiler {
                 parseTree = parseFiles(files, errorCollection);
             }
             var desugaredTree = desugarTree(parseTree);
-            DebugWriter.write(desugaredTree, "resources/sugar.json");
-
             var importedTree = importTree(desugaredTree);
             var attributedTree = attributeTree(importedTree);
             this.tree = attributedTree;

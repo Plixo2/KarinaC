@@ -1,8 +1,8 @@
-/* Fail SyntaxError */
+/* Fail temp */
 
 interface Writer {
 
-    fn write(index: int) -> int {
+    fn write(self, index: int) -> int {
 
     }
 }

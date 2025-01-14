@@ -122,13 +122,13 @@ struct W {
 struct O<T> {
     x: T
 
-    fn make() -> string = "Hello"
+    fn make(self) -> string = "Hello"
 
-    fn generic<U>(value: U) -> U = value
+    fn generic<U>(self, value: U) -> U = value
 }
 
 interface FunctionInterface {
-    fn make(x: int) -> string
+    fn make(self, x: int) -> string
 }
 
 enum Option<T> {

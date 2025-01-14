@@ -1,187 +1,74 @@
 
 
+
 fn main() {
 
+    let carNormal = Car { color: "green", conf: 99 }
 
-    let list = ListOf()
-    list.add(1)
-    list.add(2)
-    list.add(3)
-    list.add(4)
-    list.add(5)
-    list.add(6)
-    list.add(7)
-    list.add(8)
-    list.add(9)
+    let carDefault = Car.default()
+    //let b = carDefault.base()
 
-    let newList = list.map(fn(v) v).filter(fn(v) v > 5);
-    //newList.forEach(fn(v) println(v))
+    //let base = getBase(carDefault)
 
-    //  println(newList.contains(fn(v) v == 6))
-    //  println(newList.indexOf(fn(v) v == 4))
-    //   println(newList.indexOf(fn(v) v == 8))
 
-    //  println("------")
-    //let s: Option<int> = Some { value: 5 }
+    let car = Vehicle.carOf("blue")
 
-    let value = some(5)
-    if value is Some<?> s {
-        let w = s.value * 2
-        println(w)
-    } else if value is None<?> n {
-        let w = n;
+    println(car.base())
+    println(carDefault.base())
+    println(getBase(carNormal))
 
+    let something = Option.Some(1)
+    let none = Option.None<int>()
+
+
+    let path = "resources/src/Main.krna"
+    let file = readFile(path)
+    if file is Ok ok {
+        let val = ok.value;
+        println(val)
+    } else if file is Err err {
+        println("err")
     }
 
-    write(Car { color: "red" })
-
-    println(orElse(Some { value: 5 }, 10))
-    println(orElse(None {}, 10))
-
-    println(none() is Some<?>)
-    println(some(5) is Some<?>)
-
-    0
+    1
 }
+
+fn getBase<T>(v: Vehicle<T>) -> T {
+    v.base()
+}
+
+enum Result<T, E> {
+    Ok(value: T)
+    Err(error: E)
+}
+
+struct IOError {
+    message: string
+}
+
+fn readFile(str: string) -> Result<string, IOError> {
+    Result.Ok("Hello")
+}
+
+@Native
+fn println<T>(v: T) {}
 
 struct Car {
     color: string
+    conf: int
 
-    impl Serializable {
+    fn default() -> Car {
+        Car { color: "red", conf: 1 }
     }
-}
-interface Serializable {
 
-}
-
-fn write(s: Serializable) {
-    println("Writing")
-}
-
-fn orElse<T>(o: Option<int>, t: T) -> int = if o is Some s { s.value } else { t }
-
-
-fn toAny<T>(t: T) -> ? = t
-
-
-struct List<T> {
-    storage: [T]
-    capacity: int
-    size: int
-    
-    fn size() -> int = self.size
-
-    fn get(i: int) -> Option<T> {
-        if i >= self.size || i < 0 {
-           none()
+    impl Vehicle<int> {
+        fn base(self) -> int {
+            self.conf
         }
-
-        some(self.storage[i])
-    }
-
-    fn set(i: int, v: T) {
-        if i >= self.size || i < 0 {
-            raise Error { message: "Index out of bounds" }
-        }
-        self.storage[i] = v
-    }
-
-    fn add(v: T) {
-        if self.size == self.capacity {
-            self.capacity = max(self.capacity, 1) * 2
-            let newArray = array<T>(self.capacity)
-            let index = 0
-
-            while index < self.size {
-                newArray[index] = self.storage[index]
-                index = index + 1
-            }
-
-            self.storage = newArray
-        }
-        self.storage[self.size] = v
-        self.size = self.size + 1
-    }
-
-    fn map<U>(f: fn(T) -> U) -> List<U> {
-        let index = 0
-        let newList = List { storage: array(self.size), capacity: self.size, size: self.size }
-
-        while index < self.size { 
-            newList.set(index, f(self.storage[index]))
-            index = index + 1
-        }
-        newList
-    }
-
-    fn filter(f: fn(T) -> bool) -> List<T> {
-        let index = 0
-        let newList = List { storage: array(self.size), capacity: self.size, size: 0 }
-
-        while index < self.size {
-            if f(self.storage[index]) {
-                newList.add(self.storage[index])
-            }
-            index = index + 1
-        }
-
-        newList
-    }
-
-    fn forEach(f: fn(T)) {
-        let index = 0
-        while index < self.size {
-            f(self.storage[index])
-            index = index + 1
+        fn setColor(self, color: string) {
+            self.color = color
         }
     }
-
-    fn contains(f: fn(T) -> bool) -> bool {
-        let index = 0
-        while index < self.size {
-            if f(self.storage[index]) {
-                return true
-            }
-            index = index + 1
-        }
-        false
-    }
-
-    fn indexOf(f: fn(T) -> bool) -> Option<int> {
-        let index = 0
-        while index < self.size {
-            if f(self.storage[index]) {
-                return some(index)
-            }
-            index = index + 1
-        }
-        none()
-    }
-
-    fn iterator() -> Iterator<T> {
-        let index = [0]
-
-        let next = fn() {
-            let value = self.storage[index[0]]
-            index[0] = index[0] + 1
-            return value
-        }
-
-        let hasNext = fn () index[0] < self.size
-
-        Iterator { next: next, hasNext: hasNext }
-    }
-
-    fn asArray() -> [T] {
-        let newArray = array(self.size)
-        let index = 0
-        while index < self.size {
-            newArray[index] = self.storage[index]
-            index = index + 1
-        }
-        newArray
-    }
-
 }
 
 enum Option<T> {
@@ -189,66 +76,18 @@ enum Option<T> {
     None
 }
 
-fn some<T>(v: T) -> Option<T> = Some { value: v }
-fn none<T>() -> Option<T> = None {}
-
-
-enum Result<T, E> {
-    Ok(v: T)
-    Err(e: E)
-}
-
-fn ok<T, E>(v: T) -> Result<T, E> = Ok { v: v }
-fn err<T, E>(e: E) -> Result<T, E> = Err { e: e }
 
 
 
-struct Region {
-    start: int
-    end: int
-}
+interface Vehicle<T> {
+    fn base(self) -> T
+    fn setColor(self, color: string)
 
 
-@Throwable
-struct Error { 
-    message: string
-}
-
-
-struct Iterator<T> {
-    next: fn() -> T
-    hasNext: fn() -> bool
-}
-
-fn max(a: int, b: int) -> int = if a > b { a } else { b }
-fn min(a: int, b: int) -> int = if a < b { a } else { b }
-
-fn ListOf<T>() -> List<T> {
-    return List { storage: array(4), capacity: 4, size: 0 }
-}
-
-@Native
-@Unsafe
-fn array<T>(size: int) -> [T] = []
-
-@Native
-fn println<T>(v: T) {}
-
-
-struct Help<T> {
-    a: int
-    b: T
-    state: bool
-
-    fn add<W>(a: T, b: W) -> Tuple<T, W> {
-       return Tuple { a: a, b: b }
+    fn carOf(color: string) -> Vehicle<int> {
+        Car { color: color, conf: 1 }
     }
 }
 
-struct Tuple<T, U> {
-    a: T
-    b: U
 
-    fn first() -> T = self.a
-    fn second() -> U = self.b
-}
+

@@ -30,7 +30,7 @@ struct FnWithImpl {
 }
 
 interface Consumer {
-    fn consume(input: int) -> int
+    fn consume(self, input: int) -> int
 }
 
 

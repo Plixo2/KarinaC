@@ -13,6 +13,7 @@ public sealed interface CallSymbol {
     record CallStatic(ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
 
     record CallVirtual(Span nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
+    record CallInterface(Span nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
     record CallDynamic(KType returnType) implements CallSymbol { }
 
 }

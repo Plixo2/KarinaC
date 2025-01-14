@@ -14,17 +14,17 @@ struct StructWithGenerics<T> {
 struct WithFunctions {
     value: string
 
-    fn getString() -> string {
+    fn getString(self) -> string {
         return self.value
     }
 }
 
 interface Interface {
-    fn getString() -> string
+    fn getString(self) -> string
 }
 
 interface InterfaceGeneric<W> {
-    fn getString() -> W
+    fn getString(self) -> W
 }
 
 interface ImplGeneric {

@@ -118,6 +118,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 */
 	void exitInterfaceExtension(KarinaParser.InterfaceExtensionContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KarinaParser#selfParameterList}.
+	 * @param ctx the parse tree
+	 */
+	void enterSelfParameterList(KarinaParser.SelfParameterListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#selfParameterList}.
+	 * @param ctx the parse tree
+	 */
+	void exitSelfParameterList(KarinaParser.SelfParameterListContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KarinaParser#parameterList}.
 	 * @param ctx the parse tree
 	 */

@@ -77,6 +77,8 @@ public class LogFactory<T extends LogBuilder> {
                 builder.append("Expected: ").append(typeMismatch.expected());
                 builder.append("Found: ").append(typeMismatch.found());
                 builder.setPrimarySource(typeMismatch.region());
+                builder.addSecondarySource(typeMismatch.found().region());
+                builder.addSecondarySource(typeMismatch.expected().region());
             }
             case AttribError.FinalAssignment finalAssignment -> {
                 builder.append("Can't reassign final symbol '").append(finalAssignment.name()).append("'");

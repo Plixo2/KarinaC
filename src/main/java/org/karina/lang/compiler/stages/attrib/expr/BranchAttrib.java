@@ -50,7 +50,7 @@ public class BranchAttrib extends AttribExpr {
                         }
                     } else {
                         //should not happen
-                        Log.temp(expr.region(), "Type not found");
+                        Log.temp(expr.region(), "Unknown Type to check");
                         throw new Log.KarinaException();
                     }
                 }

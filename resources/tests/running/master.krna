@@ -1,0 +1,214 @@
+
+
+
+fn test() -> bool {
+
+    assert(true, "Boolean true is true")
+    assertFalse(false)
+
+    assertFalse(10 < 5)
+    assertTrue(10 > 5)
+
+
+
+    testEnum()
+    assertTrue(testReturns())
+    testInference()
+    testStaticCall()
+    testVirtualCall()
+    testDynamicCall()
+
+    testCall()
+}
+
+
+fn testCall() -> bool  = true
+
+fn testEnum() {
+    let wrapped = Option.Some(10)
+    let unwrapped = unwrap(wrapped)
+    assert(unwrapped == 10, "Unwrapped value should be 10")
+    assertFalse(wrapped is None)
+    assertTrue(wrapped is Some<?>)
+
+}
+
+fn testInference() {
+    let any = ToInfer()
+    let toInferArg = ToInferArg(Option.Some(10))
+    assertTrue(toInferArg is Ok<?, ?>)
+    let toInferArg2 = ToInferArg(Option.None())
+    assertTrue(toInferArg2 is Err)
+
+
+    let any2 = ToInfer()
+    let toInferArg3 = ToInferArg(any2)
+    assertTrue(toInferArg3 is Err)
+    let setTypeOf3: Result<int, int> = toInferArg3
+
+    let any3 = ToInfer()
+    let toInferArg4 = ToInferArg(any3)
+    assertTrue(toInferArg4 is Err<?, ?>)
+    let setTypeOf4: Result<string, int> = toInferArg4
+
+
+    let anyAssigned: Option<int> = any
+
+    let any4 = ToInfer()
+    let anyAssigned2: Option<Option<string>> = any4
+}
+
+fn ToInfer<T>() -> Option<T> = Option.None()
+fn ToInferArg<T>(option: Option<T>) -> Result<T, int> {
+    if option is Some s {
+        Result.Ok(s.value)
+    } else {
+        Result.Err(10)
+    }
+}
+
+fn testReturns() -> bool {
+    assertTrue(return2() == 0)
+    assertTrue(return3(1) == 1)
+    assertTrue(return3(0) == 0)
+
+    assertTrue(return4(1) == 1)
+    assertTrue(return4(0) == 0)
+
+
+    assertTrue(return5(1) == 1)
+    assertTrue(return5(0) == 0)
+
+    returnTestA() == 1
+}
+
+fn returnTestA() -> int {
+    return 1
+}
+fn return2() -> int = 0
+fn return3(arg: int) -> int {
+    if arg > 0 {
+        return 1
+    } else {
+        return 0
+    }
+}
+fn return4(arg: int) -> int {
+    if arg > 0 {
+        1
+    } else {
+        0
+    }
+}
+fn return5(arg: int) -> int =
+    return if arg > 0 {
+        1
+    } else {
+        0
+    }
+
+
+
+fn testStaticCall() {
+
+}
+
+fn testVirtualCall() {
+
+}
+
+fn testDynamicCall() {
+    let dut = InterfaceImpl { value: 10 }
+
+    assertTrue(dut.value == 10)
+    assertTrue(dut.call() == 10)
+    dut.callVoid()
+    assertTrue(dut.callArgs(1, 2))
+
+    callAsInterface(dut)
+    assertTrue(InterfaceTest.staticCall() == 10)
+    assertTrue(InterfaceImpl.staticCall() == 20)
+}
+fn callAsInterface(dut: InterfaceTest<int>) {
+    dut.set(20)
+    assertTrue(dut.call() == 20)
+    dut.callVoid()
+    assertTrue(dut.callArgs(1, 2))
+}
+
+struct InterfaceImpl {
+    value: int
+
+    fn staticCall() -> int = 20
+
+    impl InterfaceTest<int> {
+        fn call(self) -> int = self.value
+        fn callVoid(self) {
+            //?
+        }
+        fn callArgs(self, a: int, b: int) -> bool {
+            assertTrue(a == 1)
+            assertTrue(b == 2)
+            true
+        }
+        fn set(self, value: int) {
+            self.value = value
+        }
+    }
+}
+
+interface InterfaceTest<T> {
+    fn call(self) -> int
+    fn callVoid(self)
+    fn callArgs(self, a: int, b: T) -> bool
+    fn set(self, value: T)
+
+    fn staticCall() -> int = 10
+}
+
+
+@Throwable
+struct Error {
+    message: string
+}
+
+
+enum Option<T> {
+    Some(value: T)
+    None
+}
+
+
+fn unwrap<T>(option: Option<T>) -> T {
+    if option is None {
+        raise Error { message: "Option is None" }
+    } else if option is Some<?> s {
+        return s.value
+    }
+}
+
+enum Result<T, E> {
+    Ok(v: T)
+    Err(e: E)
+}
+
+
+
+fn assertFalse(condition: bool) {
+    if condition {
+        raise Error { message: "Assertion failed" }
+    }
+}
+
+fn assertTrue(condition: bool) {
+    if !condition {
+        raise Error { message: "Assertion failed" }
+    }
+}
+
+
+fn assert(condition: bool, message: string) {
+    if !condition {
+        raise Error { message: message }
+    }
+}

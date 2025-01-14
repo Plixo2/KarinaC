@@ -77,6 +77,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitInterfaceExtension(KarinaParser.InterfaceExtensionContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KarinaParser#selfParameterList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSelfParameterList(KarinaParser.SelfParameterListContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KarinaParser#parameterList}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

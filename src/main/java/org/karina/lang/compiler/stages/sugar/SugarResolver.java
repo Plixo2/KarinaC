@@ -1,15 +1,16 @@
 package org.karina.lang.compiler.stages.sugar;
 
 import org.karina.lang.compiler.Generic;
+import org.karina.lang.compiler.NamedExpression;
 import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.SpanOf;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.errors.Unique;
 import org.karina.lang.compiler.errors.types.ImportError;
-import org.karina.lang.compiler.objects.KTree;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.StructModifier;
+import org.karina.lang.compiler.objects.*;
 
+import javax.naming.Name;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,8 +81,17 @@ public class SugarResolver {
         build.path(interfacePath);
         build.generics(kEnum.generics());
         build.annotations(List.of());
-        build.functions(List.of());
         build.superTypes(List.of());
+
+        var duplicate = Unique.testUnique(kEnum.entries(), KTree.KEnumEntry::name);
+        if (duplicate != null) {
+            Log.importError(new ImportError.DuplicateItem(
+                    kEnum.region(),
+                    duplicate.duplicate().region(),
+                    duplicate.value().value()
+            ));
+            throw new Log.KarinaException();
+        }
 
         for (var entry : kEnum.entries()) {
             if (entry.name().value().equals(kEnum.name().value())) {
@@ -94,8 +104,74 @@ public class SugarResolver {
                 throw new Log.KarinaException();
             }
             build.permittedStruct(path.append(entry.name().value()));
+
+            var enumCaseFunction = generateEnumCaseFunction(interfacePath, path, kEnum.generics(), entry);
+            build.function(enumCaseFunction);
         }
 
+        return build.build();
+    }
+    private KTree.KFunction generateEnumCaseFunction(ObjectPath path, ObjectPath unitPath, List<Generic> generics, KTree.KEnumEntry enumEntry) {
+        var build = KTree.KFunction.builder();
+        build.region(enumEntry.region());
+        build.name(enumEntry.name());
+        var functionPath = path.append(enumEntry.name().value());
+        build.path(functionPath);
+        build.self(null); //static
+        var newGenerics =
+                generics.stream().map(ref -> new Generic(enumEntry.region(), ref.name())).toList();
+        build.modifier(new FunctionModifier());
+        build.annotations(List.of());
+
+        var implGenerics = new ArrayList<KType>();
+
+        for (var newGeneric : newGenerics) {
+            var genericPath = new ObjectPath(newGeneric.name());
+            implGenerics.add(new KType.UnprocessedType(
+                    enumEntry.region(),
+                    SpanOf.span(enumEntry.region(), genericPath),
+                    List.of()
+            ));
+        }
+
+        var creationParams = new ArrayList<NamedExpression>();
+        for (var parameter : enumEntry.parameters()) {
+            var field = new KTree.KParameter(
+                    parameter.region(),
+                    SpanOf.span(parameter.region(), parameter.name().value()),
+                    parameter.type(),
+                    null
+            );
+            build.parameter(field);
+
+            creationParams.add(new NamedExpression(
+                    parameter.region(),
+                    parameter.name(),
+                    new KExpr.Literal(
+                            parameter.region(),
+                            parameter.name().value(),
+                            null
+                    )
+            ));
+        }
+
+
+        build.returnType(new KType.UnprocessedType(
+                enumEntry.region(),
+                SpanOf.span(enumEntry.region(), path.tail()),
+                implGenerics
+        ));
+        build.generics(newGenerics);
+        build.expr(new KExpr.CreateObject(
+                enumEntry.region(),
+                new KType.UnprocessedType(
+                        enumEntry.region(),
+                        SpanOf.span(enumEntry.region(), unitPath.append(enumEntry.name().value()).tail()),
+                        implGenerics
+                ),
+                creationParams,
+                null
+        ));
         return build.build();
     }
 

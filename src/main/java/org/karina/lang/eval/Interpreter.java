@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.karina.lang.compiler.BranchPattern;
 import org.karina.lang.compiler.NameAndOptType;
+import org.karina.lang.compiler.ObjectPath;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
@@ -200,6 +201,19 @@ public class Interpreter {
                         assert function != null;
                         yield enterFunction(function, function.self(), args);
                     }
+                    case CallSymbol.CallInterface callInterface -> {
+                        var self = eval(call.left(), env);
+                        if (!(self instanceof Map map)) {
+                            throw new NullPointerException("Not a map: " + toString(self));
+                        }
+                        var object = map.get("$type");
+                        if (!(object instanceof ObjectPath path)) {
+                            throw new NullPointerException("No $type in " + toString(self));
+                        }
+
+                        var function = this.collection.vTable(path, callInterface.path());
+                        yield enterFunction(function, self, args);
+                    }
                 };
             }
             case KExpr.Cast cast -> {
@@ -288,6 +302,9 @@ public class Interpreter {
                     case MemberSymbol.VirtualFunctionSymbol virtualFunctionSymbol -> {
                         throw new NullPointerException("Not Supported");
                     }
+                    case MemberSymbol.InterfaceFunctionSymbol interfaceFunctionSymbol -> {
+                        throw new NullPointerException("Not Supported");
+                    }
                 };
             }
             case KExpr.IsInstanceOf isInstanceOf -> {
@@ -298,6 +315,12 @@ public class Interpreter {
                 assert literal.symbol() != null;
                 yield switch (literal.symbol()) {
                     case LiteralSymbol.StaticFunction staticFunction -> {
+                        throw new NullPointerException("Not Supported");
+                    }
+                    case LiteralSymbol.StructReference structReference -> {
+                        throw new NullPointerException("Not Supported");
+                    }
+                    case LiteralSymbol.InterfaceReference interfaceReference -> {
                         throw new NullPointerException("Not Supported");
                     }
                     case LiteralSymbol.VariableReference variableReference -> {
@@ -430,30 +453,58 @@ public class Interpreter {
 
     public static Interpreter fromTree(KTree.KPackage kPackage) {
         var functions = new ArrayList<KTree.KFunction>();
+        var collection = new FunctionCollection();
         for (var kUnit : kPackage.getAllUnitsRecursively()) {
             for (var item : kUnit.items()) {
                 if (item instanceof KTree.KFunction function) {
                     functions.add(function);
                 } else if (item instanceof KTree.KStruct struct) {
                     functions.addAll(struct.functions());
+
+                    var vTable = new HashMap<ObjectPath, FunctionCollection.RuntimeFunction>();
+
+                    for (var implBlock : struct.implBlocks()) {
+                        functions.addAll(implBlock.functions());
+                        for (var function : implBlock.functions()) {
+                            if (!(implBlock.type() instanceof KType.ClassType clsType)) {
+                                throw new NullPointerException("invalid interface type");
+                            }
+                            var functionName = function.name().value();
+                            var interfacePath = clsType.path().value();
+                            var runtime = toRuntime(function);
+                            var interfaceFunctionPath = interfacePath.append(functionName);
+                            vTable.put(interfaceFunctionPath, runtime);
+                        }
+                    }
+                    collection.putVTable(struct.path(), vTable);
+                } else if (item instanceof KTree.KInterface kInterface) {
+                    for (var function : kInterface.functions()) {
+                        if (function.expr() != null) {
+                            functions.add(function);
+                        }
+                    }
                 }
             }
         }
 
-        var collection = new FunctionCollection();
+
 
         for (var function : functions) {
-            var expr = Objects.requireNonNull(function.expr());
-            var params = function.parameters().stream().map(KTree.KParameter::symbol).toList();
-            if (params.contains(null)) {
-                throw new NullPointerException("Parameter is null");
-            }
-            var func = new FunctionCollection.RuntimeFunction.KarinaFunction(expr, params);
-            collection.putFunction(function.path(), func);
+            collection.putFunction(function.path(), toRuntime(function));
         }
+        collection.print();
 
         return new Interpreter(collection);
 
+    }
+
+    private static FunctionCollection.RuntimeFunction toRuntime(KTree.KFunction function) {
+        var expr = Objects.requireNonNull(function.expr());
+        var params = function.parameters().stream().map(KTree.KParameter::symbol).toList();
+        if (params.contains(null)) {
+            throw new NullPointerException("Parameter is null");
+        }
+        return new FunctionCollection.RuntimeFunction.KarinaFunction(expr, params);
     }
 
 }

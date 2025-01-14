@@ -39,6 +39,8 @@ public class ItemImporting {
             }
         }
 
+
+
         var uniqueFunctions = Unique.testUnique(kInterface.functions(), KTree.KFunction::name);
         if (uniqueFunctions != null) {
             Log.importError(new ImportError.DuplicateItem(
@@ -169,10 +171,15 @@ public class ItemImporting {
         var build = KTree.KFunction.builder();
         build.region(function.region());
         build.name(function.name());
+        build.self(function.self());
         build.path(function.path());
         build.modifier(function.modifier());
         build.annotations(function.annotations());
         build.generics(function.generics());
+
+        if (function.self() == null) {
+            ctxBuilder.clearGenerics();
+        }
 
         for (var generic : function.generics()) {
             ctxBuilder.addGeneric(generic.name(), generic);
@@ -212,6 +219,10 @@ public class ItemImporting {
         build.returnType(returnType);
 
         if (function.expr() == null) {
+            if (function.self() == null) {
+                Log.temp(function.region(), "Static Function without body");
+                throw new Log.KarinaException();
+            }
             build.expr(null);
         } else {
             build.expr(ExprImporting.importExpr(ctx, function.expr()));

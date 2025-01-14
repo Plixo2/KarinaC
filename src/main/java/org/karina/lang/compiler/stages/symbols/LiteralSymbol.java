@@ -14,10 +14,16 @@ public sealed interface LiteralSymbol {
     default KType type() {
         switch (this) {
             case StaticFunction staticFunction -> {
-                return new KType.PrimitiveType.VoidType(staticFunction.region());
+                return new KType.PrimitiveType.VoidType(this.region());
             }
             case VariableReference variableReference -> {
                 return variableReference.variable().type();
+            }
+            case StructReference structReference -> {
+                return new KType.PrimitiveType.VoidType(this.region());
+            }
+            case InterfaceReference interfaceReference -> {
+                return new KType.PrimitiveType.VoidType(this.region());
             }
         }
     }
@@ -26,5 +32,8 @@ public sealed interface LiteralSymbol {
 
     record VariableReference(Span region, Variable variable) implements LiteralSymbol { }
 
+    record StructReference(Span region, ObjectPath path) implements LiteralSymbol { }
+
+    record InterfaceReference(Span region, ObjectPath path) implements LiteralSymbol { }
 
 }

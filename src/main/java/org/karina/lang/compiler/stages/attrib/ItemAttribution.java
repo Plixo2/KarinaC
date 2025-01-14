@@ -12,7 +12,6 @@ import org.karina.lang.compiler.stages.Variable;
 import org.karina.lang.compiler.stages.VariableCollection;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class ItemAttribution {
 
@@ -25,6 +24,7 @@ public class ItemAttribution {
         var build = KTree.KFunction.builder();
         build.region(function.region());
         build.name(function.name());
+        build.self(function.self());
         build.modifier(function.modifier());
         build.path(function.path());
 
@@ -44,7 +44,14 @@ public class ItemAttribution {
                     true
             );
         }
-
+        if (function.self() != null && selfSymbol == null) {
+            Log.attribError(new AttribError.UnqualifiedSelf(
+                    function.self(), function.region()
+            ));
+            throw new Log.KarinaException();
+        } else if (function.self() == null) {
+            selfSymbol = null;
+        }
 
         var typeChecking = new TypeChecking(root);
         var ctx = new AttributionContext(
@@ -110,6 +117,7 @@ public class ItemAttribution {
                 SpanOf.span(struct.name().region(),path),
                 genericTypes
         );
+
         for (var function : struct.functions()) {
             var attribFunction = attribFunction(root, symbolTable, selfType, function);
             build.function(attribFunction);
@@ -158,7 +166,33 @@ public class ItemAttribution {
     }
 
     static KTree.KInterface attribInterface(KTree.KPackage root, SymbolTable symbolTable, KTree.KInterface anInterface) {
-        return anInterface;
+        //TODO make sure functions dont define self, they are implicitly defined
+        var build = KTree.KInterface.builder();
+
+        build.region(anInterface.region());
+        build.name(anInterface.name());
+        build.path(anInterface.path());
+        build.generics(anInterface.generics());
+        build.annotations(anInterface.annotations());
+        build.superTypes(anInterface.superTypes());
+        build.permittedStructs(anInterface.permittedStructs());
+
+        for (var function : anInterface.functions()) {
+            if (function.self() == null) {
+                var attribFunction = attribFunction(root, symbolTable, null, function);
+                build.function(attribFunction);
+            } else if (function.expr() != null) {
+                //TODO construct type for self
+                //var attribFunction = attribFunction(root, symbolTable, null, function);
+                //build.function(attribFunction);
+                Log.temp(function.region(), "Not implemented");
+                throw new Log.KarinaException();
+            } else {
+                build.function(function);
+            }
+        }
+
+        return build.build();
     }
 
     static KTree.KEnum attribEnum(KTree.KPackage root, SymbolTable symbolTable, KTree.KEnum kEnum) {

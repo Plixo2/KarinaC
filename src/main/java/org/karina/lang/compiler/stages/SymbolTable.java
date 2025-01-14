@@ -111,6 +111,10 @@ public record SymbolTable(
             }
         }
 
+        public void clearGenerics() {
+            this.scopeGenerics.clear();
+        }
+
 
         public SymbolTable build() {
             var items = new HashMap<String, KTree.KTypeItem>();

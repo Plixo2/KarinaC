@@ -9,7 +9,7 @@ import_: 'import' ('*' | ID)? 'java::'? dotWordChain;
 item: annotation* (function | struct | enum | interface);
 
 
-function: 'fn' ID genericHintDefinition? '(' parameterList ')' ('->' type)? ('=' expression | block)?;
+function: 'fn' ID genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
 struct: 'struct' ID genericHintDefinition? '{' field* function* implementation* '}';
 implementation: 'impl' structType '{' function* '}';
@@ -20,6 +20,9 @@ enumMember: ID ('(' parameterList ')')?;
 
 interface : 'interface' ID genericHintDefinition? '{' function* interfaceExtension* '}';
 interfaceExtension: 'impl' structType;
+
+selfParameterList: ((parameter | 'self') (',' parameter)*)?;
+
 
 parameterList: (parameter (',' parameter)*)?;
 parameter: ID ':' type;

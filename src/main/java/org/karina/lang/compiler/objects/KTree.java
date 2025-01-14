@@ -40,22 +40,52 @@ public final class KTree {
             case KFunction kf -> null;
             case KEnum ke -> null;
             case KInterface kInterface -> {
+                yield null;
+            }
+            case KStruct kStruct -> {
+                for (var function : kStruct.functions()) {
+                    if (function.name().value().equals(functionName) && function.self() != null) {
+                        yield function;
+                    }
+                }
+                for (var implBlock : kStruct.implBlocks()) {
+                    for (var function : implBlock.functions()) {
+                        if (function.name().value().equals(functionName) && function.self() != null) {
+                            yield function;
+                        }
+                    }
+                }
+
+                yield null;
+            }
+        };
+    }
+
+    public static @Nullable KFunction findAbsoluteInterfaceFunction(KPackage root, ObjectPath path) {
+        if (path.isEmpty()) {
+            return null;
+        }
+        var functionName = path.last();
+        var item = findAbsolutItem(root, path.everythingButLast());
+        if (item == null) {
+            return null;
+        }
+
+        return switch (item) {
+            case KFunction kf -> null;
+            case KEnum ke -> null;
+            case KInterface kInterface -> {
                 for (var function : kInterface.functions()) {
-                    if (function.name().value().equals(functionName)) {
+                    if (function.name().value().equals(functionName) && function.self() != null) {
                         yield function;
                     }
                 }
                 yield null;
             }
             case KStruct kStruct -> {
-                for (var function : kStruct.functions()) {
-                    if (function.name().value().equals(functionName)) {
-                        yield function;
-                    }
-                }
                 for (var implBlock : kStruct.implBlocks()) {
                     for (var function : implBlock.functions()) {
-                        if (function.name().value().equals(functionName)) {
+                        if (function.name().value().equals(functionName) && function.self() != null) {
                             yield function;
                         }
                     }
@@ -65,30 +95,30 @@ public final class KTree {
         };
     }
 
-    public static @Nullable KField findAbsoluteField(KPackage root, ObjectPath path) {
-        if (path.isEmpty()) {
-            return null;
-        }
-        var fieldName = path.last();
-        var item = findAbsolutItem(root, path.everythingButLast());
-        if (item == null) {
-            return null;
-        }
-
-        return switch (item) {
-            case KFunction kf -> null;
-            case KEnum ke -> null;
-            case KInterface kInterface -> null;
-            case KStruct kStruct -> {
-                for (var field : kStruct.fields()) {
-                    if (field.name().value().equals(fieldName)) {
-                        yield field;
-                    }
-                }
-                yield null;
-            }
-        };
-    }
+//    public static @Nullable KField findAbsoluteField(KPackage root, ObjectPath path) {
+//        if (path.isEmpty()) {
+//            return null;
+//        }
+//        var fieldName = path.last();
+//        var item = findAbsolutItem(root, path.everythingButLast());
+//        if (item == null) {
+//            return null;
+//        }
+//
+//        return switch (item) {
+//            case KFunction kf -> null;
+//            case KEnum ke -> null;
+//            case KInterface kInterface -> null;
+//            case KStruct kStruct -> {
+//                for (var field : kStruct.fields()) {
+//                    if (field.name().value().equals(fieldName)) {
+//                        yield field;
+//                    }
+//                }
+//                yield null;
+//            }
+//        };
+//    }
 
     public static @Nullable KItem findRelativeItem(KPackage root, ObjectPath relativeToSrc) {
         if (relativeToSrc.isEmpty()) {
@@ -96,11 +126,31 @@ public final class KTree {
         }
         var objectPath = relativeToSrc.everythingButLast();
         var unit = root.findUnit(objectPath);
+        var last = relativeToSrc.last();
         if (unit == null) {
+            var mayStruct = findRelativeItem(root, objectPath);
+            if (mayStruct instanceof KStruct struct) {
+                for (var function : struct.functions()) {
+                    if (function.name().value().equals(last) && function.self() == null) {
+                        return function;
+                    }
+                }
+            } else if (mayStruct instanceof KInterface kInterface) {
+                for (var function : kInterface.functions()) {
+                    if (function.name().value().equals(last) && function.self() == null) {
+                        return function;
+                    }
+                }
+            }
             return null;
         }
-        var itemName = relativeToSrc.last();
-        return unit.findItem(itemName);
+        var function = unit.findItem(last);
+        if (function instanceof KFunction kf) {
+            if (kf.self() != null) {
+                return null;
+            }
+        }
+        return function;
     }
 
     @Builder
@@ -225,7 +275,8 @@ public final class KTree {
             @NonNull Span region,
             @NonNull SpanOf<String> name,
             @NonNull ObjectPath path,
-            @NotNull FunctionModifier modifier,
+            @Nullable Span self,// null if not defines self, otherwise the span of the self definition
+            @NotNull FunctionModifier modifier, // unused
             @Singular List<KAnnotation> annotations,
             @Singular List<KParameter> parameters,
             @Nullable KType returnType,
