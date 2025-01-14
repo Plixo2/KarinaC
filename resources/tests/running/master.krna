@@ -15,6 +15,7 @@ fn test() -> bool {
     assertTrue(testReturns())
     testInference()
     testStaticCall()
+    testInterfaceCall()
     testVirtualCall()
     testDynamicCall()
 
@@ -110,14 +111,61 @@ fn return5(arg: int) -> int =
 
 
 fn testStaticCall() {
+    assertTrue(staticGeneric(10) == 10)
+    assertTrue(staticGeneric(true) == true)
+    assertTrue(staticGeneric(0.04) == 0.04)
+    assertTrue(staticGenericUnknown(10) == 10)
+    let v1 = staticGenericNested(Option.None(), 10)
+    assertTrue(v1 is Err)
+    let v2 = staticGenericNested(Option.Some(true), 10)
+    assertTrue(v2 is Ok<?,?>)
 
+    assertTrue(orDefault(Option.Some(10), 20) == 10)
+    assertTrue(orDefault(Option.None(), 20) == 20)
+}
+fn staticGeneric<T>(value: T) -> T = value
+fn staticGenericUnknown<T>(value: int) -> int = value
+fn staticGenericNested<T, E>(value: Option<T>, err: E) -> Result<T, E> {
+    if value is Some<?> s {
+        return Result.Ok(s.value)
+    } else {
+        return Result.Err(err)
+    }
+}
+
+fn orDefault<T>(value: Option<T>, defaultValue: T) -> T {
+    if value is Some<?> s {
+        return s.value
+    } else {
+        return defaultValue
+    }
 }
 
 fn testVirtualCall() {
-
+    let obj: DefaultStruct = DefaultStruct.default()
+    assertTrue(obj.getValue() == 10)
+    obj.setValue(20)
+    assertTrue(obj.getValue() == 20)
+    assertTrue(obj.value == 20)
 }
 
 fn testDynamicCall() {
+    let f = fn(a) -> int {
+        a
+    }
+    let w: fn(int) -> int = f
+    f(0)
+
+    let f2 = fn(a) a
+    f2(true)
+    let w2 : fn(bool) -> bool = f2
+
+    let f3 = fn(a) Option.Some(a)
+    assertTrue(f3(10) is Some<?>)
+    let w3: fn(int) -> Option<int> = f3
+}
+
+fn testInterfaceCall() {
     let dut = InterfaceImpl { value: 10 }
 
     assertTrue(dut.value == 10)
@@ -129,6 +177,7 @@ fn testDynamicCall() {
     assertTrue(InterfaceTest.staticCall() == 10)
     assertTrue(InterfaceImpl.staticCall() == 20)
 }
+
 fn callAsInterface(dut: InterfaceTest<int>) {
     dut.set(20)
     assertTrue(dut.call() == 20)
@@ -166,6 +215,20 @@ interface InterfaceTest<T> {
     fn staticCall() -> int = 10
 }
 
+struct DefaultStruct {
+    value: int
+
+    fn setValue(self, value: int) {
+        self.value = value
+    }
+    fn default() -> DefaultStruct {
+        DefaultStruct { value: 10 }
+    }
+    fn getValue(self) -> int {
+        self.value
+    }
+
+}
 
 @Throwable
 struct Error {
