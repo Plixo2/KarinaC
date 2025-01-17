@@ -1,13 +1,11 @@
 package org.karina.lang.compiler;
 
-import org.karina.lang.compiler.api.Resource;
-import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.boot.DefaultFileTree;
-import org.karina.lang.compiler.api.DiagnosticCollection;
-import org.karina.lang.compiler.api.KarinaDefaultCompiler;
+import org.karina.lang.compiler.api.*;
+import org.karina.lang.compiler.backend.interpreter.InterpreterBackend;
+import org.karina.lang.compiler.api.DefaultFileTree;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.eval.Interpreter;
+import org.karina.lang.interpreter.Interpreter;
 
 import java.util.List;
 
@@ -32,10 +30,10 @@ public class TestFile {
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var success = compiler.compile(fileTree, collection, ref -> true);
+        var result = compiler.compile(fileTree, collection, null);
 
-        if (!Boolean.TRUE.equals(success)) {
-            DiagnosticCollection.printDiagnostic(collection, true);
+        if (result.isError()) {
+            printDiagnostic(collection, true);
             throw new AssertionError("Expected success for '" + this.name + "'");
         }
     }
@@ -51,32 +49,36 @@ public class TestFile {
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var success = compiler.compile(fileTree, collection, ref -> true);
+        var result = compiler.compile(fileTree, collection, null);
 
-        if (Boolean.TRUE.equals(success)) {
-            throw new AssertionError("Expected Fail for '" + this.name + "'");
-        } else {
-            Error lastError = null;
-            for (var log : collection) {
-                lastError = log.entry();
-                if (log.entry().getClass().equals(errorType)) {
-                    if (msg.isEmpty()) {
-                        return;
+        switch (result) {
+            case CompilationResult.Error<?> v -> {
+                Error lastError = null;
+                for (var log : collection) {
+                    lastError = log.entry();
+                    if (log.entry().getClass().equals(errorType)) {
+                        if (msg.isEmpty()) {
+                            return;
+                        }
+                        if (log.mkString(true).contains(msg)) {
+                            return;
+                        }
+                        var message = "Expected Fail for '" + this.name + "' with '" + msg +
+                                "' for type " + errorType.getSimpleName();
+                        throw new AssertionError(message);
                     }
-                    if (log.mkString(true).contains(msg)) {
-                       return;
-                    }
-                    var message = "Expected Fail for '" + this.name + "' with '" + msg +
-                            "' for type " + errorType.getSimpleName();
-                    throw new AssertionError(message);
                 }
-            }
 
-            var message =
-                    "Expected Fail for '" + this.name + "' of type '" + errorType.getSimpleName() + "'" +
-                            " but got " + (lastError == null ? "no errors" : lastError.getClass().getSimpleName());
-            throw new AssertionError(message);
+                var message =
+                        "Expected Fail for '" + this.name + "' of type '" + errorType.getSimpleName() + "'" +
+                                " but got " + (lastError == null ? "no errors" : lastError.getClass().getSimpleName());
+                throw new AssertionError(message);
+            }
+            case CompilationResult.OK<?> v -> {
+                throw new AssertionError("Expected Fail for '" + this.name + "'");
+            }
         }
+
     }
 
     public Object run(String function) {
@@ -86,20 +88,31 @@ public class TestFile {
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var result = compiler.compile(fileTree, collection, tree -> {
-            var solver = Interpreter.fromTree(tree);
-            var testLibrary = new TestLibrary();
-            testLibrary.addToInterpreter(solver);
+        var result = compiler.compile(fileTree, collection, new InterpreterBackend(true, System.out));
 
-            return solver;
-        });
-
-        if (result == null) {
-            DiagnosticCollection.printDiagnostic(collection, true);
-            throw new AssertionError("Expected success for '" + this.name + "'");
+        switch (result) {
+            case CompilationResult.Error<Interpreter> v -> {
+                printDiagnostic(collection, true);
+                throw new AssertionError("Expected success for '" + this.name + "'");
+            }
+            case CompilationResult.OK(var solver) -> {
+                var testLibrary = new TestLibrary();
+                testLibrary.addToInterpreter(solver);
+                var foundFunction = solver.collection().function(function);
+                return solver.eval(foundFunction, null, List.of());
+            }
         }
-        var foundFunction = result.collection().function(function);
-        return result.eval(foundFunction, null, List.of());
+
+    }
+
+    private static void printDiagnostic(DiagnosticCollection collection, boolean printVerbose) {
+        System.out.println("\u001B[31mCompilation failed\u001B[0m");
+        System.out.flush();
+        System.err.println();
+        for (var log : collection) {
+            System.err.println(log.mkString(printVerbose));
+        }
+        System.err.flush();
     }
 
     private record TestResource(String name) implements Resource {

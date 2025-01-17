@@ -68,10 +68,20 @@ public class CallAttrib extends AttribExpr {
         putMappedGenerics(expr, genericsAnnotated, function, mapped);
         var returnType = putParameters(ctx, expr, newArguments, function, mapped);
 
+        boolean inInterface = false;
+
+        var mayInterface = KTree.findAbsolutItem(ctx.root(), staticFunction.path().everythingButLast());
+        if (mayInterface instanceof KTree.KInterface) {
+            inInterface = true;
+        }
+
         symbol = new CallSymbol.CallStatic(
                 staticFunction.path(),
                 List.copyOf(mapped.values()),
-                returnType
+                returnType,
+                function.parameters().stream().map(KTree.KParameter::type).toList(),
+                function.returnType(),
+                inInterface
         );
         return symbol;
     }
@@ -108,7 +118,9 @@ public class CallAttrib extends AttribExpr {
                 sym.classType(),
                 sym.path(),
                 List.copyOf(mapped.values()),
-                returnType
+                returnType,
+                function.parameters().stream().map(KTree.KParameter::type).toList(),
+                function.returnType()
         );
     }
 
@@ -146,7 +158,9 @@ public class CallAttrib extends AttribExpr {
                 sym.classType(),
                 sym.path(),
                 List.copyOf(mapped.values()),
-                returnType
+                returnType,
+                function.parameters().stream().map(KTree.KParameter::type).toList(),
+                function.returnType()
         );
         return symbol;
     }
@@ -241,7 +255,7 @@ public class CallAttrib extends AttribExpr {
             returnType = new KType.PrimitiveType.VoidType(expr.region());
         }
 
-        symbol = new CallSymbol.CallDynamic(returnType);
+        symbol = new CallSymbol.CallDynamic(expr.region(), returnType);
         return symbol;
     }
 

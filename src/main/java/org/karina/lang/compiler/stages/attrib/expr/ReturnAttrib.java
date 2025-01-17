@@ -25,7 +25,8 @@ public class ReturnAttrib extends AttribExpr {
 
         return of(ctx, new KExpr.Return(
                 expr.region(),
-                value
+                value,
+                yieldType
         ));
     }
 

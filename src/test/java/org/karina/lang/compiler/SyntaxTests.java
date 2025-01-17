@@ -4,6 +4,8 @@ import org.apache.commons.cli.ParseException;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.api.config.ConfigurationParseException;
 import org.karina.lang.compiler.boot.FileLoader;
 import org.karina.lang.compiler.boot.Main;
 import org.karina.lang.compiler.errors.DidYouMean;
@@ -14,6 +16,7 @@ import org.karina.lang.compiler.errors.types.Error.*;
 import org.karina.lang.compiler.errors.types.ImportError;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class SyntaxTests {
@@ -65,7 +68,7 @@ public class SyntaxTests {
     }
 
     @Test
-    public void testWorkingSource() throws ParseException {
+    public void testWorkingSource() throws IOException, ConfigurationParseException {
         Main.main(new String[] {
                 "--src",
                 "resources/src",
@@ -82,11 +85,17 @@ public class SyntaxTests {
 
         return files.stream().map(ref -> {
             var name = FileLoader.getFileNameWithoutExtension(ref.getName());
-            var source = FileLoader.loadUTF8(ref.getAbsolutePath());
+            TextSource source = null;
+            try {
+                source = FileLoader.loadUTF8(ref.getAbsolutePath());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
+            TextSource finalSource = source;
             return DynamicTest.dynamicTest(
                     ref.getName(), () -> {
-                        var toTest = new TestFile(name, source);
+                        var toTest = new TestFile(name, finalSource);
                         testSingleFile(toTest);
                     }
             );

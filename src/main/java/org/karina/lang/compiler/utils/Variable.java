@@ -28,7 +28,12 @@ public class Variable {
         return this.usageCount;
     }
 
-//    public Variable(Span region, String name, KType type, boolean mutable, boolean parameter) {
+    @Override
+    public String toString() {
+        return "Variable{" + "type=" + type + ", name='" + name + '\'' + '}';
+    }
+
+    //    public Variable(Span region, String name, KType type, boolean mutable, boolean parameter) {
 //        this.region = region;
 //        this.name = name;
 //        this.type = type;

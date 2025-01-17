@@ -19,7 +19,8 @@ public class LogFactory<T extends LogBuilder> {
         switch (log) {
             case FileLoadError error -> {
                 var fileError = builder.setTitle("File Handling");
-                fileError.append("File: ").append(error.file().getAbsolutePath());
+                var path = error.file().getAbsolutePath().replace("\\", "/");
+                fileError.append("File: file:///").append(path);
                 fileError.append("Type: ").append(error.errorMessage());
             }
             case Error.InvalidState(var region, var aClass, var expectedState) -> {

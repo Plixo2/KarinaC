@@ -1,0 +1,340 @@
+
+
+
+fn main() {
+    let ref = ref(0)
+
+    let list = ListOf()
+    list.add(1)
+    list.add(2)
+    list.add(3)
+    list.add(4)
+    list.add(5)
+    list.add(6)
+    list.add(7)
+    list.add(8)
+    list.add(9)
+
+
+//    let range = range(0, 1000000)
+//    let iter = range.iterator()
+//    let now = getTime()
+//    while iter.hasNext() {
+//        let ignore = iter.next()
+
+    let newList = list.map(fn(v) v).filter(fn(v) v > 5);
+    //newList.forEach(fn(v) println(v))
+
+    //  println(newList.contains(fn(v) v == 6))
+    //  println(newList.indexOf(fn(v) v == 4))
+    //   println(newList.indexOf(fn(v) v == 8))
+
+    //  println("------")
+    //let s: Option<int> = Some { value: 5 }
+
+    let value = some(5)
+    if value is Some<?> s {
+        let w = s.value * 2
+      //  println(w)
+    } else if value is None<?> n {
+        let w = n;
+
+    }
+
+    write(Car { color: "red" })
+
+    let or = orElse(Some { value: 5 }, 10)
+    //println(or)
+    let or2 = orElse(None {}, 10)
+    //println(or2)
+
+    let resA = none() is Some<?>
+    //println(resA)
+    let resB = some(5) is Some<?>
+    //println(resB)
+
+    if ref is ObjectRef<?> r {
+        counter(r, UICanvas {})
+    }
+//    }
+//    let end = getTime()
+//    let delta = end - now
+//    println("Time: ")
+//    println(delta)
+
+    1
+}
+
+struct Car {
+    color: string
+
+    fn setColor(self, color: string) {
+        self.color = color
+    }
+
+    impl Serializable {
+    }
+}
+interface Serializable {
+
+}
+
+
+fn write(s: Serializable) {
+   //println("Writing")
+}
+
+fn orElse<T>(o: Option<int>, t: T) -> int = if o is Some s { s.value } else { t }
+
+
+fn toAny<T>(t: T) -> ? = t
+
+fn range(start: int, end: int) -> List<int> {
+    let list = ListOf()
+    let index = start
+    while index < end {
+        list.add(index)
+        index = index + 1
+    }
+    list
+}
+
+struct List<T> {
+    storage: [T]
+    capacity: int
+    size: int
+    
+    fn size(self) -> int = self.size
+
+    fn get(self, i: int) -> Option<T> {
+        if i >= self.size || i < 0 {
+           none()
+        }
+
+        some(self.storage[i])
+    }
+
+    fn set(self, i: int, v: T) {
+        if i >= self.size || i < 0 {
+            raise Error { message: "Index out of bounds" }
+        }
+        self.storage[i] = v
+    }
+
+    fn add(self, v: T) {
+        if self.size == self.capacity {
+            self.capacity = max(self.capacity, 1) * 2
+            let newArray = array<T>(self.capacity)
+            let index = 0
+
+            while index < self.size {
+                newArray[index] = self.storage[index]
+                index = index + 1
+            }
+
+            self.storage = newArray
+        }
+        self.storage[self.size] = v
+        self.size = self.size + 1
+    }
+
+    fn map<U>(self, f: fn(T) -> U) -> List<U> {
+        let index = 0
+        let newList = List { storage: array(self.size), capacity: self.size, size: self.size }
+
+        while index < self.size { 
+            newList.set(index, f(self.storage[index]))
+            index = index + 1
+        }
+        newList
+    }
+
+    fn filter(self, f: fn(T) -> bool) -> List<T> {
+        let index = 0
+        let newList = List { storage: array(self.size), capacity: self.size, size: 0 }
+
+        while index < self.size {
+            if f(self.storage[index]) {
+                newList.add(self.storage[index])
+            }
+            index = index + 1
+        }
+
+        newList
+    }
+
+    fn forEach(self, f: fn(T)) {
+        let index = 0
+        while index < self.size {
+            f(self.storage[index])
+            index = index + 1
+        }
+    }
+
+    fn contains(self, f: fn(T) -> bool) -> bool {
+        let index = 0
+        while index < self.size {
+            if f(self.storage[index]) {
+                return true
+            }
+            index = index + 1
+        }
+        false
+    }
+
+    fn indexOf(self, f: fn(T) -> bool) -> Option<int> {
+        let index = 0
+        while index < self.size {
+            if f(self.storage[index]) {
+                return some(index)
+            }
+            index = index + 1
+        }
+        none()
+    }
+
+    fn iterator(self) -> Iterator<T> {
+        let index = [0]
+
+        let next = fn() {
+            let value = self.storage[index[0]]
+            index[0] = index[0] + 1
+            return value
+        }
+
+        let hasNext = fn () index[0] < self.size
+
+        Iterator { next: next, hasNext: hasNext }
+    }
+
+    fn asArray(self) -> [T] {
+        let newArray = array(self.size)
+        let index = 0
+        while index < self.size {
+            newArray[index] = self.storage[index]
+            index = index + 1
+        }
+        newArray
+    }
+
+}
+
+enum Option<T> {
+    Some(value: T)
+    None
+}
+
+fn some<T>(v: T) -> Option<T> = Some { value: v }
+fn none<T>() -> Option<T> = None {}
+
+
+enum Result<T, E> {
+    Ok(v: T)
+    Err(e: E)
+}
+
+fn ok<T, E>(v: T) -> Result<T, E> = Ok { v: v }
+fn err<T, E>(e: E) -> Result<T, E> = Err { e: e }
+
+fn uiTest() {
+
+}
+
+@Default = {
+
+
+}
+struct UICanvas {
+
+    fn add() {}
+
+    fn stateful<T>(state: T, f: fn(T) -> UICanvas) {
+        f(state)
+    }
+}
+
+fn counter(r: Ref<int>, ui: UICanvas) {
+    let state = ref(0)
+
+
+    ui.stateful(state, fn(v) {
+
+        //state.set(v + 1)
+
+        UICanvas {}
+    })
+    //let value = r.get()
+    //r.set(value + 1)
+}
+
+interface Ref<T> {
+    fn get() -> T
+    fn set(v: T)
+    fn subscribe(f: fn(T))
+}
+
+struct ObjectRef<T> {
+    value: T
+    subscriptions: List<fn(T)>
+
+    impl Ref<T> {
+        fn get(self) -> T = self.value
+        fn set(self, v: T) {
+            self.value = v
+            self.subscriptions.forEach(fn(f) f(v))
+        }
+
+        fn subscribe(self, f: fn(T)) {
+            self.subscriptions.add(f)
+        }
+    }
+}
+
+fn ref<T>(v: T) -> Ref<T> = ObjectRef { value: v, subscriptions: ListOf() }
+
+
+@Throwable
+struct Error { 
+    message: string
+}
+
+
+struct Iterator<T> {
+    next: fn() -> T
+    hasNext: fn() -> bool
+}
+
+fn max(a: int, b: int) -> int = if a > b { a } else { b }
+fn min(a: int, b: int) -> int = if a < b { a } else { b }
+
+fn ListOf<T>() -> List<T> {
+    return List { storage: array(4), capacity: 4, size: 0 }
+}
+
+@Native
+@Unsafe
+fn array<T>(size: int) -> [T] = []
+
+@Native
+fn println<T>(v: T) {}
+
+@Native
+fn getTime() -> long = 0
+
+struct Help<T> {
+    a: int
+    b: T
+    state: bool
+
+    fn add<W>(a: T, b: W) -> Tuple<T, W> {
+       return Tuple { a: a, b: b }
+    }
+}
+
+struct Tuple<T, U> {
+    a: T
+    b: U
+
+    fn first(self) -> T = self.a
+    fn second(self) -> U = self.b
+}

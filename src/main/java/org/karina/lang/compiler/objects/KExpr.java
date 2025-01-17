@@ -147,7 +147,7 @@ public sealed interface KExpr {
     record Branch(Span region, KExpr condition, KExpr thenArm, @Nullable KExpr elseArm, @Nullable BranchPattern branchPattern, @Nullable @Symbol KType symbol) implements KExpr {}
     record While(Span region, KExpr condition, KExpr body) implements KExpr {}
     record For(Span region, SpanOf<String> name , KExpr iter, KExpr body, @Nullable @Symbol Variable symbol) implements KExpr {}
-    record Return(Span region, @Nullable KExpr value) implements KExpr {}
+    record Return(Span region, @Nullable KExpr value, @Nullable @Symbol KType yieldType) implements KExpr {}
     record Break(Span region) implements KExpr {}
     record Continue(Span region) implements KExpr {}
     record Binary(Span region, KExpr left, SpanOf<BinaryOperator> operator, KExpr right, @Nullable @Symbol BinOperatorSymbol symbol) implements KExpr {}
@@ -158,7 +158,7 @@ public sealed interface KExpr {
     record GetArrayElement(Span region, KExpr left, KExpr index, @Nullable @Symbol KType elementType) implements KExpr {}
     record Cast(Span region, KExpr expression, KType asType, @Nullable @Symbol CastSymbol symbol) implements KExpr {}
     record Assignment(Span region, KExpr left, KExpr right, @Nullable @Symbol AssignmentSymbol symbol) implements KExpr {}
-    record CreateArray(Span region, @Nullable KType hint, List<KExpr> elements, @Nullable @Symbol KType symbol) implements KExpr {}
+    record CreateArray(Span region, @Nullable KType hint, List<KExpr> elements, @Nullable @Symbol KType.ArrayType symbol) implements KExpr {}
     record Number(Span region, BigDecimal number, boolean decimalAnnotated, @Nullable @Symbol NumberSymbol symbol) implements KExpr {}
     record Boolean(Span region, boolean value) implements KExpr {}
     record Literal(Span region, String name, @Nullable @Symbol LiteralSymbol symbol) implements KExpr {}

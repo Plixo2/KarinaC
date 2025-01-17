@@ -10,10 +10,10 @@ public sealed interface CallSymbol {
 
     KType returnType();
 
-    record CallStatic(ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
+    record CallStatic(ObjectPath path, List<KType> generics, KType returnType, List<KType> argTypeStatic, KType returnTypeStatic, boolean inInterface) implements CallSymbol { }
 
-    record CallVirtual(Span nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
-    record CallInterface(Span nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType) implements CallSymbol { }
-    record CallDynamic(KType returnType) implements CallSymbol { }
+    record CallVirtual(Span nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType, List<KType> argTypeStatic, KType returnTypeStatic) implements CallSymbol { }
+    record CallInterface(Span nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType , List<KType> argTypeStatic, KType returnTypeStatic) implements CallSymbol { }
+    record CallDynamic(Span region, KType returnType) implements CallSymbol { }
 
 }

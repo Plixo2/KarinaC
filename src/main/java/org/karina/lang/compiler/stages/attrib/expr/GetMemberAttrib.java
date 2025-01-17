@@ -62,6 +62,15 @@ public class GetMemberAttrib extends AttribExpr {
                 );
             }
         }
+        if (left.type() instanceof KType.ArrayType arrayType) {
+            if (expr.name().value().equals("size")) {
+                symbol = new MemberSymbol.ArrayLength(expr.region());
+                return of(ctx, new KExpr.GetMember(expr.region(), left, expr.name(), symbol));
+            } else {
+                Log.attribError(new AttribError.UnknownField(expr.name().region(), expr.name().value()));
+                throw new Log.KarinaException();
+            }
+        }
 
         if (!(left.type() instanceof KType.ClassType classType)) {
             Log.attribError(new AttribError.NotAStruct(expr.left().region(), left.type()));
@@ -110,7 +119,7 @@ public class GetMemberAttrib extends AttribExpr {
                 var fieldType = replaceType(field.type(), mapped);
 
                 symbol =
-                        new MemberSymbol.FieldSymbol(fieldType, field.path(), field.name().value());
+                        new MemberSymbol.FieldSymbol(fieldType, field.path(), field.name().value(), left.type());
             } else if (functionToGet.isPresent()) {
                 var function = functionToGet.get();
                 symbol = new MemberSymbol.VirtualFunctionSymbol(

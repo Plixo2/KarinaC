@@ -29,6 +29,10 @@ public sealed interface KType {
         return this instanceof PrimitiveType.VoidType;
     }
 
+    default boolean isPrimitiveNonString() {
+        return this instanceof PrimitiveType primitive && !(primitive instanceof PrimitiveType.StringType);
+    }
+
     enum KPrimitive {
         VOID,
         INT,
@@ -126,6 +130,9 @@ public sealed interface KType {
         public boolean canResolve(Span checkingRegion, KType resolved) {
             if (resolved == this) {
                 return true;
+            }
+            if (resolved.isPrimitiveNonString()) {
+                return false;
             }
 
             var dependencies = new ArrayList<TypeDependency>();

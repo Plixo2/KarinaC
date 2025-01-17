@@ -84,7 +84,8 @@ public class CreateObjectAttrib extends AttribExpr {
                 newParameters.add(new NamedExpression(
                         parameter.region(),
                         parameter.name(),
-                        attribField
+                        attribField,
+                        field.type()
                 ));
             }
         }

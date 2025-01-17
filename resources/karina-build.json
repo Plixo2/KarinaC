@@ -1,6 +1,11 @@
 {
   "build": {
     "src": "./src"
+   , "output": "out/build.jar",
+    "main": "src.Main"
   },
-  "verbose": true
+  "verbose": true,
+  "run": true
+
+  //,"eval": "src.Main.main"
 }

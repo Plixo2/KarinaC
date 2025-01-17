@@ -46,7 +46,7 @@ public record TypeChecking(KTree.KPackage root) {
      * {@code let a: left = right}
      */
     public boolean canAssign(Span checkingRegion, KType left, KType right, boolean mutable) {
-        if (left instanceof KType.AnyClass) {
+        if (left instanceof KType.AnyClass && !right.isPrimitiveNonString()) {
             //we check here, we dont want to resolve resolvable types with it
             return true;
         }

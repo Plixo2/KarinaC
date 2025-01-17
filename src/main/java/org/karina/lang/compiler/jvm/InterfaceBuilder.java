@@ -30,9 +30,6 @@ public class InterfaceBuilder {
                         var classNode = new ClassNode();
                         reader.accept(classNode, 0);
 
-//                        for (var field : classNode.fields) {
-//                            field.desc
-//                        }
 
                         System.out.println("Class Name: " + classNode.name);
                         System.out.println("Super Class: " + classNode.superName);

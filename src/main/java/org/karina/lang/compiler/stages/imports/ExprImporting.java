@@ -220,7 +220,8 @@ public class ExprImporting {
                     parameters.add(new NamedExpression(
                             parameter.region(),
                             name,
-                            value
+                            value,
+                            null
                     ));
                 });
             }
@@ -302,7 +303,7 @@ public class ExprImporting {
         } else {
             value = importExpr(ctx, expr.value());
         }
-        return new KExpr.Return(expr.region(), value);
+        return new KExpr.Return(expr.region(), value, null);
     }
 
     private static KExpr importStringExpr(ImportContext ctx, KExpr.StringExpr expr) {

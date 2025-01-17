@@ -1,0 +1,162 @@
+
+fn test() -> bool {
+
+    testFloats()
+    testDoubles()
+    testBools()
+    testInts()
+    testLongs()
+
+    true
+}
+
+fn main(args: [string]) {
+   test()
+}
+
+
+fn testFloats() {
+    let f: float = 0.0;
+    let f2: float = -1.0;
+    let f3: float = 1.0;
+    let f4: float = 2.0;
+    assertTrue(f < f3)
+    assertTrue(f2 <= f2)
+    assertTrue(f3 <= f3)
+    assertTrue(f4 > f3)
+    assertTrue(f2 <= f)
+    assertTrue(f2 <= f3)
+    assertTrue(f2 <= f4)
+    assertTrue(f3 >= f3)
+    assertTrue(f3 == f3)
+    assertTrue(f4 != f3)
+
+    assertFalse(f >= f3)
+    assertFalse(f2 > f2)
+    assertFalse(f3 > f3)
+    assertFalse(f4 <= f3)
+    assertFalse(f3 < f3)
+    assertFalse(f3 != f3)
+    assertFalse(f4 == f3)
+}
+
+fn testDoubles() {
+    let d: double = 0.0;
+    let d2: double = -1.0;
+    let d3: double = 1.0;
+    let d4: double = 2.0;
+    assertTrue(d < d3)
+    assertTrue(d2 <= d2)
+    assertTrue(d2 <= d)
+    assertTrue(d2 <= d3)
+    assertTrue(d2 <= d4)
+    assertTrue(d3 <= d3)
+    assertTrue(d4 > d3)
+    assertTrue(d3 >= d3)
+    assertTrue(d3 == d3)
+    assertTrue(d4 != d3)
+
+    assertFalse(d >= d3)
+    assertFalse(d2 > d2)
+    assertFalse(d3 > d3)
+    assertFalse(d4 <= d3)
+    assertFalse(d3 < d3)
+    assertFalse(d3 != d3)
+    assertFalse(d4 == d3)
+}
+
+fn testBools() {
+    let True = true;
+    let False = false;
+    assertTrue(True && True)
+    assertTrue(False || True)
+    assertTrue(True || False)
+    assertTrue(!(False || False))
+    assertTrue(!(False && False))
+    assertTrue(False == False)
+    assertTrue(True != False)
+
+    assertFalse(!(True && True))
+    assertFalse(False && True)
+    assertFalse(True && False)
+    assertFalse((False || False))
+    assertFalse((False && False))
+    assertFalse(False != False)
+    assertFalse(True == False)
+}
+
+fn testInts() {
+    let f: int = 0;
+    let f2: int = -1;
+    let f3: int = 1;
+    let f4: int = 2;
+    assertTrue(f < f3)
+    assertTrue(f2 <= f2)
+    assertTrue(f3 <= f3)
+    assertTrue(f2 <= f)
+    assertTrue(f2 <= f3)
+    assertTrue(f2 <= f4)
+    assertTrue(f4 > f3)
+    assertTrue(f3 >= f3)
+    assertTrue(f3 == f3)
+    assertTrue(f4 != f3)
+
+
+    assertFalse(f >= f3)
+    assertFalse(f2 > f2)
+    assertFalse(f3 > f3)
+    assertFalse(f4 <= f3)
+    assertFalse(f3 < f3)
+    assertFalse(f3 != f3)
+    assertFalse(f4 == f3)
+}
+
+fn testLongs() {
+    let f: long = 0;
+    let f2: long = -1;
+    let f3: long = 1;
+    let f4: long = 2;
+    assertTrue(f < f3)
+    assertTrue(f2 <= f2)
+    assertTrue(f3 <= f3)
+    assertTrue(f4 > f3)
+    assertTrue(f2 <= f)
+    assertTrue(f2 <= f3)
+    assertTrue(f2 <= f4)
+    assertTrue(f3 >= f3)
+    assertTrue(f3 == f3)
+    assertTrue(f4 != f3)
+
+    assertFalse(f >= f3)
+    assertFalse(f2 > f2)
+    assertFalse(f3 > f3)
+    assertFalse(f4 <= f3)
+    assertFalse(f3 < f3)
+    assertFalse(f3 != f3)
+    assertFalse(f4 == f3)
+}
+
+
+@Throwable
+struct Error {
+    message: string
+}
+
+
+fn assertFalse(condition: bool) {
+    if condition {
+        raise Error { message: "Assertion failed" }
+    }
+}
+
+fn assertTrue(condition: bool) {
+    if !condition {
+        raise Error { message: "Assertion failed" }
+    }
+}
+
+
+
+
+
+

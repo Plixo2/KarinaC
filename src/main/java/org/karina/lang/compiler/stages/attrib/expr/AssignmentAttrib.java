@@ -26,11 +26,12 @@ public class AssignmentAttrib extends AttribExpr {
         ) {
             symbol = new AssignmentSymbol.LocalVariable(variable);
         } else if (left instanceof KExpr.GetMember(
-                var ignored, var object, var ignored3, MemberSymbol.FieldSymbol(KType type, ObjectPath fieldPath, var name))
+                var ignored, var object, var ignored3, MemberSymbol.FieldSymbol(KType type, ObjectPath fieldPath, var name, var owner))
         ) {
-            symbol = new AssignmentSymbol.Field(object, fieldPath, name);
+            symbol = new AssignmentSymbol.Field(object, fieldPath, name,  owner, type);
         } else if (left instanceof KExpr.GetArrayElement getArrayElement) {
-            symbol = new AssignmentSymbol.ArrayElement(getArrayElement.left(), getArrayElement.index());
+            symbol = new AssignmentSymbol.ArrayElement(getArrayElement.left(), getArrayElement.index(),
+                    getArrayElement.elementType());
         } else {
             Log.temp(left.region(), "Unknown assignment symbol");
             throw new Log.KarinaException();

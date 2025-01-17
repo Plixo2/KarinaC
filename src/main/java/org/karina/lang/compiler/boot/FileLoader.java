@@ -1,16 +1,20 @@
 package org.karina.lang.compiler.boot;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.api.DefaultFileTree;
+import org.karina.lang.compiler.api.FileResource;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.api.FileNode;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.errors.types.FileLoadError;
-import org.karina.lang.compiler.errors.Log;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -18,58 +22,36 @@ import java.util.function.Predicate;
 public class FileLoader {
 
     //#region Load UTF-8 File
-    public static TextSource loadUTF8(String path) throws Log.KarinaException {
+    public static TextSource loadUTF8(String path) throws IOException {
         var file = new File(path);
         var lines = loadUTF8File(file);
-        return new TextSource(new DefaultResource(file), lines);
+        return new TextSource(new FileResource(file), lines);
     }
 
-    public static String loadUTF8FiletoString(File file) throws Log.KarinaException {
-        if (!file.exists()) {
-            Log.fileError(new FileLoadError.NotFound(file));
-            throw new Log.KarinaException();
-        }
-        if (!file.isFile()) {
-            Log.fileError(new FileLoadError.NotAFile(file));
-            throw new Log.KarinaException();
-        }
-        if (!file.canRead()) {
-            Log.fileError(new FileLoadError.NOPermission(file));
-            throw new Log.KarinaException();
-        }
-        try {
-            var path = file.getAbsoluteFile().toPath().normalize();
-            var charset = StandardCharsets.UTF_8;
-            return Files.readString(path, charset);
-        } catch (IOException e) {
-            Log.fileError(new FileLoadError.IO(file, e));
-            throw new Log.KarinaException();
-        }
+    public static String loadUTF8FiletoString(File file) throws IOException {
+        testValidity(file);
+        var path = file.getAbsoluteFile().toPath().normalize();
+        var charset = StandardCharsets.UTF_8;
+        return Files.readString(path, charset);
     }
 
-    private static List<String> loadUTF8File(File file) throws Log.KarinaException {
+    private static List<String> loadUTF8File(File file) throws IOException {
+        testValidity(file);
+        var path = file.getAbsoluteFile().toPath().normalize();
+        var charset = StandardCharsets.UTF_8;
+        return Files.readAllLines(path, charset);
+    }
 
+    private static void testValidity(File file) throws IOException {
         if (!file.exists()) {
-            Log.fileError(new FileLoadError.NotFound(file));
-            throw new Log.KarinaException();
+            throw new FileNotFoundException(file.toString());
         }
         if (!file.isFile()) {
-            Log.fileError(new FileLoadError.NotAFile(file));
-            throw new Log.KarinaException();
+            throw new NoSuchFileException(file.toString(), null, "not a file");
         }
         if (!file.canRead()) {
-            Log.fileError(new FileLoadError.NOPermission(file));
-            throw new Log.KarinaException();
+            throw new AccessDeniedException(file.toString());
         }
-        try {
-            var path = file.getAbsoluteFile().toPath().normalize();
-            var charset = StandardCharsets.UTF_8;
-            return Files.readAllLines(path, charset);
-        } catch (IOException e) {
-            Log.fileError(new FileLoadError.IO(file, e));
-            throw new Log.KarinaException();
-        }
-
     }
     //#endregion
 
@@ -78,7 +60,7 @@ public class FileLoader {
             @Nullable ObjectPath objectPath,
             String path,
             Predicate<String> filePredicate
-    ) throws Log.KarinaException {
+    ) throws IOException {
 
         var file = new File(path);
         var folderName = getFileNameWithoutExtension(file.getName());
@@ -86,21 +68,23 @@ public class FileLoader {
             objectPath = new ObjectPath(folderName);
         }
         if (!file.exists()) {
-            Log.fileError(new FileLoadError.NotFound(file));
-            throw new Log.KarinaException();
+            throw new FileNotFoundException(
+                    file.toString()
+            );
         }
         if (!file.isDirectory()) {
-            Log.fileError(new FileLoadError.NotAFolder(file));
-            throw new Log.KarinaException();
+            throw new NotDirectoryException(
+                file.toString()
+            );
         }
         if (!file.canRead()) {
-            Log.fileError(new FileLoadError.NOPermission(file));
-            throw new Log.KarinaException();
+            throw new AccessDeniedException(
+                    file.toString()
+            );
         }
         var files = file.listFiles();
         if (files == null) {
-            Log.fileError(new FileLoadError.IO(file, new IOException("Can't list files")));
-            throw new Log.KarinaException();
+            throw new IOException("Can't list files");
         }
         return loadTreeFiles(files, objectPath, folderName, filePredicate);
 
@@ -111,14 +95,15 @@ public class FileLoader {
             ObjectPath objectPath,
             String folderName,
             Predicate<String> filePredicate
-    ) {
+    ) throws IOException {
 
         var children = new ArrayList<DefaultFileTree>();
         var leafs = new ArrayList<FileNode>();
         for (var subFile : files) {
             if (!subFile.exists()) {
-                Log.fileError(new FileLoadError.NotFound(subFile));
-                throw new Log.KarinaException();
+                throw new FileNotFoundException(
+                        subFile.toString()
+                );
             }
             var name = getFileNameWithoutExtension(subFile.getName());
             if (name.isEmpty()) {
@@ -130,7 +115,7 @@ public class FileLoader {
                 children.add(child);
             } else if (subFile.isFile() && filePredicate.test(subFile.getName())) {
                 var lines = loadUTF8File(subFile);
-                var src = new TextSource(new DefaultResource(subFile), lines);
+                var src = new TextSource(new FileResource(subFile), lines);
                 leafs.add(new DefaultFileTree.DefaultFileNode(childPath, name, src));
             }
         }

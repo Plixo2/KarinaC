@@ -7,7 +7,13 @@ import org.karina.lang.compiler.objects.KType;
 public sealed interface MemberSymbol {
     KType type();
 
-    record FieldSymbol(KType type, ObjectPath fieldPath, String name) implements MemberSymbol {}
+    record ArrayLength(Span region) implements MemberSymbol {
+        @Override
+        public KType type() {
+            return new KType.PrimitiveType.IntType(this.region);
+        }
+    }
+    record FieldSymbol(KType type, ObjectPath fieldPath, String name, KType owner) implements MemberSymbol {}
     record InterfaceFunctionSymbol(Span region, KType.ClassType classType, ObjectPath path) implements MemberSymbol {
         @Override
         public KType type() {

@@ -5,7 +5,7 @@ import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.stages.parser.KarinaUnitParser;
+import org.karina.lang.compiler.stages.parser.KarinaTextParser;
 import org.karina.lang.lsp.fs.ContentRoot;
 import org.karina.lang.lsp.fs.KarinaFile;
 
@@ -104,7 +104,7 @@ public class Workspace {
         var path = file.path();
         if (file.state() instanceof KarinaFile.KarinaFileState.Raw(var source)) {
             var error = ErrorHandler.tryInternal(() -> {
-                var unit = KarinaUnitParser.generateParseTree(source, simpleName, path);
+                var unit = KarinaTextParser.generateParseTree(source, simpleName, path);
                 if (unit != null) {
                     file.state(new KarinaFile.KarinaFileState.Typed(source, unit));
                 }

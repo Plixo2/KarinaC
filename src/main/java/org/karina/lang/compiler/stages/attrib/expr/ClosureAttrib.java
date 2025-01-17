@@ -84,13 +84,15 @@ public class ClosureAttrib extends AttribExpr {
                 expr.region(), newArgs.stream().map(NameAndOptType::type).toList(), returnType,
                 expr.interfaces()
         );
-        var symbol = new ClosureSymbol(functionType, captures, captureSelf);
+        var variables = newArgs.stream().map(NameAndOptType::symbol).toList();
+        var symbol = new ClosureSymbol(functionType, captures, captureSelf, ctx.selfType(), variables);
         return of(ctx, new KExpr.Closure(
                 expr.region(),
                 newArgs,
                 returnType,
                 expr.interfaces(),
-                newBody, symbol
+                newBody,
+                symbol
         ));
     }
 

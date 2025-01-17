@@ -2,9 +2,12 @@ package org.karina.lang.compiler;
 
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.boot.FileLoader;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 public class RunningTests {
     private static final String TEST_DIR = "resources/tests/running/";
@@ -19,18 +22,24 @@ public class RunningTests {
 
         return files.stream().map(ref -> {
             var name = FileLoader.getFileNameWithoutExtension(ref.getName());
-            var source = FileLoader.loadUTF8(ref.getAbsolutePath());
+            TextSource source = null;
+            try {
+                source = FileLoader.loadUTF8(ref.getAbsolutePath());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
+            TextSource finalSource = source;
             return DynamicTest.dynamicTest(
                     ref.getName(), () -> {
-                        var toTest = new TestFile(name, source);
-                        testSingleFile(toTest);
+                        var toTest = new TestFile(name, finalSource);
+                        testSingleFile(toTest, true);
                     }
             );
         }).toList();
     }
 
-    private static void testSingleFile(TestFile file) {
+    private static void testSingleFile(TestFile file, Object expected) {
         if (file.source.lines().isEmpty()) {
             throw new AssertionError("Empty file: " + file.name);
         }
@@ -38,12 +47,12 @@ public class RunningTests {
         if (object == null) {
             throw new AssertionError("No object returned from file: " + file.name);
         }
-        if (!(object instanceof Boolean b)) {
-            throw new AssertionError("Expected boolean return from file: " + file.name);
+        if (Objects.equals(expected, object)) {
+            return;
         }
-        if (!b) {
-            throw new AssertionError("Expected success for file: " + file.name);
-        }
+
+        throw new AssertionError("Expected " + expected + " but got " + object + " or file: " + file.name);
+
     }
 
 
