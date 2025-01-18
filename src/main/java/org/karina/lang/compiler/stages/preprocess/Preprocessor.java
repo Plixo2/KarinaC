@@ -13,7 +13,7 @@ import org.karina.lang.compiler.objects.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Preprocessor {
+public class PreProcessor {
 
     public KTree.KPackage desugarTree(KTree.KPackage root) throws Log.KarinaException {
         return desugarPackage(root, root);

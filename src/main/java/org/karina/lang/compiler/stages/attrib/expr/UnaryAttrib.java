@@ -6,12 +6,12 @@ import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.objects.UnaryOperator;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.UnaryOperatorSymbol;
 
-public class UnaryAttrib extends AttribExpr {
-    public static AttribExpr attribUnary(
+public class UnaryAttrib extends AttributionExpr {
+    public static AttributionExpr attribUnary(
             @Nullable KType hint, AttributionContext ctx, KExpr.Unary expr) {
 
         if (expr.operator().value() == UnaryOperator.NOT) {

@@ -1,35 +1,53 @@
 package org.karina.lang.compiler.boot;
 
 
-import org.apache.commons.cli.ParseException;
 import org.karina.lang.compiler.api.*;
-import org.karina.lang.compiler.api.config.Configuration;
-import org.karina.lang.compiler.api.config.ConfigurationLoader;
-import org.karina.lang.compiler.api.config.ConfigurationParseException;
-import org.karina.lang.compiler.backend.interpreter.InterpreterBackend;
-import org.karina.lang.compiler.backend.jvm.BytecodeBackend;
-import org.karina.lang.compiler.backend.jvm.JarCompilation;
-import org.karina.lang.interpreter.Interpreter;
-import org.karina.lang.interpreter.SimpleLibrary;
 
 import java.io.IOException;
-import java.util.List;
+import java.nio.file.Path;
 
 
 public class Main {
 
-    public static void main(String[] args) throws ConfigurationParseException, IOException {
-        var configuration = ConfigurationLoader.fromCommandLineArgs(args);
+    private static final Path sourceDirectory = Path.of("resources/src/");
+    private static final Path buildDir = Path.of("resources/out/build.jar");
+    private static final String mainClass = "src.Main";
 
-        var bootstrap = new KarinaBootstrap();
-        bootstrap.enablePrintWelcome();
-        bootstrap.enablePrintTree();
-        bootstrap.enablePrintResult();
-        bootstrap.setPrintStream(System.out);
-        bootstrap.setErrPrintStream(System.err);
 
-        var code = bootstrap.run(configuration);
-        System.exit(code);
+    public static void main(String[] args) throws IOException {
+        var welcome_small =
+                """
+                \u001B[34m
+                    _  __
+                   | |/ /  __ _   _ _   _   _ _    __ _
+                   | ' <  / _  | | '_| | | | ' \\  / _  |
+                   |_|\\_\\ \\__,_| |_|   |_| |_||_| \\__,_|
+                \u001B[0m
+                """;
+        System.out.println(welcome_small);
+
+        var compiler = new KarinaDefaultCompiler(mainClass, buildDir);
+
+        var fileTree = FileLoader.loadTree(
+                null,
+                sourceDirectory.toAbsolutePath().normalize().toString()
+        );
+
+        var collection = new DiagnosticCollection();
+        var result = compiler.compile(fileTree, collection);
+        if (result) {
+            System.out.println("\u001B[33mCompilation Successful\u001B[0m");
+            System.exit(0);
+        } else {
+            System.out.println("\u001B[31mCompilation failed\u001B[0m");
+            System.out.flush();
+            System.err.println();
+            DiagnosticCollection.print(collection, true, System.err);
+            System.err.flush();
+
+            System.exit(1);
+        }
+
     }
 
 

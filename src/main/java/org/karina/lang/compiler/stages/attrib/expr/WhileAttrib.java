@@ -3,12 +3,12 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
-public class WhileAttrib extends AttribExpr {
+public class WhileAttrib extends AttributionExpr {
 
-    public static AttribExpr attribWhile(
+    public static AttributionExpr attribWhile(
             @Nullable KType hint,
             AttributionContext ctx,
             KExpr.While expr)

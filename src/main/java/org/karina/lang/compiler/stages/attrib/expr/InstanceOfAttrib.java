@@ -5,13 +5,13 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
 import java.util.ArrayList;
 
-public class InstanceOfAttrib extends AttribExpr {
-    public static AttribExpr attribInstanceOf(
+public class InstanceOfAttrib extends AttributionExpr {
+    public static AttributionExpr attribInstanceOf(
             @Nullable KType hint, AttributionContext ctx, KExpr.IsInstanceOf expr) {
 
         var left = attribExpr(null, ctx, expr.left()).expr();

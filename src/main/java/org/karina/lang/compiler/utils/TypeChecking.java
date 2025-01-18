@@ -5,7 +5,7 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 
 import java.util.HashMap;
 
@@ -169,7 +169,7 @@ public record TypeChecking(KTree.KPackage root) {
             }
 
             for (var implBlock : kStruct.implBlocks()) {
-                var replaced = AttribExpr.replaceType(implBlock.type(), mapped);
+                var replaced = AttributionExpr.replaceType(implBlock.type(), mapped);
                 if (replaced instanceof KType.ClassType implClassType) {
                     //TODO also check interface extension
                     if (classTypeStrictEquals(checkingRegion, left, implClassType, mutable)) {

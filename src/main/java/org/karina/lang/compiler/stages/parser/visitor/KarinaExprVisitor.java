@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor;
 
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.*;
+import org.karina.lang.compiler.stages.parser.TextContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.*;
 
@@ -13,11 +14,11 @@ import java.util.List;
  * Used to convert AST expression objects to the corresponding {@link KExpr}.
  */
 public class KarinaExprVisitor {
-    private final RegionConverter conv;
+    private final TextContext conv;
     private final KarinaVisitor visitor;
     private final KarinaTypeVisitor typeVisitor;
 
-    public KarinaExprVisitor(KarinaVisitor visitor, KarinaTypeVisitor typeVisitor, RegionConverter converter) {
+    public KarinaExprVisitor(KarinaVisitor visitor, KarinaTypeVisitor typeVisitor, TextContext converter) {
         this.conv = converter;
         this.typeVisitor = typeVisitor;
         this.visitor = visitor;

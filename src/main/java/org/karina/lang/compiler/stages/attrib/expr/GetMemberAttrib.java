@@ -9,7 +9,7 @@ import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.LiteralSymbol;
 import org.karina.lang.compiler.symbols.MemberSymbol;
@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class GetMemberAttrib extends AttribExpr {
-    public static AttribExpr attribGetMember(
+public class GetMemberAttrib extends AttributionExpr {
+    public static AttributionExpr attribGetMember(
             @Nullable KType hint, AttributionContext ctx, KExpr.GetMember expr) {
 
         var left = attribExpr(null, ctx, expr.left()).expr();

@@ -7,7 +7,7 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
 import java.util.ArrayList;
@@ -15,8 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CreateObjectAttrib extends AttribExpr {
-    public static AttribExpr attribCreateObject(
+public class CreateObjectAttrib extends AttributionExpr {
+    public static AttributionExpr attribCreateObject(
             @Nullable KType hint, AttributionContext ctx, KExpr.CreateObject expr) {
 
         var struct = ctx.getStruct(expr.createType().region(), expr.createType());

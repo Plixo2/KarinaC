@@ -1,10 +1,11 @@
 package org.karina.lang.compiler.stages.parser.visitor;
 
+import com.google.gson.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.json.*;
 import org.karina.lang.compiler.objects.*;
+import org.karina.lang.compiler.stages.parser.TextContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.*;
 
@@ -21,7 +22,7 @@ import java.util.List;
  *
  */
 public class KarinaVisitor {
-    private final RegionConverter conv;
+    private final TextContext conv;
 
     /**
      * Absolute path to the unit, already including the unit path
@@ -35,7 +36,7 @@ public class KarinaVisitor {
     private final KarinaTypeVisitor typeVisitor;
     private final KarinaExprVisitor exprVisitor;
 
-    public KarinaVisitor(RegionConverter converter, ObjectPath path, String unitName) {
+    public KarinaVisitor(TextContext converter, ObjectPath path, String unitName) {
         this.typeVisitor = new KarinaTypeVisitor(this,converter);
         this.exprVisitor = new KarinaExprVisitor(this, this.typeVisitor,converter);
         this.conv = converter;
@@ -252,7 +253,7 @@ public class KarinaVisitor {
         var span = this.conv.span(ctx.ID());
         JsonElement element;
         if (ctx.jsonValue() == null) {
-            element = new JsonBoolean(region, true);
+            element = new JsonPrimitive(true);
         } else {
             element = visitJsonValue(ctx.jsonValue());
         }
@@ -268,16 +269,16 @@ public class KarinaVisitor {
         } else if (ctx.jsonArray() != null) {
             return visitJsonArray(ctx.jsonArray());
         } else if (ctx.TRUE() != null) {
-            return new JsonBoolean(region, true);
+            return new JsonPrimitive(true);
         } else if (ctx.FALSE() != null) {
-            return new JsonBoolean(region, false);
+            return new JsonPrimitive(false);
         } else if (ctx.NULL() != null) {
-            return new JsonNull(region);
+            return JsonNull.INSTANCE;
         } else if (ctx.NUMBER() != null) {
            return visitJsonNumber(ctx.NUMBER());
         } else if (ctx.STRING_LITERAL() != null) {
             var string = visitString(ctx.STRING_LITERAL()).value();
-            return new JsonString(region, string);
+            return new JsonPrimitive(string);
         } else {
             Log.syntaxError(region, "Invalid JSON value");
             throw new Log.KarinaException();
@@ -285,11 +286,11 @@ public class KarinaVisitor {
 
     }
 
-    private JsonNumber visitJsonNumber(TerminalNode ctx) {
+    private JsonPrimitive visitJsonNumber(TerminalNode ctx) {
 
         var region = this.conv.toRegion(ctx);
         try {
-            return new JsonNumber(region, parseNumber(ctx.getText()));
+            return new JsonPrimitive(parseNumber(ctx.getText()));
         } catch (NumberFormatException e) {
             Log.syntaxError(region, "Invalid number format");
             throw new Log.KarinaException();
@@ -314,21 +315,25 @@ public class KarinaVisitor {
 
     private JsonObject visitJsonObject(KarinaParser.JsonObjContext ctx) {
 
-        var members = ctx.jsonPair().stream().map(ref -> {
-            var name = ref.ID() == null ? visitString(ref.STRING_LITERAL()) : this.conv.span(ref.ID());
+
+        var obj = new JsonObject();
+        for (var ref : ctx.jsonPair()) {
+            var name = ref.ID() == null ? visitString(ref.STRING_LITERAL()).value() : ref.ID().getText();
             var value = visitJsonValue(ref.jsonValue());
-            return new JsonObject.JsonMember(name.region(), name.value(), value);
-        }).toList();
-        return new JsonObject(this.conv.toRegion(ctx), members);
+            obj.add(name, value);
+        }
+        return obj;
 
     }
 
     private JsonArray visitJsonArray(KarinaParser.JsonArrayContext ctx) {
 
-        return new JsonArray(
-                this.conv.toRegion(ctx),
-                ctx.jsonValue().stream().map(this::visitJsonValue).toList()
-        );
+        var elements = ctx.jsonValue().stream().map(this::visitJsonValue).toList();
+        var jsonArray = new JsonArray();
+        for (var element : elements) {
+            jsonArray.add(element);
+        }
+        return jsonArray;
 
     }
 

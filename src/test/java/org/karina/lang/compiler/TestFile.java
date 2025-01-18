@@ -1,7 +1,7 @@
 package org.karina.lang.compiler;
 
 import org.karina.lang.compiler.api.*;
-import org.karina.lang.compiler.backend.interpreter.InterpreterBackend;
+import org.karina.lang.interpreter.InterpreterBackend;
 import org.karina.lang.compiler.api.DefaultFileTree;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.utils.ObjectPath;

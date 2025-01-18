@@ -13,8 +13,6 @@ import java.util.List;
 public class DiagnosticCollection implements Iterable<Log.LogWithTrace> {
     private final List<Log.LogWithTrace> traces = new ArrayList<>();
 
-
-
     public void addAll(Collection<Log.LogWithTrace> logs) {
         this.traces.addAll(logs);
     }
@@ -31,4 +29,12 @@ public class DiagnosticCollection implements Iterable<Log.LogWithTrace> {
     public @NotNull Iterator<Log.LogWithTrace> iterator() {
         return this.traces.iterator();
     }
+
+
+    public static void print(DiagnosticCollection collection, boolean verbose, PrintStream stream) {
+        for (var log : collection) {
+            stream.println(log.mkString(verbose));
+        }
+    }
+
 }

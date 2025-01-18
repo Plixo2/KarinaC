@@ -6,15 +6,15 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.AssignmentSymbol;
 import org.karina.lang.compiler.symbols.LiteralSymbol;
 import org.karina.lang.compiler.symbols.MemberSymbol;
 
-public class AssignmentAttrib extends AttribExpr {
+public class AssignmentAttrib extends AttributionExpr {
 
-    public static AttribExpr attribAssignment(@Nullable KType hint, AttributionContext ctx, KExpr.Assignment expr) {
+    public static AttributionExpr attribAssignment(@Nullable KType hint, AttributionContext ctx, KExpr.Assignment expr) {
 
         var left = attribExpr(null, ctx, expr.left()).expr();
         var right = attribExpr(left.type(), ctx, expr.right()).expr();

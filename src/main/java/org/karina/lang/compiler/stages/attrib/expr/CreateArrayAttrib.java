@@ -3,13 +3,13 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
 import java.util.ArrayList;
 
-public class CreateArrayAttrib extends AttribExpr {
-    public static AttribExpr attribCreateArray(
+public class CreateArrayAttrib extends AttributionExpr {
+    public static AttributionExpr attribCreateArray(
             @Nullable KType hint, AttributionContext ctx, KExpr.CreateArray expr) {
 
         KType elementType;

@@ -1,5 +1,6 @@
 //import java::java.lang.System
 import test binary
+import java::java.lang.Object
 
 fn main(args: [string]) {
     printBool(test())

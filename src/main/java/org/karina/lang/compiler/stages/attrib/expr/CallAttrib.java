@@ -10,7 +10,7 @@ import org.karina.lang.compiler.errors.types.ImportError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.CallSymbol;
 import org.karina.lang.compiler.symbols.LiteralSymbol;
@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class CallAttrib extends AttribExpr {
-    public static AttribExpr attribCall(
+public class CallAttrib extends AttributionExpr {
+    public static AttributionExpr attribCall(
             @Nullable KType hint, AttributionContext ctx, KExpr.Call expr) {
 
         var left = attribExpr(null, ctx, expr.left()).expr();

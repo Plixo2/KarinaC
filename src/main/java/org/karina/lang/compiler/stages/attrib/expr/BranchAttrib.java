@@ -7,13 +7,13 @@ import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
 import java.util.ArrayList;
 
-public class BranchAttrib extends AttribExpr {
-    public static AttribExpr attribBranch(
+public class BranchAttrib extends AttributionExpr {
+    public static AttributionExpr attribBranch(
             @Nullable KType hint, AttributionContext ctx, KExpr.Branch expr) {
 
         var boolType = new KType.PrimitiveType.BoolType(expr.condition().region());

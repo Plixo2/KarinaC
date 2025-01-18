@@ -1,10 +1,7 @@
 package org.karina.lang.lsp.features;
 
 import org.karina.lang.compiler.objects.KTree;
-import org.karina.lang.compiler.stages.KarinaStage;
-import org.karina.lang.compiler.stages.attrib.AttributionResolver;
-import org.karina.lang.compiler.stages.imports.ImportResolver;
-import org.karina.lang.compiler.stages.preprocess.Preprocessor;
+import org.karina.lang.lsp.KarinaStage;
 import org.karina.lang.lsp.ErrorHandler;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;

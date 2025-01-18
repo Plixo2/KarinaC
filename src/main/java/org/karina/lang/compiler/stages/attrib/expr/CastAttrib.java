@@ -5,13 +5,13 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.CastSymbol;
 
-public class CastAttrib extends AttribExpr {
+public class CastAttrib extends AttributionExpr {
 
-    public static AttribExpr attribCast(@Nullable KType hint, AttributionContext ctx, KExpr.Cast expr) {
+    public static AttributionExpr attribCast(@Nullable KType hint, AttributionContext ctx, KExpr.Cast expr) {
         var left = attribExpr(null, ctx, expr.expression()).expr();
         var type = left.type();
         var toType = expr.asType();

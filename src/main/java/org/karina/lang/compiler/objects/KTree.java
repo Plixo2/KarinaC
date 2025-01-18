@@ -1,11 +1,11 @@
 package org.karina.lang.compiler.objects;
 
+import com.google.gson.JsonElement;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.json.JsonElement;
 import org.karina.lang.compiler.utils.SymbolTable;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.utils.*;

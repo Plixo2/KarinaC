@@ -4,12 +4,12 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.NumberSymbol;
 
-public class NumberAttrib extends AttribExpr {
-    public static AttribExpr attribNumber(
+public class NumberAttrib extends AttributionExpr {
+    public static AttributionExpr attribNumber(
             @Nullable KType hint, AttributionContext ctx, KExpr.Number expr) {
 
         var number = expr.number();

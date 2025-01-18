@@ -8,7 +8,7 @@ import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.ClosureSymbol;
 
@@ -17,8 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-public class ClosureAttrib extends AttribExpr {
-    public static AttribExpr attribClosure(
+public class ClosureAttrib extends AttributionExpr {
+    public static AttributionExpr attribClosure(
             @Nullable KType hint, AttributionContext ctx, KExpr.Closure expr) {
 
         for (var arg : expr.args()) {

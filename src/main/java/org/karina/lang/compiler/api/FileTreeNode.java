@@ -4,9 +4,9 @@ import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.util.List;
 
-public interface FileTreeNode {
+public interface FileTreeNode<T> {
     ObjectPath path();
     String name();
-    List<? extends FileTreeNode> children();
-    List<? extends FileNode> leafs();
+    List<? extends FileTreeNode<T>> children();
+    List<? extends FileNode<T>> leafs();
 }

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.api.config.ConfigurationParseException;
 import org.karina.lang.compiler.boot.FileLoader;
 import org.karina.lang.compiler.boot.Main;
 import org.karina.lang.compiler.errors.DidYouMean;

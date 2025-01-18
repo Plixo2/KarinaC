@@ -5,13 +5,13 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
 import java.util.Objects;
 
-public class GetArrayElementAttrib extends AttribExpr {
-    public static AttribExpr attribGetArrayElement(
+public class GetArrayElementAttrib extends AttributionExpr {
+    public static AttributionExpr attribGetArrayElement(
             @Nullable KType hint, AttributionContext ctx, KExpr.GetArrayElement expr) {
 
         KType arrayHint;

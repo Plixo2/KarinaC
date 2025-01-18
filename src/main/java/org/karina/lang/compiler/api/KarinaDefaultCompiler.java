@@ -1,39 +1,56 @@
 package org.karina.lang.compiler.api;
 
-import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.stages.KarinaStage;
+import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
 import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
+import org.karina.lang.compiler.stages.imports.ImportProcessor;
+import org.karina.lang.compiler.stages.parser.TextProcessor;
+import org.karina.lang.compiler.stages.preprocess.PreProcessor;
 
-public class KarinaDefaultCompiler implements KarinaCompiler {
+import java.nio.file.Path;
 
+public class KarinaDefaultCompiler {
+    private final TextProcessor parser;
+    private final PreProcessor preprocessor;
+    private final ImportProcessor importProcessor;
+    private final AttributionProcessor attributionProcessor;
+    private final BytecodeProcessor backend;
 
-    @Override
-    public <T> CompilationResult<T> compile(FileTreeNode files, DiagnosticCollection collection, @Nullable Backend<T> backend) {
+    private final Path outPath;
+    private final String mainClass;
+    public KarinaDefaultCompiler(String mainClass, Path outPath) {
+        this.mainClass = mainClass;
+        this.outPath = outPath;
+        this.parser = new TextProcessor();
+        this.preprocessor = new PreProcessor();
+        this.importProcessor = new ImportProcessor();
+        this.attributionProcessor = new AttributionProcessor();
+        this.backend = new BytecodeProcessor();
+    }
+
+    public boolean compile(FileTreeNode<TextSource> files, DiagnosticCollection collection) {
 
         try {
-            var parseTree = KarinaStage.parseFiles(files);
-            var desugaredTree = KarinaStage.preProcessTree(parseTree);
-            var importedTree = KarinaStage.importTree(desugaredTree);
-            var attribTree = KarinaStage.attribTree(importedTree);
+            var parseTree = this.parser.parseFiles(files);
+            var desugaredTree = this.preprocessor.desugarTree(parseTree);
+            var importedTree = this.importProcessor.importTree(desugaredTree);
+            var attribTree = this.attributionProcessor.attribTree(importedTree);
 
-            CompilationResult<T> result;
-            if (backend == null) {
-                result = CompilationResult.ok(null);
-            } else {
-                result =  CompilationResult.ok(backend.accept(attribTree));
-            }
+            var result = this.backend.accept(attribTree, this.mainClass);
+            result.write(this.outPath);
+            result.dump(this.outPath);
 
             if (Log.hasErrors()) {
                 System.err.println("Errors in log, this should not happen");
             }
-            return result;
+            return true;
         } catch (Log.KarinaException ignored) {
             if (!Log.hasErrors()) {
                 System.err.println("An exception was thrown, but no errors were logged");
             } else {
                 collection.addAll(Log.getEntries());
             }
-            return CompilationResult.error();
+            return false;
         } finally {
             Log.clearLogs();
         }

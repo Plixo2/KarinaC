@@ -3,7 +3,7 @@ package org.karina.lang.compiler.stages.parser.visitor;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
-import org.karina.lang.compiler.utils.RegionConverter;
+import org.karina.lang.compiler.stages.parser.TextContext;
 
 import java.util.List;
 
@@ -11,10 +11,10 @@ import java.util.List;
  * Used to convert an AST type object to the corresponding {@link KType}.
  */
 public class KarinaTypeVisitor {
-    private final RegionConverter conv;
+    private final TextContext conv;
     private final KarinaVisitor visitor;
 
-    public KarinaTypeVisitor(KarinaVisitor visitor, RegionConverter converter) {
+    public KarinaTypeVisitor(KarinaVisitor visitor, TextContext converter) {
         this.conv = converter;
         this.visitor = visitor;
     }

@@ -4,11 +4,11 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
-public class VariableDefinitionAttrib extends AttribExpr {
-    public static AttribExpr attribVariableDefinition(
+public class VariableDefinitionAttrib extends AttributionExpr {
+    public static AttributionExpr attribVariableDefinition(
             @Nullable KType hint, AttributionContext ctx, KExpr.VariableDefinition expr) {
 
         var valueExpr = attribExpr(expr.hint(), ctx, expr.value()).expr();

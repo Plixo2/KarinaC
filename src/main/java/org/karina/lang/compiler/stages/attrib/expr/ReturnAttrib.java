@@ -3,18 +3,18 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
-public class ReturnAttrib extends AttribExpr {
+public class ReturnAttrib extends AttributionExpr {
 
-    public static AttribExpr attribReturn(
+    public static AttributionExpr attribReturn(
             @Nullable KType hint, AttributionContext ctx, KExpr.Return expr) {
 
         KExpr value;
         KType yieldType;
         if (expr.value() != null) {
-            value = AttribExpr.attribExpr(ctx.returnType(), ctx, expr.value()).expr();
+            value = AttributionExpr.attribExpr(ctx.returnType(), ctx, expr.value()).expr();
             yieldType = value.type();
         } else {
             value = null;

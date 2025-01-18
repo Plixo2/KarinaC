@@ -3,7 +3,7 @@ package org.karina.lang.lsp.features;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.stages.parser.KarinaTextParser;
+import org.karina.lang.compiler.stages.parser.TextProcessor;
 import org.karina.lang.compiler.stages.parser.KarinaErrorListener;
 import org.karina.lang.lsp.ErrorHandler;
 
@@ -19,12 +19,12 @@ public class TokenProvider {
     public @Nullable List<Integer> getTokens(TextSource content) {
         var visitor = new SemanticTokenVisitor();
         var tokens = new ArrayList<Integer>();
-        var ignored = ErrorHandler.tryInternal(() -> {
-            var errorListener = new KarinaErrorListener(content, false);
-            var unitParser = KarinaTextParser.getParserForUnit(errorListener, content);
-            visitor.visit(unitParser.parser().unit());
-            tokens.addAll(getDeltaTokens(visitor.getTokens()));
-        });
+//        var ignored = ErrorHandler.tryInternal(() -> {
+//            var errorListener = new KarinaErrorListener(content, false);
+//            var unitParser = TextProcessor.getParserForUnit(errorListener, content);
+//            visitor.visit(unitParser.parser().unit());
+//            tokens.addAll(getDeltaTokens(visitor.getTokens()));
+//        });
         return tokens;
 
     }

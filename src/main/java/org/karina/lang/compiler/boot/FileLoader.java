@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.boot;
 
+import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.DefaultFileTree;
 import org.karina.lang.compiler.api.FileResource;
@@ -58,6 +59,14 @@ public class FileLoader {
     //#region Load File Tree
     public static DefaultFileTree loadTree(
             @Nullable ObjectPath objectPath,
+            String path
+    ) throws IOException {
+        return loadTree(objectPath, path, new FilePredicate("krna"));
+    }
+
+
+    public static DefaultFileTree loadTree(
+            @Nullable ObjectPath objectPath,
             String path,
             Predicate<String> filePredicate
     ) throws IOException {
@@ -98,7 +107,7 @@ public class FileLoader {
     ) throws IOException {
 
         var children = new ArrayList<DefaultFileTree>();
-        var leafs = new ArrayList<FileNode>();
+        var leafs = new ArrayList<FileNode<TextSource>>();
         for (var subFile : files) {
             if (!subFile.exists()) {
                 throw new FileNotFoundException(
@@ -157,5 +166,16 @@ public class FileLoader {
 
     }
 
+    @AllArgsConstructor
+    public static class FilePredicate implements Predicate<String> {
+        private final String extension;
+        @Override
+        public boolean test(String path) {
+
+            var extension = FileLoader.getFileExtension(path);
+            return this.extension.equals(extension);
+
+        }
+    }
 
 }

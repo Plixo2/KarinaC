@@ -6,12 +6,12 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.BinOperatorSymbol;
 
-public class BinaryAttrib extends AttribExpr {
-    public static AttribExpr attribBinary(
+public class BinaryAttrib extends AttributionExpr {
+    public static AttributionExpr attribBinary(
             @Nullable KType hint, AttributionContext ctx, KExpr.Binary expr) {
         var left = attribExpr(hint, ctx, expr.left()).expr();
         var right = attribExpr(left.type(), ctx, expr.right()).expr();

@@ -114,7 +114,7 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
 
     }
 
-    static SymbolTable.SymbolTableBuilder getImports(KTree.KPackage root, KTree.KUnit unit) {
+    public static SymbolTable.SymbolTableBuilder getImports(KTree.KPackage root, KTree.KUnit unit) {
         var builder = SymbolTable.builder();
 
         var locals = new ArrayList<>(unit.items().stream().map(ref -> SpanOf.span(ref.region(), ref)).toList());

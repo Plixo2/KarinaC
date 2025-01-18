@@ -5,7 +5,7 @@ import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.stages.parser.KarinaTextParser;
+import org.karina.lang.compiler.stages.parser.TextProcessor;
 import org.karina.lang.lsp.fs.ContentRoot;
 import org.karina.lang.lsp.fs.KarinaFile;
 
@@ -102,19 +102,19 @@ public class Workspace {
     private void elevateFile(KarinaFile file) {
         var simpleName = file.name();
         var path = file.path();
-        if (file.state() instanceof KarinaFile.KarinaFileState.Raw(var source)) {
-            var error = ErrorHandler.tryInternal(() -> {
-                var unit = KarinaTextParser.generateParseTree(source, simpleName, path);
-                if (unit != null) {
-                    file.state(new KarinaFile.KarinaFileState.Typed(source, unit));
-                }
-            });
-            if (error == null) {
-                file.clearDiagnostics();
-            } else {
-                error.pushErrorsToFile();
-            }
-        }
+//        if (file.state() instanceof KarinaFile.KarinaFileState.Raw(var source)) {
+//            var error = ErrorHandler.tryInternal(() -> {
+//                var unit = TextProcessor.generateParseTree(source, simpleName, path);
+//                if (unit != null) {
+//                    file.state(new KarinaFile.KarinaFileState.Typed(source, unit));
+//                }
+//            });
+//            if (error == null) {
+//                file.clearDiagnostics();
+//            } else {
+//                error.pushErrorsToFile();
+//            }
+//        }
     }
 
     public @Nullable FileLoading.FileLoadResult<?> loadAllFiles() {

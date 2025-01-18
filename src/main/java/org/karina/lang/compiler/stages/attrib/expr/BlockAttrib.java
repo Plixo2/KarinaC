@@ -4,13 +4,13 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
 import java.util.ArrayList;
 
-public class BlockAttrib extends AttribExpr {
-    public static AttribExpr attribBlock(
+public class BlockAttrib extends AttributionExpr {
+    public static AttributionExpr attribBlock(
             @Nullable KType hint, AttributionContext ctx, KExpr.Block expr) {
 
         var newExpressions = new ArrayList<KExpr>();

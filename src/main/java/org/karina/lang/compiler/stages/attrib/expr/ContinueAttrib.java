@@ -5,12 +5,12 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
-public class ContinueAttrib extends AttribExpr {
+public class ContinueAttrib extends AttributionExpr {
 
-    public static AttribExpr attribContinue(@Nullable KType hint, AttributionContext ctx, KExpr.Continue expr) {
+    public static AttributionExpr attribContinue(@Nullable KType hint, AttributionContext ctx, KExpr.Continue expr) {
         if (!ctx.isLoop()) {
             Log.attribError(new AttribError.ControlFlow(expr.region(), "continue statement outside of loop"));
             throw new Log.KarinaException();

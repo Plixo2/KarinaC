@@ -2,8 +2,8 @@ package org.karina.lang.compiler.api;
 
 import org.karina.lang.compiler.utils.ObjectPath;
 
-public interface FileNode {
+public interface FileNode<T> {
     ObjectPath path();
     String name();
-    TextSource text();
+    T content();
 }

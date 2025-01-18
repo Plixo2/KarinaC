@@ -6,14 +6,14 @@ import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttribExpr;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.LiteralSymbol;
 
 import java.util.HashSet;
 
-public class LiteralAttrib extends AttribExpr {
-    public static AttribExpr attribLiteral(
+public class LiteralAttrib extends AttributionExpr {
+    public static AttributionExpr attribLiteral(
             @Nullable KType hint, AttributionContext ctx, KExpr.Literal expr) {
 
         LiteralSymbol symbol;

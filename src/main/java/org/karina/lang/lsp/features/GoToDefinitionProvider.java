@@ -2,12 +2,9 @@ package org.karina.lang.lsp.features;
 
 import org.eclipse.lsp4j.Location;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.stages.KarinaStage;
+import org.karina.lang.lsp.KarinaStage;
 import org.karina.lang.compiler.utils.Span;
 import org.karina.lang.compiler.objects.KTree;
-import org.karina.lang.compiler.stages.attrib.AttributionResolver;
-import org.karina.lang.compiler.stages.imports.ImportResolver;
-import org.karina.lang.compiler.stages.preprocess.Preprocessor;
 import org.karina.lang.lsp.*;
 import org.karina.lang.lsp.fs.KarinaFile;
 import org.karina.lang.lsp.fs.SyncFileTree;

@@ -8,8 +8,8 @@ public record DefaultFileTree(
         ObjectPath path,
         String name,
         List<DefaultFileTree> children,
-        List<FileNode> leafs
-) implements FileTreeNode {
+        List<FileNode<TextSource>> leafs
+) implements FileTreeNode<TextSource> {
 
     @Override
     public String toString() {
@@ -34,5 +34,5 @@ public record DefaultFileTree(
 
     }
 
-    public record DefaultFileNode(ObjectPath path, String name, TextSource text) implements FileNode {}
+    public record DefaultFileNode(ObjectPath path, String name, TextSource content) implements FileNode<TextSource> {}
 }
