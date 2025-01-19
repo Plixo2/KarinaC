@@ -1,10 +1,8 @@
-package org.karina.compiler.model;
+package org.karina.lang.compiler.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.compiler.Signature;
 import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 
 public interface MethodModel {

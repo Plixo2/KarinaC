@@ -1,9 +1,9 @@
-package org.karina.compiler.model;
+package org.karina.lang.compiler.model;
+
 
 import org.karina.lang.compiler.objects.KType;
 
-public interface FieldModel {
-    int modifiers();
+public interface ModelParameter {
     String name();
     KType type();
 }

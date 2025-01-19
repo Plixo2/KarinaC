@@ -1,23 +1,27 @@
-package org.karina.compiler.jvm;
+package org.karina.lang.compiler.jvm.model.karina;
 
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
-import org.karina.compiler.Signature;
-import org.karina.compiler.model.MethodModel;
-import org.karina.compiler.model.ModelParameter;
+import org.karina.lang.compiler.model.MethodModel;
+import org.karina.lang.compiler.model.Signature;
 import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.utils.Span;
 
 @AllArgsConstructor
-public class MethodModelNode implements MethodModel {
+public class KMethodModel implements MethodModel {
     private String name;
     private int modifiers;
     private Signature signature;
     private ImmutableList<String> parameters;
     private ImmutableList<Generic> generics;
     private @Nullable KExpr expression;
+    private Span region;
+
+    public Span region() {
+        return this.region;
+    }
 
 
     @Override

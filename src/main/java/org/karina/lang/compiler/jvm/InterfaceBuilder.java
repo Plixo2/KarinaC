@@ -1,14 +1,14 @@
 package org.karina.lang.compiler.jvm;
 
 import com.google.common.collect.ImmutableList;
-import org.karina.compiler.Signature;
-import org.karina.compiler.jvm.ClassModelNode;
-import org.karina.compiler.jvm.FieldModelNode;
-import org.karina.compiler.jvm.MethodModelNode;
-import org.karina.compiler.jvm.ModelNode;
-import org.karina.compiler.model.FieldModel;
-import org.karina.compiler.model.MethodModel;
-import org.karina.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model.Signature;
+import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
+import org.karina.lang.compiler.jvm.model.jvm.JFieldModel;
+import org.karina.lang.compiler.jvm.model.jvm.JMethodModel;
+import org.karina.lang.compiler.jvm.model.JModel;
+import org.karina.lang.compiler.model.FieldModel;
+import org.karina.lang.compiler.model.MethodModel;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.objectweb.asm.ClassReader;
@@ -16,10 +16,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.awt.datatransfer.Clipboard;
 import java.io.File;
 import java.io.IOException;
-import java.lang.instrument.Instrumentation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -37,14 +35,14 @@ public class InterfaceBuilder {
     public static void main(String[] args) throws IOException {
         var interfaceBuilder = new InterfaceBuilder();
         var parsed = interfaceBuilder.parse(jdk);
-        var model = new ModelNode();
+        var model = new JModel();
         for (var node : parsed) {
-            model.classModels.put(node.path(), node);
+            model.addClass(node);
         }
         for (var pointer : interfaceBuilder.typeGen.pointers) {
             var ignored = model.getClass(pointer);
         }
-        for (var value : model.classModels.values()) {
+        for (var value : model.getBytecodeClasses()) {
             for (var innerClass : value.innerClasses()) {
                 var ignored = model.getClass(innerClass);
             }
@@ -53,8 +51,8 @@ public class InterfaceBuilder {
 
     }
 
-    private List<ClassModelNode> parse(String path) throws IOException {
-        List<ClassModelNode> flatNodes = new ArrayList<>();
+    private List<JClassModel> parse(String path) throws IOException {
+        List<JClassModel> flatNodes = new ArrayList<>();
         var file = new File(path);
         try (var jarFile = new JarFile(file)) {
             var entries = jarFile.entries();
@@ -64,7 +62,7 @@ public class InterfaceBuilder {
                     try (var inputStream = jarFile.getInputStream(entry)) {
                         var reader = new ClassReader(inputStream);
                         var classNode = new ClassNode();
-                        reader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES);
+                        reader.accept(classNode, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
                         if (classNode.name.equals("module-info")) {
                             continue;
                         }
@@ -77,7 +75,7 @@ public class InterfaceBuilder {
     }
 
 
-    private ClassModelNode buildNode(ClassNode node, File file, String fileName) {
+    private JClassModel buildNode(ClassNode node, File file, String fileName) {
 
         var srcId = "jar:file:///" + file.getAbsolutePath().replace("\\", "/") + "!/" + fileName;
         var source = new TextSource(new JavaResource(srcId), List.of());
@@ -116,7 +114,7 @@ public class InterfaceBuilder {
         for (var method : node.methods) {
             methods.add(buildMethod(method));
         }
-        return new ClassModelNode(
+        return new JClassModel(
                 name, path, modifiers, superPointer, interfaces.build(), innerClasses.build(),
                 fields.build(), methods.build(), source
         );
@@ -127,35 +125,24 @@ public class InterfaceBuilder {
         var type = this.typeGen.fromType(fieldNode.desc, fieldNode.signature);
         var modifiers = fieldNode.access;
 
-        return new FieldModelNode(name, type, modifiers);
+        return new JFieldModel(name, type, modifiers);
     }
 
     private MethodModel buildMethod(MethodNode methodNode) {
         var nameSplit = methodNode.name.split("/");
         var name = nameSplit[nameSplit.length - 1];
         var modifiers = methodNode.access;
-        var parameters = ImmutableList.<String>builder();
-        if (methodNode.parameters != null) {
-            for (var parameter : methodNode.parameters) {
-                if (parameter.name != null) {
-                    parameters.add(parameter.name);
-                }
-            }
-        }
+
         var returnType = this.typeGen.getReturnType(methodNode.desc, methodNode.signature);
         var parameterTypes = this.typeGen.getParameters(methodNode.desc, methodNode.signature);
 
-        var paramNames = parameters.build();
-        if (parameterTypes.size() != paramNames.size()) {
-            var parametersNew = ImmutableList.<String>builder();
-            for (var i = 0; i < parameterTypes.size(); i++) {
-                parametersNew.add("arg" + i);
-            }
-            paramNames = parametersNew.build();
+        var parameters = ImmutableList.<String>builder();
+        for (var i = 0; i < parameterTypes.size(); i++) {
+            parameters.add("arg" + i);
         }
 
-        return new MethodModelNode(
-                name, modifiers, new Signature(parameterTypes, returnType), paramNames,
+        return new JMethodModel(
+                name, modifiers, new Signature(parameterTypes, returnType), parameters.build(),
                 ImmutableList.of(), null
         );
     }

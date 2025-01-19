@@ -1,18 +1,20 @@
-package org.karina.compiler.jvm;
+package org.karina.lang.compiler.jvm.model.karina;
 
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
-import org.karina.compiler.model.ClassModel;
-import org.karina.compiler.model.FieldModel;
-import org.karina.compiler.model.MethodModel;
-import org.karina.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.api.Resource;
 import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.model.ClassModel;
+import org.karina.lang.compiler.model.FieldModel;
+import org.karina.lang.compiler.model.MethodModel;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Span;
+
 
 @AllArgsConstructor
-public class ClassModelNode implements ClassModel {
+public class KClassModel implements ClassModel {
     private String name;
     private ObjectPath path;
     private int modifiers;
@@ -21,7 +23,17 @@ public class ClassModelNode implements ClassModel {
     private ImmutableList<ClassPointer> innerClasses;
     private ImmutableList<FieldModel> fields;
     private ImmutableList<MethodModel> methods;
+    private ImmutableList<KTree.KImport> imports;
     private TextSource resource;
+    private Span region;
+
+    public Span region() {
+        return this.region;
+    }
+
+    public ImmutableList<KTree.KImport> imports() {
+        return this.imports;
+    }
 
     @Override
     public String name() {

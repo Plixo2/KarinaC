@@ -1,9 +1,8 @@
-package org.karina.compiler.model;
+package org.karina.lang.compiler.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.api.Resource;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.utils.ObjectPath;
 

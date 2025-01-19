@@ -1,14 +1,20 @@
-package org.karina.compiler.jvm;
+package org.karina.lang.compiler.jvm.model.karina;
 
 import lombok.AllArgsConstructor;
-import org.karina.compiler.model.FieldModel;
+import org.karina.lang.compiler.model.FieldModel;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.Span;
 
 @AllArgsConstructor
-public class FieldModelNode implements FieldModel {
+public class KFieldModel implements FieldModel {
     private String name;
     private KType type;
     private int modifiers;
+    private Span region;
+
+    public Span region() {
+        return this.region;
+    }
 
     @Override
     public int modifiers() {

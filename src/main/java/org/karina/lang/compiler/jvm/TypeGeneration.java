@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.jvm;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.objectweb.asm.Type;

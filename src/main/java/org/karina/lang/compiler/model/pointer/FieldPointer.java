@@ -1,9 +1,7 @@
-package org.karina.compiler.model.pointer;
+package org.karina.lang.compiler.model.pointer;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.utils.ObjectPath;
 
 @Getter
 @Accessors(fluent = true)

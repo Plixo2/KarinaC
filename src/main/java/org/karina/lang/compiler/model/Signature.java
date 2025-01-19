@@ -1,4 +1,4 @@
-package org.karina.compiler;
+package org.karina.lang.compiler.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
