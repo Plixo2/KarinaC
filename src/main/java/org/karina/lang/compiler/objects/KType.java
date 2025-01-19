@@ -1,7 +1,5 @@
 package org.karina.lang.compiler.objects;
 
-import lombok.Getter;
-import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -14,7 +12,6 @@ import java.util.*;
 
 public sealed interface KType {
 
-    Span region();
 
     default KType unpack() {
         if (this instanceof Resolvable resolvable) {
@@ -26,11 +23,11 @@ public sealed interface KType {
     }
 
     default boolean isVoid() {
-        return this instanceof PrimitiveType.VoidType;
+        return this instanceof PrimitiveType(var primitive) && primitive == KPrimitive.VOID;
     }
 
-    default boolean isPrimitiveNonString() {
-        return this instanceof PrimitiveType primitive && !(primitive instanceof PrimitiveType.StringType);
+    default boolean isPrimitive() {
+        return this instanceof PrimitiveType primitive;
     }
 
     enum KPrimitive {
@@ -38,7 +35,6 @@ public sealed interface KType {
         INT,
         FLOAT,
         BOOL,
-        STRING,
         CHAR,
         DOUBLE,
         BYTE,
@@ -54,7 +50,7 @@ public sealed interface KType {
         }
     }
 
-    record ArrayType(Span region, KType elementType) implements KType {
+    record ArrayType(KType elementType) implements KType {
 
         @Override
         public String toString() {
@@ -63,7 +59,6 @@ public sealed interface KType {
     }
 
     record FunctionType(
-            Span region,
             List<KType> arguments,
             @Nullable KType returnType,
             List<KType> interfaces
@@ -77,23 +72,23 @@ public sealed interface KType {
         }
     }
 
-    record ClassType(Span region, SpanOf<ObjectPath> path, List<KType> generics) implements KType {
+    record ClassType(ObjectPath path, List<KType> generics) implements KType {
 
         @Override
         public String toString() {
-            return this.path.value().mkString(".") + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
+            return this.path.mkString(".") + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
         }
 
     }
 
-    record AnyClass(Span region) implements KType {
+    record AnyClass() implements KType {
         @Override
         public String toString() {
             return "Any";
         }
     }
 
-    record GenericLink(Span region, Generic link) implements KType {
+    record GenericLink(Generic link) implements KType {
 
         @Override
         public String toString() {
@@ -103,18 +98,8 @@ public sealed interface KType {
     }
 
     final class Resolvable implements KType {
-        @Getter
-        @Accessors(fluent = true)
-        private final Span region;
 
-        private int hashCode = 0;
-
-        public Resolvable(Span region) {
-            var start = region.start();
-            var end = region.end();
-            this.hashCode = Objects.hash(start, end);
-
-            this.region = region;
+        public Resolvable() {
         }
 
         private @Nullable KType resolved = null;
@@ -131,7 +116,7 @@ public sealed interface KType {
             if (resolved == this) {
                 return true;
             }
-            if (resolved.isPrimitiveNonString()) {
+            if (resolved.isPrimitive()) {
                 return false;
             }
 
@@ -156,7 +141,6 @@ public sealed interface KType {
                 linearDependencies.add(dependency.type());
                 previousLevel = dependency.level();
             }
-            var related = linearDependencies.stream().map(KType::region).toList();
             var readable = String.join(" via ", linearDependencies.stream().map(Object::toString).toList().reversed());
             var graph = new ArrayList<String>();
             for (var i = 0; i < dependencies.size(); i++) {
@@ -171,14 +155,14 @@ public sealed interface KType {
                 graph.add("    ".repeat(typeDependency.level()) + typeDependency.type() + suffix);
             }
             var msg = "Lazy Type cycle: " + readable;
-            Log.attribError(new AttribError.TypeCycle(checkingRegion, msg, related, graph));
+            Log.attribError(new AttribError.TypeCycle(checkingRegion, msg, graph));
             throw new Log.KarinaException();
         }
 
-        public void tryResolve(KType resolved) {
+        public void tryResolve(Span region, KType resolved) {
 
             if (this.resolved != null) {
-                Log.temp(this.region, "Type already resolved");
+                Log.temp(region, "Type already resolved");
                 throw new Log.KarinaException();
             }
 
@@ -190,7 +174,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            var code = this.hashCode & 0xFFFF;
+            var code = this.hashCode() & 0xFFFF;
             var readable = Integer.toHexString(code).toUpperCase();
             if (this.resolved == null) {
                 return "?" + readable;
@@ -202,94 +186,18 @@ public sealed interface KType {
     }
 
 
-    sealed interface PrimitiveType extends KType {
+    record PrimitiveType(KPrimitive primitive) implements KType {
 
-        default KPrimitive primitive() {
-
-            return switch (this) {
-                case VoidType ignored -> KPrimitive.VOID;
-                case IntType ignored -> KPrimitive.INT;
-                case FloatType ignored -> KPrimitive.FLOAT;
-                case BoolType ignored -> KPrimitive.BOOL;
-                case StringType ignored -> KPrimitive.STRING;
-                case CharType ignored -> KPrimitive.CHAR;
-                case DoubleType ignored -> KPrimitive.DOUBLE;
-                case ByteType ignored -> KPrimitive.BYTE;
-                case ShortType ignored -> KPrimitive.SHORT;
-                case LongType ignored -> KPrimitive.LONG;
-            };
-
-        }
-        record VoidType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record IntType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record FloatType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record BoolType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record StringType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record CharType(Span region) implements PrimitiveType{
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record DoubleType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record ByteType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record ShortType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-        record LongType(Span region) implements PrimitiveType {
-            @Override
-            public String toString() {
-                return mkString();
-            }
-        }
-
-
-        default boolean isNumeric() {
+        public boolean isNumeric() {
             return switch (this.primitive()) {
                 case INT, FLOAT, DOUBLE, LONG, SHORT, CHAR, BYTE -> true;
                 default -> false;
             };
         }
 
-        default String mkString() {
+
+        @Override
+        public String toString() {
             return this.primitive().toString().toLowerCase();
         }
 

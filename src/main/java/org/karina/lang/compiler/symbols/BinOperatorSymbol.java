@@ -37,9 +37,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType.BoolType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
             } else {
-                return new KType.PrimitiveType.FloatType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.FLOAT);
             }
         }
 
@@ -104,9 +104,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType.BoolType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
             } else {
-                return new KType.PrimitiveType.DoubleType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
             }
         }
 
@@ -170,9 +170,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType.BoolType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
             } else {
-                return new KType.PrimitiveType.LongType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.LONG);
             }
         }
 
@@ -237,9 +237,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType.BoolType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
             } else {
-                return new KType.PrimitiveType.IntType(region());
+                return new KType.PrimitiveType(KType.KPrimitive.INT);
             }
         }
 
@@ -286,7 +286,7 @@ public sealed interface BinOperatorSymbol {
 
         @Override
         default KType type() {
-            return new KType.PrimitiveType.BoolType(region());
+            return new KType.PrimitiveType(KType.KPrimitive.BOOL);
         }
 
         static @Nullable BinOperatorSymbol.BoolOP fromOperator(SpanOf<BinaryOperator> operator) {

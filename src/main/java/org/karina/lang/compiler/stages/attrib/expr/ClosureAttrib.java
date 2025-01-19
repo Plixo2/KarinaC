@@ -81,7 +81,7 @@ public class ClosureAttrib extends AttributionExpr {
         //TODO check interfaces, if they are functional and disjointed
 
         var functionType = new KType.FunctionType(
-                expr.region(), newArgs.stream().map(NameAndOptType::type).toList(), returnType,
+                newArgs.stream().map(NameAndOptType::type).toList(), returnType,
                 expr.interfaces()
         );
         var variables = newArgs.stream().map(NameAndOptType::symbol).toList();
@@ -129,7 +129,7 @@ public class ClosureAttrib extends AttributionExpr {
                     returnType = functionHint.returnType();
                 }
                 if (returnType == null) {
-                    returnType = new KType.PrimitiveType.VoidType(expr.region());
+                    returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
                 }
 
                 return new ArgsAndReturnType(newArgs, returnType);
@@ -144,7 +144,7 @@ public class ClosureAttrib extends AttributionExpr {
         for (var arg : expr.args()) {
             var type = arg.type();
             if (type == null) {
-                type = new KType.Resolvable(arg.region());
+                type = new KType.Resolvable();
             }
             var variable = new Variable(
                 arg.region(),
@@ -164,7 +164,7 @@ public class ClosureAttrib extends AttributionExpr {
 
         var returnType = expr.returnType();
         if (returnType == null) {
-            returnType = new KType.Resolvable(expr.region());
+            returnType = new KType.Resolvable();
         }
 
         return new ArgsAndReturnType(newArgs, returnType);

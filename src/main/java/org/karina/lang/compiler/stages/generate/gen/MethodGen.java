@@ -64,7 +64,7 @@ public class MethodGen {
 
             var returnedType = function.returnType();
             if (returnedType == null) {
-                returnedType = new KType.PrimitiveType.VoidType(function.region());
+                returnedType = new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             if (AttributionExpr.doesReturn(function.expr())) {
                 // ok

@@ -88,7 +88,16 @@ public record ObjectPath(List<String> elements) {
         if (!(object instanceof ObjectPath(List<String> elements1))) {
             return false;
         }
-        return Objects.equals(this.elements, elements1);
+        var thisElements = this.elements;
+        if (thisElements.size() != elements1.size()) {
+            return false;
+        }
+        for (var i = 0; i < thisElements.size(); i++) {
+            if (!thisElements.get(i).equals(elements1.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

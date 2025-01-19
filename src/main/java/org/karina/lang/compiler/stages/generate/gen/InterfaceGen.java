@@ -21,10 +21,7 @@ public class InterfaceGen {
     public JarCompilation.JarOutput addInterface(KTree.KInterface kInterface) {
         var classNode = new ClassNode();
         var selfType =
-                new KType.ClassType(
-                        kInterface.region(), SpanOf.span(kInterface.region(), kInterface.path()),
-                        List.of()
-                );
+                new KType.ClassType(kInterface.path(), List.of());
         for (var items : kInterface.functions()) {
             if (items instanceof KTree.KFunction function) {
                 var method = this.backend.methodGen.createMethod(selfType, true, function);

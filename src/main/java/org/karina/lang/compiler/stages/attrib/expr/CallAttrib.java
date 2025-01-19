@@ -92,7 +92,7 @@ public class CallAttrib extends AttributionExpr {
             List<KExpr> newArguments) {
 
         var referencedFunction = KTree.findAbsoluteInterfaceFunction(ctx.root(), sym.path());
-        var referencedClass = KTree.findAbsolutItem(ctx.root(), sym.classType().path().value());
+        var referencedClass = KTree.findAbsolutItem(ctx.root(), sym.classType().path());
         if (!(referencedFunction instanceof KTree.KFunction function)) {
             Log.temp(expr.region(), "Function not found + " + sym.path());
             throw new Log.KarinaException();
@@ -131,7 +131,7 @@ public class CallAttrib extends AttributionExpr {
     ) {
         CallSymbol symbol;
         var referencedFunction = KTree.findAbsoluteVirtualFunction(ctx.root(), sym.path());
-        var referencedClass = KTree.findAbsolutItem(ctx.root(), sym.classType().path().value());
+        var referencedClass = KTree.findAbsolutItem(ctx.root(), sym.classType().path());
         if (!(referencedFunction instanceof KTree.KFunction function)) {
             Log.temp(expr.region(), "Function not found");
             throw new Log.KarinaException();
@@ -171,7 +171,7 @@ public class CallAttrib extends AttributionExpr {
     ) {
         var vReturnType = function.returnType();
         if (vReturnType == null) {
-            vReturnType = new KType.PrimitiveType.VoidType(expr.region());
+            vReturnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         }
         var returnType = replaceType(vReturnType, mapped);
 
@@ -222,7 +222,7 @@ public class CallAttrib extends AttributionExpr {
         } else {
             for (var i = 0; i < function.generics().size(); i++) {
                 var generic = function.generics().get(i);
-                var type = new KType.PrimitiveType.Resolvable(expr.region());
+                var type = new KType.PrimitiveType.Resolvable();
                 mapped.put(generic, type);
             }
         }
@@ -252,7 +252,7 @@ public class CallAttrib extends AttributionExpr {
 
         var returnType = functionType.returnType();
         if (returnType == null) {
-            returnType = new KType.PrimitiveType.VoidType(expr.region());
+            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         }
 
         symbol = new CallSymbol.CallDynamic(expr.region(), returnType);

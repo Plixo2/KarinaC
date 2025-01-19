@@ -314,7 +314,7 @@ public class ExpressionGen {
 
                 var storeOp = type.getOpcode(Opcodes.IASTORE);
 
-                if (elementType.isPrimitiveNonString()) {
+                if (elementType.isPrimitive()) {
                     var arrayNewType = TypeConversion.getNewArrayConstant(type);
                     ctx.add(new IntInsnNode(Opcodes.NEWARRAY, arrayNewType));
                 } else {
@@ -518,9 +518,6 @@ public class ExpressionGen {
         }
         if (from == KType.KPrimitive.VOID || to == KType.KPrimitive.VOID) {
             throw new NullPointerException("Cannot cast to or from void");
-        }
-        if (from == KType.KPrimitive.STRING || to == KType.KPrimitive.STRING) {
-            throw new NullPointerException("Cannot cast to or from string");
         }
         switch (from) {
             case INT,CHAR,BOOL, BYTE, SHORT -> {

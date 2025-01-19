@@ -46,7 +46,7 @@ public record TypeChecking(KTree.KPackage root) {
      * {@code let a: left = right}
      */
     public boolean canAssign(Span checkingRegion, KType left, KType right, boolean mutable) {
-        if (left instanceof KType.AnyClass && !right.isPrimitiveNonString()) {
+        if (left instanceof KType.AnyClass && !right.isPrimitive()) {
             //we check here, we dont want to resolve resolvable types with it
             return true;
         }
@@ -57,7 +57,7 @@ public record TypeChecking(KTree.KPackage root) {
             } else {
                 var canResolve = resolvable.canResolve(checkingRegion, right);
                 if (mutable && canResolve) {
-                    resolvable.tryResolve(right);
+                    resolvable.tryResolve(checkingRegion, right);
                 }
                 return canResolve;
             }
@@ -67,7 +67,7 @@ public record TypeChecking(KTree.KPackage root) {
             } else {
                 var canResolve = resolvable.canResolve(checkingRegion, left);
                 if (mutable && canResolve) {
-                    resolvable.tryResolve(left);
+                    resolvable.tryResolve(checkingRegion, left);
                 }
                 return canResolve;
             }
@@ -83,8 +83,8 @@ public record TypeChecking(KTree.KPackage root) {
             }
             case KType.ClassType classType -> {
                 if (right instanceof KType.ClassType rightClassType) {
-                    var leftItem = KTree.findAbsolutItem(this.root, classType.path().value());
-                    var rightItem = KTree.findAbsolutItem(this.root, rightClassType.path().value());
+                    var leftItem = KTree.findAbsolutItem(this.root, classType.path());
+                    var rightItem = KTree.findAbsolutItem(this.root, rightClassType.path());
                     if (leftItem == null || rightItem == null) {
                         //should not happen
                         Log.temp(checkingRegion, "Element is zero");
@@ -112,11 +112,11 @@ public record TypeChecking(KTree.KPackage root) {
                     }
                     var leftReturnType = functionType.returnType();
                     if (leftReturnType == null) {
-                        leftReturnType = new KType.PrimitiveType.VoidType(functionType.region());
+                        leftReturnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
                     }
                     var rightReturnType = rightFunctionType.returnType();
                     if (rightReturnType == null) {
-                        rightReturnType = new KType.PrimitiveType.VoidType(rightFunctionType.region());
+                        rightReturnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
                     }
                     yield canAssign(checkingRegion, leftReturnType, rightReturnType, mutable);
                 } else {

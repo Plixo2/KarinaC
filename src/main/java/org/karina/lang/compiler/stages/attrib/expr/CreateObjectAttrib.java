@@ -19,7 +19,7 @@ public class CreateObjectAttrib extends AttributionExpr {
     public static AttributionExpr attribCreateObject(
             @Nullable KType hint, AttributionContext ctx, KExpr.CreateObject expr) {
 
-        var struct = ctx.getStruct(expr.createType().region(), expr.createType());
+        var struct = ctx.getStruct(expr.region(), expr.createType());
         //casting is ok, ctx.getStruct already checks for this
         var classType = (KType.ClassType) expr.createType();
         var annotatedGenerics = !classType.generics().isEmpty();
@@ -34,7 +34,7 @@ public class CreateObjectAttrib extends AttributionExpr {
             var genericCount = struct.generics().size();
             newGenerics = new ArrayList<>(genericCount);
             for (var ignored = 0; ignored < genericCount; ignored++) {
-                newGenerics.add(new KType.PrimitiveType.Resolvable(expr.region()));
+                newGenerics.add(new KType.PrimitiveType.Resolvable());
             }
         }
 
@@ -53,7 +53,6 @@ public class CreateObjectAttrib extends AttributionExpr {
 
         //The new type with all the generics replaced
         var newType = new KType.ClassType(
-                expr.createType().region(),
                 classType.path(),
                 newGenerics
         );

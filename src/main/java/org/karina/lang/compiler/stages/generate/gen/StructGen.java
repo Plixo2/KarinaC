@@ -27,10 +27,7 @@ public class StructGen {
     public JarCompilation.JarOutput addStruct(KTree.KStruct struct) {
         var classNode = new ClassNode();
         var selfType =
-                new KType.ClassType(
-                        struct.region(), SpanOf.span(struct.region(), struct.path()),
-                        List.of()
-                );
+                new KType.ClassType(struct.path(), List.of());
         for (var items : struct.functions()) {
             if (items instanceof KTree.KFunction function) {
                 var method = this.backend.methodGen.createMethod(selfType, false, function);

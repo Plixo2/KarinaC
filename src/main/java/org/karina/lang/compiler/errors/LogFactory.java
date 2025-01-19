@@ -68,9 +68,6 @@ public class LogFactory<T extends LogBuilder> {
                 builder.append(typeCycle.message());
                 builder.append("Graph: ");
                 typeCycle.graph().forEach(builder::append);
-                for (var span : typeCycle.related()) {
-                    builder.addSecondarySource(span);
-                }
                 builder.setPrimarySource(typeCycle.region());
             }
             case AttribError.TypeMismatch typeMismatch -> {
@@ -78,8 +75,6 @@ public class LogFactory<T extends LogBuilder> {
                 builder.append("Expected: ").append(typeMismatch.expected());
                 builder.append("Found: ").append(typeMismatch.found());
                 builder.setPrimarySource(typeMismatch.region());
-                builder.addSecondarySource(typeMismatch.found().region());
-                builder.addSecondarySource(typeMismatch.expected().region());
             }
             case AttribError.FinalAssignment finalAssignment -> {
                 builder.append("Can't reassign final symbol '").append(finalAssignment.name()).append("'");

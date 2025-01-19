@@ -105,7 +105,7 @@ public record AttributionContext(
     public KTree.KStruct getStruct(Span region, KType type) {
 
         if (type instanceof KType.ClassType classType) {
-            var item = KTree.findAbsolutItem(this.root, classType.path().value());
+            var item = KTree.findAbsolutItem(this.root, classType.path());
             if (!(item instanceof KTree.KStruct struct)) {
                 Log.attribError(new AttribError.NotAStruct(
                         region,

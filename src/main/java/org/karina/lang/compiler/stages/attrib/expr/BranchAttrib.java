@@ -16,7 +16,7 @@ public class BranchAttrib extends AttributionExpr {
     public static AttributionExpr attribBranch(
             @Nullable KType hint, AttributionContext ctx, KExpr.Branch expr) {
 
-        var boolType = new KType.PrimitiveType.BoolType(expr.condition().region());
+        var boolType =  new KType.PrimitiveType(KType.KPrimitive.BOOL);
         var conditionHint =  expr.branchPattern() == null ? boolType : null;
         var condition = attribExpr(conditionHint, ctx, expr.condition()).expr();
 
@@ -28,24 +28,23 @@ public class BranchAttrib extends AttributionExpr {
 
                 //replace all generics with AnyClass
                 if (isType instanceof KType.ClassType classType) {
-                    var item = KTree.findAbsolutItem(ctx.root(), classType.path().value());
+                    var item = KTree.findAbsolutItem(ctx.root(), classType.path());
                     if (item instanceof KTree.KStruct typeItem) {
                         var newGenerics = new ArrayList<KType>();
                         for (var i = 0; i < typeItem.generics().size(); i++) {
-                            newGenerics.add(new KType.Resolvable(isType.region()));
+                            newGenerics.add(new KType.Resolvable());
                         }
                         isType = new KType.ClassType(
-                                isType.region(),
                                 classType.path(),
                                 newGenerics
                         );
                         //for inference only
-                        var ignored = ctx.canAssign(isType.region(), condition.type(), isType, true);
+                        var ignored = ctx.canAssign(expr.region(), condition.type(), isType, true);
                         //if not inferred, resolve to base case
                         for (var newGeneric : newGenerics) {
                             var type = (KType.Resolvable) newGeneric;
                             if (!type.isResolved()) {
-                                type.tryResolve(new KType.AnyClass(isType.region()));
+                                type.tryResolve(expr.region(), new KType.AnyClass());
                             }
                         }
                     } else {
@@ -87,7 +86,7 @@ public class BranchAttrib extends AttributionExpr {
         KType returnType;
 
         if (elseArm == null) {
-            returnType = new KType.PrimitiveType.VoidType(expr.region());
+            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         } else {
             var elseHint = hint;
             if (hint == null) {
@@ -96,7 +95,7 @@ public class BranchAttrib extends AttributionExpr {
             elseArm = attribExpr(elseHint, ctx, elseArm).expr();
             returnType = ctx.getSuperType(then.region(), then.type(), elseArm.type());
             if (returnType == null) {
-                returnType = new KType.PrimitiveType.VoidType(expr.region());
+                returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
         }
 

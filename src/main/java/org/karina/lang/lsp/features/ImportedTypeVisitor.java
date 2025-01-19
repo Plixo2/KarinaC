@@ -108,12 +108,12 @@ public class ImportedTypeVisitor {
                 fromType(arrayType.elementType());
             }
             case KType.ClassType classType -> {
-                var definedRegion = classType.path().region();
-                var path = classType.path().value();
-                this.list.add(new SourceLocation.ClassToken(definedRegion, path, classType));
-                for (var generic : classType.generics()) {
-                    fromType(generic);
-                }
+//                var definedRegion = classType.path().region();
+//                var path = classType.path().value();
+//                this.list.add(new SourceLocation.ClassToken(definedRegion, path, classType));
+//                for (var generic : classType.generics()) {
+//                    fromType(generic);
+//                }
             }
             case KType.FunctionType functionType -> {
                 for (var argument : functionType.arguments()) {
@@ -127,9 +127,9 @@ public class ImportedTypeVisitor {
                 }
             }
             case KType.GenericLink genericType -> {
-                this.list.add(
-                        new SourceLocation.GenericLinkToken(genericType.region(), genericType.link().region())
-                );
+//                this.list.add(
+//                        new SourceLocation.GenericLinkToken(genericType.region(), genericType.link().region())
+//                );
                 // Nothing to do
             }
             case KType.PrimitiveType primitiveType -> {

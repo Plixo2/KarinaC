@@ -13,7 +13,7 @@ public class WhileAttrib extends AttributionExpr {
             AttributionContext ctx,
             KExpr.While expr)
     {
-        var boolType = new KType.PrimitiveType.BoolType(expr.condition().region());
+        var boolType = new KType.PrimitiveType(KType.KPrimitive.BOOL);
         var condition = attribExpr(boolType, ctx, expr.condition()).expr();
         ctx.assign(expr.condition().region(), boolType, condition.type());
 

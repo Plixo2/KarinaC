@@ -34,7 +34,7 @@ public class InterpreterBackend {
                                 throw new NullPointerException("invalid interface type");
                             }
                             var functionName = function.name().value();
-                            var interfacePath = clsType.path().value();
+                            var interfacePath = clsType.path();
                             var runtime = toRuntime(function);
                             var interfaceFunctionPath = interfacePath.append(functionName);
                             vTable.put(interfaceFunctionPath, runtime);

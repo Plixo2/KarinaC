@@ -24,7 +24,7 @@ public sealed interface KExpr {
     private static KType getType(KExpr expr) {
         switch (expr) {
             case Assignment assignment -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case Binary binary -> {
                 if (binary.symbol() == null) {
@@ -37,13 +37,13 @@ public sealed interface KExpr {
                 return block.symbol();
             }
             case Boolean aBoolean -> {
-                return new KType.PrimitiveType.BoolType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
             }
             case Branch branch -> {
                 return branch.symbol();
             }
             case Break aBreak -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case Call call -> {
                 if (call.symbol() == null) {
@@ -67,7 +67,7 @@ public sealed interface KExpr {
                 return closure.symbol().type();
             }
             case Continue aContinue -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case CreateArray createArray -> {
                 return createArray.symbol();
@@ -76,7 +76,7 @@ public sealed interface KExpr {
                 return createObject.symbol();
             }
             case For aFor -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case GetArrayElement getArrayElement -> {
                 return getArrayElement.elementType();
@@ -89,7 +89,7 @@ public sealed interface KExpr {
                 return getMember.symbol().type();
             }
             case IsInstanceOf isInstanceOf -> {
-                return new KType.PrimitiveType.BoolType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
             }
             case Literal literal -> {
                 if (literal.symbol() == null) {
@@ -109,7 +109,7 @@ public sealed interface KExpr {
                 return number.symbol().type();
             }
             case Return aReturn -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case Self self -> {
                 if (self.symbol() == null) {
@@ -119,7 +119,11 @@ public sealed interface KExpr {
                 return self.symbol().type();
             }
             case StringExpr stringExpr -> {
-                return new KType.PrimitiveType.StringType(expr.region());
+                var path = new ObjectPath("java", "lang", "String");
+                return new KType.ClassType(
+                        path,
+                        List.of()
+                );
             }
             case Unary unary -> {
                 if (unary.symbol() == null) {
@@ -129,13 +133,13 @@ public sealed interface KExpr {
                 return unary.symbol().type();
             }
             case VariableDefinition variableDefinition -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case While aWhile -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case Throw aThrow -> {
-                return new KType.PrimitiveType.VoidType(expr.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
         }
         Log.temp(expr.region(), "Unimplemented type for " + expr.getClass().getSimpleName());

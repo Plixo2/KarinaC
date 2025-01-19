@@ -14,16 +14,16 @@ public sealed interface LiteralSymbol {
     default KType type() {
         switch (this) {
             case StaticFunction staticFunction -> {
-                return new KType.PrimitiveType.VoidType(this.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case VariableReference variableReference -> {
                 return variableReference.variable().type();
             }
             case StructReference structReference -> {
-                return new KType.PrimitiveType.VoidType(this.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
             case InterfaceReference interfaceReference -> {
-                return new KType.PrimitiveType.VoidType(this.region());
+                return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
         }
     }

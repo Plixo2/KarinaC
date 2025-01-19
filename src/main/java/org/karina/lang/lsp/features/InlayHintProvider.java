@@ -118,10 +118,10 @@ public class InlayHintProvider {
             }
             case KType.ClassType classType -> {
                 String path;
-                if (classType.path().value().isEmpty()) {
+                if (classType.path().isEmpty()) {
                     path = "";
                 } else {
-                    path = classType.path().value().last();
+                    path = classType.path().last();
                 }
                 String generics;
                 if (classType.generics().isEmpty()) {

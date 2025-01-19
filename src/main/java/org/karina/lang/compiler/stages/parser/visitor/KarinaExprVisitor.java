@@ -84,19 +84,18 @@ public class KarinaExprVisitor {
         var condition = visitExprWithBlock(ctx.exprWithBlock());
         var thenBlock = visitBlock(ctx.block());
         BranchPattern branchPattern = null;
-        if (condition instanceof KExpr.IsInstanceOf isInstanceOf) {
+        if (condition instanceof KExpr.IsInstanceOf(Span instanceRegion, KExpr left, KType isType)) {
             if (ctx.ID() != null) {
-                condition = isInstanceOf.left();
+                condition = left;
                 branchPattern = new BranchPattern.Cast(
-                        isInstanceOf.isType().region(),
-                        isInstanceOf.isType(),
+                        instanceRegion, isType,
                         this.conv.span(ctx.ID()),
                         null
                 );
             } else if (ctx.optTypeList() != null) {
-                condition = isInstanceOf.left();
+                condition = left;
                 var values = visitOptTypeList(ctx.optTypeList());
-                branchPattern = new BranchPattern.Destruct(isInstanceOf.isType().region(), isInstanceOf.isType(), values);
+                branchPattern = new BranchPattern.Destruct(instanceRegion, isType, values);
             }
         } else {
             if (ctx.ID() != null || ctx.optTypeList() != null) {

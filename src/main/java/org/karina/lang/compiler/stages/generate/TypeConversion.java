@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.stages.generate;
 
+import com.sun.jdi.*;
 import org.karina.lang.compiler.stages.postprocess.PostExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -28,7 +29,7 @@ public class TypeConversion {
                 return arrayType(arrayType);
             }
             case KType.ClassType classType -> {
-                return Type.getObjectType(toJVMPath(classType.path().value()));
+                return Type.getObjectType(toJVMPath(classType.path()));
             }
             case KType.FunctionType functionType -> {
                 return getType(PostExpr.toClassType(functionType));
@@ -37,17 +38,16 @@ public class TypeConversion {
                 return Type.getType(Object.class);
             }
             case KType.PrimitiveType primitiveType -> {
-                return switch (primitiveType) {
-                    case KType.PrimitiveType.BoolType(var ignored) -> Type.BOOLEAN_TYPE;
-                    case KType.PrimitiveType.ByteType(var ignored) -> Type.BYTE_TYPE;
-                    case KType.PrimitiveType.CharType(var ignored) -> Type.CHAR_TYPE;
-                    case KType.PrimitiveType.DoubleType(var ignored) -> Type.DOUBLE_TYPE;
-                    case KType.PrimitiveType.FloatType(var ignored) -> Type.FLOAT_TYPE;
-                    case KType.PrimitiveType.IntType(var ignored) -> Type.INT_TYPE;
-                    case KType.PrimitiveType.LongType(var ignored) -> Type.LONG_TYPE;
-                    case KType.PrimitiveType.ShortType(var ignored) -> Type.SHORT_TYPE;
-                    case KType.PrimitiveType.StringType(var ignored) -> Type.getType(String.class);
-                    case KType.PrimitiveType.VoidType(var ignored) -> Type.VOID_TYPE;
+                return switch (primitiveType.primitive()) {
+                    case BOOL -> Type.BOOLEAN_TYPE;
+                    case BYTE -> Type.BYTE_TYPE;
+                    case CHAR -> Type.CHAR_TYPE;
+                    case DOUBLE -> Type.DOUBLE_TYPE;
+                    case FLOAT -> Type.FLOAT_TYPE;
+                    case INT -> Type.INT_TYPE;
+                    case LONG -> Type.LONG_TYPE;
+                    case SHORT -> Type.SHORT_TYPE;
+                    case VOID -> Type.VOID_TYPE;
                 };
             }
             case KType.Resolvable resolvable -> {

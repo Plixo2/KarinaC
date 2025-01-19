@@ -189,14 +189,14 @@ public class PostProcessor {
 
         KType returnType;
         if (output) {
-            returnType = new KType.GenericLink(region, outGenerics);
+            returnType = new KType.GenericLink(outGenerics);
         } else {
-            returnType = new KType.PrimitiveType.VoidType(region);
+            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         }
 
         var parameters = new ArrayList<KTree.KParameter>();
         for (var i = 0; i < input; i++) {
-            var type = new KType.GenericLink(region, inGenerics.get(i));
+            var type = new KType.GenericLink(inGenerics.get(i));
             var parameter = new KTree.KParameter(
                     region,
                     SpanOf.span(region, "p" + i), type,

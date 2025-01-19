@@ -13,11 +13,11 @@ public class ForAttrib extends AttributionExpr {
 
     public static AttributionExpr attribFor(@Nullable KType hint, AttributionContext ctx, KExpr.For expr) {
 
-        var iterHint = new KType.ArrayType(expr.name().region(), new KType.Resolvable(expr.name().region()));
+        var iterHint = new KType.ArrayType(new KType.Resolvable());
 
         var iter = attribExpr(iterHint, ctx, expr.iter()).expr();
 
-        if (!(iter.type() instanceof KType.ArrayType arrayType)) {
+        if (!(iter.type() instanceof KType.ArrayType(KType elementType))) {
             Log.attribError(new AttribError.NotAArray(iter.region(), iter.type()));
             throw new Log.KarinaException();
         }
@@ -25,8 +25,7 @@ public class ForAttrib extends AttributionExpr {
         var variable =
                 new Variable(
                         expr.name().region(),
-                        expr.name().value(),
-                        arrayType.elementType(),
+                        expr.name().value(), elementType,
                 false,
                 false
                 );

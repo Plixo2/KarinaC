@@ -255,7 +255,7 @@ public class Interpreter {
                 var map = new HashMap<String, Object>();
 
                 assert createObject.symbol() != null;
-                map.put("$type", createObject.symbol().path().value());
+              //  map.put("$type", createObject.symbol().path().value());
 
                 for (var parameter : createObject.parameters()) {
                     map.put(parameter.name().value(), eval(parameter.expr(), env));
@@ -435,7 +435,7 @@ public class Interpreter {
                     if ($type == null) {
                         yield false;
                     }
-                    yield $type.equals(classType.path().value());
+                    yield $type.equals(classType.path());
                 } else {
                     yield false;
                 }
@@ -443,11 +443,11 @@ public class Interpreter {
             case KType.FunctionType functionType -> false;
             case KType.GenericLink genericLink -> false;
             case KType.PrimitiveType primitiveType -> {
-                yield switch (primitiveType) {
-                    case KType.PrimitiveType.BoolType booleanType -> object instanceof Boolean;
-                    case KType.PrimitiveType.StringType stringType -> object instanceof String;
-                    default -> primitiveType.isNumeric() && object instanceof BigDecimal;
-                };
+//                yield switch (primitiveType) {
+//                  //  case KType.PrimitiveType.BoolType booleanType -> object instanceof Boolean;
+//                  //  default -> primitiveType.isNumeric() && object instanceof BigDecimal;
+//                };
+                yield false;
             }
             case KType.Resolvable resolvable -> false;
             case KType.UnprocessedType unprocessedType -> false;

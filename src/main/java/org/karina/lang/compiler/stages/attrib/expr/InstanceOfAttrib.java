@@ -20,14 +20,13 @@ public class InstanceOfAttrib extends AttributionExpr {
 
         //we replace non annotated generics with AnyClass, this is technically not necessary
         if (isType instanceof KType.ClassType classType) {
-            var item = KTree.findAbsolutItem(ctx.root(), classType.path().value());
+            var item = KTree.findAbsolutItem(ctx.root(), classType.path());
             if (item instanceof KTree.KStruct typeItem) {
                 var newGenerics = new ArrayList<KType>();
                 for (var i = 0; i < typeItem.generics().size(); i++) {
-                    newGenerics.add(new KType.AnyClass(isType.region()));
+                    newGenerics.add(new KType.AnyClass());
                 }
                 isType = new KType.ClassType(
-                        isType.region(),
                         classType.path(),
                         newGenerics
                 );

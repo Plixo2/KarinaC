@@ -85,21 +85,21 @@ public class PostExpr {
                     //static args, aka functions signature
                     var argTypeStatic = new ArrayList<KType>();
                     for (var arg : functionType.arguments()) {
-                        argTypeStatic.add(new KType.AnyClass(arg.region()));
+                        argTypeStatic.add(new KType.AnyClass());
                     }
 
-                    KType returnTypeStatic = new KType.AnyClass(region);
+                    KType returnTypeStatic = new KType.AnyClass();
                     if (functionType.returnType() == null) {
-                        returnTypeStatic = new KType.PrimitiveType.VoidType(region);
+                        returnTypeStatic = new KType.PrimitiveType(KType.KPrimitive.VOID);
                     } else if (functionType.returnType().isVoid()) {
-                        returnTypeStatic = new KType.PrimitiveType.VoidType(region);
+                        returnTypeStatic = new KType.PrimitiveType(KType.KPrimitive.VOID);
                     }
 
                     //interface class type
                     KType.ClassType classType = toClassType(functionType);
 
                     //path to the interface
-                    ObjectPath path = classType.path().value().append("apply");
+                    ObjectPath path = classType.path().append("apply");
 
 
                     symbol = new CallSymbol.CallInterface(
@@ -287,8 +287,7 @@ public class PostExpr {
         var name = "$FunctionalInterface" + input + "_" + hasReturn;
         var path = new ObjectPath(List.of("src" , "FunctionalInterfaces", name));
         return new KType.ClassType(
-                functionType.region(),
-                SpanOf.span(functionType.region(), path),
+                path,
                 generics
         );
     }

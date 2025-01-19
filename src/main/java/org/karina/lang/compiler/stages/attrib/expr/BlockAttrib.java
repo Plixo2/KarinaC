@@ -31,7 +31,7 @@ public class BlockAttrib extends AttributionExpr {
         }
         KType returningType;
         if (newExpressions.isEmpty()) {
-            returningType = new KType.PrimitiveType.VoidType(expr.region());
+            returningType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         } else {
             returningType = newExpressions.getLast().type();
         }

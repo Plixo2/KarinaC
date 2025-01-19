@@ -61,17 +61,17 @@ public class AttributionExpr {
 
     public static KType replaceType(KType original, Map<Generic, KType> generics) {
         return switch (original) {
-            case KType.ArrayType(var region, var element) -> {
+            case KType.ArrayType(var element) -> {
                 var newElement = replaceType(element, generics);
-                yield new KType.ArrayType(region, newElement);
+                yield new KType.ArrayType(newElement);
             }
-            case KType.ClassType(var region, var path, var classGenerics) -> {
+            case KType.ClassType(var path, var classGenerics) -> {
                 var newGenerics = new ArrayList<KType>();
                 for (var generic : classGenerics) {
                     var newType = replaceType(generic, generics);
                     newGenerics.add(newType);
                 }
-                yield new KType.ClassType(region, path, newGenerics);
+                yield new KType.ClassType(path, newGenerics);
             }
             case KType.FunctionType functionType -> {
 
@@ -91,7 +91,6 @@ public class AttributionExpr {
                 }
 
                 yield new KType.FunctionType(
-                        functionType.region(),
                         newParameters,
                         returnType,
                         newInternalGenerics

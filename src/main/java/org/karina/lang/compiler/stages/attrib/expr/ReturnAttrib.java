@@ -18,7 +18,7 @@ public class ReturnAttrib extends AttributionExpr {
             yieldType = value.type();
         } else {
             value = null;
-            yieldType = new KType.PrimitiveType.VoidType(expr.region());
+            yieldType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         }
 
         ctx.assign(expr.region(), ctx.returnType(), yieldType);

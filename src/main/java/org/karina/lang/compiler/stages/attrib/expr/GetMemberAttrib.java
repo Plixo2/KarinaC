@@ -77,7 +77,7 @@ public class GetMemberAttrib extends AttributionExpr {
             throw new Log.KarinaException();
         }
 
-        var item = KTree.findAbsolutItem(ctx.root(), classType.path().value());
+        var item = KTree.findAbsolutItem(ctx.root(), classType.path());
         if (item instanceof KTree.KInterface kInterface) {
             var functionToGet =
                     kInterface.functions().stream().filter(ref -> ref.name().equals(expr.name()) && ref.self() != null)

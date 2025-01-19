@@ -30,7 +30,7 @@ public class AttributionItem {
 
         KType returnType = function.returnType();
         if (returnType == null) {
-            returnType = new KType.PrimitiveType.VoidType(function.region());
+            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         }
         build.returnType(returnType);
 
@@ -109,12 +109,12 @@ public class AttributionItem {
         var genericTypes = new ArrayList<KType>();
 
         for (var generic : struct.generics()) {
-            var genericType = new KType.GenericLink(generic.region(), generic);
+            var genericType = new KType.GenericLink(generic);
             genericTypes.add(genericType);
         }
 
-        var selfType = new KType.ClassType(struct.name().region(),
-                SpanOf.span(struct.name().region(),path),
+        var selfType = new KType.ClassType(
+                path,
                 genericTypes
         );
 
@@ -138,16 +138,16 @@ public class AttributionItem {
         build.type(implBlock.type());
 
         if (!(implBlock.type() instanceof KType.ClassType classType)) {
-            Log.temp(implBlock.type().region(), "impl type must be a class type");
+            Log.temp(implBlock.region(), "impl type must be a class type");
             throw new Log.KarinaException();
         }
-        var path = KTree.findAbsolutItem(root, classType.path().value());
+        var path = KTree.findAbsolutItem(root, classType.path());
         if (path == null) {
-            Log.temp(implBlock.type().region(), "impl type not found " + classType.path().value());
+            Log.temp(implBlock.region(), "impl type not found " + classType.path());
             throw new Log.KarinaException();
         }
         if (!(path instanceof KTree.KInterface kInterface)) {
-            Log.attribError(new AttribError.NotAInterface(implBlock.type().region(), implBlock.type()));
+            Log.attribError(new AttribError.NotAInterface(implBlock.region(), implBlock.type()));
             throw new Log.KarinaException();
         }
 

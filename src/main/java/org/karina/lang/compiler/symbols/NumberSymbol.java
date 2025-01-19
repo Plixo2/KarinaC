@@ -9,28 +9,28 @@ public sealed interface NumberSymbol {
     record IntegerValue(Span region, int value) implements NumberSymbol {
         @Override
         public KType type() {
-            return new KType.PrimitiveType.IntType(this.region);
+            return new KType.PrimitiveType(KType.KPrimitive.INT);
         }
     }
 
     record LongValue(Span region, long value) implements NumberSymbol {
         @Override
         public KType type() {
-            return new KType.PrimitiveType.LongType(this.region);
+            return new KType.PrimitiveType(KType.KPrimitive.LONG);
         }
     }
 
     record FloatValue(Span region, float value) implements NumberSymbol {
         @Override
         public KType type() {
-            return new KType.PrimitiveType.FloatType(this.region);
+            return new KType.PrimitiveType(KType.KPrimitive.FLOAT);
         }
     }
 
     record DoubleValue(Span region, double value) implements NumberSymbol {
         @Override
         public KType type() {
-            return new KType.PrimitiveType.DoubleType(this.region);
+            return new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
         }
     }
 }

@@ -19,7 +19,7 @@ public class CreateArrayAttrib extends AttributionExpr {
             if (hint instanceof KType.ArrayType arrayType) {
                 elementType = arrayType.elementType();
             } else {
-                elementType = new KType.PrimitiveType.Resolvable(expr.region());
+                elementType = new KType.PrimitiveType.Resolvable();
             }
         }
         var newElements = new ArrayList<KExpr>();
@@ -34,7 +34,6 @@ public class CreateArrayAttrib extends AttributionExpr {
                 elementType,
                 newElements,
                 new KType.ArrayType(
-                        expr.region(),
                         elementType
                 )
         ));

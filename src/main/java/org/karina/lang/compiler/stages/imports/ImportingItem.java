@@ -212,7 +212,7 @@ public class ImportingItem {
 
         KType returnType;
         if (function.returnType() == null) {
-            returnType = new KType.PrimitiveType.VoidType(function.region());
+            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
         } else {
             returnType = ctx.resolveType(function.returnType());
         }

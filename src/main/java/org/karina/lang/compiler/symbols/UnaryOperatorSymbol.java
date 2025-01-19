@@ -14,28 +14,28 @@ public sealed interface UnaryOperatorSymbol {
         record FloatOP(Span region) implements NegateOP {
             @Override
             public KType type() {
-                return new KType.PrimitiveType.FloatType(this.region);
+                return new KType.PrimitiveType(KType.KPrimitive.FLOAT);
             }
         }
 
         record IntOP(Span region) implements NegateOP {
             @Override
             public KType type() {
-                return new KType.PrimitiveType.IntType(this.region);
+                return new KType.PrimitiveType(KType.KPrimitive.INT);
             }
         }
 
         record LongOP(Span region) implements NegateOP {
             @Override
             public KType type() {
-                return new KType.PrimitiveType.LongType(this.region);
+                return new KType.PrimitiveType(KType.KPrimitive.LONG);
             }
         }
 
         record DoubleOP(Span region) implements NegateOP {
             @Override
             public KType type() {
-                return new KType.PrimitiveType.DoubleType(this.region);
+                return new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
             }
         }
     }
@@ -44,7 +44,7 @@ public sealed interface UnaryOperatorSymbol {
         record BoolOP(Span region) implements NotOP {
             @Override
             public KType type() {
-                return new KType.PrimitiveType.BoolType(this.region);
+                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
             }
         }
     }

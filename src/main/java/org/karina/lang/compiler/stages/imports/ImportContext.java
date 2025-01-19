@@ -27,14 +27,12 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
                 return resolveUnprocessed(region, name, generics, mustInferGenerics, canInfer);
             }
             case KType.ArrayType arrayType -> {
-                return new KType.ArrayType(
-                        arrayType.region(), resolveType(arrayType.elementType()));
+                return new KType.ArrayType(resolveType(arrayType.elementType()));
             }
-            case KType.FunctionType(
-                    var region, var arguments, var returnType, var interfaces
+            case KType.FunctionType(var arguments, var returnType, var interfaces
             ) -> {
                 return new KType.FunctionType(
-                        region, arguments.stream().map(this::resolveType).toList(),
+                        arguments.stream().map(this::resolveType).toList(),
                         returnType == null ? null : resolveType(returnType),
                         interfaces.stream().map(this::resolveType).toList()
                 );
@@ -66,7 +64,7 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
                     ));
                     throw new Log.KarinaException();
                 }
-                return new KType.GenericLink(region, genericType);
+                return new KType.GenericLink(genericType);
             }
 
             referredItem = this.table.getItem(head);
@@ -109,8 +107,8 @@ record ImportContext(KTree.KPackage root, SymbolTable table) {
             }
         }
 
-        var namedPosition = SpanOf.span(path.region(), referredItem.path());
-        return new KType.ClassType(region, namedPosition, resolvedGenerics);
+        var namedPosition = referredItem.path();
+        return new KType.ClassType(namedPosition, resolvedGenerics);
 
     }
 

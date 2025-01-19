@@ -17,10 +17,9 @@ public class GetArrayElementAttrib extends AttributionExpr {
         KType arrayHint;
         arrayHint = Objects.requireNonNullElse(
                 hint,
-                new KType.PrimitiveType.Resolvable(expr.region())
+                new KType.PrimitiveType.Resolvable()
         );
         arrayHint = new KType.ArrayType(
-                expr.left().region(),
                 arrayHint
         );
 
@@ -30,8 +29,8 @@ public class GetArrayElementAttrib extends AttributionExpr {
             throw new Log.KarinaException();
         }
 
-        var index = attribExpr(new KType.PrimitiveType.IntType(expr.index().region()), ctx, expr.index()).expr();
-        ctx.assign(index.region(), new KType.PrimitiveType.IntType(expr.index().region()), index.type());
+        var index = attribExpr(new KType.PrimitiveType(KType.KPrimitive.INT), ctx, expr.index()).expr();
+        ctx.assign(index.region(), new KType.PrimitiveType(KType.KPrimitive.INT), index.type());
 
         return of(ctx, new KExpr.GetArrayElement(
                 expr.region(),

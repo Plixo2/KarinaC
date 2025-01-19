@@ -4,6 +4,8 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.TextContext;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.SpanOf;
 
 import java.util.List;
 
@@ -23,35 +25,41 @@ public class KarinaTypeVisitor {
 
         var region = this.conv.toRegion(ctx);
         if (ctx.VOID() != null) {
-            return new KType.PrimitiveType.VoidType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.VOID);
         } else if (ctx.INT() != null) {
-            return new KType.PrimitiveType.IntType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.INT);
         } else if (ctx.DOUBLE() != null) {
-            return new KType.PrimitiveType.DoubleType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
         } else if (ctx.SHORT() != null) {
-            return new KType.PrimitiveType.ShortType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.SHORT);
         } else if (ctx.BYTE() != null) {
-            return new KType.PrimitiveType.ByteType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.BYTE);
         } else if (ctx.CHAR() != null) {
-            return new KType.PrimitiveType.CharType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.CHAR);
         } else if (ctx.LONG() != null) {
-            return new KType.PrimitiveType.LongType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.LONG);
         } else if (ctx.FLOAT() != null) {
-            return new KType.PrimitiveType.FloatType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.FLOAT);
         } else if (ctx.BOOL() != null) {
-            return new KType.PrimitiveType.BoolType(region);
+            return new KType.PrimitiveType(KType.KPrimitive.BOOL);
         } else if (ctx.STRING() != null) {
-            return new KType.PrimitiveType.StringType(region);
+            var path = new ObjectPath("java", "lang", "String");
+            var span = this.conv.span(ctx.STRING()).region();
+            return new KType.UnprocessedType(
+                    span,
+                    SpanOf.span(span, path),
+                    List.of()
+            );
         } else if (ctx.structType() != null) {
             return visitStructType(ctx.structType());
         } else if (ctx.arrayType() != null) {
-            return new KType.ArrayType(region, visitType(ctx.arrayType().type()));
+            return new KType.ArrayType(visitType(ctx.arrayType().type()));
         } else if (ctx.functionType() != null) {
             return visitFunctionType(ctx.functionType());
         } else if (ctx.type() != null) {
             return visitType(ctx.type());
         } else if (ctx.CHAR_QUESTION() != null) {
-            return new KType.AnyClass(region);
+            return new KType.AnyClass();
         }
         else {
             Log.syntaxError(region, "Invalid type");
@@ -71,12 +79,11 @@ public class KarinaTypeVisitor {
 
     private KType visitFunctionType(KarinaParser.FunctionTypeContext ctx) {
 
-        var region = this.conv.toRegion(ctx);
         var interfaces = ctx.interfaceImpl() != null ? visitInterfaceImpl(ctx.interfaceImpl()) :
                 List.<KType>of();
         var args = visitTypeList(ctx.typeList());
         var returnType = ctx.type() != null ? visitType(ctx.type()) : null;
-        return new KType.FunctionType(region, args, returnType, interfaces);
+        return new KType.FunctionType(args, returnType, interfaces);
 
     }
 

@@ -51,7 +51,7 @@ public class BinaryAttrib extends AttributionExpr {
                 Log.attribError(new AttribError.NotSupportedType(left.region(), leftType));
                 throw new Log.KarinaException();
             }
-            case STRING, CHAR, SHORT, BYTE -> {
+            case CHAR, SHORT, BYTE -> {
                 Log.temp(expr.operator().region(), "Binary for " + leftPrimitive.primitive() + " not implemented");
                 throw new Log.KarinaException();
             }

@@ -10,21 +10,21 @@ public sealed interface MemberSymbol {
     record ArrayLength(Span region) implements MemberSymbol {
         @Override
         public KType type() {
-            return new KType.PrimitiveType.IntType(this.region);
+            return new KType.PrimitiveType(KType.KPrimitive.INT);
         }
     }
     record FieldSymbol(KType type, ObjectPath fieldPath, String name, KType owner) implements MemberSymbol {}
     record InterfaceFunctionSymbol(Span region, KType.ClassType classType, ObjectPath path) implements MemberSymbol {
         @Override
         public KType type() {
-            return new KType.PrimitiveType.VoidType(this.region);
+            return new KType.PrimitiveType(KType.KPrimitive.VOID);
         }
     }
     record VirtualFunctionSymbol(Span region, KType.ClassType classType, ObjectPath path) implements MemberSymbol {
 
         @Override
         public KType type() {
-            return new KType.PrimitiveType.VoidType(this.region);
+            return new KType.PrimitiveType(KType.KPrimitive.VOID);
         }
     }
 
