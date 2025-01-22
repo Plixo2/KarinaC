@@ -11,7 +11,7 @@ import org.karina.lang.compiler.objects.KType;
 @Getter
 @Accessors(fluent = true)
 public class Variable {
-    private final @NotNull Span region;
+    private final @NotNull Region region;
     private final @NotNull String name;
     private final @NotNull KType type;
     private final boolean mutable;
@@ -33,11 +33,4 @@ public class Variable {
         return "Variable{" + "type=" + type + ", name='" + name + '\'' + '}';
     }
 
-    //    public Variable(Span region, String name, KType type, boolean mutable, boolean parameter) {
-//        this.region = region;
-//        this.name = name;
-//        this.type = type;
-//        this.mutable = mutable;
-//        this.parameter = parameter;
-//    }
 }

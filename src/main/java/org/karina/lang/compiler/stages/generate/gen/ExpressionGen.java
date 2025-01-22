@@ -190,7 +190,12 @@ public class ExpressionGen {
                 ctx.add(falseTarget);
 
                 if (branch.elseArm() != null) {
-                    addExpression(branch.elseArm(), ctx);
+                    if (branch.elseArm().shortPattern() != null) {
+                        Log.temp(expr.region(), "Cannot be expressed");
+                        throw new Log.KarinaException();
+                    }
+
+                    addExpression(branch.elseArm().expr(), ctx);
                     ctx.add(endTarget);
                 }
 
@@ -507,6 +512,9 @@ public class ExpressionGen {
                 ctx.add(new JumpInsnNode(Opcodes.GOTO, startOfLoop));
                 ctx.add(endOfLoop);
 
+            }
+            case KExpr.Super aSuper -> {
+                throw new NullPointerException("Cannot be expressed");
             }
         }
 

@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.NamedExpression;
 import org.karina.lang.compiler.errors.Log;
@@ -53,7 +54,7 @@ public class CreateObjectAttrib extends AttributionExpr {
 
         //The new type with all the generics replaced
         var newType = new KType.ClassType(
-                classType.path(),
+                ClassPointer.of(classType.path()),
                 newGenerics
         );
 

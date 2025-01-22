@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.errors;
 
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.types.FileLoadError;
 import org.karina.lang.compiler.errors.types.ImportError;
@@ -37,6 +37,12 @@ public class LogFactory<T extends LogBuilder> {
                 var syntaxError = builder.setTitle("Syntax Error");
                 syntaxError.append(msg);
                 syntaxError.setPrimarySource(region);
+            }
+            case Error.BytecodeLoading(var resource, var name, var msg) -> {
+                var fileError = builder.setTitle("Bytecode Handling");
+                fileError.append("File: ").append(resource.identifier());
+                fileError.append("Class: ").append(name);
+                fileError.append(msg);
             }
             case Error.TemporaryErrorRegion(var region, var message) -> {
                 var tempError = builder.setTitle(message);
@@ -145,32 +151,26 @@ public class LogFactory<T extends LogBuilder> {
     private void populateImportError(ImportError errorType, LogBuilder logBuilder) {
 
         switch (errorType) {
-            case ImportError.NoUnitFound(var path, var root) -> {
-                var target = path.value().mkString(".");
+            case ImportError.NoUnitFound(var region, var path) -> {
+                var target = path.mkString(".");
                 logBuilder.append("No unit found for path '").append(target).append("'");
-                var suggestions = root.getAllUnitsRecursively()
-                                      .stream()
-                                      .map(ref -> ref.path().tail().mkString("."))
-                                      .toList();
-                var filtered = DidYouMean.suggestions(new HashSet<>(suggestions), target, 5);
-                if (!filtered.isEmpty()) {
-                    logBuilder.append("Did you mean: ").append(filtered);
-                }
-                logBuilder.setPrimarySource(path.region());
+//                var suggestions = root.getAllUnitsRecursively()
+//                                      .stream()
+//                                      .map(ref -> ref.path().tail().mkString("."))
+//                                      .toList();
+//                var filtered = DidYouMean.suggestions(new HashSet<>(suggestions), target, 5);
+//                if (!filtered.isEmpty()) {
+//                    logBuilder.append("Did you mean: ").append(filtered);
+//                }
+                logBuilder.setPrimarySource(region);
             }
-            case ImportError.UnknownImportType(var region, var name, var available, var root) -> {
+            case ImportError.UnknownImportType(var region, var name, var available) -> {
                 logBuilder.append("Unknown type '").append(name).append("'");
                 var suggestions = DidYouMean.suggestions(available, name, 5);
-                var importSuggestion = DidYouMean.suggestImportForType(name, root, 5);
 
                 if (!suggestions.isEmpty()) {
                     var quoted = suggestions.stream().map(x -> "'" + x + "'").toList();
                     logBuilder.append("Did you mean: ").append(quoted);
-                }
-                if (!importSuggestion.isEmpty()) {
-                    var strList = importSuggestion.stream().map(ref -> ref.everythingButLast().tail()
-                                                                       .toString()).toList();
-                    logBuilder.append("type ").append("'").append(name).append("' also exists in ").append(strList);
                 }
                 logBuilder.setPrimarySource(region);
             }
@@ -184,28 +184,10 @@ public class LogFactory<T extends LogBuilder> {
                 logBuilder.setPrimarySource(second);
                 logBuilder.addSecondarySource(first);
             }
-            case ImportError.NoItemFound(var region, var item, var unit, var root) -> {
-                logBuilder.append("No item '").append(item).append("' found in unit '")
-                          .append(unit.path()).append("'");
-                var suggestions = unit.items().stream().map(ref -> ref.name().value()).toList();
-                var suggestionsFiltered = DidYouMean.suggestions(new HashSet<>(suggestions), item, 5);
-                if (!suggestionsFiltered.isEmpty()) {
-                    logBuilder.append("Did you mean: ").append(suggestionsFiltered);
-                }
-                var importSuggestion = DidYouMean.suggestImportForType(item, root, 5);
-                if (!importSuggestion.isEmpty()) {
-                    var strList = importSuggestion.stream().map(ref -> ref.everythingButLast().tail()
-                                                                       .toString()).toList();
-                    logBuilder.append("type ").append("'").append(item).append("' also exists in ").append(strList);
-                }
-
+            case ImportError.NoItemFound(var region, var item, var cls) -> {
+                logBuilder.append("No item '").append(item).append("' found in class '")
+                          .append(cls.mkString(".")).append("'");
                 logBuilder.setPrimarySource(region);
-                var startUnitRegion = new Span(
-                        unit.region().source(),
-                        unit.region().start(),
-                        unit.region().start()
-                );
-                logBuilder.addSecondarySource(startUnitRegion);
             }
             case ImportError.JavaNotSupported(var region) -> {
                 logBuilder.append("Java item are not supported yet");

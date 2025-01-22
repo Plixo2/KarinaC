@@ -12,11 +12,11 @@ import java.util.List;
 
 public class PostProcessor {
 
-    public static KTree.KPackage rewrite(KTree.KPackage root) {
+    public KTree.KPackage rewrite(KTree.KPackage root) {
         return rewritePackage(root, root);
     }
 
-    private static KTree.KPackage rewritePackage(KTree.KPackage root, KTree.KPackage kPackage) {
+    private KTree.KPackage rewritePackage(KTree.KPackage root, KTree.KPackage kPackage) {
         var build = KTree.KPackage.builder();
         build.path(kPackage.path());
         build.name(kPackage.name());
@@ -40,7 +40,7 @@ public class PostProcessor {
         return build.build();
     }
 
-    private static KTree.KUnit rewriteUnit(KTree.KPackage root, KTree.KUnit unit, ObjectPath baseInterfacePath) {
+    private KTree.KUnit rewriteUnit(KTree.KPackage root, KTree.KUnit unit, ObjectPath baseInterfacePath) {
 
         var build = KTree.KUnit.builder();
         build.region(unit.region());
@@ -140,7 +140,7 @@ public class PostProcessor {
     }
 
 
-    private static KTree.KUnit generateUnit(ObjectPath base, Span region) {
+    private KTree.KUnit generateUnit(ObjectPath base, Region region) {
         var build = KTree.KUnit.builder();
         build.region(region);
         build.name("FunctionalInterfaces");
@@ -152,7 +152,7 @@ public class PostProcessor {
         return build.build();
     }
 
-    private static List<KTree.KInterface> generateInterfaces(ObjectPath base, Span region) {
+    private List<KTree.KInterface> generateInterfaces(ObjectPath base, Region region) {
         var interfaces = new ArrayList<KTree.KInterface>();
         for (var i = 0; i < 16; i++) {
             interfaces.add(generateInterface(base, region, i, true));
@@ -161,13 +161,13 @@ public class PostProcessor {
         return interfaces;
     }
 
-    private static KTree.KInterface generateInterface(ObjectPath base, Span region, int input, boolean output) {
+    private KTree.KInterface generateInterface(ObjectPath base, Region region, int input, boolean output) {
         var name = "$FunctionalInterface" + input + "_" + output;
         var shortName = "$" + input + "_" + output;
 
         var build = KTree.KInterface.builder();
         build.region(region);
-        build.name(SpanOf.span(region, name));
+        build.name(RegionOf.region(region, name));
         var interfacePath = base.append(name);
         build.path(interfacePath);
 
@@ -199,7 +199,7 @@ public class PostProcessor {
             var type = new KType.GenericLink(inGenerics.get(i));
             var parameter = new KTree.KParameter(
                     region,
-                    SpanOf.span(region, "p" + i), type,
+                    RegionOf.region(region, "p" + i), type,
                     new Variable(region, "p" + i, type, false, true)
             );
             parameters.add(parameter);
@@ -208,7 +208,7 @@ public class PostProcessor {
 
         var applyFunction = new KTree.KFunction(
                 region,
-                SpanOf.span(region, "apply"),
+                RegionOf.region(region, "apply"),
                 interfacePath.append("apply"),
                 region,
                 new FunctionModifier(),

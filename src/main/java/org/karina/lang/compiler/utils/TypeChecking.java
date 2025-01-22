@@ -3,16 +3,18 @@ package org.karina.lang.compiler.utils;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
+import org.karina.lang.compiler.model.Signature;
+import org.karina.lang.compiler.model.Types;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 
 import java.util.HashMap;
 
-public record TypeChecking(KTree.KPackage root) {
+public record TypeChecking(KTree.KPackage root) implements Types {
 
-    //Returns a common type of two types
-    public @Nullable KType superType(Span checkingRegion, KType a, KType b) {
+    @Override
+    public @Nullable KType superType(Region checkingRegion, KType a, KType b) {
         if (canAssign(checkingRegion, a, b, false)) {
             return a;
         } else if (canAssign(checkingRegion, b, a, false)) {
@@ -22,6 +24,12 @@ public record TypeChecking(KTree.KPackage root) {
         }
     }
 
+    @Override
+    public boolean isSameSignature(Signature a, Signature b) {
+        throw new NullPointerException("Not implemented");
+    }
+
+    @Override
     public boolean isVoid(KType type) {
         if (type instanceof KType.PrimitiveType primitiveType) {
             return primitiveType.primitive() == KType.KPrimitive.VOID;
@@ -29,7 +37,8 @@ public record TypeChecking(KTree.KPackage root) {
             return false;
         }
     }
-    public void assign(Span checkingRegion, KType left, KType right) {
+    @Override
+    public void assign(Region checkingRegion, KType left, KType right) {
         if (!canAssign(checkingRegion, left, right, false)) {
             Log.attribError(new AttribError.TypeMismatch(checkingRegion, left, right));
             throw new Log.KarinaException();
@@ -45,7 +54,8 @@ public record TypeChecking(KTree.KPackage root) {
      * Example:
      * {@code let a: left = right}
      */
-    public boolean canAssign(Span checkingRegion, KType left, KType right, boolean mutable) {
+    @Override
+    public boolean canAssign(Region checkingRegion, KType left, KType right, boolean mutable) {
         if (left instanceof KType.AnyClass && !right.isPrimitive()) {
             //we check here, we dont want to resolve resolvable types with it
             return true;
@@ -75,8 +85,8 @@ public record TypeChecking(KTree.KPackage root) {
 
         return switch (left) {
             case KType.ArrayType arrayType -> {
-                if (right instanceof KType.ArrayType rightArrayType) {
-                    yield canAssign(checkingRegion, arrayType.elementType(), rightArrayType.elementType(), mutable);
+                if (right instanceof KType.ArrayType(KType elementType)) {
+                    yield canAssign(checkingRegion, arrayType.elementType(), elementType, mutable);
                 } else {
                     yield false;
                 }
@@ -111,13 +121,7 @@ public record TypeChecking(KTree.KPackage root) {
                         }
                     }
                     var leftReturnType = functionType.returnType();
-                    if (leftReturnType == null) {
-                        leftReturnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
-                    }
                     var rightReturnType = rightFunctionType.returnType();
-                    if (rightReturnType == null) {
-                        rightReturnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
-                    }
                     yield canAssign(checkingRegion, leftReturnType, rightReturnType, mutable);
                 } else {
                     yield false;
@@ -139,7 +143,7 @@ public record TypeChecking(KTree.KPackage root) {
 
 
     private boolean canAssignInterface(
-            Span checkingRegion,
+            Region checkingRegion,
             KTree.KInterface leftItem,
             KType.ClassType left,
             KTree.KItem rightItem,
@@ -186,7 +190,7 @@ public record TypeChecking(KTree.KPackage root) {
         }
     }
 
-    private boolean classTypeStrictEquals(Span checkingRegion, KType.ClassType classType, KType.ClassType rightClassType, boolean mutable) {
+    private boolean classTypeStrictEquals(Region checkingRegion, KType.ClassType classType, KType.ClassType rightClassType, boolean mutable) {
 
         if (!classType.path().equals(rightClassType.path())) {
             return false;

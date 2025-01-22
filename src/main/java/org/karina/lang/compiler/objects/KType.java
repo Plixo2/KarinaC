@@ -1,17 +1,17 @@
 package org.karina.lang.compiler.objects;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.Span;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 
 import java.util.*;
 
 public sealed interface KType {
-
 
     default KType unpack() {
         if (this instanceof Resolvable resolvable) {
@@ -42,7 +42,7 @@ public sealed interface KType {
         LONG
     }
 
-    record UnprocessedType(Span region, SpanOf<ObjectPath> name, List<KType> generics) implements KType {
+    record UnprocessedType(Region region, RegionOf<ObjectPath> name, List<KType> generics) implements KType {
 
         @Override
         public String toString() {
@@ -60,25 +60,28 @@ public sealed interface KType {
 
     record FunctionType(
             List<KType> arguments,
-            @Nullable KType returnType,
+            KType returnType,
             List<KType> interfaces
     ) implements KType {
 
         @Override
         public String toString() {
-            var returnType = this.returnType == null ? "void" : this.returnType.toString();
+            var returnType = this.returnType.toString();
             var impls = this.interfaces.isEmpty() ? "" : " impl " + String.join(", ", this.interfaces.stream().map(KType::toString).toList());
             return "fn(" + String.join(", ", this.arguments.stream().map(KType::toString).toList()) + ") -> " + returnType + impls;
         }
     }
 
-    record ClassType(ObjectPath path, List<KType> generics) implements KType {
+    record ClassType(ClassPointer pointer, List<KType> generics) implements KType {
 
         @Override
         public String toString() {
-            return this.path.mkString(".") + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
+            return this.pointer.path().mkString(".") + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
         }
 
+        public ObjectPath path() {
+            return this.pointer.path();
+        }
     }
 
     record AnyClass() implements KType {
@@ -112,7 +115,7 @@ public sealed interface KType {
             return this.resolved;
         }
 
-        public boolean canResolve(Span checkingRegion, KType resolved) {
+        public boolean canResolve(Region checkingRegion, KType resolved) {
             if (resolved == this) {
                 return true;
             }
@@ -159,7 +162,7 @@ public sealed interface KType {
             throw new Log.KarinaException();
         }
 
-        public void tryResolve(Span region, KType resolved) {
+        public void tryResolve(Region region, KType resolved) {
 
             if (this.resolved != null) {
                 Log.temp(region, "Type already resolved");
@@ -220,9 +223,7 @@ public sealed interface KType {
                 for (var argument : functionType.arguments()) {
                     getDependencies(level + 1, argument, dependencies);
                 }
-                if (functionType.returnType() != null) {
-                    getDependencies(level + 1, functionType.returnType(), dependencies);
-                }
+                getDependencies(level + 1, functionType.returnType(), dependencies);
                 for (var impl : functionType.interfaces()) {
                     getDependencies(level + 1, impl, dependencies);
                 }

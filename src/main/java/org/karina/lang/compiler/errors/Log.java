@@ -1,7 +1,8 @@
 package org.karina.lang.compiler.errors;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.api.Resource;
+import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.errors.types.Error;
 import org.karina.lang.compiler.errors.types.FileLoadError;
 import org.karina.lang.compiler.errors.types.ImportError;
@@ -54,12 +55,17 @@ public class Log {
 
     //A thread-safe List of logs
     private static final List<LogWithTrace> entries = new CopyOnWriteArrayList<>();
+    private static final List<LogWithTrace> warnings = new CopyOnWriteArrayList<>();
+
+    public static void warn(Region region, String warning) {
+        addWarning(new Error.TemporaryErrorRegion(region, warning));
+    }
 
     public static void fileError(FileLoadError error) {
         addError(error);
     }
 
-    public static void syntaxError(Span region, String message) {
+    public static void syntaxError(Region region, String message) {
         addError(new Error.SyntaxError(region, message));
     }
 
@@ -71,15 +77,20 @@ public class Log {
         addError(errorType);
     }
 
-    public static void temp(Span region, String msg) {
+    public static void temp(Region region, String msg) {
         addError(new Error.TemporaryErrorRegion(region, msg));
     }
+
+    public static void bytecode(Resource resource, String name, String msg) {
+        addError(new Error.BytecodeLoading(resource, name, msg));
+    }
+
 
     public static void cliParseError(String message) {
         addError(new Error.ParseError(message));
     }
 
-    public static void invalidState(Span region, Class<?> aClass, String expectedState) {
+    public static void invalidState(Region region, Class<?> aClass, String expectedState) {
         addError(new Error.InvalidState(region, aClass, expectedState));
     }
 
@@ -90,21 +101,39 @@ public class Log {
 
     }
 
+    private static void addWarning(Error entry) {
+
+        var stackTrace = Thread.currentThread().getStackTrace();
+        warnings.add(new LogWithTrace(stackTrace, entry));
+
+    }
+
     public static List<LogWithTrace> getEntries() {
         return new ArrayList<>(entries);
+    }
+
+    public static List<LogWithTrace> getWarnings() {
+        return new ArrayList<>(warnings);
     }
 
     public static boolean hasErrors() {
         return !entries.isEmpty();
     }
 
-    public static List<Error> getLogs() {
-        return entries.stream().map(LogWithTrace::entry).toList();
+    public static boolean hasWarnings() {
+        return !warnings.isEmpty();
     }
+
+//    public static List<Error> getLogs() {
+//        return entries.stream().map(LogWithTrace::entry).toList();
+//    }
 
     public static void clearLogs() {
         entries.clear();
+        warnings.clear();
     }
+
+
 
     public record LogWithTrace(@Nullable StackTraceElement[] stack, Error entry) {
 

@@ -1,11 +1,13 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.BranchPattern;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.ElsePart;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
@@ -35,7 +37,7 @@ public class BranchAttrib extends AttributionExpr {
                             newGenerics.add(new KType.Resolvable());
                         }
                         isType = new KType.ClassType(
-                                classType.path(),
+                                ClassPointer.of(classType.path()),
                                 newGenerics
                         );
                         //for inference only
@@ -74,6 +76,10 @@ public class BranchAttrib extends AttributionExpr {
                 Log.temp(destruct.region(), "Destruct not implemented");
                 throw new Log.KarinaException();
             }
+            case BranchPattern.JustType justType -> {
+                Log.temp(justType.region(), "justType not implemented");
+                throw new Log.KarinaException();
+            }
             case null -> {
                 branchPattern = null;
                 ctx.assign(condition.region(), boolType, condition.type());
@@ -92,8 +98,9 @@ public class BranchAttrib extends AttributionExpr {
             if (hint == null) {
                 elseHint = then.type();
             }
-            elseArm = attribExpr(elseHint, ctx, elseArm).expr();
-            returnType = ctx.getSuperType(then.region(), then.type(), elseArm.type());
+            var elseExpr = attribExpr(elseHint, ctx, elseArm.expr()).expr();
+            elseArm = new ElsePart(elseExpr, null);
+            returnType = ctx.getSuperType(then.region(), then.type(), elseExpr.type());
             if (returnType == null) {
                 returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
             }

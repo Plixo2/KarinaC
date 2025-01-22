@@ -21,7 +21,7 @@ public sealed interface FileLoadError extends Error {
     record IO(File file, Exception exception) implements FileLoadError {
     }
 
-    record InvalidJson(File file, String message) implements FileLoadError {
+    record Generic(File file, String message) implements FileLoadError {
     }
 
     default String errorMessage() {
@@ -30,7 +30,7 @@ public sealed interface FileLoadError extends Error {
             case NotAFile ignored -> "Not a file";
             case NotAFolder ignored -> "Not a folder";
             case NOPermission ignored -> "No permission";
-            case InvalidJson json -> json.message();
+            case Generic json -> json.message();
             case IO io -> io.exception().getMessage();
         };
     }

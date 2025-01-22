@@ -53,5 +53,5 @@ src/main/java/org/karina/lang/ImmutableList.java
 resources/sugar.json
 resources/jars/commons-cli-1.9.0.jar
 resources/jars/java_base/
-resources/jars/jdk21.jar
+src/main/resources/jdk21.jar
 resources/jars/

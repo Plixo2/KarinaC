@@ -12,7 +12,6 @@ import java.util.List;
 import static org.objectweb.asm.Type.*;
 
 public class TypeGeneration {
-    public List<ClassPointer> pointers = new ArrayList<>();
 
     public KType fromType(String desc, @Nullable String signature) {
         var type = Type.getType(desc);
@@ -36,7 +35,7 @@ public class TypeGeneration {
             }
             case OBJECT -> {
                 var pointer = internalNameToPointer(desc.getInternalName());
-                yield new KType.ClassType(pointer.path(), List.of());
+                yield new KType.ClassType(pointer, List.of());
             }
             default -> throw new IllegalStateException("Unexpected value: " + desc.getSort());
         };
@@ -57,15 +56,15 @@ public class TypeGeneration {
     }
 
 
+
     public ClassPointer internalNameToPointer(String name) {
         var nameSplit = name.split("/");
         var path = new ObjectPath();
         for (String s : nameSplit) {
             path = path.append(s);
         }
-        var pointer = ClassPointer.of(path);
-        this.pointers.add(pointer);
-        return pointer;
+        //TODO test existance of class
+        return ClassPointer.of(path);
     }
 
 }

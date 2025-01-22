@@ -1,9 +1,11 @@
 package org.karina.lang.compiler.stages.parser.visitor;
 
+import org.antlr.v4.runtime.Parser;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.stages.parser.TextContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
+import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.*;
 
 import java.math.BigDecimal;
@@ -14,11 +16,12 @@ import java.util.List;
  * Used to convert AST expression objects to the corresponding {@link KExpr}.
  */
 public class KarinaExprVisitor {
+    public static Parser PARSER;
     private final TextContext conv;
-    private final KarinaVisitor visitor;
+    private final KarinaUnitVisitor visitor;
     private final KarinaTypeVisitor typeVisitor;
 
-    public KarinaExprVisitor(KarinaVisitor visitor, KarinaTypeVisitor typeVisitor, TextContext converter) {
+    public KarinaExprVisitor(KarinaUnitVisitor visitor, KarinaTypeVisitor typeVisitor, TextContext converter) {
         this.conv = converter;
         this.typeVisitor = typeVisitor;
         this.visitor = visitor;
@@ -29,7 +32,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         if (ctx.varDef() != null) {
             var varDefContext = ctx.varDef();
-            var name = this.conv.span(varDefContext.ID());
+            var name = this.conv.region(varDefContext.ID());
             var type = varDefContext.type() == null ? null : this.typeVisitor.visitType(varDefContext.type());
             var expr = visitExprWithBlock(varDefContext.exprWithBlock());
             return new KExpr.VariableDefinition(region, name, type, expr, null);
@@ -84,12 +87,12 @@ public class KarinaExprVisitor {
         var condition = visitExprWithBlock(ctx.exprWithBlock());
         var thenBlock = visitBlock(ctx.block());
         BranchPattern branchPattern = null;
-        if (condition instanceof KExpr.IsInstanceOf(Span instanceRegion, KExpr left, KType isType)) {
+        if (condition instanceof KExpr.IsInstanceOf(Region instanceRegion, KExpr left, KType isType)) {
             if (ctx.ID() != null) {
                 condition = left;
                 branchPattern = new BranchPattern.Cast(
                         instanceRegion, isType,
-                        this.conv.span(ctx.ID()),
+                        this.conv.region(ctx.ID()),
                         null
                 );
             } else if (ctx.optTypeList() != null) {
@@ -103,9 +106,32 @@ public class KarinaExprVisitor {
                 throw new Log.KarinaException();
             }
         }
-        KExpr elseBlock;
+        ElsePart elsePart = null;
+
         if (ctx.elseExpr() != null) {
             var elseExpr = ctx.elseExpr();
+            BranchPattern elseBranchPattern = null;
+            var shortPattern = elseExpr.isShort();
+            if (shortPattern != null) {
+                var regionShortPattern = this.conv.toRegion(shortPattern);
+                var isType = this.typeVisitor.visitType(shortPattern.type());
+                if (shortPattern.ID() != null) {
+                    elseBranchPattern = new BranchPattern.Cast(
+                            regionShortPattern,
+                            isType,
+                            this.conv.region(ctx.ID()),
+                            null
+                    );
+                } else if (shortPattern.optTypeList() != null) {
+                    var values = visitOptTypeList(shortPattern.optTypeList());
+                    elseBranchPattern = new BranchPattern.Destruct(regionShortPattern, isType, values);
+                } else {
+                    elseBranchPattern = new BranchPattern.JustType(regionShortPattern, isType);
+                }
+            }
+
+
+            KExpr elseBlock;
             if (elseExpr.if_() != null) {
                 elseBlock = visitIf(elseExpr.if_());
             } else if (elseExpr.block() != null) {
@@ -116,10 +142,11 @@ public class KarinaExprVisitor {
                 Log.syntaxError(this.conv.toRegion(elseExpr), "Invalid else expression");
                 throw new Log.KarinaException();
             }
-        } else {
-            elseBlock = null;
+
+            elsePart = new ElsePart(elseBlock, elseBranchPattern);
         }
-        return new KExpr.Branch(region, condition, thenBlock, elseBlock, branchPattern, null);
+
+        return new KExpr.Branch(region, condition, thenBlock, elsePart, branchPattern, null);
 
     }
 
@@ -132,7 +159,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, BinaryOperator.OR),
+                    RegionOf.region(position, BinaryOperator.OR),
                     visitConditionalOrExpression(ctx.conditionalOrExpression()),
                     null
             );
@@ -151,7 +178,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, BinaryOperator.AND),
+                    RegionOf.region(position, BinaryOperator.AND),
                     visitConditionalAndExpression(ctx.conditionalAndExpression()),
                     null
             );
@@ -166,7 +193,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         var left = visitRelationalExpression(ctx.relationalExpression());
         if (ctx.equalityExpression() != null) {
-            Span position;
+            Region position;
             BinaryOperator operator;
             if (ctx.EQUALS() != null) {
                 position = this.conv.toRegion(ctx.EQUALS());
@@ -179,7 +206,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, operator),
+                    RegionOf.region(position, operator),
                     visitEqualityExpression(ctx.equalityExpression()),
                     null
             );
@@ -193,7 +220,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         var left = visitAdditiveExpression(ctx.additiveExpression());
         if (ctx.relationalExpression() != null) {
-            Span position;
+            Region position;
             BinaryOperator operator;
             if (ctx.GREATER_EQULAS() != null) {
                 position = this.conv.toRegion(ctx.GREATER_EQULAS());
@@ -215,7 +242,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, operator),
+                    RegionOf.region(position, operator),
                     visitRelationalExpression(ctx.relationalExpression()),
                     null
             );
@@ -230,7 +257,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         var left = visitMultiplicativeExpression(ctx.multiplicativeExpression());
         if (ctx.additiveExpression() != null) {
-            Span position;
+            Region position;
             BinaryOperator operator;
             if (ctx.CHAR_PLIS() != null) {
                 position = this.conv.toRegion(ctx.CHAR_PLIS());
@@ -249,7 +276,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, operator),
+                    RegionOf.region(position, operator),
                     visitAdditiveExpression(ctx.additiveExpression()),
                     null
             );
@@ -264,7 +291,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         var left = visitUnaryExpression(ctx.unaryExpression());
         if (ctx.multiplicativeExpression() != null) {
-            Span position;
+            Region position;
             BinaryOperator operator;
             if (ctx.CHAR_R_SLASH() != null) {
                 position = this.conv.toRegion(ctx.CHAR_R_SLASH());
@@ -283,7 +310,7 @@ public class KarinaExprVisitor {
             return new KExpr.Binary(
                     region,
                     left,
-                    SpanOf.span(position, operator),
+                    RegionOf.region(position, operator),
                     visitMultiplicativeExpression(ctx.multiplicativeExpression()),
                     null
             );
@@ -299,10 +326,10 @@ public class KarinaExprVisitor {
         var left = visitFactor(ctx.factor());
         if (ctx.CHAR_MINUS() != null) {
             var signRegion = this.conv.toRegion(ctx.CHAR_MINUS());
-            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NEGATE), left, null);
+            return new KExpr.Unary(region, RegionOf.region(signRegion, UnaryOperator.NEGATE), left, null);
         } else if (ctx.CHAR_EXCLAMATION() != null) {
             var signRegion = this.conv.toRegion(ctx.CHAR_EXCLAMATION());
-            return new KExpr.Unary(region, SpanOf.span(signRegion, UnaryOperator.NOT), left, null);
+            return new KExpr.Unary(region, RegionOf.region(signRegion, UnaryOperator.NOT), left, null);
         } else {
             return left;
         }
@@ -332,7 +359,7 @@ public class KarinaExprVisitor {
 
         var region = this.conv.toRegion(ctx);
         if (ctx.ID() != null) {
-            var name = this.conv.span(ctx.ID());
+            var name = this.conv.region(ctx.ID());
             return new KExpr.GetMember(region, prev, name, null);
         } else if (ctx.expressionList() != null) {
             var expressions = visitExprList(ctx.expressionList());
@@ -350,7 +377,8 @@ public class KarinaExprVisitor {
             var type = this.typeVisitor.visitType(ctx.type());
             return new KExpr.Cast(region, prev, type, null);
         } else {
-            Log.syntaxError(region, "Invalid postfix");
+            Log.syntaxError(region, "Invalid postfix ");
+//            Log.syntaxError(region, "Invalid postfix " + ctx.toString(PARSER));
             throw new Log.KarinaException();
         }
 
@@ -380,13 +408,13 @@ public class KarinaExprVisitor {
                 var initList = ctx.initList();
                 var inits = initList.memberInit().stream().map(ref -> {
                     var initRegion = this.conv.toRegion(ref);
-                    var name = this.conv.span(ref.ID());
+                    var name = this.conv.region(ref.ID());
                     var value = visitExprWithBlock(ref.exprWithBlock());
                     return new NamedExpression(initRegion, name, value, null);
                 }).toList();
-                var name = this.conv.span(ctx.ID());
+                var name = this.conv.region(ctx.ID());
                 var path = new ObjectPath(name.value());
-                var type = new KType.UnprocessedType(name.region(), SpanOf.span(name.region(), path), generics);
+                var type = new KType.UnprocessedType(name.region(), RegionOf.region(name.region(), path), generics);
                 return new KExpr.CreateObject(
                         region,
                         type,
@@ -402,6 +430,8 @@ public class KarinaExprVisitor {
             return new KExpr.StringExpr(region, text);
         } else if (ctx.SELF() != null) {
             return new KExpr.Self(region, null);
+        } else if (ctx.SUPER() != null) {
+            return new KExpr.Super(region);
         } else if (ctx.FALSE() != null) {
             return new KExpr.Boolean(region, false);
         } else if (ctx.TRUE() != null) {
@@ -441,7 +471,7 @@ public class KarinaExprVisitor {
         var body = visitExprWithBlock(ctx.exprWithBlock());
         List<KType> interfaces;
         if (ctx.interfaceImpl() != null) {
-            interfaces = this.typeVisitor.visitInterfaceImpl(ctx.interfaceImpl());
+            interfaces = this.typeVisitor.visitInterfaceImpl(ctx.interfaceImpl()).stream().map(ref -> (KType)ref).toList();
         } else {
             interfaces = List.of();
         }
@@ -460,7 +490,7 @@ public class KarinaExprVisitor {
     private KExpr visitFor(KarinaParser.ForContext ctx) {
 
         var region = this.conv.toRegion(ctx);
-        var name = this.conv.span(ctx.ID());
+        var name = this.conv.region(ctx.ID());
         var iter = visitExprWithBlock(ctx.exprWithBlock());
         var body = visitBlock(ctx.block());
         return new KExpr.For(
@@ -509,7 +539,7 @@ public class KarinaExprVisitor {
             var instance = ctx.matchInstance();
             var type = this.typeVisitor.visitStructType(instance.structType());
             if (instance.ID() != null) {
-                var name = this.conv.span(instance.ID());
+                var name = this.conv.region(instance.ID());
                 return new MatchPattern.Cast(region, type, name, expr);
             } else {
                 var values = visitOptTypeList(instance.optTypeList());
@@ -523,7 +553,7 @@ public class KarinaExprVisitor {
 
         return ctx.optTypeName().stream().map(ref -> {
             var region = this.conv.toRegion(ref);
-            var name = this.conv.span(ref.ID());
+            var name = this.conv.region(ref.ID());
             var type = ref.type() == null ? null : this.typeVisitor.visitType(ref.type());
             return new NameAndOptType(region, name, type, null);
         }).toList();

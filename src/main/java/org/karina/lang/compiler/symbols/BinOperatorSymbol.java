@@ -1,29 +1,29 @@
 package org.karina.lang.compiler.symbols;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.utils.Span;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.objects.BinaryOperator;
 import org.karina.lang.compiler.objects.KType;
 
 public sealed interface BinOperatorSymbol {
-    Span region();
+    Region region();
     KType type();
     BinaryOperator operator();
 
 
     sealed interface FloatOP extends BinOperatorSymbol {
-        record Add(Span region) implements FloatOP {}
-        record Subtract(Span region) implements FloatOP {}
-        record Multiply(Span region) implements FloatOP {}
-        record Divide(Span region) implements FloatOP {}
-        record Modulus(Span region) implements FloatOP {}
-        record Equal(Span region) implements FloatOP {}
-        record NotEqual(Span region) implements FloatOP {}
-        record LessThan(Span region) implements FloatOP {}
-        record LessThanOrEqual(Span region) implements FloatOP {}
-        record GreaterThan(Span region) implements FloatOP {}
-        record GreaterThanOrEqual(Span region) implements FloatOP {}
+        record Add(Region region) implements FloatOP {}
+        record Subtract(Region region) implements FloatOP {}
+        record Multiply(Region region) implements FloatOP {}
+        record Divide(Region region) implements FloatOP {}
+        record Modulus(Region region) implements FloatOP {}
+        record Equal(Region region) implements FloatOP {}
+        record NotEqual(Region region) implements FloatOP {}
+        record LessThan(Region region) implements FloatOP {}
+        record LessThanOrEqual(Region region) implements FloatOP {}
+        record GreaterThan(Region region) implements FloatOP {}
+        record GreaterThanOrEqual(Region region) implements FloatOP {}
 
         @Override
         default KType type() {
@@ -44,7 +44,7 @@ public sealed interface BinOperatorSymbol {
         }
 
 
-        static @Nullable FloatOP fromOperator(SpanOf<BinaryOperator> operator) {
+        static @Nullable FloatOP fromOperator(RegionOf<BinaryOperator> operator) {
             return switch (operator.value()) {
                 case ADD -> new Add(operator.region());
                 case SUBTRACT -> new Subtract(operator.region());
@@ -80,17 +80,17 @@ public sealed interface BinOperatorSymbol {
     }
 
     sealed interface DoubleOP extends BinOperatorSymbol {
-        record Add(Span region) implements DoubleOP {}
-        record Subtract(Span region) implements DoubleOP {}
-        record Multiply(Span region) implements DoubleOP {}
-        record Divide(Span region) implements DoubleOP {}
-        record Modulus(Span region) implements DoubleOP {}
-        record Equal(Span region) implements DoubleOP {}
-        record NotEqual(Span region) implements DoubleOP {}
-        record LessThan(Span region) implements DoubleOP {}
-        record LessThanOrEqual(Span region) implements DoubleOP {}
-        record GreaterThan(Span region) implements DoubleOP {}
-        record GreaterThanOrEqual(Span region) implements DoubleOP {}
+        record Add(Region region) implements DoubleOP {}
+        record Subtract(Region region) implements DoubleOP {}
+        record Multiply(Region region) implements DoubleOP {}
+        record Divide(Region region) implements DoubleOP {}
+        record Modulus(Region region) implements DoubleOP {}
+        record Equal(Region region) implements DoubleOP {}
+        record NotEqual(Region region) implements DoubleOP {}
+        record LessThan(Region region) implements DoubleOP {}
+        record LessThanOrEqual(Region region) implements DoubleOP {}
+        record GreaterThan(Region region) implements DoubleOP {}
+        record GreaterThanOrEqual(Region region) implements DoubleOP {}
 
         @Override
         default KType type() {
@@ -110,7 +110,7 @@ public sealed interface BinOperatorSymbol {
             }
         }
 
-        static @Nullable BinOperatorSymbol.DoubleOP fromOperator(SpanOf<BinaryOperator> operator) {
+        static @Nullable BinOperatorSymbol.DoubleOP fromOperator(RegionOf<BinaryOperator> operator) {
             return switch (operator.value()) {
                 case ADD -> new Add(operator.region());
                 case SUBTRACT -> new Subtract(operator.region());
@@ -146,17 +146,17 @@ public sealed interface BinOperatorSymbol {
     }
 
     sealed interface LongOP extends BinOperatorSymbol {
-        record Add(Span region) implements LongOP {}
-        record Subtract(Span region) implements LongOP {}
-        record Multiply(Span region) implements LongOP {}
-        record Divide(Span region) implements LongOP {}
-        record Modulus(Span region) implements LongOP {}
-        record Equal(Span region) implements LongOP {}
-        record NotEqual(Span region) implements LongOP {}
-        record LessThan(Span region) implements LongOP {}
-        record LessThanOrEqual(Span region) implements LongOP {}
-        record GreaterThan(Span region) implements LongOP {}
-        record GreaterThanOrEqual(Span region) implements LongOP {}
+        record Add(Region region) implements LongOP {}
+        record Subtract(Region region) implements LongOP {}
+        record Multiply(Region region) implements LongOP {}
+        record Divide(Region region) implements LongOP {}
+        record Modulus(Region region) implements LongOP {}
+        record Equal(Region region) implements LongOP {}
+        record NotEqual(Region region) implements LongOP {}
+        record LessThan(Region region) implements LongOP {}
+        record LessThanOrEqual(Region region) implements LongOP {}
+        record GreaterThan(Region region) implements LongOP {}
+        record GreaterThanOrEqual(Region region) implements LongOP {}
 
         @Override
         default KType type() {
@@ -176,7 +176,7 @@ public sealed interface BinOperatorSymbol {
             }
         }
 
-        static @Nullable BinOperatorSymbol.LongOP fromOperator(SpanOf<BinaryOperator> operator) {
+        static @Nullable BinOperatorSymbol.LongOP fromOperator(RegionOf<BinaryOperator> operator) {
             return switch (operator.value()) {
                 case ADD -> new Add(operator.region());
                 case SUBTRACT -> new Subtract(operator.region());
@@ -213,17 +213,17 @@ public sealed interface BinOperatorSymbol {
 
     sealed interface IntOP extends BinOperatorSymbol {
 
-        record Add(Span region) implements IntOP {}
-        record Subtract(Span region) implements IntOP {}
-        record Multiply(Span region) implements IntOP {}
-        record Divide(Span region) implements IntOP {}
-        record Modulus(Span region) implements IntOP {}
-        record Equal(Span region) implements IntOP {}
-        record NotEqual(Span region) implements IntOP {}
-        record LessThan(Span region) implements IntOP {}
-        record LessThanOrEqual(Span region) implements IntOP {}
-        record GreaterThan(Span region) implements IntOP {}
-        record GreaterThanOrEqual(Span region) implements IntOP {}
+        record Add(Region region) implements IntOP {}
+        record Subtract(Region region) implements IntOP {}
+        record Multiply(Region region) implements IntOP {}
+        record Divide(Region region) implements IntOP {}
+        record Modulus(Region region) implements IntOP {}
+        record Equal(Region region) implements IntOP {}
+        record NotEqual(Region region) implements IntOP {}
+        record LessThan(Region region) implements IntOP {}
+        record LessThanOrEqual(Region region) implements IntOP {}
+        record GreaterThan(Region region) implements IntOP {}
+        record GreaterThanOrEqual(Region region) implements IntOP {}
 
         @Override
         default KType type() {
@@ -243,7 +243,7 @@ public sealed interface BinOperatorSymbol {
             }
         }
 
-        static @Nullable IntOP fromOperator(SpanOf<BinaryOperator> operator) {
+        static @Nullable IntOP fromOperator(RegionOf<BinaryOperator> operator) {
             return switch (operator.value()) {
                 case ADD -> new Add(operator.region());
                 case SUBTRACT -> new Subtract(operator.region());
@@ -279,17 +279,17 @@ public sealed interface BinOperatorSymbol {
     }
 
     sealed interface BoolOP extends BinOperatorSymbol {
-        record And(Span region) implements BoolOP {}
-        record Or(Span region) implements BoolOP {}
-        record Equal(Span region) implements BoolOP {}
-        record NotEqual(Span region) implements BoolOP {}
+        record And(Region region) implements BoolOP {}
+        record Or(Region region) implements BoolOP {}
+        record Equal(Region region) implements BoolOP {}
+        record NotEqual(Region region) implements BoolOP {}
 
         @Override
         default KType type() {
             return new KType.PrimitiveType(KType.KPrimitive.BOOL);
         }
 
-        static @Nullable BinOperatorSymbol.BoolOP fromOperator(SpanOf<BinaryOperator> operator) {
+        static @Nullable BinOperatorSymbol.BoolOP fromOperator(RegionOf<BinaryOperator> operator) {
             return switch (operator.value()) {
                 case EQUAL -> new Equal(operator.region());
                 case NOT_EQUAL -> new NotEqual(operator.region());

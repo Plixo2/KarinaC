@@ -1,6 +1,5 @@
 package org.karina.lang.compiler;
 
-import org.apache.commons.cli.ParseException;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
@@ -27,7 +26,7 @@ public class SyntaxTests {
         var map = new HashMap<String, Class<? extends Error> >();
 
         map.put("io", FileLoadError.IO.class);
-        map.put("InvalidJson", FileLoadError.InvalidJson.class);
+        map.put("InvalidJson", FileLoadError.Generic.class);
         map.put("NOPermission", FileLoadError.NOPermission.class);
         map.put("NotFound", FileLoadError.NotFound.class);
         map.put("NotAFile", FileLoadError.NotAFile.class);

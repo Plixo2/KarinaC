@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
@@ -27,7 +28,7 @@ public class InstanceOfAttrib extends AttributionExpr {
                     newGenerics.add(new KType.AnyClass());
                 }
                 isType = new KType.ClassType(
-                        classType.path(),
+                        ClassPointer.of(classType.path()),
                         newGenerics
                 );
             } else {

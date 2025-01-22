@@ -164,7 +164,6 @@ public class Interpreter {
                     }
                     condition = checkCast(eval, cast.type());
                     env.set(cast.symbol(), eval);
-
                 } else {
                     condition = (boolean) eval;
                 }
@@ -172,7 +171,10 @@ public class Interpreter {
                 if (condition) {
                     yield eval(branch.thenArm(), env);
                 } else if (branch.elseArm() != null) {
-                    yield eval(branch.elseArm(), env);
+                    if (branch.elseArm().shortPattern() != null) {
+                        throw new NullPointerException("Not implemented");
+                    }
+                    yield eval(branch.elseArm().expr(), env);
                 } else {
                     yield null;
                 }
@@ -397,6 +399,9 @@ public class Interpreter {
                 var value = eval(aThrow.value(), env);
                 assert value != null;
                 throw new EvalException(value);
+            }
+            case KExpr.Super aSuper -> {
+                throw new NullPointerException("Not implemented");
             }
         };
     }

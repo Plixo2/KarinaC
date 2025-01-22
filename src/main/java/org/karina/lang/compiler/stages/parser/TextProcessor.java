@@ -1,11 +1,19 @@
 package org.karina.lang.compiler.stages.parser;
 
+import org.karina.lang.compiler.api.FileNode;
 import org.karina.lang.compiler.api.FileTreeNode;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.errors.ErrorCollector;
+import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.karina.KClassModel;
+import org.karina.lang.compiler.model.Model;
 import org.karina.lang.compiler.objects.KTree;
+import org.karina.lang.compiler.utils.Reference;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -13,26 +21,29 @@ import java.util.ArrayList;
  */
 public class TextProcessor {
 
-    public KTree.KPackage parseFiles(FileTreeNode<TextSource> fileTree) {
+    public JKModel parseFiles(FileTreeNode<TextSource> fileTree) {
         try (var errorCollection = new ErrorCollector()) {
             return this.parseFiles(fileTree, errorCollection);
         }
     }
 
-    private KTree.KPackage parseFiles(FileTreeNode<TextSource> fileTree, ErrorCollector collector) {
-
-        var units = new ArrayList<KTree.KUnit>();
-        for (var files : fileTree.leafs()) {
+    private JKModel parseFiles(FileTreeNode<TextSource> fileTree, ErrorCollector collector) {
+        JKModelBuilder builder = new JKModelBuilder();
+        for (var file : getFiles(fileTree)) {
             collector.collect(() -> {
-                var unitParser = new TextUnitParser(files.content(), files.name(), files.path());
-                units.add(unitParser.parse());
+                var unitParser = new TextUnitParser(file.content(), file.name(), file.path());
+                unitParser.parse(builder);
             });
         }
-        var subPackages = fileTree.children().stream().map(ref -> parseFiles(ref, collector)).toList();
-        return new KTree.KPackage(fileTree.path(), fileTree.name(), subPackages, units);
-
+        return builder.build();
     }
 
-
+    private List<FileNode<TextSource>> getFiles(FileTreeNode<TextSource> fileTree) {
+        var files = new ArrayList<FileNode<TextSource>>(fileTree.leafs());
+        for (var child : fileTree.children()) {
+            files.addAll(getFiles(child));
+        }
+        return files;
+    }
 
 }

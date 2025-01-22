@@ -195,7 +195,7 @@ public final class KTree {
 
     @Builder
     public record KUnit(
-            @NonNull Span region,
+            @NonNull Region region,
             @NonNull String name,
             @NonNull ObjectPath path,
             @Singular List<KImport> kImports,
@@ -218,15 +218,15 @@ public final class KTree {
 
     @Builder
     public record KImport(
-            @NonNull Span region,
+            @NonNull Region region,
             @NonNull TypeImport importType,
-            @NonNull SpanOf<ObjectPath> path
+            @NonNull ObjectPath path
     ) {}
 
     public sealed interface KItem permits KFunction, KTypeItem {
-        Span region();
+        Region region();
         List<KAnnotation> annotations();
-        SpanOf<String> name();
+        RegionOf<String> name();
         ObjectPath path();
         List<Generic> generics();
     }
@@ -236,8 +236,8 @@ public final class KTree {
 
     @Builder
     public record KInterface(
-            @NonNull Span region,
-            @NonNull SpanOf<String> name,
+            @NonNull Region region,
+            @NonNull RegionOf<String> name,
             @NonNull ObjectPath path,
             @Singular List<Generic> generics,
             @Singular List<KAnnotation> annotations,
@@ -248,8 +248,8 @@ public final class KTree {
 
     @Builder
     public record KStruct(
-            @NonNull Span region,
-            @NonNull SpanOf<String> name,
+            @NonNull Region region,
+            @NonNull RegionOf<String> name,
             @NonNull ObjectPath path,
             @NotNull StructModifier modifier,
             @Singular List<Generic> generics,
@@ -261,8 +261,8 @@ public final class KTree {
 
     @Builder
     public record KEnum(
-            @NonNull Span region,
-            @NonNull SpanOf<String> name,
+            @NonNull Region region,
+            @NonNull RegionOf<String> name,
             @NonNull ObjectPath path,
             @Singular List<Generic> generics,
             @Singular List<KAnnotation> annotations,
@@ -272,10 +272,10 @@ public final class KTree {
 
     @Builder
     public record KFunction(
-            @NonNull Span region,
-            @NonNull SpanOf<String> name,
+            @NonNull Region region,
+            @NonNull RegionOf<String> name,
             @NonNull ObjectPath path,
-            @Nullable Span self,// null if not defines self, otherwise the span of the self definition
+            @Nullable Region self,// null if not defines self, otherwise the region of the self definition
             @NotNull FunctionModifier modifier, // unused
             @Singular List<KAnnotation> annotations,
             @Singular List<KParameter> parameters,
@@ -285,17 +285,17 @@ public final class KTree {
     ) implements KItem {}
 
     @Builder
-    public record KImplBlock(@NonNull Span region, @NonNull KType type, @Singular List<KFunction> functions) { }
+    public record KImplBlock(@NonNull Region region, @NonNull KType type, @Singular List<KFunction> functions) { }
 
 
-    public record KField(Span region, ObjectPath path, SpanOf<String> name, KType type) { }
+    public record KField(Region region, ObjectPath path, RegionOf<String> name, KType type) { }
 
 
     @Builder
-    public record KEnumEntry(Span region, SpanOf<String> name, @Singular List<KParameter> parameters) { }
+    public record KEnumEntry(Region region, RegionOf<String> name, @Singular List<KParameter> parameters) { }
 
 
-    public record KParameter(Span region, SpanOf<String> name, KType type, @Nullable @Symbol Variable symbol) { }
-    public record KAnnotation(Span region, SpanOf<String> name, JsonElement value) { }
+    public record KParameter(Region region, RegionOf<String> name, KType type, @Nullable @Symbol Variable symbol) { }
+    public record KAnnotation(Region region, RegionOf<String> name, JsonElement value) { }
 
 }

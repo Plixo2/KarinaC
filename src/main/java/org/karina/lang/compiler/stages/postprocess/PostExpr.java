@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.postprocess;
 
 import org.jetbrains.annotations.NotNull;
 import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.symbols.CallSymbol;
 import org.karina.lang.compiler.utils.*;
@@ -51,9 +52,13 @@ public class PostExpr {
             case KExpr.Branch branch -> {
                 var condition = rewrite(branch.condition(), context);
                 var thenBranch = rewrite(branch.thenArm(), context);
-                KExpr elseBranch = null;
+                ElsePart elseBranch = null;
                 if (branch.elseArm() != null) {
-                    elseBranch = rewrite(branch.elseArm(), context);
+                    var rewrite = rewrite(branch.elseArm().expr(), context);
+                    elseBranch = new ElsePart(
+                            rewrite,
+                            branch.elseArm().shortPattern()
+                    );
                 }
                 yield new KExpr.Branch(
                         branch.region(),
@@ -75,7 +80,7 @@ public class PostExpr {
                 var left = rewrite(call.left(), context);
 
                 CallSymbol symbol = call.symbol();
-                if (symbol instanceof CallSymbol.CallDynamic(Span region, KType returnType)) {
+                if (symbol instanceof CallSymbol.CallDynamic(Region region, KType returnType)) {
 
                     if (!(call.left().type() instanceof KType.FunctionType functionType)) {
                         Log.temp(call.region(), "Invalid function type");
@@ -89,9 +94,7 @@ public class PostExpr {
                     }
 
                     KType returnTypeStatic = new KType.AnyClass();
-                    if (functionType.returnType() == null) {
-                        returnTypeStatic = new KType.PrimitiveType(KType.KPrimitive.VOID);
-                    } else if (functionType.returnType().isVoid()) {
+                    if (functionType.returnType().isVoid()) {
                         returnTypeStatic = new KType.PrimitiveType(KType.KPrimitive.VOID);
                     }
 
@@ -266,17 +269,14 @@ public class PostExpr {
                         body
                 );
             }
+            case KExpr.Super aSuper -> {
+                yield aSuper;
+            }
         };
     }
 
     public static KType.ClassType toClassType(KType.FunctionType functionType) {
-        boolean hasReturn = true;
-
-        if (functionType.returnType() == null) {
-            hasReturn = false;
-        } else if (functionType.returnType().isVoid()) {
-            hasReturn = false;
-        }
+        boolean hasReturn = !functionType.returnType().isVoid();
 
         var generics = new ArrayList<>(functionType.arguments());
 
@@ -287,7 +287,9 @@ public class PostExpr {
         var name = "$FunctionalInterface" + input + "_" + hasReturn;
         var path = new ObjectPath(List.of("src" , "FunctionalInterfaces", name));
         return new KType.ClassType(
-                path,
+
+                //TODO not ok
+                ClassPointer.of(path),
                 generics
         );
     }
@@ -303,7 +305,7 @@ public class PostExpr {
             fields.add(new KTree.KField(
                     capture.region(),
                     structPath.append(capture.name()),
-                    SpanOf.span(capture.region(), capture.name()),
+                    RegionOf.region(capture.region(), capture.name()),
                     capture.type()
             ));
         }
@@ -312,7 +314,7 @@ public class PostExpr {
             fields.add(new KTree.KField(
                     closure.symbol().self().region(),
                     structPath.append("self"),
-                    SpanOf.span(closure.symbol().self().region(), "self"),
+                    RegionOf.region(closure.symbol().self().region(), "self"),
                     closure.symbol().self().type()
             ));
         }
@@ -324,7 +326,7 @@ public class PostExpr {
             var argument = args.get(i);
             params.add(new KTree.KParameter(
                     argument.region(),
-                    SpanOf.span(argument.region(), "p" + i),
+                    RegionOf.region(argument.region(), "p" + i),
                     argument.type(),
                     argument
             ));
@@ -338,7 +340,7 @@ public class PostExpr {
 
         var applyFn = new KTree.KFunction(
                 closure.region(),
-                SpanOf.span(closure.region(), "apply"),
+                RegionOf.region(closure.region(), "apply"),
                 structPath.append("apply"),
                 closure.region(),
                 new FunctionModifier(),
@@ -359,7 +361,7 @@ public class PostExpr {
 
         var struct = new KTree.KStruct(
                 closure.region(),
-                SpanOf.span(closure.region(), name), structPath,
+                RegionOf.region(closure.region(), name), structPath,
                 new StructModifier(),
                 List.of(),
                 List.of(),

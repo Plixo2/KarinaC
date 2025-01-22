@@ -3,7 +3,7 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.errors.types.ImportError;
@@ -86,7 +86,7 @@ public class CallAttrib extends AttributionExpr {
         return symbol;
     }
 
-    private static CallSymbol getInterface( AttributionContext ctx, KExpr.Call expr, SpanOf<String> name,
+    private static CallSymbol getInterface( AttributionContext ctx, KExpr.Call expr, RegionOf<String> name,
             MemberSymbol.InterfaceFunctionSymbol sym,
             boolean genericsAnnotated,
             List<KExpr> newArguments) {
@@ -125,7 +125,7 @@ public class CallAttrib extends AttributionExpr {
     }
 
     private static @NotNull CallSymbol getVirtual(
-            AttributionContext ctx, KExpr.Call expr, SpanOf<String> name,
+            AttributionContext ctx, KExpr.Call expr, RegionOf<String> name,
             MemberSymbol.VirtualFunctionSymbol sym, boolean genericsAnnotated,
             List<KExpr> newArguments
     ) {
@@ -251,10 +251,6 @@ public class CallAttrib extends AttributionExpr {
         }
 
         var returnType = functionType.returnType();
-        if (returnType == null) {
-            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
-        }
-
         symbol = new CallSymbol.CallDynamic(expr.region(), returnType);
         return symbol;
     }

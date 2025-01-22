@@ -1,12 +1,12 @@
 package org.karina.lang.compiler.symbols;
 
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
 
 public sealed interface LiteralSymbol {
-    Span region();
+    Region region();
 
     /*
      * Return void for static functions, they don't have a type directly
@@ -28,12 +28,12 @@ public sealed interface LiteralSymbol {
         }
     }
 
-    record StaticFunction(Span region, ObjectPath path) implements LiteralSymbol { }
+    record StaticFunction(Region region, ObjectPath path) implements LiteralSymbol { }
 
-    record VariableReference(Span region, Variable variable) implements LiteralSymbol { }
+    record VariableReference(Region region, Variable variable) implements LiteralSymbol { }
 
-    record StructReference(Span region, ObjectPath path) implements LiteralSymbol { }
+    record StructReference(Region region, ObjectPath path) implements LiteralSymbol { }
 
-    record InterfaceReference(Span region, ObjectPath path) implements LiteralSymbol { }
+    record InterfaceReference(Region region, ObjectPath path) implements LiteralSymbol { }
 
 }

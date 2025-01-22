@@ -2,26 +2,26 @@ package org.karina.lang.compiler.errors.types;
 
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.Span;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.Region;
 
 import java.util.Set;
 
 public sealed interface ImportError extends Error {
 
-    record NoUnitFound(SpanOf<ObjectPath> path, KTree.KPackage root) implements ImportError {}
+    record NoUnitFound(Region region, ObjectPath path) implements ImportError {}
 
-    record UnknownImportType(Span region, String name, Set<String> available, KTree.KPackage root)
+    record UnknownImportType(Region region, String name, Set<String> available)
             implements ImportError {}
 
-    record GenericCountMismatch(Span region, String name, int expected, int found)
+    record GenericCountMismatch(Region region, String name, int expected, int found)
             implements ImportError {}
 
-    record DuplicateItem(Span first, Span second, String item) implements ImportError {}
+    record DuplicateItem(Region first, Region second, String item) implements ImportError {}
 
-    record NoItemFound(Span region, String item, KTree.KUnit unit, KTree.KPackage root) implements ImportError {}
+    record NoItemFound(Region region, String item, ObjectPath cls) implements ImportError {}
 
-    record JavaNotSupported(Span region) implements ImportError {}
+    record JavaNotSupported(Region region) implements ImportError {}
+
 
 
 }

@@ -28,6 +28,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 */
 	void exitImport_(KarinaParser.Import_Context ctx);
 	/**
+	 * Enter a parse tree produced by {@link KarinaParser#commaWordChain}.
+	 * @param ctx the parse tree
+	 */
+	void enterCommaWordChain(KarinaParser.CommaWordChainContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#commaWordChain}.
+	 * @param ctx the parse tree
+	 */
+	void exitCommaWordChain(KarinaParser.CommaWordChainContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KarinaParser#item}.
 	 * @param ctx the parse tree
 	 */
@@ -407,6 +417,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitElseExpr(KarinaParser.ElseExprContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#isShort}.
+	 * @param ctx the parse tree
+	 */
+	void enterIsShort(KarinaParser.IsShortContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#isShort}.
+	 * @param ctx the parse tree
+	 */
+	void exitIsShort(KarinaParser.IsShortContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KarinaParser#while}.
 	 * @param ctx the parse tree

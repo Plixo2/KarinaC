@@ -23,6 +23,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitImport_(KarinaParser.Import_Context ctx);
 	/**
+	 * Visit a parse tree produced by {@link KarinaParser#commaWordChain}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCommaWordChain(KarinaParser.CommaWordChainContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KarinaParser#item}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -250,6 +256,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitElseExpr(KarinaParser.ElseExprContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#isShort}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitIsShort(KarinaParser.IsShortContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#while}.
 	 * @param ctx the parse tree

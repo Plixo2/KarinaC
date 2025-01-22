@@ -2,7 +2,7 @@ package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.NameAndOptType;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
@@ -171,7 +171,7 @@ public class ClosureAttrib extends AttributionExpr {
     }
 
 
-    private static void checkForPreexistingVariable(AttributionContext ctx, SpanOf<String> argument) {
+    private static void checkForPreexistingVariable(AttributionContext ctx, RegionOf<String> argument) {
         var name = argument.value();
         if(ctx.variables().contains(name)) {
             Log.attribError(new AttribError.DuplicateVariable(

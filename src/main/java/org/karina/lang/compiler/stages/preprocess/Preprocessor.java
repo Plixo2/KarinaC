@@ -1,9 +1,10 @@
 package org.karina.lang.compiler.stages.preprocess;
 
+import org.karina.lang.compiler.jvm.model.JKModel;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.NamedExpression;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.errors.ErrorCollector;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.Unique;
@@ -15,9 +16,12 @@ import java.util.List;
 
 public class PreProcessor {
 
-    public KTree.KPackage desugarTree(KTree.KPackage root) throws Log.KarinaException {
-        return desugarPackage(root, root);
+    public JKModel desugarTree(JKModel root) throws Log.KarinaException {
+//        return desugarPackage(root, root);
+        throw new NullPointerException("");
     }
+
+//    private void
 
     private KTree.KPackage desugarPackage(KTree.KPackage root, KTree.KPackage pkg) {
         var build = KTree.KPackage.builder();
@@ -128,7 +132,7 @@ public class PreProcessor {
             var genericPath = new ObjectPath(newGeneric.name());
             implGenerics.add(new KType.UnprocessedType(
                     enumEntry.region(),
-                    SpanOf.span(enumEntry.region(), genericPath),
+                    RegionOf.region(enumEntry.region(), genericPath),
                     List.of()
             ));
         }
@@ -137,7 +141,7 @@ public class PreProcessor {
         for (var parameter : enumEntry.parameters()) {
             var field = new KTree.KParameter(
                     parameter.region(),
-                    SpanOf.span(parameter.region(), parameter.name().value()),
+                    RegionOf.region(parameter.region(), parameter.name().value()),
                     parameter.type(),
                     null
             );
@@ -158,7 +162,7 @@ public class PreProcessor {
 
         build.returnType(new KType.UnprocessedType(
                 enumEntry.region(),
-                SpanOf.span(enumEntry.region(), path.tail()),
+                RegionOf.region(enumEntry.region(), path.tail()),
                 implGenerics
         ));
         build.generics(newGenerics);
@@ -166,7 +170,7 @@ public class PreProcessor {
                 enumEntry.region(),
                 new KType.UnprocessedType(
                         enumEntry.region(),
-                        SpanOf.span(enumEntry.region(), unitPath.append(enumEntry.name().value()).tail()),
+                        RegionOf.region(enumEntry.region(), unitPath.append(enumEntry.name().value()).tail()),
                         implGenerics
                 ),
                 creationParams,
@@ -206,7 +210,7 @@ public class PreProcessor {
             var genericPath = new ObjectPath(newGeneric.name());
             implGenerics.add(new KType.UnprocessedType(
                     regionImpl,
-                    SpanOf.span(regionImpl, genericPath),
+                    RegionOf.region(regionImpl, genericPath),
                     List.of()
             ));
         }
@@ -215,7 +219,7 @@ public class PreProcessor {
                 enumEntry.region(),
                 new KType.UnprocessedType(
                         regionImpl,
-                        SpanOf.span(regionImpl, interfacePath.tail()),
+                        RegionOf.region(regionImpl, interfacePath.tail()),
                         implGenerics
                 ),
                 List.of()

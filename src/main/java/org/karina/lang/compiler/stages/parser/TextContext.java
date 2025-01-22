@@ -1,41 +1,45 @@
 package org.karina.lang.compiler.stages.parser;
 
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.utils.Span;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.RegionOf;
 
 /**
- * Converts an ANTLR {@link org.antlr.v4.runtime.misc.Interval} to a {@link Span}.
+ * Converts an ANTLR {@link org.antlr.v4.runtime.misc.Interval} to a {@link Region}.
  */
+@Getter
+@Accessors(fluent = true)
 @RequiredArgsConstructor
 public class TextContext {
     private final TextSource source;
     private final TokenStream stream;
 
-    public Span toRegion(ParseTree ctx) {
+    public Region toRegion(ParseTree ctx) {
         return toRegion(ctx.getSourceInterval());
     }
 
-    public <T> SpanOf<T> span(T t, Interval interval) {
-        return SpanOf.span(toRegion(interval), t);
+    public <T> RegionOf<T> region(T t, Interval interval) {
+        return RegionOf.region(toRegion(interval), t);
     }
 
-    public SpanOf<String> span(TerminalNode n) {
-        return span(n.getText(), n.getSourceInterval());
+    public RegionOf<String> region(TerminalNode n) {
+        return region(n.getText(), n.getSourceInterval());
     }
 
 
-    public Span toRegion(Interval interval) {
-        var invalid = new Span(
+    public Region toRegion(Interval interval) {
+        var invalid = new Region(
                 this.source,
-                new Span.Position(-1, 0),
-                new Span.Position(-1, 0)
+                new Region.Position(-1, 0),
+                new Region.Position(-1, 0)
         );
         if (interval.a < 0 || interval.b < 0 || interval.a > interval.b) {
             return invalid;
@@ -47,10 +51,10 @@ public class TextContext {
             var toToken = this.stream.get(interval.b);
             var toLine = toToken.getLine() - 1;
             var toColumn = toToken.getCharPositionInLine() + toToken.getText().length();
-            return new Span(
+            return new Region(
                     this.source,
-                    new Span.Position(fromLine, fromColumn),
-                    new Span.Position(toLine, toColumn)
+                    new Region.Position(fromLine, fromColumn),
+                    new Region.Position(toLine, toColumn)
             );
         } catch (IndexOutOfBoundsException e) {
             return invalid;

@@ -1,38 +1,38 @@
 package org.karina.lang.compiler.symbols;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.utils.Span;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.objects.UnaryOperator;
 
 public sealed interface UnaryOperatorSymbol {
-    Span region();
+    Region region();
     KType type();
 
     sealed interface NegateOP extends UnaryOperatorSymbol {
-        record FloatOP(Span region) implements NegateOP {
+        record FloatOP(Region region) implements NegateOP {
             @Override
             public KType type() {
                 return new KType.PrimitiveType(KType.KPrimitive.FLOAT);
             }
         }
 
-        record IntOP(Span region) implements NegateOP {
+        record IntOP(Region region) implements NegateOP {
             @Override
             public KType type() {
                 return new KType.PrimitiveType(KType.KPrimitive.INT);
             }
         }
 
-        record LongOP(Span region) implements NegateOP {
+        record LongOP(Region region) implements NegateOP {
             @Override
             public KType type() {
                 return new KType.PrimitiveType(KType.KPrimitive.LONG);
             }
         }
 
-        record DoubleOP(Span region) implements NegateOP {
+        record DoubleOP(Region region) implements NegateOP {
             @Override
             public KType type() {
                 return new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
@@ -41,7 +41,7 @@ public sealed interface UnaryOperatorSymbol {
     }
 
     sealed interface NotOP extends UnaryOperatorSymbol {
-        record BoolOP(Span region) implements NotOP {
+        record BoolOP(Region region) implements NotOP {
             @Override
             public KType type() {
                 return new KType.PrimitiveType(KType.KPrimitive.BOOL);
@@ -49,7 +49,7 @@ public sealed interface UnaryOperatorSymbol {
         }
     }
 
-    static @Nullable UnaryOperatorSymbol fromOperator(KType.KPrimitive primitive, SpanOf<UnaryOperator> operator) {
+    static @Nullable UnaryOperatorSymbol fromOperator(KType.KPrimitive primitive, RegionOf<UnaryOperator> operator) {
         return switch (operator.value()) {
             case NOT -> {
                 if (primitive == KType.KPrimitive.BOOL) {

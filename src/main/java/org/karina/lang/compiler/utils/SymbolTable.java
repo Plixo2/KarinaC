@@ -3,38 +3,40 @@ package org.karina.lang.compiler.utils;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.ImportError;
-import org.karina.lang.compiler.objects.KTree;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model.pointer.MethodPointer;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Symbol table to store top level items, functions, and generics
  * This is used mainly for imports, but also for type checking
  */
 public record SymbolTable(
-        Map<String, KTree.KTypeItem> items,
-        Map<String, KTree.KFunction> functions,
+        Map<String, ClassPointer> classes,
+        Map<String, List<MethodPointer>> functions,
         Map<String, Generic> scopeGenerics
 ) {
 
     public SymbolTable {
         // Copy item to prevent modification
-        items = new HashMap<>(items);
+        classes = new HashMap<>(classes);
         functions = new HashMap<>(functions);
         scopeGenerics = new HashMap<>(scopeGenerics);
     }
 
 
-    public @Nullable KTree.KTypeItem getItem(String name) {
-        return this.items.get(name);
+    public static SymbolTable empty() {
+        return new SymbolTable(new HashMap<>(), new HashMap<>(), new HashMap<>());
     }
 
-    public @Nullable KTree.KFunction getFunction(String name) {
-        return this.functions.get(name);
+    public @Nullable ClassPointer getClass(String name) {
+        return this.classes.get(name);
     }
+
+//    public @Nullable MethodPointer getFunction(String name) {
+//        return this.functions.get(name);
+//    }
 
     public @Nullable Generic getGeneric(String name) {
         return this.scopeGenerics.get(name);
@@ -45,20 +47,21 @@ public record SymbolTable(
     }
 
     public Set<String> availableTypeNames() {
-        var keys = new HashSet<>(this.items.keySet());
+        var keys = new HashSet<>(this.classes.keySet());
         keys.addAll(this.scopeGenerics.keySet());
         return keys;
     }
+
     public static SymbolTableBuilder builder() {
         return new SymbolTableBuilder();
     }
 
     public static class SymbolTableBuilder {
-        private final Map<String, Pair<SpanOf<KTree.KTypeItem>, SymbolLocation>> items = new HashMap<>();
-        private final Map<String, Pair<SpanOf<KTree.KFunction>, SymbolLocation>> functions = new HashMap<>();
+        private final Map<String, Pair<RegionOf<ClassPointer>, SymbolLocation>> items = new HashMap<>();
+        private final Map<String, Pair<RegionOf<MethodPointer>, SymbolLocation>> functions = new HashMap<>();
         private final Map<String, Generic> scopeGenerics = new HashMap<>();
 
-        public void addItem(SymbolLocation bucket, String name, SpanOf<KTree.KTypeItem> item) {
+        public void addItem(SymbolLocation bucket, String name, RegionOf<ClassPointer> item) {
             if (this.items.containsKey(name)) {
                 var existingSymbol = this.items.get(name);
                 var inBucket = existingSymbol.second();
@@ -76,7 +79,7 @@ public record SymbolTable(
             }
         }
 
-        public void addFunction(SymbolLocation bucket, String name, SpanOf<KTree.KFunction> item) {
+        public void addFunction(SymbolLocation bucket, String name, RegionOf<MethodPointer> item) {
             if (this.functions.containsKey(name)) {
                 var existingSymbol = this.functions.get(name);
                 var inBucket = existingSymbol.second();
@@ -114,8 +117,8 @@ public record SymbolTable(
 
 
         public SymbolTable build() {
-            var items = new HashMap<String, KTree.KTypeItem>();
-            var functions = new HashMap<String, KTree.KFunction>();
+            var items = new HashMap<String, ClassPointer>();
+            var functions = new HashMap<String, MethodPointer>();
 
             for (var entry : this.items.entrySet()) {
                 var name = entry.getKey();
@@ -128,8 +131,8 @@ public record SymbolTable(
                 var item = entry.getValue().first().value();
                 functions.put(name, item);
             }
-
-            return new SymbolTable(items, functions, this.scopeGenerics);
+throw new NullPointerException("");
+//            return new SymbolTable(items, functions, this.scopeGenerics);
         }
 
         public SymbolTableBuilder copy() {

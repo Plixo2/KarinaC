@@ -1,11 +1,11 @@
 package org.karina.lang.compiler.stages.generate.gen;
 
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.stages.generate.TypeConversion;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.utils.SpanOf;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
@@ -21,7 +21,7 @@ public class InterfaceGen {
     public JarCompilation.JarOutput addInterface(KTree.KInterface kInterface) {
         var classNode = new ClassNode();
         var selfType =
-                new KType.ClassType(kInterface.path(), List.of());
+                new KType.ClassType(ClassPointer.of(kInterface.path()), List.of());
         for (var items : kInterface.functions()) {
             if (items instanceof KTree.KFunction function) {
                 var method = this.backend.methodGen.createMethod(selfType, true, function);

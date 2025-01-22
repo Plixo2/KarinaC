@@ -3,6 +3,7 @@ package org.karina.lang.compiler.stages.attrib;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
@@ -49,6 +50,7 @@ public class AttributionExpr {
             case KExpr.VariableDefinition variableDefinition -> VariableDefinitionAttrib.attribVariableDefinition(hint, ctx, variableDefinition);
             case KExpr.While aWhile -> WhileAttrib.attribWhile(hint, ctx, aWhile);
             case KExpr.Throw aThrow -> ThrowAttrib.attribThrow(hint, ctx, aThrow);
+            case KExpr.Super aSuper -> SuperAttrib.attribSuper(hint, ctx, aSuper);
         };
     }
 
@@ -74,11 +76,7 @@ public class AttributionExpr {
                 yield new KType.ClassType(path, newGenerics);
             }
             case KType.FunctionType functionType -> {
-
-                var returnType = functionType.returnType();
-                if (returnType != null) {
-                    returnType = replaceType(returnType, generics);
-                }
+                var returnType = replaceType(functionType.returnType(), generics) ;
                 var newParameters = new ArrayList<KType>();
                 for (var parameter : functionType.arguments()) {
                     var newType = replaceType(parameter, generics);
@@ -136,7 +134,13 @@ public class AttributionExpr {
                 if (branch.elseArm() == null) {
                     yield false;
                 } else {
-                    yield doesReturn(branch.thenArm()) && doesReturn(branch.elseArm());
+                    //TODO tests if all pattern match
+                    if (branch.elseArm().shortPattern() != null) {
+                        Log.temp(expr.region(), "Pattern matching is not exhaustive");
+                        throw new Log.KarinaException();
+                    }
+
+                    yield doesReturn(branch.thenArm()) && doesReturn(branch.elseArm().expr());
                 }
             }
 
@@ -166,6 +170,7 @@ public class AttributionExpr {
             case KExpr.Unary unary -> false;
             case KExpr.VariableDefinition variableDefinition ->false;
             case KExpr.While aWhile -> false;
+            case KExpr.Super aSuper -> false;
         };
     }
 

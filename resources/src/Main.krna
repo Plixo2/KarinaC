@@ -1,8 +1,57 @@
 //import java::java.lang.System
 
+import java.lang.System { out, err }
+import java.lang.Object
+import java.lang.String
+import java.lang.String valueOf
+import java.lang.Throwable
+import src.Main.Result
+import src.Main.Result.Ok
+import src.Main.Result.Err
+import src.Main.T
+
 fn main() {
-    let a: java.lang.String = "Hello World"
+    let a: string = "Hello World"
+    let s: String = String.valueOf(1)
+    let s: String = valueOf(1)
+}
+
+fn get() -> ? {
+    //let b = a.
+    return 1;
+    let result = try(fn() 10)
+    if result is Ok(value) {
+
+    } else is Err(error) {
+
+    }
+}
+
+fn try(f: fn() -> T) -> Result<T, Throwable> {
+
+}
+
+struct T {
+    a: int
+
+    fn function(self, a: int) {
+
+    }
+
+    fn staticFunction() {
+
+    }
+
+
 }
 
 
+enum Result<R, E> {
+    Ok(value: R)
+    Err(error: E)
+}
 
+
+interface I {
+    fn function(self) -> bool
+}

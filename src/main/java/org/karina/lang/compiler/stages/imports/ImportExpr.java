@@ -13,6 +13,7 @@ import java.util.List;
 public class ImportExpr {
 
     static KExpr importExpr(ImportContext ctx, KExpr kExpr) {
+
         return switch (kExpr) {
             case KExpr.Assignment assignment -> importAssignment(ctx, assignment);
             case KExpr.Binary binary -> importBinary(ctx, binary);
@@ -40,6 +41,9 @@ public class ImportExpr {
             case KExpr.VariableDefinition variableDefinition -> importVariableDefinition(ctx, variableDefinition);
             case KExpr.While aWhile -> importWhile(ctx, aWhile);
             case KExpr.Throw aThrow -> importThrow(ctx, aThrow);
+            case KExpr.Super aSuper -> {
+                throw new NullPointerException("TODO");
+            }
         };
     }
 
@@ -79,53 +83,66 @@ public class ImportExpr {
     private static KExpr importBranch(ImportContext ctx, KExpr.Branch expr) {
         var condition = importExpr(ctx, expr.condition());
         var thenArm = importExpr(ctx, expr.thenArm());
-        KExpr elseArm;
+        ElsePart elseArm;
         if (expr.elseArm() == null) {
             elseArm = null;
         } else {
-            elseArm = importExpr(ctx, expr.elseArm());
+            var elseExpr = importExpr(ctx, expr.elseArm().expr());
+            BranchPattern falseBranchPattern;
+            if (expr.branchPattern() == null) {
+                falseBranchPattern = null;
+            } else {
+                falseBranchPattern = importBranchPatterns(ctx, expr.branchPattern());
+            }
+            elseArm = new ElsePart(elseExpr, falseBranchPattern);
         }
-        BranchPattern branchPattern;
-        if (expr.branchPattern() == null) {
-            branchPattern = null;
-        } else {
-            branchPattern = switch (expr.branchPattern()) {
-                case BranchPattern.Cast(var region, KType type, SpanOf<String> castedName, var ignored) -> {
-                    var resolved = ctx.resolveType(type, true, false);
-                    yield new BranchPattern.Cast(region, resolved, castedName, null);
-                }
-                case BranchPattern.Destruct destruct -> {
-                    var variables = new ArrayList<NameAndOptType>();
-                    for (var variable : destruct.variables()) {
-                        KType variableType;
-                        if (variable.type() == null) {
-                            variableType = null;
-                        } else {
-                            variableType = ctx.resolveType(variable.type());
-                        }
-                        variables.add(new NameAndOptType(
-                                variable.region(),
-                                variable.name(),
-                                variableType,
-                                null
-                        ));
-                    }
-                    var uniqueVariables = Unique.testUnique(variables, NameAndOptType::name);
-                    if (uniqueVariables != null) {
-                        Log.importError(new ImportError.DuplicateItem(
-                                uniqueVariables.first().name().region(),
-                                uniqueVariables.duplicate().name().region(),
-                                uniqueVariables.value().value()
-                        ));
-                        throw new Log.KarinaException();
-                    }
 
-                    var resolved = ctx.resolveType(destruct.type(), true, false);
-                    yield new BranchPattern.Destruct(destruct.region(), resolved, variables);
-                }
-            };
+        BranchPattern trueBranchPattern;
+        if (expr.branchPattern() == null) {
+            trueBranchPattern = null;
+        } else {
+            trueBranchPattern = importBranchPatterns(ctx, expr.branchPattern());
         }
-        return new KExpr.Branch(expr.region(), condition, thenArm, elseArm, branchPattern, null);
+
+        return new KExpr.Branch(expr.region(), condition, thenArm, elseArm, trueBranchPattern, null);
+    }
+
+    private static BranchPattern importBranchPatterns(ImportContext ctx, BranchPattern branchPattern) {
+        return switch (branchPattern) {
+            case BranchPattern.Cast(var region, KType type, RegionOf<String> castedName, var ignored) -> {
+                var resolved = ctx.resolveType(type, true, false);
+                yield new BranchPattern.Cast(region, resolved, castedName, null);
+            }
+            case BranchPattern.Destruct destruct -> {
+                var variables = new ArrayList<NameAndOptType>();
+                for (var variable : destruct.variables()) {
+                    KType variableType;
+                    if (variable.type() == null) {
+                        variableType = null;
+                    } else {
+                        variableType = ctx.resolveType(variable.type());
+                    }
+                    var optType = new NameAndOptType(variable.region(), variable.name(), variableType, null);
+                    variables.add(optType);
+                }
+                var uniqueVariables = Unique.testUnique(variables, NameAndOptType::name);
+                if (uniqueVariables != null) {
+                    Log.importError(new ImportError.DuplicateItem(
+                            uniqueVariables.first().name().region(),
+                            uniqueVariables.duplicate().name().region(),
+                            uniqueVariables.value().value()
+                    ));
+                    throw new Log.KarinaException();
+                }
+
+                var resolved = ctx.resolveType(destruct.type(), true, false);
+                yield new BranchPattern.Destruct(destruct.region(), resolved, variables);
+            }
+            case BranchPattern.JustType justType -> {
+                var resolved = ctx.resolveType(justType.type(), true, false);
+                yield new BranchPattern.JustType(justType.region(), resolved);
+            }
+        };
     }
 
     private static KExpr importBreak(ImportContext ctx, KExpr.Break expr) {
@@ -164,7 +181,8 @@ public class ImportExpr {
         var returnType = Reference.<KType>of();
         var body = Reference.<KExpr>of();
         try (var collector = new ErrorCollector()) {
-            args = ImportingItem.importNameAndOptTypeList(ctx, expr.args(), collector);
+            args = null;
+//            args = ImportingItem.importNameAndOptTypeList(ctx, expr.args(), collector);
             for (var kType : expr.interfaces()) {
                 collector.collect(() -> {
                     interfaces.add(ctx.resolveType(kType));
@@ -261,7 +279,8 @@ public class ImportExpr {
                         case MatchPattern.Destruct destruct -> {
                             var body = importExpr(ctx, destruct.expr());
                             var type = ctx.resolveType(destruct.type(), true, false);
-                            var args = ImportingItem.importNameAndOptTypeList(ctx, destruct.variables(), collector);
+                            var args = new ArrayList<NameAndOptType>();
+//                            var args = ImportingItem.importNameAndOptTypeList(ctx, destruct.variables(), collector);
                             var uniqueArgs = Unique.testUnique(args, NameAndOptType::name);
                             if (uniqueArgs != null) {
                                 Log.importError(new ImportError.DuplicateItem(

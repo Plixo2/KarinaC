@@ -2,6 +2,7 @@ package org.karina.lang.compiler.objects;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.symbols.*;
 import org.karina.lang.compiler.utils.*;
@@ -10,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public sealed interface KExpr {
-    Span region();
+    Region region();
 
     default KType type() {
         var type = getType(this);
@@ -121,7 +122,8 @@ public sealed interface KExpr {
             case StringExpr stringExpr -> {
                 var path = new ObjectPath("java", "lang", "String");
                 return new KType.ClassType(
-                        path,
+                        //TODO not ok, fix with validated path
+                        ClassPointer.of(path),
                         List.of()
                 );
             }
@@ -141,37 +143,41 @@ public sealed interface KExpr {
             case Throw aThrow -> {
                 return new KType.PrimitiveType(KType.KPrimitive.VOID);
             }
+            case Super aSuper -> {
+
+            }
         }
         Log.temp(expr.region(), "Unimplemented type for " + expr.getClass().getSimpleName());
         throw new Log.KarinaException();
     }
 
-    record Block(Span region, List<KExpr> expressions, @Nullable @Symbol KType symbol) implements KExpr {}
-    record VariableDefinition(Span region, SpanOf<String> name, @Nullable KType hint, KExpr value, @Nullable @Symbol Variable symbol) implements KExpr {}
-    record Branch(Span region, KExpr condition, KExpr thenArm, @Nullable KExpr elseArm, @Nullable BranchPattern branchPattern, @Nullable @Symbol KType symbol) implements KExpr {}
-    record While(Span region, KExpr condition, KExpr body) implements KExpr {}
-    record For(Span region, SpanOf<String> name , KExpr iter, KExpr body, @Nullable @Symbol Variable symbol) implements KExpr {}
-    record Return(Span region, @Nullable KExpr value, @Nullable @Symbol KType yieldType) implements KExpr {}
-    record Break(Span region) implements KExpr {}
-    record Continue(Span region) implements KExpr {}
-    record Binary(Span region, KExpr left, SpanOf<BinaryOperator> operator, KExpr right, @Nullable @Symbol BinOperatorSymbol symbol) implements KExpr {}
-    record Unary(Span region, SpanOf<UnaryOperator> operator, KExpr value, @Nullable @Symbol UnaryOperatorSymbol symbol) implements KExpr {}
-    record IsInstanceOf(Span region, KExpr left, KType isType) implements KExpr {}
-    record GetMember(Span region, KExpr left, SpanOf<String> name, @Nullable @Symbol MemberSymbol symbol) implements KExpr {}
-    record Call(Span region, KExpr left, List<KType> generics, List<KExpr> arguments, @Nullable @Symbol CallSymbol symbol) implements KExpr {}
-    record GetArrayElement(Span region, KExpr left, KExpr index, @Nullable @Symbol KType elementType) implements KExpr {}
-    record Cast(Span region, KExpr expression, KType asType, @Nullable @Symbol CastSymbol symbol) implements KExpr {}
-    record Assignment(Span region, KExpr left, KExpr right, @Nullable @Symbol AssignmentSymbol symbol) implements KExpr {}
-    record CreateArray(Span region, @Nullable KType hint, List<KExpr> elements, @Nullable @Symbol KType.ArrayType symbol) implements KExpr {}
-    record Number(Span region, BigDecimal number, boolean decimalAnnotated, @Nullable @Symbol NumberSymbol symbol) implements KExpr {}
-    record Boolean(Span region, boolean value) implements KExpr {}
-    record Literal(Span region, String name, @Nullable @Symbol LiteralSymbol symbol) implements KExpr {}
-    record Self(Span region, @Nullable @Symbol Variable symbol) implements KExpr {}
-    record StringExpr(Span region, String value) implements KExpr {}
-    record Match(Span region, KExpr value, List<MatchPattern> cases) implements KExpr {}
-    record CreateObject(Span region, KType createType, List<NamedExpression> parameters, @Nullable @Symbol KType.ClassType symbol) implements KExpr {}
-    record Closure(Span region, List<NameAndOptType> args, @Nullable KType returnType, List<KType> interfaces, KExpr body, @Nullable @Symbol ClosureSymbol symbol) implements KExpr {}
-    record Throw(Span region, KExpr value, @Nullable @Symbol KType.ClassType symbol) implements KExpr {}
+    record Block(Region region, List<KExpr> expressions, @Nullable @Symbol KType symbol) implements KExpr {}
+    record VariableDefinition(Region region, RegionOf<String> name, @Nullable KType hint, KExpr value, @Nullable @Symbol Variable symbol) implements KExpr {}
+    record Branch(Region region, KExpr condition, KExpr thenArm, @Nullable ElsePart elseArm, @Nullable BranchPattern branchPattern, @Nullable @Symbol KType symbol) implements KExpr {}
+    record While(Region region, KExpr condition, KExpr body) implements KExpr {}
+    record For(Region region, RegionOf<String> name , KExpr iter, KExpr body, @Nullable @Symbol Variable symbol) implements KExpr {}
+    record Return(Region region, @Nullable KExpr value, @Nullable @Symbol KType yieldType) implements KExpr {}
+    record Break(Region region) implements KExpr {}
+    record Continue(Region region) implements KExpr {}
+    record Binary(Region region, KExpr left, RegionOf<BinaryOperator> operator, KExpr right, @Nullable @Symbol BinOperatorSymbol symbol) implements KExpr {}
+    record Unary(Region region, RegionOf<UnaryOperator> operator, KExpr value, @Nullable @Symbol UnaryOperatorSymbol symbol) implements KExpr {}
+    record IsInstanceOf(Region region, KExpr left, KType isType) implements KExpr {}
+    record GetMember(Region region, KExpr left, RegionOf<String> name, @Nullable @Symbol MemberSymbol symbol) implements KExpr {}
+    record Call(Region region, KExpr left, List<KType> generics, List<KExpr> arguments, @Nullable @Symbol CallSymbol symbol) implements KExpr {}
+    record GetArrayElement(Region region, KExpr left, KExpr index, @Nullable @Symbol KType elementType) implements KExpr {}
+    record Cast(Region region, KExpr expression, KType asType, @Nullable @Symbol CastSymbol symbol) implements KExpr {}
+    record Assignment(Region region, KExpr left, KExpr right, @Nullable @Symbol AssignmentSymbol symbol) implements KExpr {}
+    record CreateArray(Region region, @Nullable KType hint, List<KExpr> elements, @Nullable @Symbol KType.ArrayType symbol) implements KExpr {}
+    record Number(Region region, BigDecimal number, boolean decimalAnnotated, @Nullable @Symbol NumberSymbol symbol) implements KExpr {}
+    record Boolean(Region region, boolean value) implements KExpr {}
+    record Literal(Region region, String name, @Nullable @Symbol LiteralSymbol symbol) implements KExpr {}
+    record Self(Region region, @Nullable @Symbol Variable symbol) implements KExpr {}
+    record Super(Region region) implements KExpr {}
+    record StringExpr(Region region, String value) implements KExpr {}
+    record Match(Region region, KExpr value, List<MatchPattern> cases) implements KExpr {}
+    record CreateObject(Region region, KType createType, List<NamedExpression> parameters, @Nullable @Symbol KType.ClassType symbol) implements KExpr {}
+    record Closure(Region region, List<NameAndOptType> args, @Nullable KType returnType, List<KType> interfaces, KExpr body, @Nullable @Symbol ClosureSymbol symbol) implements KExpr {}
+    record Throw(Region region, KExpr value, @Nullable @Symbol KType.ClassType symbol) implements KExpr {}
 
 
 }

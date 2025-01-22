@@ -2,17 +2,21 @@ package org.karina.lang.compiler.jvm.model.karina;
 
 import lombok.AllArgsConstructor;
 import org.karina.lang.compiler.model.FieldModel;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model.pointer.FieldPointer;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 
 @AllArgsConstructor
 public class KFieldModel implements FieldModel {
     private String name;
     private KType type;
     private int modifiers;
-    private Span region;
+    private Region region;
+    private ClassPointer classPointer;
 
-    public Span region() {
+    @Override
+    public Region region() {
         return this.region;
     }
 
@@ -29,5 +33,15 @@ public class KFieldModel implements FieldModel {
     @Override
     public KType type() {
         return this.type;
+    }
+
+    @Override
+    public FieldPointer pointer() {
+        return FieldPointer.of(this.classPointer, this.name);
+    }
+
+    @Override
+    public ClassPointer classPointer() {
+        return this.classPointer;
     }
 }

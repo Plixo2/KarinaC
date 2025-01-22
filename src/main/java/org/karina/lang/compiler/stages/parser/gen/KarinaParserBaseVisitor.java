@@ -32,6 +32,13 @@ public class KarinaParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> impl
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitCommaWordChain(KarinaParser.CommaWordChainContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitItem(KarinaParser.ItemContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -292,6 +299,13 @@ public class KarinaParserBaseVisitor<T> extends AbstractParseTreeVisitor<T> impl
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitElseExpr(KarinaParser.ElseExprContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitIsShort(KarinaParser.IsShortContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

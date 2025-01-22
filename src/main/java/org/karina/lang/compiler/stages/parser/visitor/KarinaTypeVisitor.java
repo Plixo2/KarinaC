@@ -4,8 +4,9 @@ import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.TextContext;
+import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.SpanOf;
+import org.karina.lang.compiler.utils.RegionOf;
 
 import java.util.List;
 
@@ -14,9 +15,9 @@ import java.util.List;
  */
 public class KarinaTypeVisitor {
     private final TextContext conv;
-    private final KarinaVisitor visitor;
+    private final KarinaUnitVisitor visitor;
 
-    public KarinaTypeVisitor(KarinaVisitor visitor, TextContext converter) {
+    public KarinaTypeVisitor(KarinaUnitVisitor visitor, TextContext converter) {
         this.conv = converter;
         this.visitor = visitor;
     }
@@ -44,10 +45,10 @@ public class KarinaTypeVisitor {
             return new KType.PrimitiveType(KType.KPrimitive.BOOL);
         } else if (ctx.STRING() != null) {
             var path = new ObjectPath("java", "lang", "String");
-            var span = this.conv.span(ctx.STRING()).region();
+            var regionInner = this.conv.region(ctx.STRING()).region();
             return new KType.UnprocessedType(
-                    span,
-                    SpanOf.span(span, path),
+                    regionInner,
+                    RegionOf.region(regionInner, path),
                     List.of()
             );
         } else if (ctx.structType() != null) {
@@ -67,7 +68,7 @@ public class KarinaTypeVisitor {
         }
     }
 
-    public KType visitStructType(KarinaParser.StructTypeContext ctx) {
+    public KType.UnprocessedType visitStructType(KarinaParser.StructTypeContext ctx) {
 
         var region = this.conv.toRegion(ctx);
         var path = this.visitor.visitDotWordChain(ctx.dotWordChain());
@@ -82,8 +83,9 @@ public class KarinaTypeVisitor {
         var interfaces = ctx.interfaceImpl() != null ? visitInterfaceImpl(ctx.interfaceImpl()) :
                 List.<KType>of();
         var args = visitTypeList(ctx.typeList());
-        var returnType = ctx.type() != null ? visitType(ctx.type()) : null;
-        return new KType.FunctionType(args, returnType, interfaces);
+        var returnType = ctx.type() != null ? visitType(ctx.type()) : new KType.PrimitiveType(KType.KPrimitive.VOID);
+        List<KType> interfacesCast = interfaces.stream().map(ref -> (KType)ref).toList();
+        return new KType.FunctionType(args, returnType, interfacesCast);
 
     }
 
@@ -92,7 +94,7 @@ public class KarinaTypeVisitor {
     }
 
     //#region public
-    public List<KType> visitInterfaceImpl(KarinaParser.InterfaceImplContext ctx) {
+    public List<? extends KType> visitInterfaceImpl(KarinaParser.InterfaceImplContext ctx) {
         return ctx.structTypeList().structType().stream().map(this::visitStructType).toList();
     }
     //#endregion

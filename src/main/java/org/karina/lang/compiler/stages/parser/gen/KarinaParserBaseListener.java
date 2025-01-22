@@ -41,6 +41,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterCommaWordChain(KarinaParser.CommaWordChainContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCommaWordChain(KarinaParser.CommaWordChainContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterItem(KarinaParser.ItemContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -492,6 +504,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitElseExpr(KarinaParser.ElseExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterIsShort(KarinaParser.IsShortContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitIsShort(KarinaParser.IsShortContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

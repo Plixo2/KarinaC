@@ -2,6 +2,7 @@ package org.karina.lang.compiler.jvm.model.karina;
 
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.model.ClassModel;
@@ -9,8 +10,9 @@ import org.karina.lang.compiler.model.FieldModel;
 import org.karina.lang.compiler.model.MethodModel;
 import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KTree;
+import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 
 
 @AllArgsConstructor
@@ -19,15 +21,19 @@ public class KClassModel implements ClassModel {
     private ObjectPath path;
     private int modifiers;
     private ClassPointer superClass;
+    private @Nullable ClassPointer outerClass;
     private ImmutableList<ClassPointer> interfaces;
     private ImmutableList<ClassPointer> innerClasses;
-    private ImmutableList<FieldModel> fields;
-    private ImmutableList<MethodModel> methods;
+    private ImmutableList<KFieldModel> fields;
+    private ImmutableList<KMethodModel> methods;
+    private ImmutableList<Generic> generics;
     private ImmutableList<KTree.KImport> imports;
+    private ImmutableList<ClassPointer> permittedSubclasses;
     private TextSource resource;
-    private Span region;
+    private Region region;
 
-    public Span region() {
+    @Override
+    public Region region() {
         return this.region;
     }
 
@@ -51,8 +57,13 @@ public class KClassModel implements ClassModel {
     }
 
     @Override
-    public @Nullable ClassPointer superClass() {
+    public ClassPointer superClass() {
         return this.superClass;
+    }
+
+    @Override
+    public @Nullable ClassPointer outerClass() {
+        return this.outerClass;
     }
 
     @Override
@@ -66,18 +77,34 @@ public class KClassModel implements ClassModel {
     }
 
     @Override
-    public ImmutableList<FieldModel> fields() {
+    public ImmutableList<? extends FieldModel> fields() {
         return this.fields;
     }
 
     @Override
-    public ImmutableList<MethodModel> methods() {
+    public ImmutableList<Generic> generics() {
+        return this.generics;
+    }
+
+    @Override
+    public ImmutableList<? extends MethodModel> methods() {
         return this.methods;
+    }
+
+    @Override
+    public ImmutableList<ClassPointer> permittedSubclasses() {
+        return this.permittedSubclasses;
     }
 
     @Override
     public TextSource resource() {
         return this.resource;
+    }
+
+    @Override
+    public ClassPointer pointer() {
+        //OK
+        return ClassPointer.of(this.path);
     }
 
     @Override

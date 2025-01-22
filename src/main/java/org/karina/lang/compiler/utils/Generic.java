@@ -1,5 +1,5 @@
 package org.karina.lang.compiler.utils;
 
 
-public record Generic(Span region, String name) {
+public record Generic(Region region, String name) {
 }

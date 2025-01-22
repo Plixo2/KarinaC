@@ -3,13 +3,13 @@ package org.karina.lang.compiler.stages.attrib;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.SymbolTable;
 import org.karina.lang.compiler.utils.TypeChecking;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.utils.VariableCollection;
-import org.karina.lang.compiler.utils.SpanOf;
 
 import java.util.ArrayList;
 
@@ -114,7 +114,8 @@ public class AttributionItem {
         }
 
         var selfType = new KType.ClassType(
-                path,
+                //TODO not ok
+                ClassPointer.of(path),
                 genericTypes
         );
 

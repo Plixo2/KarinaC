@@ -2,7 +2,7 @@ package org.karina.lang.compiler.errors;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +21,7 @@ public class ConsoleLogBuilder implements LogBuilder {
     }
 
     @Override
-    public void setPrimarySource(Span region) {
+    public void setPrimarySource(Region region) {
 
         append("");
         appendRegionFile(region);
@@ -30,7 +30,7 @@ public class ConsoleLogBuilder implements LogBuilder {
     }
 
     @Override
-    public void addSecondarySource(Span region) {
+    public void addSecondarySource(Region region) {
         append("");
         appendRegionFile(region);
         appendRegion(region);
@@ -44,7 +44,7 @@ public class ConsoleLogBuilder implements LogBuilder {
 
     }
 
-    private void appendRegionFile(Span region) {
+    private void appendRegionFile(Region region) {
 
         region = region.reorder();
         var path = region.source().resource().identifier();
@@ -54,7 +54,7 @@ public class ConsoleLogBuilder implements LogBuilder {
 
     }
 
-    private void appendRegion(Span region) {
+    private void appendRegion(Region region) {
 
         region = region.reorder();
         LogBuilder.getCodeOfRegion(region, true).forEach(this::append);

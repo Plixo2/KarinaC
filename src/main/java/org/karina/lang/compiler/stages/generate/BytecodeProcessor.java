@@ -42,8 +42,7 @@ public class BytecodeProcessor {
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
 
-        var jvmReady = PostProcessor.rewrite(kPackage);
-        var units = jvmReady.getAllUnitsRecursively();
+        var units = kPackage.getAllUnitsRecursively();
         for (var unit : units) {
             addUnit(unit);
 

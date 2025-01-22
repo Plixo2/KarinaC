@@ -3,7 +3,7 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.errors.Log;
 import org.karina.lang.compiler.errors.types.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
@@ -28,14 +28,14 @@ public class GetMemberAttrib extends AttributionExpr {
         if (left instanceof KExpr.Literal(var ignored, var name, var symbol1)) {
             Optional<KTree.KFunction> staticFunc = Optional.empty();
 
-            if (symbol1 instanceof LiteralSymbol.StructReference(Span region, ObjectPath path)) {
+            if (symbol1 instanceof LiteralSymbol.StructReference(Region region, ObjectPath path)) {
                 var item = KTree.findAbsolutItem(ctx.root(), path);
                 if (item instanceof KTree.KStruct struct) {
                     staticFunc = struct.functions().stream()
                                        .filter(ref -> ref.name().equals(expr.name()) && ref.self() == null).findFirst();
                 }
             } else if (symbol1 instanceof LiteralSymbol.InterfaceReference(
-                    Span region, ObjectPath path
+                    Region region, ObjectPath path
             )) {
                 var item = KTree.findAbsolutItem(ctx.root(), path);
                 if (item instanceof KTree.KInterface kInterface) {

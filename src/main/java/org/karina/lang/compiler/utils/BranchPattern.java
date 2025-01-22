@@ -8,10 +8,7 @@ import java.util.List;
 public sealed interface BranchPattern {
     KType type();
 
-    record Cast(Span region, KType type, SpanOf<String> castedName, @Nullable Variable symbol) implements BranchPattern {
-    }
-
-    record Destruct(Span region, KType type, List<NameAndOptType> variables)
-            implements BranchPattern {
-    }
+    record Cast(Region region, KType type, RegionOf<String> castedName, @Nullable Variable symbol) implements BranchPattern { }
+    record Destruct(Region region, KType type, List<NameAndOptType> variables) implements BranchPattern { }
+    record JustType(Region region, KType type) implements BranchPattern { }
 }

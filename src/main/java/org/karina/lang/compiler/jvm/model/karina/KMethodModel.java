@@ -5,9 +5,11 @@ import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model.MethodModel;
 import org.karina.lang.compiler.model.Signature;
+import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 
 @AllArgsConstructor
 public class KMethodModel implements MethodModel {
@@ -17,12 +19,14 @@ public class KMethodModel implements MethodModel {
     private ImmutableList<String> parameters;
     private ImmutableList<Generic> generics;
     private @Nullable KExpr expression;
-    private Span region;
+    private Region region;
+    private ClassPointer classPointer;
 
-    public Span region() {
+
+    @Override
+    public Region region() {
         return this.region;
     }
-
 
     @Override
     public int modifiers() {
@@ -52,5 +56,15 @@ public class KMethodModel implements MethodModel {
     @Override
     public @Nullable KExpr expression() {
         return this.expression;
+    }
+
+    @Override
+    public MethodPointer pointer() {
+        return MethodPointer.of(this.classPointer, this.name, this.signature);
+    }
+
+    @Override
+    public ClassPointer classPointer() {
+        return this.classPointer;
     }
 }

@@ -10,7 +10,7 @@ import org.karina.lang.compiler.utils.SymbolTable;
 import org.karina.lang.compiler.utils.TypeChecking;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.utils.VariableCollection;
-import org.karina.lang.compiler.utils.Span;
+import org.karina.lang.compiler.utils.Region;
 
 import java.util.Objects;
 
@@ -19,7 +19,7 @@ public record AttributionContext(
         KTree.KPackage root,
         @Nullable Variable selfType,
         boolean isLoop,
-        Span methodRegion,
+        Region methodRegion,
         @NotNull KType returnType,
         VariableCollection variables,
         SymbolTable table,
@@ -31,7 +31,7 @@ public record AttributionContext(
     }
 
     @Nullable
-    public KType getSuperType(Span checkingRegion, KType a, KType b) {
+    public KType getSuperType(Region checkingRegion, KType a, KType b) {
         return this.checking.superType(checkingRegion, a, b);
     }
 
@@ -46,11 +46,11 @@ public record AttributionContext(
 //        return this.checking.canAssign(left, right, mutable);
 //    }
 
-    public void assign(Span region, KType left, KType right) {
+    public void assign(Region region, KType left, KType right) {
         this.checking.assign(region, left, right);
     }
 
-    public boolean canAssign(Span region, KType left, KType right, boolean mutable) {
+    public boolean canAssign(Region region, KType left, KType right, boolean mutable) {
         return this.checking.canAssign(region, left, right, mutable);
     }
 
@@ -102,7 +102,7 @@ public record AttributionContext(
         );
     }
 
-    public KTree.KStruct getStruct(Span region, KType type) {
+    public KTree.KStruct getStruct(Region region, KType type) {
 
         if (type instanceof KType.ClassType classType) {
             var item = KTree.findAbsolutItem(this.root, classType.path());

@@ -4,7 +4,8 @@ options { tokenVocab=KarinaLexer; }
 
 unit: import_* item* EOF;
 
-import_: 'import' ('*' | ID)? 'java::'? dotWordChain;
+import_: 'import' dotWordChain ('*' | ID | '{' commaWordChain '}')?;
+commaWordChain: ID (',' ID)*;
 
 item: annotation* (function | struct | enum | interface);
 
@@ -15,7 +16,7 @@ struct: 'struct' ID genericHintDefinition? '{' field* function* implementation* 
 implementation: 'impl' structType '{' function* '}';
 field: ID ':' type;
 
-enum: 'enum' ID genericHintDefinition? '{' enumMember* '}';
+enum: 'enum' ID genericHintDefinition? '{' enumMember* function* '}';
 enumMember: ID ('(' parameterList ')')?;
 
 interface : 'interface' ID genericHintDefinition? '{' function* interfaceExtension* '}';
@@ -84,7 +85,8 @@ matchInstance: structType (ID | '(' optTypeList ')');
 matchDefault: '_';
 
 if: 'if' exprWithBlock (ID | '(' optTypeList ')')? block elseExpr?;
-elseExpr: 'else' (if | block | match);
+elseExpr: 'else' isShort? (if | block | match);
+isShort: 'is' type (ID | '(' optTypeList ')')?;
 
 while: 'while' exprWithBlock block;
 for: 'for' ID 'in' exprWithBlock block;
@@ -100,7 +102,7 @@ multiplicativeExpression: unaryExpression (('*' | '/' | '%') multiplicativeExpre
 unaryExpression: ('-' | '!')? factor;
 factor: object postFix* (('=' exprWithBlock) | isInstanceOf)?;
 postFix: '.' ID | '.' 'class' | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type;
-object: array | '(' exprWithBlock ')' | NUMBER | ID (genericHint? '{' initList '}')? | STRING_LITERAL | 'self' | 'true' | 'false';
+object: array | '(' exprWithBlock ')' | NUMBER | ID (genericHint? '{' initList '}')? | STRING_LITERAL | 'self' | 'super' | 'true' | 'false';
 array: ('<' type '>')? '[' expressionList ']';
 
 

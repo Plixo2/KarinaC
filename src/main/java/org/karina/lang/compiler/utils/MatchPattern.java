@@ -7,10 +7,10 @@ import java.util.List;
 
 public sealed interface MatchPattern {
     KExpr expr();
-    Span region();
+    Region region();
 
-    record Default(Span region, KExpr expr) implements MatchPattern {}
-    record Cast(Span region, KType type, SpanOf<String> name, KExpr expr) implements MatchPattern {}
-    record Destruct(Span region, KType type, List<NameAndOptType> variables, KExpr expr) implements MatchPattern {}
+    record Default(Region region, KExpr expr) implements MatchPattern {}
+    record Cast(Region region, KType type, RegionOf<String> name, KExpr expr) implements MatchPattern {}
+    record Destruct(Region region, KType type, List<NameAndOptType> variables, KExpr expr) implements MatchPattern {}
 
 }
