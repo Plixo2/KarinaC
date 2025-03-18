@@ -56,3 +56,15 @@ resources/jars/java_base/
 src/main/resources/jdk21.jar
 resources/jars/
 /src/main/resources/jdk
+resources/corelib/compile.cmd
+/resources/corelib
+resources/flight.txt
+resources/howToCode.md
+resources/jdk.bin
+resources/jdk.bin
+resources/Object.class
+resources/TestA.class
+resources/TestA.java
+resources/TODO.txt
+src/main/java/test/Inner.java
+src/main/java/test/pack/Pack.java
