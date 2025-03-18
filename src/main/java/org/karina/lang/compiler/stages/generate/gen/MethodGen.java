@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.generate.gen;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.objects.Expressions;
 import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
 import org.karina.lang.compiler.stages.generate.BytecodeContext;
 import org.karina.lang.compiler.stages.generate.TypeConversion;
@@ -64,9 +65,9 @@ public class MethodGen {
 
             var returnedType = function.returnType();
             if (returnedType == null) {
-                returnedType = new KType.PrimitiveType(KType.KPrimitive.VOID);
+                returnedType = KType.VOID;
             }
-            if (AttributionExpr.doesReturn(function.expr())) {
+            if (function.expr().doesReturn()) {
                 // ok
             } else {
                 if (returnedType.isVoid()) {

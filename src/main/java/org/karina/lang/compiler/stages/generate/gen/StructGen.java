@@ -2,7 +2,7 @@ package org.karina.lang.compiler.stages.generate.gen;
 
 import com.google.gson.JsonPrimitive;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.stages.generate.TypeConversion;
@@ -22,11 +22,10 @@ public class StructGen {
     }
 
 
-
     public JarCompilation.JarOutput addStruct(KTree.KStruct struct) {
         var classNode = new ClassNode();
         //TODO not ok
-        var selfType = new KType.ClassType(ClassPointer.of(struct.path()), List.of());
+        var selfType = new KType.ClassType(ClassPointer.of(null, struct.path()), List.of());
         for (var items : struct.functions()) {
             if (items instanceof KTree.KFunction function) {
                 var method = this.backend.methodGen.createMethod(selfType, false, function);

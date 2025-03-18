@@ -4,6 +4,13 @@ import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.util.List;
 
+/**
+ * Directory tree structure
+ * @param path full path to the directory, relative to the root
+ * @param name simple name of the directory
+ * @param children child directories
+ * @param leafs files in the directory
+ */
 public record DefaultFileTree(
         ObjectPath path,
         String name,
@@ -34,5 +41,11 @@ public record DefaultFileTree(
 
     }
 
-    public record DefaultFileNode(ObjectPath path, String name, TextSource content) implements FileNode<TextSource> {}
+    /**
+     * File node including the string
+     * @param path full path to the file, relative to the root
+     * @param name simple name of the file
+     * @param content file content
+     */
+    public record DefaultFileNode(ObjectPath path, String name, TextSource content) implements FileNode<TextSource> { }
 }

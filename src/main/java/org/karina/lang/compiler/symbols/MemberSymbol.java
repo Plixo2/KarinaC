@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.symbols;
 
-import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.model_api.pointer.FieldPointer;
+import org.karina.lang.compiler.utils.MethodCollection;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
 
@@ -13,18 +14,12 @@ public sealed interface MemberSymbol {
             return new KType.PrimitiveType(KType.KPrimitive.INT);
         }
     }
-    record FieldSymbol(KType type, ObjectPath fieldPath, String name, KType owner) implements MemberSymbol {}
-    record InterfaceFunctionSymbol(Region region, KType.ClassType classType, ObjectPath path) implements MemberSymbol {
-        @Override
-        public KType type() {
-            return new KType.PrimitiveType(KType.KPrimitive.VOID);
-        }
-    }
-    record VirtualFunctionSymbol(Region region, KType.ClassType classType, ObjectPath path) implements MemberSymbol {
+    record FieldSymbol(FieldPointer pointer, KType type, KType.ClassType classType) implements MemberSymbol { }
+    record VirtualFunctionSymbol(Region region, KType.ClassType classType,  MethodCollection collection) implements MemberSymbol {
 
         @Override
         public KType type() {
-            return new KType.PrimitiveType(KType.KPrimitive.VOID);
+            return KType.VOID;
         }
     }
 

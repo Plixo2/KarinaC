@@ -1,29 +1,29 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
-import org.karina.lang.compiler.model.Signature;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.objects.KAnnotation;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.parser.TextContext;
+import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.Generic;
 
 import java.lang.reflect.Modifier;
 
 public class KarinaMethodVisitor {
-    private final TextContext context;
+    private final RegionContext context;
     private final KarinaUnitVisitor base;
 
-    public KarinaMethodVisitor(KarinaUnitVisitor base, TextContext textContext) {
+    public KarinaMethodVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
         this.base = base;
-        this.context = textContext;
+        this.context = regionContext;
     }
 
-    public KMethodModel visit(ClassPointer owningClass, KarinaParser.FunctionContext function) {
-        var name = function.ID().getText();
+    public KMethodModel visit(ClassPointer owningClass,  ImmutableList<KAnnotation> annotations, KarinaParser.FunctionContext function) {
+        var name = this.context.escapeID(function.id());
         var region = this.context.toRegion(function);
 
         var generics = ImmutableList.<Generic>of();
@@ -33,7 +33,7 @@ public class KarinaMethodVisitor {
         var isStatic = function.selfParameterList().SELF() == null;
 
         var parameters = ImmutableList.copyOf(function.selfParameterList().parameter().stream().map(
-                KarinaParser.ParameterContext::ID).map(ParseTree::getText).toList());
+                KarinaParser.ParameterContext::id).map(this.context::escapeID).toList());
         var signature = this.getSignature(function);
 
         KExpr expr;
@@ -54,6 +54,7 @@ public class KarinaMethodVisitor {
                 parameters,
                 generics,
                 expr,
+                annotations,
                 region,
                 owningClass
         );
@@ -66,7 +67,7 @@ public class KarinaMethodVisitor {
         if (function.type() != null) {
             returnType = this.base.typeVisitor.visitType(function.type());
         } else {
-            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
+            returnType = KType.VOID;
         }
 
         var parameters = ImmutableList.<KType>builder();

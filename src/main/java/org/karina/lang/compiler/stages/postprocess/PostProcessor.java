@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.stages.postprocess;
 
-import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.FunctionModifier;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KTree;
@@ -191,7 +191,7 @@ public class PostProcessor {
         if (output) {
             returnType = new KType.GenericLink(outGenerics);
         } else {
-            returnType = new KType.PrimitiveType(KType.KPrimitive.VOID);
+            returnType = KType.VOID;
         }
 
         var parameters = new ArrayList<KTree.KParameter>();

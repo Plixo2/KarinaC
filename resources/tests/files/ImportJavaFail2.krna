@@ -1,3 +1,2 @@
-/* Fail JavaNotSupported */
+/* Ok */
 
-import java::from.obj

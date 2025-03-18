@@ -38,6 +38,10 @@ dependencies {
     //lsp
     implementation group: 'org.eclipse.lsp4j', name: 'org.eclipse.lsp4j', version: '0.23.1'
 
+    //escaping
+    implementation 'org.apache.commons:commons-text:1.13.0'
+
+
     //tests
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.11.4'
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.11.4'

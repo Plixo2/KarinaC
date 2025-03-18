@@ -3,7 +3,7 @@ package org.karina.lang.compiler.stages.generate.gen;
 import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
 import org.karina.lang.compiler.stages.generate.BytecodeContext;
 import org.karina.lang.compiler.stages.generate.TypeConversion;
-import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.BinaryOperator;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
@@ -22,6 +22,7 @@ public class ExpressionGen {
     }
 
     public void addExpression(KExpr expr, BytecodeContext ctx) {
+        /*
         var region = expr.region();
         var currentLine = region.start().line() + 1;
         if (currentLine != ctx.getLastLineNumber()) {
@@ -190,7 +191,7 @@ public class ExpressionGen {
                 ctx.add(falseTarget);
 
                 if (branch.elseArm() != null) {
-                    if (branch.elseArm().shortPattern() != null) {
+                    if (branch.elseArm().elsePattern() != null) {
                         Log.temp(expr.region(), "Cannot be expressed");
                         throw new Log.KarinaException();
                     }
@@ -295,8 +296,8 @@ public class ExpressionGen {
             case KExpr.Cast cast -> {
                 addExpression(cast.expression(), ctx);
                 assert cast.symbol() != null;
-                var from = cast.symbol().fromNumeric().primitive();
-                var to = cast.symbol().toNumeric().primitive();
+                var from = cast.symbol().fromNumeric();
+                var to = cast.symbol().toNumeric();
                 var code = numericCast(from, to);
                 if (code != Opcodes.NOP) {
                     ctx.add(new InsnNode(code));
@@ -380,7 +381,7 @@ public class ExpressionGen {
                     case MemberSymbol.FieldSymbol fieldSymbol -> {
                         addExpression(getMember.left(), ctx);
                         var owner = TypeConversion.getType(fieldSymbol.owner());
-                        var fieldType = TypeConversion.getType(fieldSymbol.type());
+                        var fieldType = TypeConversion.getType(fieldSymbol.fieldType());
                         ctx.add(new FieldInsnNode(
                                 Opcodes.GETFIELD,
                                 owner.getInternalName(),
@@ -403,13 +404,10 @@ public class ExpressionGen {
             case KExpr.Literal literal -> {
                 assert literal.symbol() != null;
                 switch (literal.symbol()) {
-                    case LiteralSymbol.InterfaceReference interfaceReference -> {
+                    case LiteralSymbol.StaticMethodReference staticMethodReference -> {
                         throw new NullPointerException("Cannot be expressed");
                     }
-                    case LiteralSymbol.StaticFunction staticFunction -> {
-                        throw new NullPointerException("Cannot be expressed");
-                    }
-                    case LiteralSymbol.StructReference structReference -> {
+                    case LiteralSymbol.StaticClassReference staticClassReference -> {
                         throw new NullPointerException("Cannot be expressed");
                     }
                     case LiteralSymbol.VariableReference variableReference -> {
@@ -517,15 +515,12 @@ public class ExpressionGen {
                 throw new NullPointerException("Cannot be expressed");
             }
         }
-
+        */
     }
 
     private static int numericCast(KType.KPrimitive from, KType.KPrimitive to) {
         if (from == to) {
             return Opcodes.NOP;
-        }
-        if (from == KType.KPrimitive.VOID || to == KType.KPrimitive.VOID) {
-            throw new NullPointerException("Cannot cast to or from void");
         }
         switch (from) {
             case INT,CHAR,BOOL, BYTE, SHORT -> {

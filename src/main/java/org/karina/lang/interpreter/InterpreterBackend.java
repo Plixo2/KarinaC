@@ -31,10 +31,10 @@ public class InterpreterBackend {
                         functions.addAll(implBlock.functions());
                         for (var function : implBlock.functions()) {
                             if (!(implBlock.type() instanceof KType.ClassType clsType)) {
-                                throw new NullPointerException("invalid interface type");
+                                throw new NullPointerException("invalid interface fieldType");
                             }
                             var functionName = function.name().value();
-                            var interfacePath = clsType.path();
+                            var interfacePath = clsType.pointer().path();
                             var runtime = toRuntime(function);
                             var interfaceFunctionPath = interfacePath.append(functionName);
                             vTable.put(interfaceFunctionPath, runtime);

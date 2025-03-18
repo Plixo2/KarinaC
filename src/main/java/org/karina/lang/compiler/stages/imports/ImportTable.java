@@ -1,80 +1,87 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.jetbrains.annotations.Contract;
+import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.ImportError;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.model.pointer.FieldPointer;
-import org.karina.lang.compiler.model.pointer.MethodPointer;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.FieldPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.*;
 
 import java.util.*;
 
+/*
+ * Import table for a single file.
+ * This structure is immutable (without inner mutability).
+ * Top level classes will append to this table and will get a new table in return.
+ * This filled-in table will be passes to all items and subclasses
+ */
 public record ImportTable(
         JKModel model,
-        Map<String, ImportEntry<ClassPointer>> classes,
-        Map<String, ImportEntry<Generic>> generics,
-        Map<String, ImportEntry<List<MethodPointer>>> staticMethods,
-        Map<String, ImportEntry<FieldPointer>> staticFields
+        ImmutableMap<String, ImportEntry<ClassPointer>> classes,
+        ImmutableMap<String, ImportEntry<Generic>> generics,
+        //list of UntypedMethodCollection, as we dont know the signature yet see 'UntypedMethodCollection'
+        ImmutableMap<String, ImportEntry<UntypedMethodCollection>> untypedStaticMethods,
+        ImmutableMap<String, ImportEntry<MethodCollection>> typedStaticMethods,
+        ImmutableMap<String, ImportEntry<FieldPointer>> staticFields
 ) {
     public ImportTable(JKModel model) {
-        this(model, new HashMap<>(), new HashMap<>(), new HashMap<>(), new HashMap<>());
+        this(model, ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of());
     }
 
     public ImportTable {
-        classes = Map.copyOf(classes);
-        generics = Map.copyOf(generics);
-        staticMethods = Map.copyOf(staticMethods);
-        staticFields = Map.copyOf(staticFields);
+//        classes = Map.copyOf(classes);
+//        generics = Map.copyOf(generics);
+//        staticMethods = Map.copyOf(staticMethods);
+//        staticFields = Map.copyOf(staticFields);
     }
 
-
-
     public KType importType(Region region, KType kType) {
-        switch (kType) {
-            case KType.AnyClass anyClass -> {
-                return new KType.ClassType(ClassPointer.ROOT, List.of());
-            }
+        return importType(region, kType, ImportGenericBehavior.DEFAULT);
+    }
+
+    public KType importType(Region region, KType kType, ImportGenericBehavior flags) {
+        return switch (kType) {
             case KType.ArrayType arrayType -> {
-                return new KType.ArrayType(importType(region, arrayType.elementType()));
+                yield new KType.ArrayType(importType(region, arrayType.elementType()));
             }
             case KType.FunctionType functionType -> {
                 var returnType = importType(region, functionType.returnType());
                 var arguments = functionType.arguments().stream().map(ref -> importType(region, ref)).toList();
                 var interfaces = functionType.interfaces().stream().map(ref -> importType(region, ref)).toList();
-                return new KType.FunctionType(arguments, returnType, interfaces);
+                yield new KType.FunctionType(arguments, returnType, interfaces);
             }
-            case KType.GenericLink genericLink -> {
-                return genericLink;
-            }
-            case KType.PrimitiveType primitiveType -> {
-                return primitiveType;
-            }
-            case KType.Resolvable resolvable -> {
-                return resolvable;
-            }
+            case KType.GenericLink genericLink -> genericLink;
+            case KType.PrimitiveType primitiveType -> primitiveType;
+            case KType.Resolvable resolvable -> resolvable;
             case KType.ClassType classType -> {
-                return importUnprocessedType(region, classType.pointer().path(), classType.generics());
+                //revalidate class pointers
+                yield importUnprocessedType(region, classType.pointer().path(), classType.generics(), flags);
             }
             case KType.UnprocessedType unprocessedType -> {
-                return importUnprocessedType(region, unprocessedType.name().value(), unprocessedType.generics());
+                yield importUnprocessedType(unprocessedType.region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
             }
-        }
+            case KType.VoidType _ -> KType.VOID;
+        };
     }
 
+    private KType importUnprocessedType(Region region, ObjectPath path, List<KType> generics, ImportGenericBehavior flags) {
 
-    private KType importUnprocessedType(Region region, ObjectPath path, List<KType> generics) {
+        if (path.isEmpty()) {
+            Log.temp(region, "Empty path, this should not happen");
+            throw new Log.KarinaException();
+        }
 
+        //first check if the first element is imported, or a generic
         var head = path.first();
         boolean hasPathDefined = !path.tail().isEmpty();
         ClassPointer classPointer = null;
         if (!hasPathDefined) {
+            //first check if it is a generic
             var generic = getGeneric(head);
             if (generic != null) {
                 if (!generics.isEmpty()) {
@@ -88,25 +95,68 @@ public record ImportTable(
                 }
                 return new KType.GenericLink(generic);
             }
+            //otherwise check if it is a class with a imported name
             classPointer = this.getClass(head);
-        }
-        if (classPointer == null) {
-            classPointer = this.model.getClassPointer(path);
+        } else {
+            //otherwise check for the full qualified name recursively
+            classPointer = getClassNested(head, path.tail());
         }
 
+        //TODO what does getClassNested and what does getClassPointer?
+        // shouldn't be EVERY class already in the model?
+
         if (classPointer == null) {
+            //otherwise check for the full qualified directly
+            classPointer = this.model.getClassPointer(region, path);
+        }
+
+
+        if (classPointer == null) {
+            //error reporting. Collect all names and give them as suggestions
             var available = availableTypeNames();
             Log.importError(new ImportError.UnknownImportType(region, path.mkString("."), available));
             throw new Log.KarinaException();
         }
+
         var classModel = this.model.getClass(classPointer);
 
+        var expectedSize = classModel.generics().size();
         var newGenerics = generics.stream().map(ref -> importType(region, ref)).toList();
-        if (classModel.generics().size() != newGenerics.size()) {
+
+        boolean checkGenericLength = flags == ImportGenericBehavior.INSTANCE_CHECK || flags == ImportGenericBehavior.DEFAULT;
+        switch (flags) {
+            case DEFAULT -> {
+                //unused
+            }
+            case INSTANCE_CHECK -> {
+                //we fill in all generics with KType.ROOT, as they cannot be checked at runtime
+                if (newGenerics.isEmpty()) {
+                    newGenerics = new ArrayList<>();
+                    for (var i = 0; i < expectedSize; i++) {
+                        newGenerics.add(KType.ROOT);
+                    }
+                } else {
+                    for (var newGeneric : newGenerics) {
+                        if (!(newGeneric.isRoot())) {
+                            Log.temp(region, "Cannot use generics in instance check");
+                            throw new Log.KarinaException();
+                        }
+                    }
+                }
+            }
+            case OBJECT_CREATION -> {
+                //if some are defined, we check for length, otherwise we infer the fieldType later
+                if (!newGenerics.isEmpty()) {
+                    checkGenericLength = true;
+                }
+            }
+        }
+
+
+        if (checkGenericLength && expectedSize != newGenerics.size()) {
             Log.importError(new ImportError.GenericCountMismatch(
                     region,
-                    classModel.name(),
-                    classModel.generics().size(),
+                    classModel.name(), expectedSize,
                     newGenerics.size()
             ));
             throw new Log.KarinaException();
@@ -119,10 +169,21 @@ public record ImportTable(
 
     public Set<String> availableTypeNames() {
         var keys = new HashSet<>(this.classes.keySet());
+        for (var objectPath : this.model.classModels().keySet()) {
+            keys.add(objectPath.mkString("."));
+        }
+
         keys.addAll(this.generics.keySet());
         return keys;
     }
 
+    public Set<String> availableItemNames() {
+        var keys = new HashSet<>(this.classes.keySet());
+        keys.addAll(this.staticFields.keySet());
+        keys.addAll(this.typedStaticMethods.keySet());
+        keys.addAll(this.untypedStaticMethods.keySet());
+        return keys;
+    }
 
     private @Nullable Generic getGeneric(String name) {
         var entry = this.generics.get(name);
@@ -132,46 +193,93 @@ public record ImportTable(
         return entry.reference();
     }
 
-    private @Nullable ClassPointer getClass(String name) {
-        if (this.classes.containsKey(name)) {
-            return this.classes.get(name).reference();
+    private @Nullable ClassPointer getClassNested(String first, ObjectPath tail) {
+
+        if (this.classes.containsKey(first)) {
+            var topLevel = Objects.requireNonNull(this.classes.get(first)).reference();
+            var referedClassModel = this.model.getClass(topLevel);
+            for (var element : tail.elements()) {
+                boolean found = false;
+                for (var innerClass : referedClassModel.innerClasses()) {
+                    if (innerClass.name().equals(element)) {
+                        referedClassModel = innerClass;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    return null;
+                }
+            }
+            return referedClassModel.pointer();
         }
         return null;
     }
 
-    public ImportTable addClass(Region declarationRegion, String name, ClassPointer reference, boolean declared) {
-        var newClasses = new HashMap<>(this.classes);
-        var declare = testDuplicate(newClasses, declarationRegion, name, declared);
-        if (declare) {
-            newClasses.put(name, new ImportEntry<>(declarationRegion, reference, declared));
+    public @Nullable ClassPointer getClass(String name) {
+        if (this.classes.containsKey(name)) {
+            return Objects.requireNonNull(this.classes.get(name)).reference();
         }
-        return new ImportTable(this.model, newClasses, this.generics, this.staticMethods, this.staticFields);
+        return null;
     }
 
+
+    public ImportTable addClass(Region declarationRegion, String name, ClassPointer pointer, boolean declaredExplicit, boolean prelude) {
+        var newClasses = new HashMap<>(this.classes);
+        var declare = testDuplicate(newClasses, declarationRegion, name, declaredExplicit);
+        if (declare) {
+            newClasses.put(name, new ImportEntry<>(declarationRegion, pointer, declaredExplicit, prelude));
+        }
+        return new ImportTable(this.model, ImmutableMap.copyOf(newClasses), this.generics, this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+    }
+
+    /*
+     * Add a generic to the table.
+     * they always overwrite existing generics
+     */
     public ImportTable addGeneric(Region declarationRegion, Generic generic) {
         var newGenerics = new HashMap<>(this.generics);
         testDuplicate(newGenerics, declarationRegion, generic.name(), true);
-        newGenerics.put(generic.name(), new ImportEntry<>(declarationRegion, generic, true));
-        return new ImportTable(this.model, this.classes, newGenerics, this.staticMethods, this.staticFields);
+        newGenerics.put(generic.name(), new ImportEntry<>(declarationRegion, generic, true, false));
+        return new ImportTable(this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
 
-    public @NotNull ImportTable addStaticMethod(Region declarationRegion, String name, List<MethodPointer> reference, boolean declared) {
-        var newStaticMethods = new HashMap<>(this.staticMethods);
-        var declare = testDuplicate(newStaticMethods, declarationRegion, name, declared);
+    /**
+     * TODO Replace with {@link MethodCollection}
+     */
+    public @NotNull ImportTable addStaticMethod(Region declarationRegion, String name, ClassPointer classPointer, boolean declaredExplicit, boolean prelude) {
+        var newStaticMethods = new HashMap<>(this.untypedStaticMethods);
+        var declare = testDuplicate(newStaticMethods, declarationRegion, name, declaredExplicit);
         if (declare) {
-            newStaticMethods.put(name, new ImportEntry<>(declarationRegion, reference, declared));
+            var collection = new UntypedMethodCollection(name, classPointer);
+            newStaticMethods.put(name, new ImportEntry<>(declarationRegion, collection, declaredExplicit, prelude));
         }
-        return new ImportTable(this.model, this.classes, this.generics, newStaticMethods, this.staticFields);
+        var newTypedStaticMethods = new HashMap<>(this.typedStaticMethods);
+        //remove any duplicates
+        newTypedStaticMethods.remove(name);
+
+        return new ImportTable(this.model, this.classes, this.generics, ImmutableMap.copyOf(newStaticMethods), ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
     }
 
+    public @NotNull ImportTable addPreludeMethods(Region declarationRegion, String name, List<MethodPointer> methods) {
+        if (this.untypedStaticMethods.containsKey(name)) {
+            return this;
+        }
+        var newTypedStaticMethods = new HashMap<>(this.typedStaticMethods);
+        newTypedStaticMethods.remove(name); // remove any duplicates
+        var typedCollection = new MethodCollection(name, methods);
+        newTypedStaticMethods.put(name, new ImportEntry<>(declarationRegion, typedCollection, false, true));
 
-    public @NotNull ImportTable addStaticField(Region declarationRegion, String name, FieldPointer reference, boolean declared) {
+        return new ImportTable(this.model, this.classes, this.generics, this.untypedStaticMethods, ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
+    }
+
+    public @NotNull ImportTable addStaticField(Region declarationRegion, String name, FieldPointer reference, boolean declaredExplicit, boolean prelude) {
         var newStaticFields = new HashMap<>(this.staticFields);
-        var declare = testDuplicate(newStaticFields, declarationRegion, name, declared);
+        var declare = testDuplicate(newStaticFields, declarationRegion, name, declaredExplicit);
         if (declare) {
-            newStaticFields.put(name, new ImportEntry<>(declarationRegion, reference, declared));
+            newStaticFields.put(name, new ImportEntry<>(declarationRegion, reference, declaredExplicit, prelude));
         }
-        return new ImportTable(this.model, this.classes, this.generics, this.staticMethods, newStaticFields);
+        return new ImportTable(this.model, this.classes, this.generics, this.untypedStaticMethods, this.typedStaticMethods, ImmutableMap.copyOf(newStaticFields));
     }
 
     /**
@@ -179,19 +287,96 @@ public record ImportTable(
      */
     private <T> boolean testDuplicate(
             Map<String, ImportEntry<T>> objects, Region declarationRegion, String name,
-            boolean declared
+            boolean declaredExplicit
     ) {
         if (!objects.containsKey(name)) {
             return true;
         }
         var entry = objects.get(name);
-        if (entry.wasDeclared() && declared) {
+        if (entry.wasDeclaredExplicit() && declaredExplicit) {
             Log.importError(
-                    new ImportError.DuplicateItem(entry.definedRegion(), declarationRegion, name));
+                    new ImportError.DuplicateItem(entry.definedRegion(), declarationRegion, name)
+            );
             throw new Log.KarinaException();
         }
-        return declared || !entry.wasDeclared();
+        return declaredExplicit || !entry.wasDeclaredExplicit();
     }
 
-    private record ImportEntry<T>(Region definedRegion, T reference, boolean wasDeclared) { }
+    public ImportTable removeGenerics() {
+        return new ImportTable(this.model, this.classes, ImmutableMap.of(), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+    }
+
+    public record ImportEntry<T>(Region definedRegion, T reference, boolean wasDeclaredExplicit, boolean prelude) { }
+
+
+    /**
+     * Used to determine how deal with generics when resolving types.
+     * DEFAULT: import as is, check count of generics.
+     * INSTANCE_CHECK: The type is not allowed to define generics other than KType.ROOT (java.lang.Object).
+     *                 Replace potential generics with KType.ROOT, when not defined.
+     *                 Also check the count of generics when defined.
+     *                 Only used in instance checks (if .. is Object cast) and match expressions.
+     * OBJECT_CREATION: Generics can be omitted, they can be inferred from the field types.
+     *                  Check the count of generics, if defined.
+     *                  Only used for object creation.
+     */
+    public enum ImportGenericBehavior {
+        DEFAULT,
+        INSTANCE_CHECK,
+        OBJECT_CREATION;
+    }
+
+
+    public void logImport() {
+        if (Log.LogTypes.IMPORTS.isVisible()) {
+            Log.beginType(Log.LogTypes.IMPORTS, "generics");
+            for (var entry : this.generics.entrySet()) {
+                var entryValue = entry.getValue();
+                if (entryValue.prelude()) continue;
+                var name = entry.getKey();
+                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
+            }
+            Log.endType(Log.LogTypes.IMPORTS, "generics");
+
+            Log.beginType(Log.LogTypes.IMPORTS, "classes");
+            for (var entry : this.classes.entrySet()) {
+                var entryValue = entry.getValue();
+                if (entryValue.prelude()) continue;
+                var name = entry.getKey();
+                Log.record(name, entryValue.reference(), "explicit: ", entryValue.wasDeclaredExplicit());
+            }
+            Log.endType(Log.LogTypes.IMPORTS, "classes");
+
+            Log.beginType(Log.LogTypes.IMPORTS, "untyped static methods");
+            for (var entry : this.untypedStaticMethods.entrySet()) {
+                var entryValue = entry.getValue();
+                if (entryValue.prelude()) continue;
+                var name = entry.getKey();
+                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
+            }
+            Log.endType(Log.LogTypes.IMPORTS, "untyped static methods");
+
+            Log.beginType(Log.LogTypes.IMPORTS, "typed static methods");
+            for (var entry : this.typedStaticMethods.entrySet()) {
+                var entryValue = entry.getValue();
+                if (entryValue.prelude()) continue;
+                var name = entry.getKey();
+                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
+            }
+            Log.endType(Log.LogTypes.IMPORTS, "typed static methods");
+
+            Log.beginType(Log.LogTypes.IMPORTS, "static fields");
+
+            for (var entry : this.staticFields.entrySet()) {
+                var entryValue = entry.getValue();
+                if (entryValue.prelude()) continue;
+                var name = entry.getKey();
+                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
+            }
+
+            Log.endType(Log.LogTypes.IMPORTS, "static fields");
+
+
+        }
+    }
 }

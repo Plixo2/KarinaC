@@ -6,6 +6,4 @@
   },
   "verbose": true,
   "run": true
-
-  //,"eval": "src.Main.main"
 }

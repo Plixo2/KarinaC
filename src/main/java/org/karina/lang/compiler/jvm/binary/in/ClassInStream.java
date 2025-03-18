@@ -5,11 +5,12 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.jvm.model.jvm.JFieldModel;
 import org.karina.lang.compiler.jvm.model.jvm.JMethodModel;
-import org.karina.lang.compiler.model.Signature;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Region;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,26 +65,26 @@ public class ClassInStream {
         return new Signature(ImmutableList.copyOf(parameters), returnType);
     }
 
-    public @Nullable ClassPointer readClassPointer() throws IOException {
+    public @Nullable ClassPointer readClassPointer(TextSource source) throws IOException {
         var type = readByte();
         if (type == 0) {
             return null;
         } else if (type == 1) {
             var path = readObjectPath();
-            //TODO test existance of class
-            return ClassPointer.of(path);
+            //TODO test existence of class
+            return ClassPointer.of(source.emptyRegion(), path);
         } else {
-            throw new IOException("Unknown class pointer type: " + type);
+            throw new IOException("Unknown class methodPointer fieldType: " + type);
         }
     }
 
-    public ImmutableList<ClassPointer> readClassPointerList() throws IOException {
+    public ImmutableList<ClassPointer> readClassPointerList(TextSource source) throws IOException {
         int length = readInt();
         var pointers = new ClassPointer[length];
         for (int i = 0; i < length; i++) {
-            pointers[i] = readClassPointer();
+            pointers[i] = readClassPointer(source);
             if (pointers[i] == null) {
-                throw new IOException("Class pointer cannot be null in a list");
+                throw new IOException("Class methodPointer cannot be null in a list");
             }
         }
         return ImmutableList.copyOf(pointers);
@@ -138,13 +139,13 @@ public class ClassInStream {
     public KType readType(TextSource source) throws IOException {
         var type = readByte();
         return switch (type) {
-            case 1 -> new KType.AnyClass();
+            case 1 -> KType.ROOT;
             case 2 -> {
                 var inner = readType(source);
                 yield new KType.ArrayType(inner);
             }
             case 3 -> {
-                var classPointer = readClassPointer();
+                var classPointer = readClassPointer(source);
                 var genericCount = readInt();
                 var generics = new KType[genericCount];
                 for (int i = 0; i < genericCount; i++) {
@@ -178,9 +179,9 @@ public class ClassInStream {
             case 11 -> new KType.PrimitiveType(KType.KPrimitive.INT);
             case 12 -> new KType.PrimitiveType(KType.KPrimitive.LONG);
             case 13 -> new KType.PrimitiveType(KType.KPrimitive.SHORT);
-            case 14 -> new KType.PrimitiveType(KType.KPrimitive.VOID);
+            case 14 -> KType.VOID;
             default -> {
-                throw new IOException("Unknown type: " + type);
+                throw new IOException("Unknown fieldType: " + type);
             }
         };
     }

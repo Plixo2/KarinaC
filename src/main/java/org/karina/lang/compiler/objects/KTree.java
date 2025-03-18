@@ -13,8 +13,10 @@ import org.karina.lang.compiler.utils.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated()
 public final class KTree {
 
+    @Deprecated()
     public static @Nullable KItem findAbsolutItem(KPackage root, ObjectPath absolut) {
         if (absolut.isEmpty()) {
             return null;
@@ -26,6 +28,7 @@ public final class KTree {
         return findRelativeItem(root, absolut.tail());
     }
 
+    @Deprecated()
     public static @Nullable KFunction findAbsoluteVirtualFunction(KPackage root, ObjectPath path) {
         if (path.isEmpty()) {
             return null;
@@ -61,6 +64,7 @@ public final class KTree {
         };
     }
 
+    @Deprecated()
     public static @Nullable KFunction findAbsoluteInterfaceFunction(KPackage root, ObjectPath path) {
         if (path.isEmpty()) {
             return null;
@@ -120,6 +124,7 @@ public final class KTree {
 //        };
 //    }
 
+    @Deprecated()
     public static @Nullable KItem findRelativeItem(KPackage root, ObjectPath relativeToSrc) {
         if (relativeToSrc.isEmpty()) {
             return null;
@@ -153,6 +158,7 @@ public final class KTree {
         return function;
     }
 
+    @Deprecated()
     @Builder
     public record KPackage(
             @NonNull ObjectPath path,
@@ -193,6 +199,7 @@ public final class KTree {
 
     }
 
+    @Deprecated()
     @Builder
     public record KUnit(
             @NonNull Region region,
@@ -216,13 +223,7 @@ public final class KTree {
 
     }
 
-    @Builder
-    public record KImport(
-            @NonNull Region region,
-            @NonNull TypeImport importType,
-            @NonNull ObjectPath path
-    ) {}
-
+    @Deprecated()
     public sealed interface KItem permits KFunction, KTypeItem {
         Region region();
         List<KAnnotation> annotations();
@@ -231,9 +232,11 @@ public final class KTree {
         List<Generic> generics();
     }
 
+    @Deprecated()
     public sealed interface KTypeItem extends KItem permits KInterface, KStruct, KEnum {
     }
 
+    @Deprecated()
     @Builder
     public record KInterface(
             @NonNull Region region,
@@ -246,6 +249,7 @@ public final class KTree {
             @Singular List<ObjectPath> permittedStructs
     ) implements KTypeItem {}
 
+    @Deprecated()
     @Builder
     public record KStruct(
             @NonNull Region region,
@@ -259,6 +263,7 @@ public final class KTree {
             @Singular List<KImplBlock> implBlocks
     ) implements KTypeItem {}
 
+    @Deprecated()
     @Builder
     public record KEnum(
             @NonNull Region region,
@@ -270,6 +275,7 @@ public final class KTree {
     ) implements KTypeItem {}
 
 
+    @Deprecated()
     @Builder
     public record KFunction(
             @NonNull Region region,
@@ -284,18 +290,21 @@ public final class KTree {
             @Nullable KExpr expr
     ) implements KItem {}
 
+    @Deprecated()
     @Builder
     public record KImplBlock(@NonNull Region region, @NonNull KType type, @Singular List<KFunction> functions) { }
 
-
+    @Deprecated()
     public record KField(Region region, ObjectPath path, RegionOf<String> name, KType type) { }
 
-
+    @Deprecated()
     @Builder
     public record KEnumEntry(Region region, RegionOf<String> name, @Singular List<KParameter> parameters) { }
 
-
+    @Deprecated()
     public record KParameter(Region region, RegionOf<String> name, KType type, @Nullable @Symbol Variable symbol) { }
+
+    @Deprecated()
     public record KAnnotation(Region region, RegionOf<String> name, JsonElement value) { }
 
 }

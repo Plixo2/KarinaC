@@ -2,9 +2,9 @@ package org.karina.lang.compiler.stages.generate;
 
 
 import lombok.AllArgsConstructor;
-import org.karina.lang.compiler.errors.ErrorCollector;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.FileLoadError;
+import org.karina.lang.compiler.logging.ErrorCollector;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.FileLoadError;
 
 import java.io.File;
 import java.io.FileOutputStream;

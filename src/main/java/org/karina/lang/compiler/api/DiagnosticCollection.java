@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.api;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.LogBuilder;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -32,6 +32,7 @@ public class DiagnosticCollection implements Iterable<Log.LogWithTrace> {
 
 
     public static void print(DiagnosticCollection collection, boolean verbose, PrintStream stream) {
+
         for (var log : collection) {
             stream.println(log.mkString(verbose));
         }

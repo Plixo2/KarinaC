@@ -1,15 +1,12 @@
 package org.karina.lang.compiler.stages.parser.error;
 
-import lombok.Getter;
-import lombok.experimental.Accessors;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.ATNState;
 import org.antlr.v4.runtime.misc.IntervalSet;
 import org.antlr.v4.runtime.misc.Pair;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.Region;
 
@@ -68,21 +65,7 @@ public class KarinaRecoveringStrategy extends DefaultErrorStrategy {
     }
 
 
-    private static boolean isPostFixDotError(Recognizer<?, ?> recognizer, NoViableAltException noViableAlt) {
-        if (noViableAlt.getCtx().isEmpty()) {
-            return false;
-        }
 
-        if (noViableAlt.getCtx().getRuleIndex() != KarinaParser.RULE_postFix) {
-            return false;
-        }
-
-        var tokens = (TokenStream) recognizer.getInputStream();
-        Token offendingToken = noViableAlt.getOffendingToken();
-        Token previousToken = tokens.get(offendingToken.getTokenIndex() - 1);
-
-        return previousToken.getText().equals(".");
-    }
 
     //From DefaultErrorStrategy
     @Override
@@ -184,5 +167,21 @@ public class KarinaRecoveringStrategy extends DefaultErrorStrategy {
             return false;
         }
         return isPostFixDotError(recognizer, noViableAlt);
+    }
+
+    private static boolean isPostFixDotError(Recognizer<?, ?> recognizer, NoViableAltException noViableAlt) {
+        if (noViableAlt.getCtx().isEmpty()) {
+            return false;
+        }
+
+        if (noViableAlt.getCtx().getRuleIndex() != KarinaParser.RULE_postFix) {
+            return false;
+        }
+
+        var tokens = (TokenStream) recognizer.getInputStream();
+        Token offendingToken = noViableAlt.getOffendingToken();
+        Token previousToken = tokens.get(offendingToken.getTokenIndex() - 1);
+
+        return previousToken.getText().equals(".");
     }
 }

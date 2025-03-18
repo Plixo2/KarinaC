@@ -2,14 +2,12 @@ package org.karina.lang.compiler.stages.parser;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.jvm.model.JKModelBuilder;
 import org.karina.lang.compiler.stages.parser.error.KarinaErrorListener;
 import org.karina.lang.compiler.stages.parser.error.KarinaRecoveringStrategy;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
-import org.karina.lang.compiler.stages.parser.visitor.KarinaExprVisitor;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.ObjectPath;
 
@@ -30,13 +28,12 @@ public class TextUnitParser {
         this.karinaParser.removeErrorListeners();
         this.karinaParser.addErrorListener(errorListener);
 
-        KarinaExprVisitor.PARSER = this.karinaParser;
 
-        var regionConverter = new TextContext(source, tokenStream);
+        var regionConverter = new RegionContext(source, tokenStream);
         this.visitor = new KarinaUnitVisitor(regionConverter, name, path);
     }
 
-    public void parse(JKModelBuilder builder) {
+    public void visit(JKModelBuilder builder) {
         this.visitor.visit(this.karinaParser.unit(), builder);
     }
 

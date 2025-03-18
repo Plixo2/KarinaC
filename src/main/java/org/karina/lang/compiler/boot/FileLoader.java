@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.DefaultFileTree;
 import org.karina.lang.compiler.api.FileResource;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.api.FileNode;
 import org.karina.lang.compiler.api.TextSource;
@@ -38,9 +39,13 @@ public class FileLoader {
 
     private static List<String> loadUTF8File(File file) throws IOException {
         testValidity(file);
+        var nameWithoutExtension = getFileNameWithoutExtension(file.getName());
+        Log.begin("file-load-" + nameWithoutExtension);
         var path = file.getAbsoluteFile().toPath().normalize();
         var charset = StandardCharsets.UTF_8;
-        return Files.readAllLines(path, charset);
+        var lines = Files.readAllLines(path, charset);
+        Log.end("file-load-" + nameWithoutExtension);
+        return lines;
     }
 
     private static void testValidity(File file) throws IOException {
@@ -58,14 +63,13 @@ public class FileLoader {
 
     //#region Load File Tree
     public static DefaultFileTree loadTree(
-            @Nullable ObjectPath objectPath,
             String path
     ) throws IOException {
-        return loadTree(objectPath, path, new FilePredicate("krna"));
+        return loadTree(null, path, new FilePredicate("krna"));
     }
 
 
-    public static DefaultFileTree loadTree(
+    private static DefaultFileTree loadTree(
             @Nullable ObjectPath objectPath,
             String path,
             Predicate<String> filePredicate
@@ -73,6 +77,7 @@ public class FileLoader {
 
         var file = new File(path);
         var folderName = getFileNameWithoutExtension(file.getName());
+        Log.begin("file-load-" + folderName);
         if (objectPath == null) {
             objectPath = new ObjectPath(folderName);
         }
@@ -95,7 +100,9 @@ public class FileLoader {
         if (files == null) {
             throw new IOException("Can't list files");
         }
-        return loadTreeFiles(files, objectPath, folderName, filePredicate);
+        var tree = loadTreeFiles(files, objectPath, folderName, filePredicate);
+        Log.end("file-load-" + folderName);
+        return tree;
 
     }
 

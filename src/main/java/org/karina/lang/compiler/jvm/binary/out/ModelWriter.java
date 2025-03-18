@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.jvm.binary.out;
 
 import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -18,7 +19,8 @@ public class ModelWriter {
     }
 
     public void write(JKModel model) throws IOException {
-        var classes = model.getBytecodeClasses();
+        var classes = new ArrayList< JClassModel>();
+        model.getBytecodeClasses().forEach(classes::add);
 
         var outerWriter = new ClassWriter(this.stream);
 

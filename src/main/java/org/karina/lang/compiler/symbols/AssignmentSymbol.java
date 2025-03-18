@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.symbols;
 
+import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.objects.KExpr;
@@ -11,6 +12,7 @@ public sealed interface AssignmentSymbol {
 
     record ArrayElement(KExpr array, KExpr index, KType elementType) implements AssignmentSymbol { }
 
-    record Field(KExpr object, ObjectPath fieldPath, String name, KType fieldOwner, KType fieldType) implements AssignmentSymbol { }
+    record Field(KExpr object, FieldPointer pointer, KType fieldType, KType fieldOwner) implements AssignmentSymbol { }
+
 
 }

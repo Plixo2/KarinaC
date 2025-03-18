@@ -1,10 +1,9 @@
 package org.karina.lang.compiler.jvm.model.jvm;
 
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import org.karina.lang.compiler.model.FieldModel;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.model.pointer.FieldPointer;
+import org.karina.lang.compiler.model_api.FieldModel;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Region;
 
@@ -12,11 +11,11 @@ import java.util.Objects;
 
 @AllArgsConstructor
 public class JFieldModel implements FieldModel {
-    private String name;
-    private KType type;
-    private int modifiers;
-    private Region region;
-    private ClassPointer classPointer;
+    private final String name;
+    private final KType type;
+    private final int modifiers;
+    private final Region region;
+    private final ClassPointer classPointer;
 
     @Override
     public Region region() {
@@ -25,7 +24,7 @@ public class JFieldModel implements FieldModel {
 
     @Override
     public FieldPointer pointer() {
-        return FieldPointer.of(this.classPointer, this.name);
+        return FieldPointer.of(this.region, this.classPointer, this.name);
     }
 
     @Override

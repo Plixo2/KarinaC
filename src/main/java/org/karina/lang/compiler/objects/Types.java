@@ -1,0 +1,285 @@
+package org.karina.lang.compiler.objects;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.utils.Generic;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class Types {
+
+    public static boolean signatureEquals(List<KType> a, List<KType> b) {
+        if (a.size() != b.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < a.size(); i++) {
+            if (!Types.erasedEquals(a.get(i), b.get(i))) {
+                return false;
+            }
+        }
+
+
+        return true;
+    }
+
+    public static KType erase(KType type) {
+        return switch (type) {
+            case KType.ArrayType arrayType -> new KType.ArrayType(erase(arrayType.elementType()));
+            case KType.ClassType classType -> {
+                List<KType> generics = new ArrayList<>();
+                for (var ignored : classType.generics()) {
+                    generics.add(KType.ROOT);
+                }
+
+                yield new KType.ClassType(classType.pointer(), generics);
+            }
+            case KType.FunctionType functionType -> {
+                List<KType> arguments = new ArrayList<>();
+                for (var ignored : functionType.arguments()) {
+                    arguments.add(KType.ROOT);
+                }
+                KType returnType = KType.ROOT;
+                yield new KType.FunctionType(arguments, returnType, java.util.List.of());
+            }
+            case KType.GenericLink genericLink -> KType.ROOT;
+            case KType.PrimitiveType primitiveType -> primitiveType;
+            case KType.Resolvable resolvable -> KType.ROOT;
+            case KType.UnprocessedType unprocessedType -> {
+                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                throw new Log.KarinaException();
+            }
+            case KType.VoidType _ -> KType.VOID;
+        };
+    }
+
+    public static boolean erasedEquals(KType a, KType b) {
+        if (a == b) {
+            return true;
+        }
+        if (a.getClass() != b.getClass()) {
+            return false;
+        }
+        return switch (a) {
+            case KType.GenericLink genericLink -> false;
+            case KType.Resolvable resolvable -> false;
+            case KType.ArrayType arrayType -> {
+                yield erasedEquals(arrayType.elementType(), ((KType.ArrayType) b).elementType());
+            }
+            case KType.ClassType classType -> {
+                var other = (KType.ClassType) b;
+                //dont have to check for generic size
+                yield classType.pointer().equals(other.pointer());
+            }
+            case KType.FunctionType functionType -> {
+                var other = (KType.FunctionType) b;
+                yield functionType.arguments().size() == other.arguments().size();
+            }
+            case KType.PrimitiveType primitiveType -> {
+                yield  primitiveType.primitive() == ((KType.PrimitiveType) b).primitive();
+            }
+            case KType.UnprocessedType unprocessedType -> {
+                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                throw new Log.KarinaException();
+            }
+            case KType.VoidType _ -> b.isVoid();
+        };
+
+    }
+
+
+
+    static void putDependencies(int level, KType type, List<TypeDependency> dependencies) {
+        switch (type) {
+            case KType.ArrayType arrayType -> {
+                dependencies.add(new TypeDependency(arrayType, level));
+                putDependencies(level + 1, arrayType.elementType(), dependencies);
+            }
+            case KType.ClassType classType -> {
+                dependencies.add(new TypeDependency(classType, level));
+                for (var generic : classType.generics()) {
+                    putDependencies(level + 1, generic, dependencies);
+                }
+            }
+            case KType.FunctionType functionType -> {
+                dependencies.add(new TypeDependency(functionType, level));
+                for (var argument : functionType.arguments()) {
+                    putDependencies(level + 1, argument, dependencies);
+                }
+                putDependencies(level + 1, functionType.returnType(), dependencies);
+                for (var impl : functionType.interfaces()) {
+                    putDependencies(level + 1, impl, dependencies);
+                }
+            }
+            case KType.GenericLink genericLink -> {
+                dependencies.add(new TypeDependency(genericLink, level));
+            }
+            case KType.PrimitiveType primitiveType -> {
+                dependencies.add(new TypeDependency(primitiveType, level));
+            }
+            case KType.Resolvable resolvable -> {
+                dependencies.add(new TypeDependency(resolvable, level));
+                if (resolvable.get() != null) {
+                    putDependencies(level + 1, resolvable.get(), dependencies);
+                }
+            }
+            case KType.VoidType voidType -> {
+                dependencies.add(new TypeDependency(voidType, level));
+            }
+            case KType.UnprocessedType unprocessedType -> {
+                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                throw new Log.KarinaException();
+            }
+        }
+    }
+
+    record TypeDependency(KType type, int level) { }
+
+    static int getTypeDependencyIndex(KType type, List<TypeDependency> dependencies) {
+        for (var i = 0; i < dependencies.size(); i++) {
+            if (dependencies.get(i).type() == type) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
+    /**
+     * <p>
+     * Used to map generics to their actual types
+     * </p>
+     * See {@link Types#projectGenerics(JKModel, KType.ClassType, KType.ClassType)}
+     * to construct generics from a ClassType, where the generics are not linked to the correct mapping.
+     * (only used for interfaces and super classes)
+     */
+    public static KType projectGenerics(KType original, Map<Generic, KType> generics) {
+        return switch (original) {
+            case KType.ArrayType(var element) -> {
+                var newElement = projectGenerics(element, generics);
+                yield new KType.ArrayType(newElement);
+            }
+            case KType.ClassType(var path, var classGenerics) -> {
+                var newGenerics = new ArrayList<KType>();
+                for (var generic : classGenerics) {
+                    var newType = projectGenerics(generic, generics);
+                    newGenerics.add(newType);
+                }
+                yield new KType.ClassType(path, newGenerics);
+            }
+            case KType.FunctionType functionType -> {
+                var returnType = projectGenerics(functionType.returnType(), generics) ;
+                var newParameters = new ArrayList<KType>();
+                for (var parameter : functionType.arguments()) {
+                    var newType = projectGenerics(parameter, generics);
+                    newParameters.add(newType);
+                }
+                var newInternalGenerics = new ArrayList<KType>();
+                for (var kInterface : functionType.interfaces()) {
+                    var newType = projectGenerics(kInterface, generics);
+                    newInternalGenerics.add(newType);
+                }
+
+                yield new KType.FunctionType(
+                        newParameters,
+                        returnType,
+                        newInternalGenerics
+                );
+            }
+            case KType.GenericLink genericLink -> {
+                var link = genericLink.link();
+                var newType = generics.get(link);
+                if (newType != null) {
+                    yield newType;
+                } else {
+                    yield genericLink;
+                }
+            }
+            case KType.PrimitiveType primitiveType -> {
+                yield primitiveType;
+            }
+
+            case KType.Resolvable resolvable -> {
+                var resolved = resolvable.get();
+                if (resolved == null) {
+                    yield resolvable;
+                } else {
+                    yield projectGenerics(resolved, generics);
+                }
+            }
+            case KType.UnprocessedType unprocessedType -> {
+                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                throw new Log.KarinaException();
+            }
+            case KType.VoidType _ -> KType.VOID;
+        };
+    }
+
+    /**
+     * Returns the correctly mapped superClass of cls
+     */
+    public static @Nullable KType.ClassType getSuperType(JKModel model, KType.ClassType cls) {
+        var rightModel = model.getClass(cls.pointer());
+        var superClass = rightModel.superClass();
+
+        if (superClass == null) {
+            return null;
+        }
+
+        return projectGenerics(model, cls, superClass);
+    }
+
+    /**
+     * Returns the correctly mapped direct interfaces of cls (non recursive)
+     */
+    public static List<KType.ClassType> getInterfaces(JKModel model, KType.ClassType cls) {
+        var rightModel = model.getClass(cls.pointer());
+        var list = new ArrayList<KType.ClassType>();
+
+        for (var interfaceOfRight : rightModel.interfaces()) {
+            list.add(projectGenerics(model, cls, interfaceOfRight));
+        }
+
+        return list;
+    }
+
+    /**
+     * This is used to get generic mapped super classes and interfaces, since they are not encoded in the type system directly
+     * Replaces generics of the 'classToMap' with the generics provided by the 'owningClass' class,
+     * mapped with the information from the classModel
+     */
+    public static @NotNull KType.ClassType projectGenerics(
+            JKModel model,
+            KType.ClassType owningClass,
+            KType.ClassType classToMap
+    ) {
+        ClassModel classModel = model.getClass(owningClass.pointer());
+        var genericMap = new HashMap<Generic, KType>();
+
+        var testingModelToGetIndexFrom = model.getClass(classModel.pointer());
+        for (var generic : classToMap.generics()) {
+            if (!(generic instanceof KType.GenericLink(Generic link))) {
+                continue;
+            }
+
+            var index = testingModelToGetIndexFrom.generics().indexOf(link);
+            Log.assert_(index != -1, "Generic not found in model, this should not happen", classModel.pointer().region());
+
+            var mapped = owningClass.generics().get(index);
+            genericMap.put(link, mapped);
+            Log.recordType(Log.LogTypes.CHECK_TYPE, "Mapped " + link + " generic to " + mapped);
+
+
+        }
+        //Cast is allowed since Types.projectGenerics returns the a ClassType when provided with a ClassType
+        return (KType.ClassType) Types.projectGenerics(classToMap, genericMap);
+    }
+
+
+}

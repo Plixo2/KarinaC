@@ -1,17 +1,18 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.ImportError;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.model.pointer.MethodPointer;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 
 import java.util.*;
 
 /**
  * Symbol table to store top level items, functions, and generics
- * This is used mainly for imports, but also for type checking
+ * This is used mainly for imports, but also for fieldType checking
  */
+@Deprecated
 public record SymbolTable(
         Map<String, ClassPointer> classes,
         Map<String, List<MethodPointer>> functions,
@@ -153,6 +154,11 @@ throw new NullPointerException("");
         public boolean shouldOverwrite(SymbolLocation other) {
             return this == SymbolLocation.LOCAL || other == SymbolLocation.NON_LOCAL ||
                     (this == SymbolLocation.NON_LOCAL && other == SymbolLocation.PRELUDE);
+        }
+    }
+    private record Pair<U, T>(U first, T second) {
+        public static <U, T> Pair<U, T> of(U first, T second) {
+            return new Pair<>(first, second);
         }
     }
 }

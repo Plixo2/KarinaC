@@ -13,12 +13,17 @@ public record RegionOf<T>(Region region, T value) {
 
     @Override
     public boolean equals(Object object) {
-       return object instanceof RegionOf<?>(var ignored, var otherValue)
-               && Objects.equals(this.value, otherValue);
+        return object instanceof RegionOf<?>(var ignored, var otherValue) &&
+                Objects.equals(this.value, otherValue);
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(this.value);
+    }
+
+    @Override
+    public String toString() {
+        return "RegionOf{" + "inner=" + value + '}';
     }
 }

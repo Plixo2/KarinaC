@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.generate;
 
 import com.sun.jdi.*;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.postprocess.PostExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -22,14 +23,11 @@ public class TypeConversion {
 
     public static Type getType(KType type) {
         switch (type) {
-            case KType.AnyClass anyClass -> {
-                return Type.getType(Object.class);
-            }
             case KType.ArrayType arrayType -> {
                 return arrayType(arrayType);
             }
             case KType.ClassType classType -> {
-                return Type.getObjectType(toJVMPath(classType.path()));
+                return Type.getObjectType(toJVMPath(classType.pointer().path()));
             }
             case KType.FunctionType functionType -> {
                 return getType(PostExpr.toClassType(functionType));
@@ -47,7 +45,6 @@ public class TypeConversion {
                     case INT -> Type.INT_TYPE;
                     case LONG -> Type.LONG_TYPE;
                     case SHORT -> Type.SHORT_TYPE;
-                    case VOID -> Type.VOID_TYPE;
                 };
             }
             case KType.Resolvable resolvable -> {
@@ -59,7 +56,11 @@ public class TypeConversion {
                 }
             }
             case KType.UnprocessedType unprocessedType -> {
-                throw new NullPointerException("UnprocessedType is not supported");
+                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                throw new Log.KarinaException();
+            }
+            case KType.VoidType voidType -> {
+                throw new NullPointerException("VoidType is not supported");
             }
         }
     }
@@ -127,7 +128,7 @@ public class TypeConversion {
             case Type.SHORT -> Opcodes.T_SHORT;
             case Type.INT -> Opcodes.T_INT;
             case Type.LONG -> Opcodes.T_LONG;
-            default -> throw new IllegalArgumentException("Unsupported type for NEWARRAY: " + type);
+            default -> throw new IllegalArgumentException("Unsupported fieldType for NEWARRAY: " + type);
         };
     }
 

@@ -1,4 +1,4 @@
-// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/KarinaParser.g4 by ANTLR 4.13.2
+// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/grammar/language/KarinaParser.g4 by ANTLR 4.13.2
 package org.karina.lang.compiler.stages.parser.gen;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -77,6 +77,56 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitImplementation(KarinaParser.ImplementationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#boundWhere}.
+	 * @param ctx the parse tree
+	 */
+	void enterBoundWhere(KarinaParser.BoundWhereContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#boundWhere}.
+	 * @param ctx the parse tree
+	 */
+	void exitBoundWhere(KarinaParser.BoundWhereContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#genericWithBounds}.
+	 * @param ctx the parse tree
+	 */
+	void enterGenericWithBounds(KarinaParser.GenericWithBoundsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#genericWithBounds}.
+	 * @param ctx the parse tree
+	 */
+	void exitGenericWithBounds(KarinaParser.GenericWithBoundsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#genericWithBound}.
+	 * @param ctx the parse tree
+	 */
+	void enterGenericWithBound(KarinaParser.GenericWithBoundContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#genericWithBound}.
+	 * @param ctx the parse tree
+	 */
+	void exitGenericWithBound(KarinaParser.GenericWithBoundContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#bounds}.
+	 * @param ctx the parse tree
+	 */
+	void enterBounds(KarinaParser.BoundsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#bounds}.
+	 * @param ctx the parse tree
+	 */
+	void exitBounds(KarinaParser.BoundsContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#bound}.
+	 * @param ctx the parse tree
+	 */
+	void enterBound(KarinaParser.BoundContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#bound}.
+	 * @param ctx the parse tree
+	 */
+	void exitBound(KarinaParser.BoundContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KarinaParser#field}.
 	 * @param ctx the parse tree
@@ -167,6 +217,26 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitType(KarinaParser.TypeContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#typePostFix}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypePostFix(KarinaParser.TypePostFixContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#typePostFix}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypePostFix(KarinaParser.TypePostFixContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#typeInner}.
+	 * @param ctx the parse tree
+	 */
+	void enterTypeInner(KarinaParser.TypeInnerContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#typeInner}.
+	 * @param ctx the parse tree
+	 */
+	void exitTypeInner(KarinaParser.TypeInnerContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KarinaParser#structType}.
 	 * @param ctx the parse tree
@@ -277,6 +347,26 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitJsonArray(KarinaParser.JsonArrayContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#jsonExpression}.
+	 * @param ctx the parse tree
+	 */
+	void enterJsonExpression(KarinaParser.JsonExpressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#jsonExpression}.
+	 * @param ctx the parse tree
+	 */
+	void exitJsonExpression(KarinaParser.JsonExpressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#jsonType}.
+	 * @param ctx the parse tree
+	 */
+	void enterJsonType(KarinaParser.JsonTypeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#jsonType}.
+	 * @param ctx the parse tree
+	 */
+	void exitJsonType(KarinaParser.JsonTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KarinaParser#jsonValue}.
 	 * @param ctx the parse tree
@@ -627,4 +717,24 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitOptTypeName(KarinaParser.OptTypeNameContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#id}.
+	 * @param ctx the parse tree
+	 */
+	void enterId(KarinaParser.IdContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#id}.
+	 * @param ctx the parse tree
+	 */
+	void exitId(KarinaParser.IdContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#escaped}.
+	 * @param ctx the parse tree
+	 */
+	void enterEscaped(KarinaParser.EscapedContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#escaped}.
+	 * @param ctx the parse tree
+	 */
+	void exitEscaped(KarinaParser.EscapedContext ctx);
 }

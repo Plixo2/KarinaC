@@ -5,9 +5,8 @@ import lombok.experimental.Accessors;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
-import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.api.TextSource;
 

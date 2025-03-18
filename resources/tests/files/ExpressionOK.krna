@@ -1,5 +1,6 @@
 /* OK */
 
+import java.lang.Integer
 
 fn create<T>(value: T) -> int {
 
@@ -28,7 +29,7 @@ fn create<T>(value: T) -> int {
         x
     }
     let closure2 = fn(x: int) {
-            x
+           Integer.valueOf(x)
     }
     let closureImpl = fn(x: int) -> string impl FunctionInterface {
         "Hello"

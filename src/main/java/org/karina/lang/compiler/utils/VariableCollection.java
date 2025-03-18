@@ -19,13 +19,18 @@ public class VariableCollection implements Iterable<Variable> {
         this.markedImmutable = Set.copyOf(markedImmutable);
     }
 
-    public boolean isFinal(String name) {
-        var variable = get(name);
-        if (variable == null) {
-            return false;
-        }
-        return this.markedImmutable.contains(variable) || !variable.mutable();
+    public boolean isMutable(Variable variable) {
+        return !this.markedImmutable.contains(variable) && variable.mutable();
     }
+
+    /**
+     * Only valid to use this, when {@link #isMutable} returns false.
+     * Used to determine if a variable can be wrapped, so the value is not on the stack anymore.
+     * Used for having a mutable reference is closures.
+    public boolean canEscapeNonMutable(Variable variable) {
+        return variable.mutable();
+    }
+     */
 
     public Set<String> names() {
         return new HashSet<>(this.variables.stream().map(Variable::name).toList());

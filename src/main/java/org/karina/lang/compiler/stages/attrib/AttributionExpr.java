@@ -3,27 +3,47 @@ package org.karina.lang.compiler.stages.attrib;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.expr.*;
+import org.karina.lang.compiler.utils.Variable;
 
-import java.util.ArrayList;
-import java.util.Map;
 
 @Getter
 @Accessors(fluent = true)
-public class AttributionExpr {
+public final class AttributionExpr {
 
     KExpr expr;
     AttributionContext ctx;
 
-    protected static AttributionExpr attribExpr(@Nullable KType hint, AttributionContext ctx, KExpr expr) {
+    private AttributionExpr() {}
+
+    public static AttributionExpr of(AttributionContext ctx, KExpr expr) {
+        var attribExpr = new AttributionExpr();
+        attribExpr.expr = expr;
+        attribExpr.ctx = ctx;
+        return attribExpr;
+    }
+
+    /**
+     * Only call this method once per expression, since {@link org.karina.lang.compiler.objects.KType.Resolvable#tryResolve}
+     * and {@link Variable#incrementUsageCount} are mutable.
+     * @param hint Optional hint. When provided, and this function returns a expression with that type,
+     *             is HAS to be valid. When the expressions is of another type, it still can be valid.
+     *             This is checked by the caller of this function and will not be enforced otherwise.
+     *             The hint is only used for type inference.
+     * @return A typed attributed expression. Now every expression (and all parts of it) should have the 'symbol' field set.
+     *         These fields are annotated with @Nullable @Symbol, so they should never be null.
+     *         Calling now {@link KExpr#type} and {@link KExpr#doesReturn} is valid.
+     */
+    public static AttributionExpr attribExpr(@Nullable KType hint, AttributionContext ctx, KExpr expr) {
         if (hint != null) {
             hint = hint.unpack();
         }
-        return switch (expr) {
+        var logName = "expr-" + expr.getClass().getSimpleName();
+        Log.beginType(Log.LogTypes.EXPR,logName);
+        var newExpr = switch (expr) {
             case KExpr.Assignment assignment -> AssignmentAttrib.attribAssignment(hint, ctx, assignment);
             case KExpr.Binary binary -> BinaryAttrib.attribBinary(hint, ctx, binary);
             case KExpr.Block block -> BlockAttrib.attribBlock(hint, ctx, block);
@@ -46,132 +66,15 @@ public class AttributionExpr {
             case KExpr.Return aReturn -> ReturnAttrib.attribReturn(hint, ctx, aReturn);
             case KExpr.Self self -> SelfAttrib.attribSelf(hint, ctx, self);
             case KExpr.StringExpr stringExpr -> StringAttrib.attribStringExpr(hint, ctx, stringExpr);
+            case KExpr.StringInterpolation stringExpr -> StringInterpolationAttrib.attribStringExpr(hint, ctx, stringExpr);
             case KExpr.Unary unary -> UnaryAttrib.attribUnary(hint, ctx, unary);
             case KExpr.VariableDefinition variableDefinition -> VariableDefinitionAttrib.attribVariableDefinition(hint, ctx, variableDefinition);
             case KExpr.While aWhile -> WhileAttrib.attribWhile(hint, ctx, aWhile);
             case KExpr.Throw aThrow -> ThrowAttrib.attribThrow(hint, ctx, aThrow);
-            case KExpr.Super aSuper -> SuperAttrib.attribSuper(hint, ctx, aSuper);
+            case KExpr.SpecialCall aSuper -> SpecialCallAttrib.attribSpecialCall(hint, ctx, aSuper);
         };
-    }
-
-    public static AttributionExpr of(AttributionContext ctx, KExpr expr) {
-        var attribExpr = new AttributionExpr();
-        attribExpr.expr = expr;
-        attribExpr.ctx = ctx;
-        return attribExpr;
-    }
-
-    public static KType replaceType(KType original, Map<Generic, KType> generics) {
-        return switch (original) {
-            case KType.ArrayType(var element) -> {
-                var newElement = replaceType(element, generics);
-                yield new KType.ArrayType(newElement);
-            }
-            case KType.ClassType(var path, var classGenerics) -> {
-                var newGenerics = new ArrayList<KType>();
-                for (var generic : classGenerics) {
-                    var newType = replaceType(generic, generics);
-                    newGenerics.add(newType);
-                }
-                yield new KType.ClassType(path, newGenerics);
-            }
-            case KType.FunctionType functionType -> {
-                var returnType = replaceType(functionType.returnType(), generics) ;
-                var newParameters = new ArrayList<KType>();
-                for (var parameter : functionType.arguments()) {
-                    var newType = replaceType(parameter, generics);
-                    newParameters.add(newType);
-                }
-                var newInternalGenerics = new ArrayList<KType>();
-                for (var kInterface : functionType.interfaces()) {
-                    var newType = replaceType(kInterface, generics);
-                    newInternalGenerics.add(newType);
-                }
-
-                yield new KType.FunctionType(
-                        newParameters,
-                        returnType,
-                        newInternalGenerics
-                );
-            }
-            case KType.GenericLink genericLink -> {
-                var link = genericLink.link();
-                var newType = generics.get(link);
-                if (newType != null) {
-                    yield newType;
-                } else {
-                    yield genericLink;
-                }
-            }
-            case KType.PrimitiveType primitiveType -> {
-                yield primitiveType;
-            }
-            case KType.Resolvable resolvable -> {
-                var resolved = resolvable.get();
-                if (resolved == null) {
-                    yield resolvable;
-                } else {
-                    yield replaceType(resolved, generics);
-                }
-            }
-            case KType.UnprocessedType unprocessedType -> {
-                yield unprocessedType;
-            }
-            case KType.AnyClass anyClass -> anyClass;
-        };
-    }
-
-    public static boolean doesReturn(KExpr expr) {
-        return switch (expr) {
-            case KExpr.Block block -> {
-                if (block.expressions().isEmpty()) {
-                    yield false;
-                } else {
-                    yield doesReturn(block.expressions().getLast());
-                }
-            }
-            case KExpr.Branch branch -> {
-                if (branch.elseArm() == null) {
-                    yield false;
-                } else {
-                    //TODO tests if all pattern match
-                    if (branch.elseArm().shortPattern() != null) {
-                        Log.temp(expr.region(), "Pattern matching is not exhaustive");
-                        throw new Log.KarinaException();
-                    }
-
-                    yield doesReturn(branch.thenArm()) && doesReturn(branch.elseArm().expr());
-                }
-            }
-
-            case KExpr.Return aReturn -> true;
-            //Also include loop control
-            case KExpr.Continue aContinue -> true;
-            case KExpr.Break aBreak -> true;
-            case KExpr.Throw aThrow -> true;
-
-            case KExpr.Boolean aBoolean -> false;
-            case KExpr.Assignment assignment -> false;
-            case KExpr.Binary binary -> false;
-            case KExpr.Call call -> false;
-            case KExpr.Cast cast -> false;
-            case KExpr.Closure closure -> false;
-            case KExpr.CreateArray createArray -> false;
-            case KExpr.CreateObject createObject -> false;
-            case KExpr.For aFor -> false;
-            case KExpr.GetArrayElement getArrayElement -> false;
-            case KExpr.GetMember getMember -> false;
-            case KExpr.IsInstanceOf isInstanceOf -> false;
-            case KExpr.Literal literal -> false;
-            case KExpr.Match match -> false;
-            case KExpr.Number number -> false;
-            case KExpr.Self self -> false;
-            case KExpr.StringExpr stringExpr ->false;
-            case KExpr.Unary unary -> false;
-            case KExpr.VariableDefinition variableDefinition ->false;
-            case KExpr.While aWhile -> false;
-            case KExpr.Super aSuper -> false;
-        };
+        Log.endType(Log.LogTypes.EXPR, logName);
+        return newExpr;
     }
 
 }

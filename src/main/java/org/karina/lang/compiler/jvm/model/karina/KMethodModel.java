@@ -3,24 +3,26 @@ package org.karina.lang.compiler.jvm.model.karina;
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model.MethodModel;
-import org.karina.lang.compiler.model.Signature;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.model.pointer.MethodPointer;
+import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.objects.KAnnotation;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.Region;
 
 @AllArgsConstructor
 public class KMethodModel implements MethodModel {
-    private String name;
-    private int modifiers;
-    private Signature signature;
-    private ImmutableList<String> parameters;
-    private ImmutableList<Generic> generics;
-    private @Nullable KExpr expression;
-    private Region region;
-    private ClassPointer classPointer;
+    private final String name;
+    private final int modifiers;
+    private final Signature signature;
+    private final ImmutableList<String> parameters;
+    private final ImmutableList<Generic> generics;
+    private final @Nullable KExpr expression;
+    private final ImmutableList<KAnnotation> annotations;
+    private final Region region;
+    private final ClassPointer classPointer;
 
 
     @Override
@@ -60,7 +62,11 @@ public class KMethodModel implements MethodModel {
 
     @Override
     public MethodPointer pointer() {
-        return MethodPointer.of(this.classPointer, this.name, this.signature);
+        return MethodPointer.of(this.region, this.classPointer, this.name, this.signature);
+    }
+
+    public ImmutableList<KAnnotation> annotations() {
+        return this.annotations;
     }
 
     @Override

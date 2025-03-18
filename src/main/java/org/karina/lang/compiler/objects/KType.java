@@ -1,17 +1,107 @@
 package org.karina.lang.compiler.objects;
 
+import org.apache.commons.lang3.mutable.MutableLong;
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.jvm.JavaResource;
+import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.RegionOf;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.AttribError;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.AttribError;
 
 import java.util.*;
 
 public sealed interface KType {
+    Region KARINA_LIB = new TextSource(
+            new JavaResource("karina standard library"),
+            List.of("su-su-su-supernova")
+    ).emptyRegion();
+
+    Region JAVA_LIB = new TextSource(
+            new JavaResource("java standard library"),
+            List.of("cafebabe")
+    ).emptyRegion();
+
+    ClassType ROOT = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.ROOT_PATH),
+            List.of()
+    );
+
+    ClassType STRING = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.STRING_PATH),
+            List.of()
+    );
+
+    ClassType NUMBER = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.NUMBER_PATH),
+            List.of()
+    );
+
+    ClassType DOUBLE = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.DOUBLE_PATH),
+            List.of()
+    );
+
+    ClassType FLOAT = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.FLOAT_PATH),
+            List.of()
+    );
+
+    ClassType LONG = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.LONG_PATH),
+            List.of()
+    );
+
+    ClassType INTEGER = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.INTEGER_PATH),
+            List.of()
+    );
+
+    ClassType BOOLEAN = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.BOOLEAN_PATH),
+            List.of()
+    );
+    static ClassType ITERABLE(KType iter_type) {
+        return new ClassType(
+                ClassPointer.of(JAVA_LIB, ClassPointer.ITERABLE_PATH),
+                List.of(iter_type)
+        );
+    }
+
+    VoidType VOID = new VoidType();
+
+    static void validateBuildIns(JKModel model) {
+        validatePointer(model, ROOT);
+        validatePointer(model, NUMBER);
+        validatePointer(model, STRING);
+        validatePointer(model, ITERABLE(ROOT));
+
+        validatePointer(model, BOOLEAN);
+        validatePointer(model, INTEGER);
+        validatePointer(model, LONG);
+        validatePointer(model, FLOAT);
+        validatePointer(model, DOUBLE);
+
+    }
+    private static void validatePointer(JKModel model, ClassType classType) {
+        var classModel = model.classModels().get(classType.pointer().path());
+
+        if (classModel == null) {
+            Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class not found");
+            throw new Log.KarinaException();
+        } else if (classModel.generics().size() != classType.generics().size()) {
+            Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class has wrong number of generics");
+            throw new Log.KarinaException();
+        }
+
+    }
+
 
     default KType unpack() {
         if (this instanceof Resolvable resolvable) {
@@ -23,15 +113,20 @@ public sealed interface KType {
     }
 
     default boolean isVoid() {
-        return this instanceof PrimitiveType(var primitive) && primitive == KPrimitive.VOID;
+        return this.unpack() instanceof VoidType;
     }
 
     default boolean isPrimitive() {
         return this instanceof PrimitiveType primitive;
     }
 
+    default boolean isRoot() {
+        return this instanceof ClassType classType &&
+                classType.pointer().isRoot();
+    }
+
+
     enum KPrimitive {
-        VOID,
         INT,
         FLOAT,
         BOOL,
@@ -39,7 +134,24 @@ public sealed interface KType {
         DOUBLE,
         BYTE,
         SHORT,
-        LONG
+        LONG;
+
+
+        public boolean isNumeric() {
+            return switch (this) {
+                case INT, FLOAT, DOUBLE, LONG, SHORT, CHAR, BYTE -> true;
+                case BOOL -> false;
+            };
+        }
+    }
+
+    final class VoidType implements KType {
+        private VoidType() {}
+
+        @Override
+        public String toString() {
+            return "void";
+        }
     }
 
     record UnprocessedType(Region region, RegionOf<ObjectPath> name, List<KType> generics) implements KType {
@@ -67,8 +179,8 @@ public sealed interface KType {
         @Override
         public String toString() {
             var returnType = this.returnType.toString();
-            var impls = this.interfaces.isEmpty() ? "" : " impl " + String.join(", ", this.interfaces.stream().map(KType::toString).toList());
-            return "fn(" + String.join(", ", this.arguments.stream().map(KType::toString).toList()) + ") -> " + returnType + impls;
+            var impls = this.interfaces.isEmpty() ? "" : " impl (" + String.join(", ", this.interfaces.stream().map(KType::toString).toList()) + ")";
+            return "fn(" + String.join(", ", this.arguments.stream().map(KType::toString).toList()) + ")" + impls + " -> " + returnType;
         }
     }
 
@@ -76,20 +188,16 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return this.pointer.path().mkString(".") + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
-        }
+            String suffix = "";;
+            if (!this.generics.isEmpty()) {
+                var names = String.join(", ", this.generics.stream().map(KType::toString).toList());
+                suffix = "<" + names + ">";
+            }
 
-        public ObjectPath path() {
-            return this.pointer.path();
+            return this.pointer.path().mkString(".") + suffix;
         }
     }
 
-    record AnyClass() implements KType {
-        @Override
-        public String toString() {
-            return "Any";
-        }
-    }
 
     record GenericLink(Generic link) implements KType {
 
@@ -100,9 +208,21 @@ public sealed interface KType {
 
     }
 
+    //TODO test if the Resolvable is backed by a Generic, or just unknown
+    // (i think only used for arrays?)
     final class Resolvable implements KType {
+        private final boolean canUsePrimitives;
 
         public Resolvable() {
+            this(false);
+        }
+
+        public Resolvable(boolean canUsePrimitives) {
+            this.canUsePrimitives = canUsePrimitives;
+        }
+
+        public boolean canUsePrimitives() {
+            return this.canUsePrimitives;
         }
 
         private @Nullable KType resolved = null;
@@ -115,17 +235,29 @@ public sealed interface KType {
             return this.resolved;
         }
 
+        /**
+         * Make sure to call this before calling {@link #tryResolve}
+         */
         public boolean canResolve(Region checkingRegion, KType resolved) {
+
+            /*
+             * return true if the resolved type refers to itself.
+             * this is valid, but we still don't want to resolve it to anything in 'tryResolve'
+             */
             if (resolved == this) {
                 return true;
             }
-            if (resolved.isPrimitive()) {
+            if (resolved.isVoid()) {
                 return false;
             }
 
-            var dependencies = new ArrayList<TypeDependency>();
-            getDependencies(0, resolved, dependencies);
-            var index = getIndex(this, dependencies);
+            if (!this.canUsePrimitives && resolved.isPrimitive()) {
+                return false;
+            }
+
+            var dependencies = new ArrayList<Types.TypeDependency>();
+            Types.putDependencies(0, resolved, dependencies);
+            var index = Types.getTypeDependencyIndex(this, dependencies);
             if (index == -1) {
                 return true;
             }
@@ -162,6 +294,13 @@ public sealed interface KType {
             throw new Log.KarinaException();
         }
 
+        /**
+         * Check {@link #canResolve} before calling this method.
+         * This does not guarantee that the type will be resolved,
+         * since the Type might be checked against itself.
+         * Checking a resolvable against itself will return true.
+         * Test with {@link #isResolved} to be sure if it was resolved after calling this method.
+         */
         public void tryResolve(Region region, KType resolved) {
 
             if (this.resolved != null) {
@@ -183,21 +322,12 @@ public sealed interface KType {
                 return "?" + readable;
             } else {
                 return "?" + readable + " as " + this.resolved;
-//                return this.resolved.toString();
             }
         }
     }
 
 
     record PrimitiveType(KPrimitive primitive) implements KType {
-
-        public boolean isNumeric() {
-            return switch (this.primitive()) {
-                case INT, FLOAT, DOUBLE, LONG, SHORT, CHAR, BYTE -> true;
-                default -> false;
-            };
-        }
-
 
         @Override
         public String toString() {
@@ -206,55 +336,5 @@ public sealed interface KType {
 
     }
 
-    private static void getDependencies(int level, KType type, List<TypeDependency> dependencies) {
-        switch (type) {
-            case ArrayType arrayType -> {
-                dependencies.add(new TypeDependency(arrayType, level));
-                getDependencies(level + 1, arrayType.elementType(), dependencies);
-            }
-            case ClassType classType -> {
-                dependencies.add(new TypeDependency(classType, level));
-                for (var generic : classType.generics()) {
-                    getDependencies(level + 1, generic, dependencies);
-                }
-            }
-            case FunctionType functionType -> {
-                dependencies.add(new TypeDependency(functionType, level));
-                for (var argument : functionType.arguments()) {
-                    getDependencies(level + 1, argument, dependencies);
-                }
-                getDependencies(level + 1, functionType.returnType(), dependencies);
-                for (var impl : functionType.interfaces()) {
-                    getDependencies(level + 1, impl, dependencies);
-                }
-            }
-            case GenericLink genericLink -> {
-                dependencies.add(new TypeDependency(genericLink, level));
-            }
-            case PrimitiveType primitiveType -> {
-                dependencies.add(new TypeDependency(primitiveType, level));
-            }
-            case Resolvable resolvable -> {
-                dependencies.add(new TypeDependency(resolvable, level));
-                if (resolvable.get() != null) {
-                    getDependencies(level + 1, resolvable.get(), dependencies);
-                }
-            }
-            case AnyClass anyClass -> {
-            }
-            case UnprocessedType unprocessedType -> {
-            }
-        }
-    }
 
-    record TypeDependency(KType type, int level) { }
-
-    private static int getIndex(KType type, List<TypeDependency> dependencies) {
-        for (var i = 0; i < dependencies.size(); i++) {
-            if (dependencies.get(i).type() == type) {
-                return i;
-            }
-        }
-        return -1;
-    }
 }

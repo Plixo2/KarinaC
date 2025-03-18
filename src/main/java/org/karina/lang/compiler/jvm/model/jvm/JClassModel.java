@@ -2,38 +2,46 @@ package org.karina.lang.compiler.jvm.model.jvm;
 
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model.ClassModel;
-import org.karina.lang.compiler.model.FieldModel;
-import org.karina.lang.compiler.model.MethodModel;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.jvm.model.PhaseDebug;
+import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.model_api.FieldModel;
+import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 @AllArgsConstructor
 public class JClassModel implements ClassModel {
-    private String name;
-    private ObjectPath path;
-    private int version;
-    private int modifiers;
-    private @Nullable ClassPointer superClass;
-    private @Nullable ClassPointer outerClass;
-    private ImmutableList<ClassPointer> interfaces;
-    private ImmutableList<ClassPointer> innerClasses;
-    private ImmutableList<JFieldModel> fields;
-    private ImmutableList<JMethodModel> methods;
-    private ImmutableList<Generic> generics;
-    private ImmutableList<ClassPointer> permittedSubclasses;
-    private TextSource resource;
-    private Region region;
+    private final String name;
+    private final ObjectPath path;
+    private final int version;
+    private final int modifiers;
+    private final @Nullable KType.ClassType superClass;
+    private final @Nullable JClassModel outerClass;
+    private final ImmutableList<KType.ClassType> interfaces;
+    private final List<JClassModel> innerClasses;
+    private final List<JFieldModel> fields;
+    private final List<JMethodModel> methods;
+    private final ImmutableList<Generic> generics;
+    private final ImmutableList<ClassPointer> permittedSubclasses;
+    private final ImmutableList<ClassPointer> nestMembers;
+    private final TextSource resource;
+    private final Region region;
 
     public int version() {
         return this.version;
+    }
+
+    @Override
+    public PhaseDebug phase() {
+        return PhaseDebug.JVM;
     }
 
     @Override
@@ -52,28 +60,28 @@ public class JClassModel implements ClassModel {
     }
 
     @Override
-    public @Nullable ClassPointer superClass() {
+    public @Nullable KType.ClassType superClass() {
         return this.superClass;
     }
 
     @Override
-    public @Nullable ClassPointer outerClass() {
+    public @Nullable JClassModel outerClass() {
         return this.outerClass;
     }
 
     @Override
-    public ImmutableList<ClassPointer> interfaces() {
+    public ImmutableList<KType.ClassType> interfaces() {
         return this.interfaces;
     }
 
     @Override
-    public ImmutableList<ClassPointer> innerClasses() {
-        return this.innerClasses;
+    public ImmutableList<? extends ClassModel> innerClasses() {
+        return ImmutableList.copyOf(this.innerClasses);
     }
 
     @Override
     public ImmutableList<? extends FieldModel> fields() {
-        return this.fields;
+        return ImmutableList.copyOf(this.fields);
     }
 
     @Override
@@ -83,12 +91,17 @@ public class JClassModel implements ClassModel {
 
     @Override
     public ImmutableList<? extends MethodModel> methods() {
-        return this.methods;
+        return ImmutableList.copyOf(this.methods);
     }
 
     @Override
     public ImmutableList<ClassPointer> permittedSubclasses() {
         return this.permittedSubclasses;
+    }
+
+    @Override
+    public ImmutableList<ClassPointer> nestMembers() {
+        return this.nestMembers;
     }
 
     @Override
@@ -99,7 +112,7 @@ public class JClassModel implements ClassModel {
     @Override
     public ClassPointer pointer() {
         //OK
-        return ClassPointer.of(this.path);
+        return ClassPointer.of(this.region, this.path);
     }
 
     @Override
@@ -109,27 +122,9 @@ public class JClassModel implements ClassModel {
 
     @Override
     public String toString() {
-        return "ClassModelNode{" + "path=" + this.path.mkString("/") + '}';
+        return "JavaClassModel{" + "path=" + this.path.mkString(".") + '}';
     }
 
 
 
-    public int hashCodeExpensive() {
-        int expensiveHashField = 0;
-        for (var field : this.fields) {
-            expensiveHashField = Objects.hash(field.hashCodeExpensive(), expensiveHashField);
-        }
-
-        int expensiveHashMethod = 0;
-        for (var method : this.methods) {
-            expensiveHashMethod = Objects.hash(method.hashCodeExpensive(), expensiveHashMethod);
-        }
-
-
-        return Objects.hash(
-                this.name, this.path, this.version, this.modifiers, this.superClass, this.outerClass, this.interfaces,
-                this.innerClasses,
-                expensiveHashField, expensiveHashMethod, this.generics, this.permittedSubclasses, this.resource, this.region
-        );
-    }
 }

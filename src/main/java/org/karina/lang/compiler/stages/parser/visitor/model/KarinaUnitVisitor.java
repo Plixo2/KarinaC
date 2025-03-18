@@ -1,33 +1,35 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.jvm.model.PhaseDebug;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.jvm.model.JKModelBuilder;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
-import org.karina.lang.compiler.model.FieldModel;
-import org.karina.lang.compiler.model.MethodModel;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.objects.KTree;
+import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.objects.KAnnotation;
+import org.karina.lang.compiler.utils.KImport;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.parser.TextContext;
+import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
+import org.karina.lang.compiler.stages.parser.visitor.KarinaAnnotationVisitor;
 import org.karina.lang.compiler.stages.parser.visitor.KarinaExprVisitor;
 import org.karina.lang.compiler.stages.parser.visitor.KarinaTypeVisitor;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.RegionOf;
-import org.karina.lang.compiler.utils.TypeImport;
 
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.List;
 
 public class KarinaUnitVisitor {
     private final String name;
     private final ObjectPath path;
-    private final TextContext context;
+    private final RegionContext conv;
 
     KarinaStructVisitor structVisitor;
     KarinaInterfaceVisitor interfaceVisitor;
@@ -35,117 +37,192 @@ public class KarinaUnitVisitor {
     KarinaMethodVisitor methodVisitor;
     KarinaTypeVisitor typeVisitor;
     KarinaExprVisitor exprVisitor;
+    KarinaAnnotationVisitor annotationVisitor;
 
-    public KarinaUnitVisitor(TextContext textContext, String name, ObjectPath path) {
+    public KarinaUnitVisitor(RegionContext regionContext, String name, ObjectPath path) {
         this.name = name;
         this.path = path;
-        this.context = textContext;
+        this.conv = regionContext;
 
-        this.structVisitor = new KarinaStructVisitor(this, textContext);
-        this.interfaceVisitor = new KarinaInterfaceVisitor(this, textContext);
-        this.enumVisitor = new KarinaEnumVisitor(this, textContext);
-        this.methodVisitor = new KarinaMethodVisitor(this, textContext);
-        this.typeVisitor = new KarinaTypeVisitor(this, textContext);
-        this.exprVisitor = new KarinaExprVisitor(this, this.typeVisitor, textContext);
+        this.typeVisitor = new KarinaTypeVisitor(this, regionContext);
+        this.exprVisitor = new KarinaExprVisitor(this, this.typeVisitor, regionContext);
+        this.annotationVisitor = new KarinaAnnotationVisitor(regionContext, this.typeVisitor, this.exprVisitor);
+        this.structVisitor = new KarinaStructVisitor(this, regionContext);
+        this.interfaceVisitor = new KarinaInterfaceVisitor(this, regionContext);
+        this.enumVisitor = new KarinaEnumVisitor(this, regionContext);
+        this.methodVisitor = new KarinaMethodVisitor(this, regionContext);
 
     }
 
     public ClassPointer visit(KarinaParser.UnitContext ctx, JKModelBuilder builder) {
-        var region = this.context.toRegion(ctx);
+        var region = this.conv.toRegion(ctx);
         int mods = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
 
         var imports = ImmutableList.copyOf(ctx.import_().stream().map(this::visitImport).toList());
-        var interfaces = ImmutableList.<ClassPointer>of();
+        var interfaces = ImmutableList.<KType.ClassType>of();
         var fields = ImmutableList.<KFieldModel>of();
-        var innerClasses = ImmutableList.<ClassPointer>builder();
+
         var methods = ImmutableList.<KMethodModel>builder();
         var generics = ImmutableList.<Generic>of();
 
-        var currentClass = ClassPointer.of(this.path);
+        var currentClass = ClassPointer.of(region, this.path);
         var constructor =
-                KarinaStructVisitor.createConstructor(region, currentClass, List.of(), Modifier.PRIVATE);
+                KarinaStructVisitor.createConstructor(region, currentClass, List.of(), Modifier.PRIVATE, null);
         methods.add(constructor);
-
         for (var itemContext : ctx.item()) {
             if (itemContext.function() != null) {
-                var method = this.methodVisitor.visit(currentClass, itemContext.function());
+                var annotationsInner = ImmutableList.<KAnnotation>builder();
+
+                if (itemContext.annotation() != null) {
+                    for (var annotationContext : itemContext.annotation()) {
+                        var annotation = this.annotationVisitor.visit(annotationContext);
+                        annotationsInner.add(annotation);
+                    }
+                }
+                var kAnnotations = annotationsInner.build();
+
+                var method = this.methodVisitor.visit(currentClass, kAnnotations, itemContext.function());
                 methods.add(method);
-            } else if (itemContext.struct() != null) {
-                var struct = this.structVisitor.visit(currentClass, this.path, itemContext.struct(), builder);
-                innerClasses.add(struct);
-            } else if (itemContext.enum_() != null) {
-                var enum_ = this.enumVisitor.visit(currentClass, this.path, itemContext.enum_(), builder);
-                innerClasses.add(enum_);
-            } else if (itemContext.interface_() != null) {
-                var interface_ = this.interfaceVisitor.visit(currentClass, this.path, itemContext.interface_(), builder);
-                innerClasses.add(interface_);
-            } else {
-                Log.syntaxError(this.context.toRegion(itemContext), "Invalid item");
-                throw new Log.KarinaException();
             }
         }
 
-        var permittedSubClasses = ImmutableList.<ClassPointer>of();
+            var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
+        var superClass = KType.ROOT;
+
+        var innerClassesToFill = new ArrayList<KClassModel>();
+        var annotations = ImmutableList.<KAnnotation>of();
+
+        var nestMembersToFill = new ArrayList<ClassPointer>();
         var classModel = new KClassModel(
+                PhaseDebug.LOADED,
                 this.name,
                 this.path,
                 mods,
-                ClassPointer.ROOT,
+                superClass,
                 null,
                 interfaces,
-                innerClasses.build(),
+                innerClassesToFill,
                 fields,
                 methods.build(),
                 generics,
                 imports,
                 permittedSubClasses,
-                this.context.source(),
-                region
+                nestMembersToFill,
+                annotations,
+                this.conv.source(),
+                region,
+                null
         );
 
-        builder.addClass(classModel);
+        for (var itemContext : ctx.item()) {
+            var annotationsInner = ImmutableList.<KAnnotation>builder();
+
+            if (itemContext.annotation() != null) {
+                for (var annotationContext : itemContext.annotation()) {
+                    var annotation = this.annotationVisitor.visit(annotationContext);
+                    annotationsInner.add(annotation);
+                }
+            }
+            var kAnnotations = annotationsInner.build();
+            if (itemContext.struct() != null) {
+                var struct = this.structVisitor.visit(classModel, this.path, kAnnotations, itemContext.struct());
+                innerClassesToFill.add(struct);
+            } else if (itemContext.enum_() != null) {
+                var enum_ = this.enumVisitor.visit(classModel, this.path, kAnnotations , itemContext.enum_());
+                innerClassesToFill.add(enum_);
+            } else if (itemContext.interface_() != null) {
+                var interface_ = this.interfaceVisitor.visit(classModel, this.path, kAnnotations, itemContext.interface_());
+                innerClassesToFill.add(interface_);
+            } else if (itemContext.function() == null) {
+                Log.syntaxError(this.conv.toRegion(itemContext), "Invalid item");
+                throw new Log.KarinaException();
+            }
+        }
+        //get all inner classes and add them as nest members, so they have access to stuff on the top level
+        putNestMembers(innerClassesToFill, nestMembersToFill);
+
+        //same classes as nestMembersToFill
+        var allInnerClasses = new ArrayList<KClassModel>();
+        putAllClassesDeep(innerClassesToFill, allInnerClasses);
+
+        //we update nest members for all inner classes, so they have access to each other
+        for (var deepInnerClass : allInnerClasses) {
+            deepInnerClass.updateNestMembers(nestMembersToFill);
+        }
+
+        builder.addClassWithChildren(classModel);
 
         return classModel.pointer();
     }
 
-    private KTree.KImport visitImport(KarinaParser.Import_Context ctx) {
 
-        var region = this.context.toRegion(ctx);
+    private void putNestMembers(List<? extends ClassModel> children, List<ClassPointer> collection) {
+        for (var child : children) {
+            collection.add(child.pointer());
+            putNestMembers(child.innerClasses(), collection);
+        }
+    }
+
+    /**
+     * Technically, the same as putNestMembers
+     */
+    private void putAllClassesDeep(List<? extends ClassModel> children, List<KClassModel> collection) {
+        for (var child : children) {
+            if (child instanceof KClassModel kChild) {
+                collection.add(kChild);
+            }
+            putAllClassesDeep(child.innerClasses(), collection);
+        }
+    }
+
+    private KImport visitImport(KarinaParser.Import_Context ctx) {
+
+        var region = this.conv.toRegion(ctx);
         var path = visitDotWordChain(ctx.dotWordChain()).value();
         var importAll = ctx.CHAR_STAR() != null;
         if (importAll) {
-            return new KTree.KImport(region, new TypeImport.All(), path);
+            return new KImport(region, new KImport.TypeImport.All(), path);
         }
 
         var names = ImmutableList.<String>builder();
 
-        if (ctx.ID() != null) {
-            names.add(ctx.ID().getText());
+        if (ctx.id() != null) {
+            names.add(this.conv.escapeID(ctx.id()));
         } else if (ctx.commaWordChain() != null) {
-            ctx.commaWordChain().ID().forEach(id -> names.add(id.getText()));
+            ctx.commaWordChain().id().forEach(id -> names.add(this.conv.escapeID(id)));
         } else {
-            return new KTree.KImport(region, new TypeImport.Base(), path);
+            return new KImport(region, new KImport.TypeImport.Base(), path);
         }
 
-        return new KTree.KImport(region, new TypeImport.Names(names.build()), path);
+        return new KImport(region, new KImport.TypeImport.Names(names.build()), path);
 
     }
 
     public RegionOf<ObjectPath> visitDotWordChain(KarinaParser.DotWordChainContext ctx) {
 
-        var elements = ctx.ID().stream().map(ParseTree::getText).toList();
-        return this.context.region(new ObjectPath(elements), ctx.getSourceInterval());
+        var elements = ctx.id().stream().map(this.conv::escapeID).toList();
+        return this.conv.region(new ObjectPath(elements), ctx.getSourceInterval());
 
     }
 
     public List<KType> visitGenericHint(KarinaParser.GenericHintContext ctx) {
-        return ctx.type().stream().map(this.typeVisitor::visitType).toList();
+
+
+        return ctx.type().stream().map(ref -> {
+            var mapped = this.typeVisitor.visitType(ref);
+            if (mapped.isVoid()) {
+                var innerRegion = this.conv.toRegion(ref);
+                Log.attribError(new AttribError.NotSupportedType(innerRegion, mapped));
+                throw new Log.KarinaException();
+            }
+            return mapped;
+        }).toList();
     }
 
     public List<Generic> visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
-        return ctx.ID().stream().map(ref -> {
-            var region = this.context.region(ref);
+        return ctx.id().stream().map(ref -> {
+            var region = this.conv.region(ref);
             return new Generic(region.region(), region.value());
         }).toList();
     }

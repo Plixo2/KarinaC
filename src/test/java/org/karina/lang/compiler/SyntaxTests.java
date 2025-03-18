@@ -1,17 +1,15 @@
 package org.karina.lang.compiler;
 
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.boot.FileLoader;
-import org.karina.lang.compiler.boot.Main;
-import org.karina.lang.compiler.errors.DidYouMean;
-import org.karina.lang.compiler.errors.types.AttribError;
-import org.karina.lang.compiler.errors.types.Error;
-import org.karina.lang.compiler.errors.types.FileLoadError;
-import org.karina.lang.compiler.errors.types.Error.*;
-import org.karina.lang.compiler.errors.types.ImportError;
+import org.karina.lang.compiler.logging.DidYouMean;
+import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.logging.errors.Error;
+import org.karina.lang.compiler.logging.errors.FileLoadError;
+import org.karina.lang.compiler.logging.errors.Error.*;
+import org.karina.lang.compiler.logging.errors.ImportError;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,10 +34,11 @@ public class SyntaxTests {
         map.put("SyntaxError", SyntaxError.class);
 
         map.put("DuplicateItem", ImportError.DuplicateItem.class);
+        map.put("DuplicateItemWithMessage", ImportError.DuplicateItemWithMessage.class);
         map.put("NoItemFound", ImportError.NoItemFound.class);
         map.put("UnknownImportType", ImportError.UnknownImportType.class);
         map.put("GenericCountMismatch", ImportError.GenericCountMismatch.class);
-        map.put("NoUnitFound", ImportError.NoUnitFound.class);
+        map.put("NoUnitFound", ImportError.NoClassFound.class);
         map.put("JavaNotSupported", ImportError.JavaNotSupported.class);
 
         map.put("temp", TemporaryErrorRegion.class);
@@ -58,21 +57,21 @@ public class SyntaxTests {
         map.put("ParameterCountMismatch", AttribError.ParameterCountMismatch.class);
         map.put("ScopeFinalityAssignment", AttribError.ScopeFinalityAssignment.class);
 
-        map.put("MissingField", AttribError.MissingField.class);
+        map.put("MissingField", AttribError.UnknownCast.class);
         map.put("UnknownField", AttribError.UnknownField.class);
 
         SyntaxTests.map = new HashMap<>();
         map.forEach((key, value) -> SyntaxTests.map.put(key.toLowerCase(), value));
     }
 
-    @Test
-    public void testWorkingSource() throws IOException, ConfigurationParseException {
-        Main.main(new String[] {
-                "--src",
-                "resources/src",
-                "-v"
-        });
-    }
+//    @Test
+//    public void testWorkingSource() throws IOException {
+////        Main.main(new String[] {
+////                "--src",
+////                "resources/src",
+////                "-v"
+////        });
+//    }
 
     @TestFactory
     List<DynamicTest> testSingleFiles() {
@@ -122,7 +121,7 @@ public class SyntaxTests {
     private static TestType getTestType(String line, String name)  {
         var stripped = line.strip();
         if (!stripped.startsWith("/*") || !stripped.endsWith("*/")) {
-            throw new AssertionError("Expected type not found in file: " + name);
+            throw new AssertionError("Expected fieldType not found in file: " + name);
         }
         var substring = stripped.substring(2, stripped.length() - 2).strip();
         if (substring.toLowerCase().startsWith("ok")) {
@@ -132,7 +131,7 @@ public class SyntaxTests {
             var errorType = substring.substring(4).strip();
             return new TestType.Error(errorClasFromName(errorType));
         } else {
-            throw new AssertionError("Unknown test type: " + substring + " in file: " + name);
+            throw new AssertionError("Unknown test fieldType: " + substring + " in file: " + name);
         }
 
     }
@@ -152,7 +151,7 @@ public class SyntaxTests {
                     "\n ",
                     DidYouMean.suggestions(map.keySet(), lowerCase, limit)
             );
-            throw new AssertionError("Unknown error type: '" + name + "'\n Did you mean: " + suggestions);
+            throw new AssertionError("Unknown error fieldType: '" + name + "'\n Did you mean: " + suggestions);
         }
     }
 

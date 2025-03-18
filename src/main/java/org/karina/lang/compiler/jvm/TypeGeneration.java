@@ -1,9 +1,12 @@
 package org.karina.lang.compiler.jvm;
 
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Region;
 import org.objectweb.asm.Type;
 
 import java.util.ArrayList;
@@ -13,14 +16,14 @@ import static org.objectweb.asm.Type.*;
 
 public class TypeGeneration {
 
-    public KType fromType(String desc, @Nullable String signature) {
+    public KType fromType(Region region, String desc) {
         var type = Type.getType(desc);
-        return fromType(type, signature);
+        return fromType(region, type);
     }
 
-    public KType fromType(Type desc, @Nullable String signature) {
+    public KType fromType(Region region, Type desc) {
         return switch (desc.getSort()) {
-            case VOID -> new KType.PrimitiveType(KType.KPrimitive.VOID);
+            case VOID -> KType.VOID;
             case BOOLEAN -> new KType.PrimitiveType(KType.KPrimitive.BOOL);
             case CHAR -> new KType.PrimitiveType(KType.KPrimitive.CHAR);
             case BYTE -> new KType.PrimitiveType(KType.KPrimitive.BYTE);
@@ -30,41 +33,41 @@ public class TypeGeneration {
             case LONG -> new KType.PrimitiveType(KType.KPrimitive.LONG);
             case DOUBLE -> new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
             case ARRAY -> {
-                var elementType = fromType(desc.getElementType().getDescriptor(), null);
+                var elementType = fromType(region, desc.getElementType().getDescriptor());
                 yield new KType.ArrayType(elementType);
             }
             case OBJECT -> {
-                var pointer = internalNameToPointer(desc.getInternalName());
+                var pointer = internalNameToPointer(region, desc.getInternalName());
                 yield new KType.ClassType(pointer, List.of());
             }
             default -> throw new IllegalStateException("Unexpected value: " + desc.getSort());
         };
     }
 
-    public KType getReturnType(String desc, @Nullable String signature) {
+    public KType getReturnType(Region region, String desc) {
         var returnType = Type.getReturnType(desc);
-        return fromType(returnType, null);
+        return fromType(region, returnType);
     }
 
-    public List<KType> getParameters(String desc, @Nullable String signature) {
+    public List<KType> getParameters(Region region, String desc) {
         var returnType = Type.getArgumentTypes(desc);
         List<KType> types = new ArrayList<>();
         for (var type : returnType) {
-            types.add(fromType(type, null));
+            types.add(fromType(region, type));
         }
         return types;
     }
 
 
 
-    public ClassPointer internalNameToPointer(String name) {
-        var nameSplit = name.split("/");
+    public ClassPointer internalNameToPointer(Region region, String name) {
+        var nameSplit = name.split("[/$]");
         var path = new ObjectPath();
         for (String s : nameSplit) {
             path = path.append(s);
         }
         //TODO test existance of class
-        return ClassPointer.of(path);
+        return ClassPointer.of(region, path);
     }
 
 }

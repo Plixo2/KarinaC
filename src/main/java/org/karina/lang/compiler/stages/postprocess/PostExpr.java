@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.stages.postprocess;
 
 import org.jetbrains.annotations.NotNull;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.symbols.CallSymbol;
 import org.karina.lang.compiler.utils.*;
@@ -57,7 +57,7 @@ public class PostExpr {
                     var rewrite = rewrite(branch.elseArm().expr(), context);
                     elseBranch = new ElsePart(
                             rewrite,
-                            branch.elseArm().shortPattern()
+                            branch.elseArm().elsePattern()
                     );
                 }
                 yield new KExpr.Branch(
@@ -83,36 +83,36 @@ public class PostExpr {
                 if (symbol instanceof CallSymbol.CallDynamic(Region region, KType returnType)) {
 
                     if (!(call.left().type() instanceof KType.FunctionType functionType)) {
-                        Log.temp(call.region(), "Invalid function type");
+                        Log.temp(call.region(), "Invalid function fieldType");
                         throw new Log.KarinaException();
                     }
 
                     //static args, aka functions signature
                     var argTypeStatic = new ArrayList<KType>();
                     for (var arg : functionType.arguments()) {
-                        argTypeStatic.add(new KType.AnyClass());
+                        argTypeStatic.add(KType.ROOT);
                     }
 
-                    KType returnTypeStatic = new KType.AnyClass();
+                    KType returnTypeStatic = KType.ROOT;
                     if (functionType.returnType().isVoid()) {
-                        returnTypeStatic = new KType.PrimitiveType(KType.KPrimitive.VOID);
+                        returnTypeStatic = KType.VOID;
                     }
 
-                    //interface class type
+                    //interface class fieldType
                     KType.ClassType classType = toClassType(functionType);
 
                     //path to the interface
-                    ObjectPath path = classType.path().append("apply");
+                    ObjectPath path = classType.pointer().path().append("apply");
 
 
-                    symbol = new CallSymbol.CallInterface(
-                            region,
-                            classType,
-                            path,
-                            List.of(), returnType,
-                            argTypeStatic,
-                            returnTypeStatic
-                    );
+//                    symbol = new CallSymbol.CallInterface(
+//                            region,
+//                            classType,
+//                            path,
+//                            List.of(), returnType,
+//                            argTypeStatic,
+//                            returnTypeStatic
+//                    );
                 }
 
                 //TODO replace dynamic calls with virtual calls
@@ -129,7 +129,7 @@ public class PostExpr {
                 yield new KExpr.Cast(
                         cast.region(),
                         left,
-                        cast.asType(),
+                        cast.cast(),
                         cast.symbol()
                 );
             }
@@ -165,8 +165,7 @@ public class PostExpr {
                 yield new KExpr.CreateObject(
                         createObject.region(),
                         createObject.createType(),
-                        parameters,
-                        createObject.symbol()
+                        parameters
                 );
             }
             case KExpr.For aFor -> {
@@ -269,8 +268,11 @@ public class PostExpr {
                         body
                 );
             }
-            case KExpr.Super aSuper -> {
-                yield aSuper;
+            case KExpr.SpecialCall aSpecialCall -> {
+                yield aSpecialCall;
+            }
+            case KExpr.StringInterpolation stringInterpolation -> {
+                throw new NullPointerException("StringInterpolation not implemented");
             }
         };
     }
@@ -289,7 +291,7 @@ public class PostExpr {
         return new KType.ClassType(
 
                 //TODO not ok
-                ClassPointer.of(path),
+                ClassPointer.of(null, path),
                 generics
         );
     }
@@ -373,6 +375,6 @@ public class PostExpr {
         context.add(struct);
 
 
-        return new KExpr.StringExpr(closure.region(), "HI");
+        return new KExpr.StringExpr(closure.region(), "HI", false);
     }
 }

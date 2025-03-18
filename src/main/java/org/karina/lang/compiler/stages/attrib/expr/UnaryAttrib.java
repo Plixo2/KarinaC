@@ -1,16 +1,18 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.AttribError;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.objects.UnaryOperator;
-import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.symbols.UnaryOperatorSymbol;
 
-public class UnaryAttrib extends AttributionExpr {
+import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
+
+public class UnaryAttrib  {
     public static AttributionExpr attribUnary(
             @Nullable KType hint, AttributionContext ctx, KExpr.Unary expr) {
 
@@ -21,10 +23,10 @@ public class UnaryAttrib extends AttributionExpr {
         var value = attribExpr(hint, ctx, expr.value()).expr();
 
         if (expr.operator().value() == UnaryOperator.NOT) {
-            ctx.assign(expr.region(), new KType.PrimitiveType(KType.KPrimitive.BOOL), value.type());
+            value = ctx.makeAssignment(expr.region(), new KType.PrimitiveType(KType.KPrimitive.BOOL), value);
         } else if (!(value.type() instanceof KType.PrimitiveType) && hint != null) {
             //we try to fill in extra information when using resolvable.
-            ctx.assign(expr.region(), hint, value.type());
+            value = ctx.makeAssignment(expr.region(), hint, value);
         }
 
         if (!(value.type() instanceof KType.PrimitiveType(KType.KPrimitive primitive))) {

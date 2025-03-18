@@ -15,7 +15,6 @@
     ok: 0x4,
     "negative": -1,
     "negative-float": -1.0,
-    "ok": 0x4,
     hex: 0x4,
     binary: 0b100
 

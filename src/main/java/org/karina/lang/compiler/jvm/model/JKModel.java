@@ -1,58 +1,63 @@
 package org.karina.lang.compiler.jvm.model;
 
-import lombok.EqualsAndHashCode;
+import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
-import org.karina.lang.compiler.model.ClassModel;
-import org.karina.lang.compiler.model.FieldModel;
-import org.karina.lang.compiler.model.MethodModel;
-import org.karina.lang.compiler.model.Model;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
-import org.karina.lang.compiler.model.pointer.FieldPointer;
-import org.karina.lang.compiler.model.pointer.MethodPointer;
+import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.model_api.FieldModel;
+import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.FieldPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.objects.Types;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Java-Karina Model
  * Represents ALL class models of the program.
  * @param classModels
  */
-public record JKModel(Map<ObjectPath, ClassModel> classModels) implements Model {
+public record JKModel(PhaseDebug phase, Map<ObjectPath, ClassModel> classModels) implements Model {
 
     public JKModel {
-        classModels = new HashMap<>(classModels);
+        classModels = ImmutableMap.copyOf(classModels);
     }
 
-    public JKModel() {
-        this(Map.of());
+    public JKModel(PhaseDebug phase) {
+        this(phase, Map.of());
     }
 
-    public JKModel merge(JKModel other) {
-        var newClassModels = new HashMap<>(this.classModels);
-        for (var entry : other.classModels.entrySet()) {
-            if (newClassModels.containsKey(entry.getKey())) {
-                var msg = "Class already exists: " + entry.getKey();
-                Log.bytecode(entry.getValue().resource().resource(), entry.getValue().name(), msg);
-                throw new Log.KarinaException();
+    public static JKModel merge(JKModel... models) {
+        var newClassModels = new HashMap<ObjectPath, ClassModel>();
+
+        for (var other : models) {
+            for (var entry : other.classModels.entrySet()) {
+                if (newClassModels.containsKey(entry.getKey())) {
+                    Log.importError(new ImportError.DuplicateItem(
+                            newClassModels.get(entry.getKey()).region(),
+                            entry.getValue().region(),
+                            entry.getKey().toString()
+                    ));
+                    throw new Log.KarinaException();
+                }
+                newClassModels.put(entry.getKey(), entry.getValue());
             }
-            newClassModels.put(entry.getKey(), entry.getValue());
         }
-        return new JKModel(newClassModels);
+        return new JKModel(PhaseDebug.LOADED, newClassModels);
     }
 
     @Override
-    public @Nullable ClassPointer getClassPointer(ObjectPath objectPath) {
+    public @Nullable ClassPointer getClassPointer(Region region, ObjectPath objectPath) {
         if (this.classModels.containsKey(objectPath)) {
-            //OK
-            return ClassPointer.of(objectPath);
+            return ClassPointer.of(region, objectPath);
         }
         return null;
     }
@@ -62,49 +67,63 @@ public record JKModel(Map<ObjectPath, ClassModel> classModels) implements Model 
         var classModel = this.classModels.get(pointer.path());
 
         if (classModel == null) {
-            //TODO: Log
-            //This should not happen, every ClassPointer should be already valid
-            throw new NullPointerException("Class not found " + pointer.path());
+            Log.temp(pointer.region(), "Class not found, this should not happen: " + pointer.path());
+            throw new Log.KarinaException();
         }
 
         return classModel;
     }
 
+
     @Override
-    public MethodModel getMethod(MethodPointer model) {
-        throw new NullPointerException("Not implemented");
+    public MethodModel getMethod(MethodPointer pointer) {
+
+        var parameters = pointer.signature().parameters();
+        var erased = parameters.stream().map(Types::erase).toList();
+
+        var classModel = getClass(pointer.classPointer());
+        for (var method : classModel.methods()) {
+            if (!method.name().equals(pointer.name())) {
+                continue;
+            }
+            var interErased = method.signature().parametersErased();
+            if (Types.signatureEquals(erased, interErased)) {
+                return method;
+            }
+        }
+        Log.temp(pointer.region(), "Method not found, this should not happen: " + pointer);
+        throw new Log.KarinaException();
     }
 
     @Override
-    public FieldModel fieldPointer(FieldPointer pointer) {
+    public FieldModel getField(FieldPointer pointer) {
         var classModel = getClass(pointer.classPointer());
         for (var field : classModel.fields()) {
-            if (field.name().equals(pointer.fieldName())) {
+            if (field.name().equals(pointer.name())) {
                 return field;
             }
         }
-        throw new NullPointerException("Field not found");
+        Log.temp(pointer.region(), "Field not found, this should not happen: " + pointer);
+        throw new Log.KarinaException();
     }
 
-    public List<KClassModel> getUserClasses() {
-        return this.classModels.values().stream().filter(c -> c instanceof KClassModel)
-                               .map(c -> (KClassModel) c).toList();
+    public Iterable<KClassModel> getUserClasses() {
+        return () -> this.classModels.values().stream()
+                .filter(c -> c instanceof KClassModel)
+                .map(c -> (KClassModel) c)
+                .iterator();
     }
 
-    public List<JClassModel> getBytecodeClasses() {
-        return this.classModels.values().stream().filter(c -> c instanceof JClassModel)
-                               .map(c -> (JClassModel) c).toList();
+    public Iterable<JClassModel> getBytecodeClasses() {
+        return () -> this.classModels.values().stream()
+                .filter(c -> c instanceof JClassModel)
+                .map(c -> (JClassModel) c)
+                .iterator();
     }
 
-    public int hashCodeExpensive() {
-
-        int expensiveHashMethod = 0;
-        for (var classModel : this.classModels.values()) {
-            if (classModel instanceof JClassModel jClassModel) {
-                expensiveHashMethod = Objects.hash(expensiveHashMethod, jClassModel.hashCodeExpensive());
-            }
-        }
-
-        return expensiveHashMethod;
+    public int getClassCount() {
+        return this.classModels.size();
     }
+
+
 }

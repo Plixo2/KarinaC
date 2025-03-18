@@ -1,15 +1,15 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.errors.Log;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 
 import java.util.ArrayList;
-
-public class BlockAttrib extends AttributionExpr {
+import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
+public class BlockAttrib {
     public static AttributionExpr attribBlock(
             @Nullable KType hint, AttributionContext ctx, KExpr.Block expr) {
 
@@ -21,7 +21,7 @@ public class BlockAttrib extends AttributionExpr {
             var isLast = i == expressions.size() - 1;
             var hintLine = isLast ? hint : null;
             var newExpr = attribExpr(hintLine, subCtx, subExpr);
-            if (!isLast && doesReturn(newExpr.expr())) {
+            if (!isLast && newExpr.expr().doesReturn()) {
                 Log.temp(expressions.get(i + 1).region(), "Unreachable code");
                 throw new Log.KarinaException();
             }
@@ -31,7 +31,7 @@ public class BlockAttrib extends AttributionExpr {
         }
         KType returningType;
         if (newExpressions.isEmpty()) {
-            returningType = new KType.PrimitiveType(KType.KPrimitive.VOID);
+            returningType = KType.VOID;
         } else {
             returningType = newExpressions.getLast().type();
         }

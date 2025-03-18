@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.jvm.JavaResource;
 import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 
 import java.io.IOException;
@@ -21,36 +21,37 @@ public class ClassReader {
     public JClassModel read() throws IOException {
         var name = this.stream.readString();
         var path = this.stream.readObjectPath();
-        var currentClass = ClassPointer.of(path);
+        var currentClass = ClassPointer.of(null, path);
         var source = new TextSource(new JavaResource(this.stream.readString()), List.of());
         var version = this.stream.readInt();
         var modifiers = this.stream.readInt();
-        var superClass = this.stream.readClassPointer();
-        var outerClass = this.stream.readClassPointer();
-        var interfaces = this.stream.readClassPointerList();
-        var innerClasses = this.stream.readClassPointerList();
+        var superClass = this.stream.readClassPointer(source);
+        var outerClass = this.stream.readClassPointer(source);
+        var interfaces = this.stream.readClassPointerList(source);
+        var innerClasses = this.stream.readClassPointerList(source);
         var fields = this.stream.readFieldList(currentClass, source);
         var methods = this.stream.readMethodList(currentClass, source);
 
         var emptyRegion = source.emptyRegion();
         var generics = ImmutableList.copyOf(this.stream.readStrings().stream().map(ref -> new Generic(emptyRegion, ref)).toList());
-        var permittedSubclasses = this.stream.readClassPointerList();
-        return new JClassModel(
-                name,
-                path,
-                version,
-                modifiers,
-                superClass,
-                outerClass,
-                interfaces,
-                innerClasses,
-                fields,
-                methods,
-                generics,
-                permittedSubclasses,
-                source,
-                source.emptyRegion()
-        );
+        var permittedSubclasses = this.stream.readClassPointerList(source);
+//        return new JClassModel(
+//                name,
+//                path,
+//                version,
+//                modifiers,
+//                superClass,
+//                outerClass,
+//                interfaces,
+//                innerClasses,
+//                fields,
+//                methods,
+//                generics,
+//                permittedSubclasses,
+//                source,
+//                source.emptyRegion()
+//        );
+        throw new NullPointerException("Not implemented");
     }
 
 

@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.symbols;
 
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
@@ -10,10 +11,14 @@ public sealed interface CallSymbol {
 
     KType returnType();
 
-    record CallStatic(ObjectPath path, List<KType> generics, KType returnType, List<KType> argTypeStatic, KType returnTypeStatic, boolean inInterface) implements CallSymbol { }
+    //CallStatic cannot use the object 'left' that is defined in the Call expression.
+    // The MethodPointer is the only thing to get information about the method.
+    // Also only used for compilation.
+    record CallStatic(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
 
-    record CallVirtual(Region nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType, List<KType> argTypeStatic, KType returnTypeStatic) implements CallSymbol { }
-    record CallInterface(Region nameRegion, KType.ClassType classType, ObjectPath path, List<KType> generics, KType returnType , List<KType> argTypeStatic, KType returnTypeStatic) implements CallSymbol { }
+    record CallVirtual(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
+    record CallInterface(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
+    record CallSuper(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
     record CallDynamic(Region region, KType returnType) implements CallSymbol { }
 
 }

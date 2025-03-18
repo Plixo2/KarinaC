@@ -54,7 +54,13 @@ public record Region(TextSource source, Position start, Position end) {
         return !(this.end.isBefore(other.start) || other.end.isBefore(this.start));
     }
 
-
-
+    @Override
+    public String toString() {
+        var region = this.reorder();
+        var path = region.source().resource().identifier();
+        var column = region.start().column() + 1;
+        var line = region.start().line() + 1;
+        return path + ":" + line + ":" + column;
+    }
 }
 

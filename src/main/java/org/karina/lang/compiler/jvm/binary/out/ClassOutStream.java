@@ -1,10 +1,11 @@
 package org.karina.lang.compiler.jvm.binary.out;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model.FieldModel;
-import org.karina.lang.compiler.model.MethodModel;
-import org.karina.lang.compiler.model.Signature;
-import org.karina.lang.compiler.model.pointer.ClassPointer;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.FieldModel;
+import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -64,9 +65,6 @@ public class ClassOutStream {
 
     public void writeType(KType type) throws IOException {
         switch (type) {
-            case KType.AnyClass anyClass -> {
-                writeByte(1);
-            }
             case KType.ArrayType arrayType -> {
                 writeByte(2);
                 writeType(arrayType.elementType());
@@ -105,14 +103,17 @@ public class ClassOutStream {
                     case INT -> writeByte(11);
                     case LONG -> writeByte(12);
                     case SHORT -> writeByte(13);
-                    case VOID -> writeByte(14);
                 }
             }
             case KType.Resolvable resolvable -> {
-                throw new IOException("Resolvable type should not be written to binary");
+                throw new IOException("Resolvable fieldType should not be written to binary");
             }
             case KType.UnprocessedType unprocessedType -> {
-                throw new IOException("Unprocessed type should not be written to binary");
+                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                throw new Log.KarinaException();
+            }
+            case KType.VoidType voidType -> {
+                writeByte(14);
             }
         }
     }

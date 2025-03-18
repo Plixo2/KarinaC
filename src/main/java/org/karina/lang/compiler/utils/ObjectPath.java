@@ -85,23 +85,51 @@ public record ObjectPath(List<String> elements) {
 
     @Override
     public boolean equals(Object object) {
-        if (!(object instanceof ObjectPath(List<String> elements1))) {
-            return false;
-        }
-        var thisElements = this.elements;
-        if (thisElements.size() != elements1.size()) {
-            return false;
-        }
-        for (var i = 0; i < thisElements.size(); i++) {
-            if (!thisElements.get(i).equals(elements1.get(i))) {
+        if (object instanceof ObjectPath(List<String> elements1)) {
+            var thisElements = this.elements;
+            if (thisElements.size() != elements1.size()) {
                 return false;
             }
+            for (var i = 0; i < thisElements.size(); i++) {
+                if (!thisElements.get(i).equals(elements1.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (object instanceof String[] strings) {
+            if (this.elements.size() != strings.length) {
+                return false;
+            }
+            for (var i = 0; i < strings.length; i++) {
+                if (!this.elements.get(i).equals(strings[i])) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return true;
+
+        return false;
     }
 
     @Override
     public int hashCode() {
         return Objects.hashCode(this.elements);
     }
+
+    public boolean startsWith(String... prefixes) {
+        if (prefixes.length > this.elements.size()) {
+            return false;
+        }
+        for (var i = 0; i < prefixes.length; i++) {
+            if (!this.elements.get(i).equals(prefixes[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public int length() {
+        return this.elements.size();
+    }
+
 }

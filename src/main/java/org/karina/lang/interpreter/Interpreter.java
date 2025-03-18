@@ -3,12 +3,12 @@ package org.karina.lang.interpreter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.symbols.*;
 import org.karina.lang.compiler.utils.BranchPattern;
 import org.karina.lang.compiler.utils.NameAndOptType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
 
@@ -70,6 +70,8 @@ public class Interpreter {
     }
 
     private Object eval(KExpr expr, Environment env) throws Flow {
+        return null;
+        /*
         return switch (expr) {
             case KExpr.Assignment assignment -> {
                 assert assignment.symbol() != null;
@@ -85,7 +87,7 @@ public class Interpreter {
                     case AssignmentSymbol.Field field -> {
                         var obj = (HashMap<String, Object>) eval(field.object(), env);
                         assert obj != null;
-                        obj.put(field.name(), eval(assignment.right(), env));
+                        obj.put(field.pointer().fieldName(), eval(assignment.right(), env));
                     }
                     case AssignmentSymbol.LocalVariable localVariable -> {
                         env.set(localVariable.variable(), eval(assignment.right(), env));
@@ -171,7 +173,7 @@ public class Interpreter {
                 if (condition) {
                     yield eval(branch.thenArm(), env);
                 } else if (branch.elseArm() != null) {
-                    if (branch.elseArm().shortPattern() != null) {
+                    if (branch.elseArm().elsePattern() != null) {
                         throw new NullPointerException("Not implemented");
                     }
                     yield eval(branch.elseArm().expr(), env);
@@ -210,9 +212,9 @@ public class Interpreter {
                         if (!(self instanceof Map<?, ?> map)) {
                             throw new NullPointerException("Not a map: " + toString(self));
                         }
-                        var object = map.get("$type");
+                        var object = map.get("$fieldType");
                         if (!(object instanceof ObjectPath path)) {
-                            throw new NullPointerException("No $type in " + toString(self));
+                            throw new NullPointerException("No $fieldType in " + toString(self));
                         }
 
                         var function = this.collection.vTable(path, callInterface.path());
@@ -257,7 +259,7 @@ public class Interpreter {
                 var map = new HashMap<String, Object>();
 
                 assert createObject.symbol() != null;
-              //  map.put("$type", createObject.symbol().path().value());
+              //  map.put("$fieldType", createObject.symbol().path().value());
 
                 for (var parameter : createObject.parameters()) {
                     map.put(parameter.name().value(), eval(parameter.expr(), env));
@@ -323,13 +325,10 @@ public class Interpreter {
             case KExpr.Literal literal -> {
                 assert literal.symbol() != null;
                 yield switch (literal.symbol()) {
-                    case LiteralSymbol.StaticFunction staticFunction -> {
+                    case LiteralSymbol.StaticMethodReference staticMethodReference -> {
                         throw new NullPointerException("Not Supported");
                     }
-                    case LiteralSymbol.StructReference structReference -> {
-                        throw new NullPointerException("Not Supported");
-                    }
-                    case LiteralSymbol.InterfaceReference interfaceReference -> {
+                    case LiteralSymbol.StaticClassReference staticClassReference -> {
                         throw new NullPointerException("Not Supported");
                     }
                     case LiteralSymbol.VariableReference variableReference -> {
@@ -404,6 +403,7 @@ public class Interpreter {
                 throw new NullPointerException("Not implemented");
             }
         };
+        */
     }
 
     public static String toString(Object object) {
@@ -436,11 +436,11 @@ public class Interpreter {
             case KType.ArrayType arrayType -> false;
             case KType.ClassType classType -> {
                 if (object instanceof HashMap<?,?> map) {
-                    Object $type = map.get("$type");
+                    Object $type = map.get("$fieldType");
                     if ($type == null) {
                         yield false;
                     }
-                    yield $type.equals(classType.path());
+                    yield $type.equals(classType.pointer().path());
                 } else {
                     yield false;
                 }
@@ -455,8 +455,11 @@ public class Interpreter {
                 yield false;
             }
             case KType.Resolvable resolvable -> false;
-            case KType.UnprocessedType unprocessedType -> false;
-            case KType.AnyClass anyClass -> false;
+            case KType.UnprocessedType unprocessedType -> {
+                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                throw new Log.KarinaException();
+            }
+            case KType.VoidType voidType -> false;
         };
     }
 

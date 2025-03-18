@@ -1,14 +1,16 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.errors.Log;
-import org.karina.lang.compiler.errors.types.AttribError;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 
-public class ContinueAttrib extends AttributionExpr {
+import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
+
+public class ContinueAttrib  {
 
     public static AttributionExpr attribContinue(@Nullable KType hint, AttributionContext ctx, KExpr.Continue expr) {
         if (!ctx.isLoop()) {

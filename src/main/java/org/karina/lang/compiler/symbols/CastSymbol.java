@@ -10,10 +10,10 @@ import org.karina.lang.compiler.objects.KType;
 @Accessors(fluent = true)
 public class CastSymbol {
 
-    KType.PrimitiveType fromNumeric;
-    KType.PrimitiveType toNumeric;
+    KType.KPrimitive fromNumeric;
+    KType.KPrimitive toNumeric;
 
     public KType type() {
-        return this.toNumeric;
+        return new KType.PrimitiveType(this.toNumeric);
     }
 }

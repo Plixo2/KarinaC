@@ -1,6 +1,9 @@
 package org.karina.lang.compiler.symbols;
 
-import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.FieldPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.utils.MethodCollection;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
@@ -9,31 +12,31 @@ public sealed interface LiteralSymbol {
     Region region();
 
     /*
-     * Return void for static functions, they don't have a type directly
+     * Return void for static functions, they don't have a fieldType directly
      */
     default KType type() {
         switch (this) {
-            case StaticFunction staticFunction -> {
-                return new KType.PrimitiveType(KType.KPrimitive.VOID);
+            case StaticMethodReference staticMethodReference -> {
+                return KType.VOID;
             }
             case VariableReference variableReference -> {
                 return variableReference.variable().type();
             }
-            case StructReference structReference -> {
-                return new KType.PrimitiveType(KType.KPrimitive.VOID);
+            case StaticClassReference staticClassReference -> {
+                //todo class return
+                return KType.VOID;
             }
-            case InterfaceReference interfaceReference -> {
-                return new KType.PrimitiveType(KType.KPrimitive.VOID);
+            case StaticFieldReference staticFieldReference -> {
+                return staticFieldReference.fieldType();
             }
         }
     }
 
-    record StaticFunction(Region region, ObjectPath path) implements LiteralSymbol { }
+    record StaticMethodReference(Region region, MethodCollection collection) implements LiteralSymbol { }
+    record StaticFieldReference(Region region, FieldPointer fieldPointer, KType fieldType) implements LiteralSymbol { }
 
     record VariableReference(Region region, Variable variable) implements LiteralSymbol { }
 
-    record StructReference(Region region, ObjectPath path) implements LiteralSymbol { }
-
-    record InterfaceReference(Region region, ObjectPath path) implements LiteralSymbol { }
+    record StaticClassReference(Region region, ClassPointer classPointer) implements LiteralSymbol { }
 
 }

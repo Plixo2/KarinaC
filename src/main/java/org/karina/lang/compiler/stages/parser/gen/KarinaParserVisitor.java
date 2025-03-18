@@ -1,4 +1,4 @@
-// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/KarinaParser.g4 by ANTLR 4.13.2
+// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/grammar/language/KarinaParser.g4 by ANTLR 4.13.2
 package org.karina.lang.compiler.stages.parser.gen;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -53,6 +53,36 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitImplementation(KarinaParser.ImplementationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KarinaParser#boundWhere}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBoundWhere(KarinaParser.BoundWhereContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#genericWithBounds}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGenericWithBounds(KarinaParser.GenericWithBoundsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#genericWithBound}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGenericWithBound(KarinaParser.GenericWithBoundContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#bounds}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBounds(KarinaParser.BoundsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#bound}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBound(KarinaParser.BoundContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KarinaParser#field}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -106,6 +136,18 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitType(KarinaParser.TypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#typePostFix}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypePostFix(KarinaParser.TypePostFixContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#typeInner}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeInner(KarinaParser.TypeInnerContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#structType}.
 	 * @param ctx the parse tree
@@ -172,6 +214,18 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitJsonArray(KarinaParser.JsonArrayContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#jsonExpression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitJsonExpression(KarinaParser.JsonExpressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#jsonType}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitJsonType(KarinaParser.JsonTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#jsonValue}.
 	 * @param ctx the parse tree
@@ -382,4 +436,16 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitOptTypeName(KarinaParser.OptTypeNameContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#id}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitId(KarinaParser.IdContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#escaped}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEscaped(KarinaParser.EscapedContext ctx);
 }

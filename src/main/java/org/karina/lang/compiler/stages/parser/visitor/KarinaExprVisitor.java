@@ -1,9 +1,11 @@
 package org.karina.lang.compiler.stages.parser.visitor;
 
-import org.antlr.v4.runtime.Parser;
-import org.karina.lang.compiler.errors.Log;
+import com.google.common.collect.ImmutableList;
+import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.text.StringEscapeUtils;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.*;
-import org.karina.lang.compiler.stages.parser.TextContext;
+import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.*;
@@ -11,17 +13,17 @@ import org.karina.lang.compiler.utils.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Used to convert AST expression objects to the corresponding {@link KExpr}.
  */
 public class KarinaExprVisitor {
-    public static Parser PARSER;
-    private final TextContext conv;
+    private final RegionContext conv;
     private final KarinaUnitVisitor visitor;
     private final KarinaTypeVisitor typeVisitor;
 
-    public KarinaExprVisitor(KarinaUnitVisitor visitor, KarinaTypeVisitor typeVisitor, TextContext converter) {
+    public KarinaExprVisitor(KarinaUnitVisitor visitor, KarinaTypeVisitor typeVisitor, RegionContext converter) {
         this.conv = converter;
         this.typeVisitor = typeVisitor;
         this.visitor = visitor;
@@ -32,7 +34,7 @@ public class KarinaExprVisitor {
         var region = this.conv.toRegion(ctx);
         if (ctx.varDef() != null) {
             var varDefContext = ctx.varDef();
-            var name = this.conv.region(varDefContext.ID());
+            var name = this.conv.region(varDefContext.id());
             var type = varDefContext.type() == null ? null : this.typeVisitor.visitType(varDefContext.type());
             var expr = visitExprWithBlock(varDefContext.exprWithBlock());
             return new KExpr.VariableDefinition(region, name, type, expr, null);
@@ -88,11 +90,11 @@ public class KarinaExprVisitor {
         var thenBlock = visitBlock(ctx.block());
         BranchPattern branchPattern = null;
         if (condition instanceof KExpr.IsInstanceOf(Region instanceRegion, KExpr left, KType isType)) {
-            if (ctx.ID() != null) {
+            if (ctx.id() != null) {
                 condition = left;
                 branchPattern = new BranchPattern.Cast(
                         instanceRegion, isType,
-                        this.conv.region(ctx.ID()),
+                        this.conv.region(ctx.id()),
                         null
                 );
             } else if (ctx.optTypeList() != null) {
@@ -101,7 +103,7 @@ public class KarinaExprVisitor {
                 branchPattern = new BranchPattern.Destruct(instanceRegion, isType, values);
             }
         } else {
-            if (ctx.ID() != null || ctx.optTypeList() != null) {
+            if (ctx.id() != null || ctx.optTypeList() != null) {
                 Log.syntaxError(this.conv.toRegion(ctx), "Invalid pattern match");
                 throw new Log.KarinaException();
             }
@@ -115,11 +117,11 @@ public class KarinaExprVisitor {
             if (shortPattern != null) {
                 var regionShortPattern = this.conv.toRegion(shortPattern);
                 var isType = this.typeVisitor.visitType(shortPattern.type());
-                if (shortPattern.ID() != null) {
+                if (shortPattern.id() != null) {
                     elseBranchPattern = new BranchPattern.Cast(
                             regionShortPattern,
                             isType,
-                            this.conv.region(ctx.ID()),
+                            this.conv.region(shortPattern.id()),
                             null
                     );
                 } else if (shortPattern.optTypeList() != null) {
@@ -198,7 +200,13 @@ public class KarinaExprVisitor {
             if (ctx.EQUALS() != null) {
                 position = this.conv.toRegion(ctx.EQUALS());
                 operator = BinaryOperator.EQUAL;
-            } else {
+            } else if (ctx.STRICT_NOT_EQUALS() != null) {
+                position = this.conv.toRegion(ctx.STRICT_NOT_EQUALS());
+                operator = BinaryOperator.STRICT_NOT_EQUAL;
+            } else if (ctx.STRICT_EQUALS() != null) {
+                position = this.conv.toRegion(ctx.STRICT_EQUALS());
+                operator = BinaryOperator.STRICT_EQUAL;
+            }else {
                 position = this.conv.toRegion(ctx.NOT_EQUALS());
                 operator = BinaryOperator.NOT_EQUAL;
             }
@@ -358,9 +366,10 @@ public class KarinaExprVisitor {
     private KExpr visitPostfix(KExpr prev, KarinaParser.PostFixContext ctx) {
 
         var region = this.conv.toRegion(ctx);
-        if (ctx.ID() != null) {
-            var name = this.conv.region(ctx.ID());
-            return new KExpr.GetMember(region, prev, name, null);
+        var regionMerged = region.merge(prev.region());
+        if (ctx.id() != null) {
+            var name = this.conv.region(ctx.id());
+            return new KExpr.GetMember(regionMerged, prev, name, null);
         } else if (ctx.expressionList() != null) {
             var expressions = visitExprList(ctx.expressionList());
             List<KType> genHint;
@@ -369,13 +378,23 @@ public class KarinaExprVisitor {
             } else {
                 genHint = List.of();
             }
-            return new KExpr.Call(region, prev, genHint, expressions, null);
+            return new KExpr.Call(regionMerged, prev, genHint, expressions, null);
         } else if (ctx.exprWithBlock() != null) {
             var index = visitExprWithBlock(ctx.exprWithBlock());
-            return new KExpr.GetArrayElement(region, prev, index, null);
+            return new KExpr.GetArrayElement(regionMerged, prev, index, null);
         } else if (ctx.type() != null) {
             var type = this.typeVisitor.visitType(ctx.type());
-            return new KExpr.Cast(region, prev, type, null);
+
+            CastTo castTo = null;
+            if (type instanceof KType.UnprocessedType unprocessedType) {
+                if (unprocessedType.name().value().mkString("-").equals("_") && unprocessedType.generics().isEmpty()) {
+                    castTo = new CastTo.AutoCast();
+                }
+            }
+            if (castTo == null) {
+                castTo = new CastTo.CastToType(type);
+            }
+            return new KExpr.Cast(regionMerged, prev, castTo, null);
         } else {
             Log.syntaxError(region, "Invalid postfix ");
 //            Log.syntaxError(region, "Invalid postfix " + ctx.toString(PARSER));
@@ -386,19 +405,27 @@ public class KarinaExprVisitor {
 
     private KExpr visitObject(KarinaParser.ObjectContext ctx) {
 
+
+
         var region = this.conv.toRegion(ctx);
         if (ctx.array() != null) {
             return visitArrayCreating(ctx.array());
         } else if (ctx.exprWithBlock() != null) {
             return visitExprWithBlock(ctx.exprWithBlock());
         } else if (ctx.NUMBER() != null) {
-            var text = ctx.NUMBER().getText();
-            var decimal = parseNumber(text);
-            var decimalStr = text.contains(".") || text.contains("e") || text.contains("E");
-            return new KExpr.Number(region, decimal, decimalStr, null);
-        } else if (ctx.ID() != null) {
-            var text = ctx.ID().getText();
+            try {
+                var text = ctx.NUMBER().getText();
+                var decimal = parseNumber(text);
+                var decimalStr = text.contains(".") || text.contains("e") || text.contains("E");
+                return new KExpr.Number(region, decimal, decimalStr, null);
+            } catch (NumberFormatException e) {
+                Log.syntaxError(region, "Invalid number");
+                throw new Log.KarinaException();
+            }
+        } else if (ctx.id() != null && !ctx.id().isEmpty()) {
+            var text = this.conv.escapeID(ctx.id().getFirst());
             if (ctx.initList() != null) {
+                //
                 List<KType> generics;
                 if (ctx.genericHint() != null) {
                     generics = this.visitor.visitGenericHint(ctx.genericHint());
@@ -408,30 +435,34 @@ public class KarinaExprVisitor {
                 var initList = ctx.initList();
                 var inits = initList.memberInit().stream().map(ref -> {
                     var initRegion = this.conv.toRegion(ref);
-                    var name = this.conv.region(ref.ID());
+                    var name = this.conv.region(ref.id());
                     var value = visitExprWithBlock(ref.exprWithBlock());
                     return new NamedExpression(initRegion, name, value, null);
                 }).toList();
-                var name = this.conv.region(ctx.ID());
-                var path = new ObjectPath(name.value());
-                var type = new KType.UnprocessedType(name.region(), RegionOf.region(name.region(), path), generics);
+                var names = ctx.id().stream().map(this.conv::region).toList();
+                var regionOfName = names.stream().map(RegionOf::region).reduce(Region::merge).orElseThrow(() -> {
+                    Log.temp(region, "Invalid region");
+                    return new Log.KarinaException();
+                });
+
+                var path = new ObjectPath(names.stream().map(RegionOf::value).toList());
+                var type = new KType.UnprocessedType(regionOfName, RegionOf.region(regionOfName, path), generics);
                 return new KExpr.CreateObject(
                         region,
                         type,
-                        inits,
-                        null
+                        inits
                 );
             } else {
                 return new KExpr.Literal(region, text, null);
             }
         } else if (ctx.STRING_LITERAL() != null) {
-            var inner = ctx.STRING_LITERAL().getText();
-            var text = inner.substring(1, inner.length() - 1);
-            return new KExpr.StringExpr(region, text);
+            return visitString(ctx.STRING_LITERAL());
+        } else if (ctx.CHAR_LITERAL() != null) {
+            return visitTickedString(ctx.CHAR_LITERAL());
         } else if (ctx.SELF() != null) {
             return new KExpr.Self(region, null);
         } else if (ctx.SUPER() != null) {
-            return new KExpr.Super(region);
+            return new KExpr.SpecialCall(region, new InvocationType.Unknown());
         } else if (ctx.FALSE() != null) {
             return new KExpr.Boolean(region, false);
         } else if (ctx.TRUE() != null) {
@@ -442,6 +473,113 @@ public class KarinaExprVisitor {
         }
 
     }
+
+    private KExpr visitString(TerminalNode ctx) {
+        //escaping is done later when omitting bytecode
+        var region = this.conv.toRegion(ctx);
+        var inner = ctx.getText();
+        var text = inner.substring(1, inner.length() - 1);
+        return new KExpr.StringExpr(region, text, false);
+    }
+
+    private KExpr visitTickedString(TerminalNode ctx) {
+        var region = this.conv.toRegion(ctx);
+        var inner = ctx.getText();
+        var text = inner.substring(1, inner.length() - 1);
+
+        //check if the length is one, so it has the be a char
+        //we have to check the unescaped string, because the may char is escaped
+
+        //this call should be safe without exception handling
+        var escapedText = StringEscapeUtils.unescapeJava(text);
+
+        if (escapedText.length() == 1) {
+            return new KExpr.StringExpr(region, text, true);
+        }
+
+        //TODO make better regions for better error messages
+
+        var components = ImmutableList.<StringComponent>builder();
+
+        var length = text.length();
+        var isEscaped = false;
+        var previousAddedIndexEnd = 0;
+        for (var i = 0; i < length; i++) {
+            var c = text.charAt(i);
+
+            //escaping
+            if (isEscaped) {
+                isEscaped = false;
+                continue;
+            }
+            if (c == '\\') {
+                isEscaped = true;
+                continue;
+            }
+
+            if (c == '$') {
+                if (previousAddedIndexEnd < (i-1)) {
+                    components.add(new StringComponent.StringLiteralComponent(
+                            text.substring(previousAddedIndexEnd, i)
+                    ));
+                }
+                //we skip the first character, as it might be a escaped character for karina keywords
+                //The grammar ensures that the first character is valid for a literal otherwise
+                var next = i + 2;
+                //check for a literal after the $
+                //this call also does range checking.
+                next = continueIdentifier(text, next);
+                if (next == -1) {
+                    Log.syntaxError(region, "Invalid string interpolation, expected identifier after $");
+                    throw new Log.KarinaException();
+                }
+                var name = this.conv.escapeID(text.substring(i+1, next));
+                i = next;
+
+                components.add(
+                        new StringComponent.VariableComponent(region, name, null)
+                );
+                previousAddedIndexEnd = next;
+            }
+        }
+        if (previousAddedIndexEnd < length) {
+            components.add(new StringComponent.StringLiteralComponent(
+                    text.substring(previousAddedIndexEnd)
+            ));
+        }
+
+        return new KExpr.StringInterpolation(region, components.build());
+    }
+
+    /**
+     * Matches a identifier. Also does range checking.
+     * @return -1 if the start does not match a keyword, otherwise the end of the keyword
+     */
+    private int continueIdentifier(String text, int index) {
+        Predicate<Character> next =
+                c -> c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' || c >= '0' && c <= '9';
+
+        var length = text.length();
+        if (index < 0 || index > length) {
+            return -1;
+        }
+        if (index == length) {
+            return length;
+        }
+        var i = index;
+        while (i < length) {
+            var c = text.charAt(i);
+            if (!next.test(c)) {
+                break;
+            }
+            i++;
+        }
+
+        return i;
+
+    }
+
+
 
     private KExpr visitArrayCreating(KarinaParser.ArrayContext ctx) {
 
@@ -490,7 +628,7 @@ public class KarinaExprVisitor {
     private KExpr visitFor(KarinaParser.ForContext ctx) {
 
         var region = this.conv.toRegion(ctx);
-        var name = this.conv.region(ctx.ID());
+        var name = this.conv.region(ctx.id());
         var iter = visitExprWithBlock(ctx.exprWithBlock());
         var body = visitBlock(ctx.block());
         return new KExpr.For(
@@ -538,8 +676,8 @@ public class KarinaExprVisitor {
         } else {
             var instance = ctx.matchInstance();
             var type = this.typeVisitor.visitStructType(instance.structType());
-            if (instance.ID() != null) {
-                var name = this.conv.region(instance.ID());
+            if (instance.id() != null) {
+                var name = this.conv.region(instance.id());
                 return new MatchPattern.Cast(region, type, name, expr);
             } else {
                 var values = visitOptTypeList(instance.optTypeList());
@@ -553,14 +691,14 @@ public class KarinaExprVisitor {
 
         return ctx.optTypeName().stream().map(ref -> {
             var region = this.conv.toRegion(ref);
-            var name = this.conv.region(ref.ID());
+            var name = this.conv.region(ref.id());
             var type = ref.type() == null ? null : this.typeVisitor.visitType(ref.type());
             return new NameAndOptType(region, name, type, null);
         }).toList();
 
     }
 
-    private BigDecimal parseNumber(String text) throws NumberFormatException {
+    public BigDecimal parseNumber(String text) throws NumberFormatException {
 
         text = text.replace("_", "");
         if (text.startsWith("0x")) {
@@ -574,4 +712,7 @@ public class KarinaExprVisitor {
         }
 
     }
+
+
+
 }

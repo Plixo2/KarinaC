@@ -3,10 +3,11 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+import org.karina.lang.compiler.stages.attrib.AttributionExpr;
+import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
-public class WhileAttrib extends AttributionExpr {
+public class WhileAttrib  {
 
     public static AttributionExpr attribWhile(
             @Nullable KType hint,
@@ -15,7 +16,7 @@ public class WhileAttrib extends AttributionExpr {
     {
         var boolType = new KType.PrimitiveType(KType.KPrimitive.BOOL);
         var condition = attribExpr(boolType, ctx, expr.condition()).expr();
-        ctx.assign(expr.condition().region(), boolType, condition.type());
+        condition = ctx.makeAssignment(expr.condition().region(), boolType, condition);
 
         var body = attribExpr(null, ctx.setInLoop(true), expr.body()).expr();
 

@@ -1,9 +1,10 @@
 package org.karina.lang.compiler;
 
 import org.karina.lang.compiler.api.*;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.interpreter.InterpreterBackend;
 import org.karina.lang.compiler.api.DefaultFileTree;
-import org.karina.lang.compiler.errors.types.Error;
+import org.karina.lang.compiler.logging.errors.Error;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.interpreter.Interpreter;
 
@@ -24,15 +25,16 @@ public class TestFile {
     }
 
     public void expect() {
-        var compiler = new KarinaDefaultCompiler();
+        var compiler = new KarinaDefaultCompiler("", null);
         var collection = new DiagnosticCollection();
+        var warnings = new DiagnosticCollection();
 
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var result = compiler.compile(fileTree, collection, null);
+        var result = compiler.compile(fileTree, collection, warnings, null);
 
-        if (result.isError()) {
+        if (!result) {
             printDiagnostic(collection, true);
             throw new AssertionError("Expected success for '" + this.name + "'");
         }
@@ -43,67 +45,48 @@ public class TestFile {
     }
 
     public <T> void expectError(Class<T> errorType, String msg) {
-        var compiler = new KarinaDefaultCompiler();
+        var compiler = new KarinaDefaultCompiler("", null);
         var collection = new DiagnosticCollection();
+        var warnings = new DiagnosticCollection();
 
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var result = compiler.compile(fileTree, collection, null);
+        var result = compiler.compile(fileTree, collection, warnings, null);
 
-        switch (result) {
-            case CompilationResult.Error<?> v -> {
-                Error lastError = null;
-                for (var log : collection) {
-                    lastError = log.entry();
-                    if (log.entry().getClass().equals(errorType)) {
-                        if (msg.isEmpty()) {
-                            return;
-                        }
-                        if (log.mkString(true).contains(msg)) {
-                            return;
-                        }
-                        var message = "Expected Fail for '" + this.name + "' with '" + msg +
-                                "' for type " + errorType.getSimpleName();
-                        throw new AssertionError(message);
-                    }
+        if (result) {
+            throw new AssertionError("Expected Fail for '" + this.name + "'" + " but got success for " + this.source.resource().identifier());
+        }
+
+        Log.LogWithTrace lastError = null;
+        for (var log : collection) {
+            lastError = log;
+            if (log.entry().getClass().equals(errorType)) {
+                if (msg.isEmpty()) {
+                    return;
                 }
-
-                var message =
-                        "Expected Fail for '" + this.name + "' of type '" + errorType.getSimpleName() + "'" +
-                                " but got " + (lastError == null ? "no errors" : lastError.getClass().getSimpleName());
+                if (log.mkString(true).contains(msg)) {
+                    return;
+                }
+                var message = "Expected Fail for '" + this.name + "' with '" + msg +
+                        "' for fieldType " + errorType.getSimpleName();
                 throw new AssertionError(message);
             }
-            case CompilationResult.OK<?> v -> {
-                throw new AssertionError("Expected Fail for '" + this.name + "'");
-            }
         }
+
+        String suffix = "";
+        if (lastError != null) {
+
+            suffix = lastError.mkString(true);
+        }
+
+        var message =
+                "Expected Fail for '" + this.name + "' of fieldType '" + errorType.getSimpleName() + "'" +
+                        " but got " + (lastError == null ? "no errors" : lastError.getClass().getSimpleName() + " " + suffix);
+        throw new AssertionError(message);
 
     }
 
-    public Object run(String function) {
-        var compiler = new KarinaDefaultCompiler();
-        var collection = new DiagnosticCollection();
-
-        var basePath = new ObjectPath("src");
-        var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
-        var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var result = compiler.compile(fileTree, collection, new InterpreterBackend(true, System.out));
-
-        switch (result) {
-            case CompilationResult.Error<Interpreter> v -> {
-                printDiagnostic(collection, true);
-                throw new AssertionError("Expected success for '" + this.name + "'");
-            }
-            case CompilationResult.OK(var solver) -> {
-                var testLibrary = new TestLibrary();
-                testLibrary.addToInterpreter(solver);
-                var foundFunction = solver.collection().function(function);
-                return solver.eval(foundFunction, null, List.of());
-            }
-        }
-
-    }
 
     private static void printDiagnostic(DiagnosticCollection collection, boolean printVerbose) {
         System.out.println("\u001B[31mCompilation failed\u001B[0m");
