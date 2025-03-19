@@ -22,4 +22,4 @@ jobs:
     - name: Gradle Permissions
       run: chmod +x ./gradlew
     - name: test with Gradle
-      run: ./gradlew test --info
+      run: ./gradlew test --info -PenablePreview=true

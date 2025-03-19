@@ -79,3 +79,10 @@ test {
         events "passed", "skipped", "failed"
     }
 }
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += '--enable-preview'
+}
+
+tasks.withType(Test).configureEach {
+    jvmArgs += '--enable-preview'
+}
