@@ -3,6 +3,8 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.objects.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.symbols.BranchYieldSymbol;
 import org.karina.lang.compiler.utils.BranchPattern;
@@ -10,13 +12,13 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ElsePart;
+import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.function.Function;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
@@ -83,19 +85,79 @@ public class BranchAttrib  {
                     // to check if both cases fail, even tho it should be impossible,
                     // but the bytecode cannot be verified.
                     var classModel = ctx.model().getClass(classType.pointer());
-
                     var permittedSubclasses = new HashSet<>(classModel.permittedSubclasses());
+                    var isSealedAbstract = Modifier.isAbstract(classModel.modifiers());
 
-                    Log.recordType(Log.LogTypes.BRANCH,"permittedSubclasses of if branch = " + permittedSubclasses);
+                    var region = expr.condition().region();
+                    if (ctx.checking().canAssign(region, trueBranchPattern.type() , condition.type(), true)) {
+                        Log.warn(region, "Condition is always true");
+                    }
+
+                    //TODO check for sealed, non sealed, what can be available as the, what not, etc
+                    var foundRestricted = false;
+                    if (Modifier.isFinal(classModel.modifiers())) {
+                        Log.recordType(
+                                Log.LogTypes.BRANCH, "Final class, no subclasses",
+                                "of " + classModel.pointer()
+                        );
+                        var maybeRestricted = new ArrayList<KType.ClassType>();
+                        var superClass = classModel.superClass();
+                        if (superClass != null) {
+                            maybeRestricted.add(superClass);
+                        }
+                        maybeRestricted.addAll(classModel.interfaces());
+
+                        Log.recordType(Log.LogTypes.BRANCH, "Testing ", maybeRestricted);
+                        for (var type : maybeRestricted) {
+                            var subClassModel = ctx.model().getClass(type.pointer());
+                            var subclasses =
+                                    subClassModel.permittedSubclasses();
+
+                            if (!Modifier.isAbstract(subClassModel.modifiers())) {
+                                Log.recordType(
+                                        Log.LogTypes.BRANCH, "Skipping non-abstract class",
+                                        "of " + type.pointer()
+                                );
+                                continue;
+                            }
+
+                            if (subclasses.isEmpty()) {
+                                Log.recordType(
+                                        Log.LogTypes.BRANCH, "Skipping empty class",
+                                        "of " + type.pointer()
+                                );
+                                continue;
+                            }
+                            if (foundRestricted) {
+                                Log.recordType(
+                                        Log.LogTypes.BRANCH, "Found to many restricted classes ",
+                                        "of " + classModel.pointer()
+                                );
+                                permittedSubclasses.clear();
+                                isSealedAbstract = Modifier.isAbstract(classModel.modifiers());
+                                break;
+                            }
+                            foundRestricted = true;
+                            isSealedAbstract = true;
+                            permittedSubclasses = new HashSet<>(subclasses);
+                        }
+
+                    }
+
+
+                    Log.recordType(Log.LogTypes.BRANCH,"permittedSubclasses of if branch = " + permittedSubclasses, "of " + classModel.pointer());
 
                     if (permittedSubclasses.size() == 2) {
                         if (trueBranchPattern.type() instanceof KType.ClassType innerTrueCase) {
-                            permittedSubclasses.remove(innerTrueCase.pointer());
+
+                            var removed = permittedSubclasses.remove(innerTrueCase.pointer());
+                            Log.recordType(Log.LogTypes.BRANCH,"removing true case: " + removed);
                         }
                         if (elsePattern.type() instanceof KType.ClassType innerFalseCase) {
-                            permittedSubclasses.remove(innerFalseCase.pointer());
+                            var removed = permittedSubclasses.remove(innerFalseCase.pointer());
+                            Log.recordType(Log.LogTypes.BRANCH,"removing false case: " + removed);
                         }
-                        if (permittedSubclasses.isEmpty() && Modifier.isAbstract(classModel.modifiers())) {
+                        if (permittedSubclasses.isEmpty() && isSealedAbstract) {
                             bothCasesCovered = true;
                         }
                     }
@@ -125,8 +187,8 @@ public class BranchAttrib  {
             }
 
             Function<Boolean, String> toStr = b -> b ? "returns" : "does not return";
-            Log.recordType(Log.LogTypes.BRANCH, "Then branch: " + toStr.apply(thenReturns) + ", yielding value of type: " + then.type());
-            Log.recordType(Log.LogTypes.BRANCH, "Else branch: " + toStr.apply(elseReturns) + ", yielding value of type: " + elseExpr.type());
+            Log.recordType(Log.LogTypes.BRANCH, "Then branch: " + toStr.apply(thenReturns) + ", yielding value of then: " + then.type());
+            Log.recordType(Log.LogTypes.BRANCH, "Else branch: " + toStr.apply(elseReturns) + ", yielding value of else: " + elseExpr.type());
             Log.recordType(Log.LogTypes.BRANCH, "Both cases covered: " + bothCasesCovered + ", Yield symbol: " + yieldSymbol);
 
         }
@@ -164,6 +226,9 @@ public class BranchAttrib  {
             case BranchPattern.Cast cast -> {
                 var isType = cast.type();
 
+                //TODO: Allow function to be checked
+                // allow auto conversion
+                //
                 //replace all generics with KType.ROOT
                 if (isType instanceof KType.ClassType classType) {
                     var classModel = ctx.model().getClass(classType.pointer());
@@ -175,14 +240,16 @@ public class BranchAttrib  {
                     //for inference only
                     var _ = ctx.checking().canAssign(cast.region(), inferHint, isType, true);
                     //if not inferred, resolve to base case
-                    for (var newGeneric : newGenerics) {
-                        var type = (KType.Resolvable) newGeneric;
+                    for (var i = 0; i < classModel.generics().size(); i++) {
+                        var generic = classModel.generics().get(i);
+                        var type = (KType.Resolvable) newGenerics.get(i);
                         if (!type.isResolved()) {
-                            type.tryResolve(cast.region(), KType.ROOT);
+                            //TODO Types.eraseGeneric might lead to recursive types
+                            type.tryResolve(cast.region(), Types.eraseGeneric(generic));
                         }
                     }
                 } else {
-                    Log.attribError(new AttribError.NotAStruct(cast.region(), isType));
+                    Log.attribError(new AttribError.NotAClass(cast.region(), isType));
                     throw new Log.KarinaException();
                 }
 

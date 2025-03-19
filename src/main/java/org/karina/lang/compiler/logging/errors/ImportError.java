@@ -21,9 +21,9 @@ public sealed interface ImportError extends Error {
 
     record NoItemFound(Region region, String item, ObjectPath cls) implements ImportError {}
 
-    record JavaNotSupported(Region region) implements ImportError {}
     record InvalidName(Region region, String name, @Nullable String message) implements ImportError {}
 
+    record InnerClassImport(Region region, ObjectPath cls) implements ImportError {}
 
 
 }

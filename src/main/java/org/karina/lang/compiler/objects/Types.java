@@ -3,6 +3,7 @@ package org.karina.lang.compiler.objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.logging.FlightRecorder;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.utils.Generic;
@@ -37,7 +38,6 @@ public class Types {
                 for (var ignored : classType.generics()) {
                     generics.add(KType.ROOT);
                 }
-
                 yield new KType.ClassType(classType.pointer(), generics);
             }
             case KType.FunctionType functionType -> {
@@ -48,21 +48,36 @@ public class Types {
                 KType returnType = KType.ROOT;
                 yield new KType.FunctionType(arguments, returnType, java.util.List.of());
             }
-            case KType.GenericLink genericLink -> KType.ROOT;
+            case KType.GenericLink genericLink -> {
+                yield eraseGeneric(genericLink.link());
+            }
             case KType.PrimitiveType primitiveType -> primitiveType;
-            case KType.Resolvable resolvable -> KType.ROOT;
+            case KType.Resolvable resolvable -> {
+                //this should not happen
+                yield KType.ROOT;
+            }
             case KType.UnprocessedType unprocessedType -> {
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
-                throw new Log.KarinaException();
+                yield KType.ROOT;
             }
             case KType.VoidType _ -> KType.VOID;
         };
+    }
+
+    public static KType eraseGeneric(Generic generic) {
+        if (generic.superType() != null) {
+            return generic.superType();
+        } else if (!generic.bounds().isEmpty()) {
+            return generic.bounds().getFirst();
+        } else {
+            return KType.ROOT;
+        }
     }
 
     public static boolean erasedEquals(KType a, KType b) {
         if (a == b) {
             return true;
         }
+        //check for class, so cast is valid
         if (a.getClass() != b.getClass()) {
             return false;
         }
@@ -88,7 +103,7 @@ public class Types {
                 Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
                 throw new Log.KarinaException();
             }
-            case KType.VoidType _ -> b.isVoid();
+            case KType.VoidType _ -> true;
         };
 
     }
@@ -139,6 +154,11 @@ public class Types {
         }
     }
 
+    public static KType erasedClass(ClassModel classModel) {
+        var generics = classModel.generics().stream().map(Types::eraseGeneric).toList();
+        return new KType.ClassType(classModel.pointer(), generics);
+    }
+
     record TypeDependency(KType type, int level) { }
 
     static int getTypeDependencyIndex(KType type, List<TypeDependency> dependencies) {
@@ -160,7 +180,8 @@ public class Types {
      * (only used for interfaces and super classes)
      */
     public static KType projectGenerics(KType original, Map<Generic, KType> generics) {
-        return switch (original) {
+        var sample = Log.addSuperSample("GENERIC_TYPE_PROJECTION");
+        var replaced = switch (original) {
             case KType.ArrayType(var element) -> {
                 var newElement = projectGenerics(element, generics);
                 yield new KType.ArrayType(newElement);
@@ -219,6 +240,8 @@ public class Types {
             }
             case KType.VoidType _ -> KType.VOID;
         };
+        sample.endSample();
+        return replaced;
     }
 
     /**
@@ -259,6 +282,7 @@ public class Types {
             KType.ClassType owningClass,
             KType.ClassType classToMap
     ) {
+        var sample = Log.addSuperSample("GENERIC_MODEL_PROJECTION");
         ClassModel classModel = model.getClass(owningClass.pointer());
         var genericMap = new HashMap<Generic, KType>();
 
@@ -269,7 +293,10 @@ public class Types {
             }
 
             var index = testingModelToGetIndexFrom.generics().indexOf(link);
-            Log.assert_(index != -1, "Generic not found in model, this should not happen", classModel.pointer().region());
+            if (index == -1) {
+                Log.temp(testingModelToGetIndexFrom.region(), "Generic not found in model, this should not happen");
+                throw new Log.KarinaException();
+            }
 
             var mapped = owningClass.generics().get(index);
             genericMap.put(link, mapped);
@@ -278,7 +305,9 @@ public class Types {
 
         }
         //Cast is allowed since Types.projectGenerics returns the a ClassType when provided with a ClassType
-        return (KType.ClassType) Types.projectGenerics(classToMap, genericMap);
+        var classType = (KType.ClassType) Types.projectGenerics(classToMap, genericMap);
+        sample.endSample();
+        return classType;
     }
 
 

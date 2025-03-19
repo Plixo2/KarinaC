@@ -22,7 +22,7 @@ public class CreateObjectAttrib  {
 
 
         if (!(expr.createType() instanceof KType.ClassType classType)) {
-            Log.attribError(new AttribError.NotAStruct(expr.region(), expr.createType()));
+            Log.attribError(new AttribError.NotAClass(expr.region(), expr.createType()));
             throw new Log.KarinaException();
         }
 
@@ -155,7 +155,7 @@ public class CreateObjectAttrib  {
     ) {
 
         var classToInit = ctx.model().getClass(classPointer);
-        var collection = classToInit.getMethodCollection("<init>");
+        var collection = classToInit.getMethodCollectionShallow("<init>");
         collection = collection.filter(ref -> {
             var methodModel = ctx.model().getMethod(ref);
             var modifiers = methodModel.modifiers();
@@ -199,7 +199,7 @@ public class CreateObjectAttrib  {
         for (var i = 0; i < methodParams.size(); i++) {
             var parameter = methodParams.get(i);
             var param = args.get(i);
-            if (!parameter.equals(param) && !parameter.equals("_")) {
+            if (!parameter.equals(param) && !param.equals("_")) {
                 return false;
             }
         }

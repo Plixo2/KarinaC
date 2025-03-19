@@ -180,7 +180,7 @@ public class KarinaStructVisitor {
                 Log.temp(expr.region(), "Expected a call expression");
                 throw new Log.KarinaException();
             }
-            if (!(call.left() instanceof KExpr.SpecialCall(var _, InvocationType.Unknown()))) {
+            if (!(call.left() instanceof KExpr.SpecialCall(_, InvocationType.Unknown()))) {
                 Log.temp(expr.region(), "Expected a call to super");
                 throw new Log.KarinaException();
             }
@@ -190,7 +190,7 @@ public class KarinaStructVisitor {
         for (var field : fields) {
             var self = new KExpr.Self(region, null);
             var fieldName = RegionOf.region(region, field.name());
-            var lhs = new KExpr.GetMember(region, self, fieldName, null);
+            var lhs = new KExpr.GetMember(region, self, fieldName, false, null);
             var rhs = new KExpr.Literal(region, field.name(), null);
             var assign = new KExpr.Assignment(region, lhs, rhs, null);
             expressions.add(assign);

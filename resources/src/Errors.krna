@@ -1,0 +1,13 @@
+
+
+@Super = {
+    type: type { java.lang.RuntimeException }
+    invocation: expr { super(message, cause.nullable()) }
+}
+struct RuntimeError {
+    message: string
+    cause: Throwable?
+}
+
+
+struct Data

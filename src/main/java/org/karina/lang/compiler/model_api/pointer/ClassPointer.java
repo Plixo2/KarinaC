@@ -28,6 +28,8 @@ public class ClassPointer {
 
     public static final ObjectPath NUMBER_PATH = new ObjectPath("java", "lang", "Number");
     public static final ObjectPath ITERABLE_PATH = new ObjectPath("java", "lang", "Iterable");
+    public static final ObjectPath THROWABLE_PATH = new ObjectPath("java", "lang", "Throwable");
+    public static final ObjectPath CLASS_TYPE = new ObjectPath("java", "lang", "Class");
 
 
     public static boolean shouldIncludeInPrelude(ObjectPath pointer) {

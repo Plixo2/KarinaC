@@ -2,6 +2,7 @@ package org.karina.lang.compiler.jvm.model;
 
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.logging.FlightRecorder;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
@@ -18,6 +19,7 @@ import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,7 +30,7 @@ import java.util.Map;
 public record JKModel(PhaseDebug phase, Map<ObjectPath, ClassModel> classModels) implements Model {
 
     public JKModel {
-        classModels = ImmutableMap.copyOf(classModels);
+        //classModels = ImmutableMap.copyOf(classModels);
     }
 
     public JKModel(PhaseDebug phase) {
@@ -64,13 +66,14 @@ public record JKModel(PhaseDebug phase, Map<ObjectPath, ClassModel> classModels)
 
     @Override
     public ClassModel getClass(ClassPointer pointer) {
+        var sample = Log.addSuperSample("GET_CLASS");
         var classModel = this.classModels.get(pointer.path());
 
         if (classModel == null) {
             Log.temp(pointer.region(), "Class not found, this should not happen: " + pointer.path());
             throw new Log.KarinaException();
         }
-
+        sample.endSample();
         return classModel;
     }
 
@@ -78,15 +81,14 @@ public record JKModel(PhaseDebug phase, Map<ObjectPath, ClassModel> classModels)
     @Override
     public MethodModel getMethod(MethodPointer pointer) {
 
-        var parameters = pointer.signature().parameters();
-        var erased = parameters.stream().map(Types::erase).toList();
+        var erased = pointer.erasedParameters();
 
         var classModel = getClass(pointer.classPointer());
         for (var method : classModel.methods()) {
             if (!method.name().equals(pointer.name())) {
                 continue;
             }
-            var interErased = method.signature().parametersErased();
+            var interErased = method.erasedParameters();
             if (Types.signatureEquals(erased, interErased)) {
                 return method;
             }
@@ -107,11 +109,11 @@ public record JKModel(PhaseDebug phase, Map<ObjectPath, ClassModel> classModels)
         throw new Log.KarinaException();
     }
 
-    public Iterable<KClassModel> getUserClasses() {
-        return () -> this.classModels.values().stream()
+    public List<KClassModel> getUserClasses() {
+        return this.classModels.values().stream()
                 .filter(c -> c instanceof KClassModel)
                 .map(c -> (KClassModel) c)
-                .iterator();
+                .toList();
     }
 
     public Iterable<JClassModel> getBytecodeClasses() {

@@ -12,7 +12,8 @@ public class AttributionProcessor {
     public JKModel attribTree(JKModel model) throws Log.KarinaException {
         var build = new JKModelBuilder(PhaseDebug.TYPED);
         try (var collector = new ErrorCollector()) {
-            for (var kClassModel : model.getUserClasses()) {
+            var userClasses = model.getUserClasses();
+            for (var kClassModel : userClasses) {
                 if (!kClassModel.isTopLevel()) {
                     continue;
                 }

@@ -1,18 +1,25 @@
 
 import java.lang.String valueOf
-import java.lang.Throwable
-import karina.lang.Result { tryFunction }
-import karina.lang.Result.Ok
-import karina.lang.Result.Err
+import karina.lang.Result { safeCall }
+import karina.lang.Result { Ok, Err }
 import src.Main.Inner
 import java.util.function.Supplier
 import java.lang.System out
-import karina.lang.Option { some, none }
+import karina.lang.Option
 //import src.Main.Option { some, none }
 import java.util.ArrayList
+import java.util.List
+import java.util.Arrays
+import src.Errors
 
+import src.Files
 
 fn main() {
+    let path = Files.getPath("Hello").expect("a valid path")
+    println(Files.exists(path))
+    Files.loadFile(path)
+
+
    // let a: int = 1
    // let b: string = "Hello World"
    // let c: String = String.valueOf(a)
@@ -23,35 +30,45 @@ fn main() {
 }
 
 fn get() -> ? {
-   // let i: java.lang.Integer = Integer.valueOf(1)
+    let indicesA = Arrays.asList([1, 2]).stream().map(fn(a) valueOf(a.intValue())).toList()
 
-    //  let w = SimpleSupplier { value: 10 }
-    //let b = a.
- //   let result: Result<Integer, java.lang.Throwable> = tryFunction(SimpleSupplier { value: 10})
- //   let result2 = tryFunction(fn() impl Supplier<?> Integer.valueOf(10))
- //   let result3 = tryFunction(fn() Integer.valueOf(10))
-  //  if result is Result.Ok value {
-  //      let w = value
-  //  } else is Result.Err e {
-  //      let error = e
- //   }
-    //let o = getAsAny("Hello")
-    //if o is Other(w) {
+    for text: string in indicesA {
+        if text.isEmpty() {
+            continue
+        }
+        let firstChar = Character.toUpperCase(text.charAt(0))
+        let rest = text.substring(1).toLowerCase()
+        println('$firstChar$rest')
+    }
 
-    //} else is Result.Ok(value) {
+    let map = java.util.HashMap<> {}
 
-    //}
+    //map.put("Hello", 10)
 
-    //return 1;
+    map.forEach(fn(key, value) {
+        let str: String = key
+        let s: int = value;
+        println('Key: $key Value: $value')
+    })
+
 
     let list = ArrayList<Integer> {
-        initialCapacity: 10
+        _: List.of()
     }
+    list.stream()
     let _ = list.add(10)
+    let _ = list.add(20)
+    let c = []
 
     for a in list {
         let s: int = a
+    }
+    let indices = Arrays.asList([1, 2, 3, 4, 5, 6, 7, 8, 9]).stream().map(fn(a) valueOf(a)).toList()
 
+    //let indices = Arrays.asList([1, 2]).stream(fn(a) valueOf(a.intValue())).toList()
+
+    for a in indices {
+        println(a)
     }
 
    // let _b: int = list.get(10)
@@ -69,8 +86,9 @@ fn get() -> ? {
 
 fn test() -> bool {
 
+    let box = fn(value: int) -> Integer { value }
 
-    let s: Option<Integer> = some(Integer.valueOf(10))
+    let s: Integer? = Option.Some { _: (Integer.valueOf(10)) } as Option<Integer>
 
     let s2: TestInterface<Integer, String> = Test { inner: box(10) }
 
@@ -97,11 +115,11 @@ fn test() -> bool {
     any.test()
     any.testTwo(any)
     let ret = any.ret()
-    ret = none()
+    ret = Option.none()
 
-    let testBox = some(10)
+    let testBox = Option.some(10)
 
-
+    let WWW: int = 10.0 as _
 
     let a_ = <int>[]
     a_[boxed_int] = 1
@@ -132,103 +150,6 @@ fn test() -> bool {
 
     any != a
 }
-
-/*
-enum Option<T> {
-    Some(value: T)
-    None
-
-    fn some<T>(value: T) -> T? {
-        Option.Some { value: value }
-    }
-
-    fn none<T>() -> T? {
-        Option.None {}
-    }
-
-
-    fn fromJava<T>(value: java.util.Optional<T>) -> T? {
-        if value.isPresent() {
-            Option.Some { value: value.get() }
-        } else {
-            Option.None {}
-        }
-       Option.None {}
-    }
-
-    fn fromNullable<T>(value: T) -> T? {
-        if value != NULL_VALUE {
-            Option.Some { value: value }
-        } else {
-            Option.None {}
-        }
-    }
-
-
-    fn orElse(self, other: T) -> T {
-        if self is Option.Some some {
-            some.value
-        } else is Option.None {
-            other
-        }
-    }
-
-    fn orElseGet(self, function: fn() -> T) -> T {
-        if self is Option.Some some {
-            some.value
-        } else is Option.None {
-            function()
-        }
-    }
-
-    fn map<W>(self, function: fn(T) -> W) -> Option<W> {
-        if self is Option.Some some {
-            Option.Some { value: function(some.value) }
-        } else is Option.None {
-            Option.None {}
-        }
-    }
-
-    fn mapOrElse<W>(self, mapFunction: fn(T) -> W, defaultValue: W) -> W {
-        if self is Option.Some some {
-            mapFunction(some.value)
-        } else is Option.None {
-            defaultValue
-        }
-    }
-
-    fn or(self, other: Option<T>) -> Option<T> {
-        if self is Option.Some some {
-            self
-        } else is Option.None {
-            other
-        }
-    }
-
-    fn and(self, other: Option<T>) -> Option<T> {
-        if self is Option.Some some {
-            other
-        } else is Option.None none {
-            none
-        }
-    }
-
-    //not implemented on enums
-    impl Interface
-
-    //not implemented
-    where T: impl Equals, T: impl Clone {
-        fn contains(self, value: T) -> bool {
-            if self is Option.Some some {
-                some.value == value
-            } else is Option.None {
-                false
-            }
-        }
-    }
-
-}
-*/
 
 struct Test<W> {
     inner: W
@@ -262,6 +183,8 @@ interface TestInterface<T, B> {
 
 }
 
+
+
 struct ObjectSome {
     \fn: string
 }
@@ -274,10 +197,7 @@ struct ObjectToBase {
     element: int
 }
 
-@Super = {
-    type: type { ObjectToBase }
-    invocation: expr { super(value.length()) }
-}
+
 /*
 @Init = {
     type: type { ObjectToBase }
@@ -290,6 +210,11 @@ struct ObjectToBase {
 }
 */
 
+
+@Super = {
+    type: type { ObjectToBase }
+    invocation: expr { super(value.length()) }
+}
 struct BasedObject {
     value: string
 }
@@ -331,30 +256,22 @@ interface Interface {
     fn function(self) -> bool
 }
 
-
-fn box(i: int) -> Integer {
-    Integer.valueOf(i)
+fn expect<T, E>(result: Result<T, E>) -> T {
+    expect(result, "")
 }
 
-fn box(i: long) -> Long {
-    Long.valueOf(i)
+fn expect<T, E>(result: Result<T, E>, message: string) -> T {
+    if result is Ok ok {
+        ok.value
+    } else is Err e {
+        let suffix = if message.isEmpty() { "" } else { ': $message' }
+
+        raise java.lang.RuntimeException {
+            message: 'Could not unwrap Result$suffix',
+            cause: Option.instanceOf(Throwable, e.error).nullable()
+        }
+    }
 }
-
-fn box(i: double) -> Double {
-    Double.valueOf(i)
-}
-
-fn box(i: float) -> Float {
-    Float.valueOf(i)
-}
-
-fn box(i: bool) -> Boolean {
-    Boolean.valueOf(i)
-}
-
-
-
-
 /*
 Expr
 Value

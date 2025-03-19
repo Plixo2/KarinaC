@@ -223,7 +223,9 @@ public class KarinaUnitVisitor {
     public List<Generic> visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
         return ctx.id().stream().map(ref -> {
             var region = this.conv.region(ref);
-            return new Generic(region.region(), region.value());
+            var generic = new Generic(region.region(), region.value());
+            generic.updateBounds(KType.ROOT, List.of());
+            return generic;
         }).toList();
     }
 

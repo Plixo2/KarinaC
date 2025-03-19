@@ -39,7 +39,6 @@ public class SyntaxTests {
         map.put("UnknownImportType", ImportError.UnknownImportType.class);
         map.put("GenericCountMismatch", ImportError.GenericCountMismatch.class);
         map.put("NoUnitFound", ImportError.NoClassFound.class);
-        map.put("JavaNotSupported", ImportError.JavaNotSupported.class);
 
         map.put("temp", TemporaryErrorRegion.class);
 
@@ -49,7 +48,7 @@ public class SyntaxTests {
         map.put("DuplicateVariable", AttribError.DuplicateVariable.class);
         map.put("TypeMismatch", AttribError.TypeMismatch.class);
         map.put("UnknownIdentifier", AttribError.UnknownIdentifier.class);
-        map.put("NotAStruct", AttribError.NotAStruct.class);
+        map.put("NotAStruct", AttribError.NotAClass.class);
         map.put("NotAInterface", AttribError.NotAInterface.class);
         map.put("ControlFlow", AttribError.ControlFlow.class);
         map.put("NotAArray", AttribError.NotAArray.class);
@@ -58,7 +57,7 @@ public class SyntaxTests {
         map.put("ScopeFinalityAssignment", AttribError.ScopeFinalityAssignment.class);
 
         map.put("MissingField", AttribError.UnknownCast.class);
-        map.put("UnknownField", AttribError.UnknownField.class);
+        map.put("UnknownField", AttribError.UnknownMember.class);
 
         SyntaxTests.map = new HashMap<>();
         map.forEach((key, value) -> SyntaxTests.map.put(key.toLowerCase(), value));

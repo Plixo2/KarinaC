@@ -1,9 +1,13 @@
 package org.karina.lang.compiler.jvm.loading;
 
+import org.karina.lang.compiler.logging.FlightRecorder;
+import org.karina.lang.compiler.logging.Log;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class BytecodeLoading {
@@ -18,11 +22,15 @@ public class BytecodeLoading {
                 try (var inputStream = jarFile.getInputStream(entry)) {
                     var reader = new ClassReader(inputStream);
                     var classNode = new ClassNode();
+                    var sample = Log.addSuperSample("ASM_PARSE");
                     reader.accept(
-                            classNode, 0
-//                            ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES
-//                            ClassReader.EXPAND_FRAMES
+                            classNode,
+                            ClassReader.SKIP_FRAMES
+                            //we cant skip code, as this skips local variables,
+                            // which we need for recovering parameter names
+                            // this costs us 30% of the time
                     );
+                    sample.endSample();
                     if (!classNode.name.equals("module-info")) {
                         openSet.add(classNode, entry.getRealName());
                     }

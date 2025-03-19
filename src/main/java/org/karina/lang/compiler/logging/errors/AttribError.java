@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.logging.errors;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.objects.BinaryOperator;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
@@ -17,8 +18,11 @@ public sealed interface AttribError extends Error {
     record DuplicateVariable(Region first, Region second, String name) implements AttribError {}
 
     record UnknownCast(Region region) implements AttribError {}
+    record InvalidNarrowingCast(Region region) implements AttribError {}
 
-    record UnknownField(Region region, String name) implements AttribError {}
+    record UnknownMember(Region region, String of, String name, Set<String> availableMethods, Set<String> availableFields, @Nullable String protectedPointer) implements AttribError {}
+
+    record DuplicateInterface(Region region, KType.ClassType interfaceType) implements AttribError {}
 
     record FinalAssignment(Region region, Region regionOfFinalObject, String name) implements AttribError {}
 
@@ -28,7 +32,8 @@ public sealed interface AttribError extends Error {
 
     record TypeCycle(Region region, String message, List<String> graph) implements AttribError {}
 
-    record NotAStruct(Region region, KType type) implements AttribError { }
+    record NotAClass(Region region, KType type) implements AttribError { }
+    record NotAValidInterface(Region region, List<KType> args, KType returning, KType type) implements AttribError { }
 
     record NotAArray(Region region, KType type) implements AttribError { }
 

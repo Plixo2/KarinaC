@@ -1,0 +1,113 @@
+{
+  "scopeName": "source.karina",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#literals"
+    },
+    {
+      "include": "#identifiers"
+    }
+    
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.karina",
+          "match": "(?<!\\\\)\\b(fn|is|in|as|null|import|extends|raise|extend|match|override|native|true|false|virtual|break|return|yield|struct|trait|impl|enum|class|let|if|else|matches|while|for|super|interface|self|continue|where)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.karina",
+          "match": "(->|=>|>=|<=|==|!=|&&|\\|\\||\\+|-|\\*|/|%|\\||\\^|~|>|<|!|:|=|\\(|\\)|\\{|\\}|\\[|\\]|@|,|_|&|\\.|\\?|;)"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.karina",
+          "match": "\\b(void|int|double|short|byte|char|long|float|bool|string|json)\\b"
+        }
+      ]
+    },
+    "literals": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.karina",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.karina",
+              "match": "\\\\[btnfr\\\\\"]"
+            },
+            {
+              "name": "constant.character.escape.unicode.karina",
+              "match": "\\\\u[0-9a-fA-F]{4}"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.interpolated.karina",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.karina",
+              "match": "\\\\[btnfr\\\\']"
+            },
+            {
+              "name": "constant.character.escape.unicode.karina",
+              "match": "\\\\u[0-9a-fA-F]{4}"
+            },
+            {
+              "name": "variable.other.karina",
+              "match": "(?<!\\\\)\\$[a-zA-Z_][a-zA-Z0-9_]*"
+            }
+          ]
+        },
+        {
+          "name": "constant.numeric.karina",
+          "match": "\\b(0x[0-9a-fA-F_]+|0b[01_]+|[0-9_]+(\\.[0-9_]+)?([eE][+-]?[0-9_]+)?)\\b"
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "name": "variable.other.karina",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.karina",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.line.double-slash.karina",
+          "match": "//.*$"
+        }
+      ]
+    }
+  }
+}

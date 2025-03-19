@@ -23,7 +23,7 @@ public class CreateArrayAttrib  {
             if (hint instanceof KType.ArrayType(KType type)) {
                 elementType = type;
             } else {
-                elementType = new KType.PrimitiveType.Resolvable(true);
+                elementType = new KType.PrimitiveType.Resolvable(true, false);
             }
         }
 
@@ -32,22 +32,57 @@ public class CreateArrayAttrib  {
             throw new Log.KarinaException();
         }
 
-        //TODO first get super type of all elements, or only when to type available?
-        // then it fails, try to use makeAssignment
 
-        var newElements = new ArrayList<KExpr>();
+        var unMappedElements = new ArrayList<KExpr>();
+
+
         for (var element : expr.elements()) {
             var newElement = attribExpr(elementType, ctx, element).expr();
-            newElement = ctx.makeAssignment(newElement.region(), elementType, newElement);
-            newElements.add(newElement);
+            unMappedElements.add(newElement);
+        }
+
+        // check if we can convert every element to a common type
+        var mappedElements = new ArrayList<KExpr>();
+        for (var unMappedElement : unMappedElements) {
+            var conversion = ctx.getConversion(unMappedElement.region(), elementType, unMappedElement, true, false);
+            if (conversion != null) {
+                mappedElements.add(conversion);
+            } else {
+                break;
+            }
+        }
+
+        KType currentType = elementType;
+
+        // if we can't convert every element to a common type, we need to find a common super type
+        if (mappedElements.size() != unMappedElements.size()) {
+            mappedElements.clear();
+
+            for (var unMappedElement : unMappedElements) {
+                var superType = ctx.checking().superType(unMappedElement.region(), currentType, unMappedElement.type());
+                if (superType == null) {
+                    //dont report error right away, we still can use root for primitive conversion
+                    currentType = KType.ROOT;
+                    break;
+                } else {
+                    currentType = superType;
+                }
+            }
+
+            // ... and then convert every element to that type, otherwise fail
+            for (var unMappedElement : unMappedElements) {
+                var conversion = ctx.makeAssignment(unMappedElement.region(), currentType, unMappedElement);
+                mappedElements.add(conversion);
+            }
+
         }
 
         return of(ctx, new KExpr.CreateArray(
                 expr.region(),
                 elementType,
-                newElements,
+                unMappedElements,
                 new KType.ArrayType(
-                        elementType
+                        currentType
                 )
         ));
 

@@ -59,7 +59,7 @@ public class InterfaceLinker {
         }
         visited.add(node.name);
 
-        var pointer = this.typeGen.internalNameToPointer(region, node.name);
+        var pointer = TypeGeneration.internalNameToPointer(region, node.name);
         var name = pointer.path().last();
         var path = pointer.path();
 
@@ -70,7 +70,9 @@ public class InterfaceLinker {
 
 
         for (var anInterface : node.interfaces) {
-            var interFacePointer = this.typeGen.internalNameToPointer(region, anInterface);
+            var interFacePointer = TypeGeneration.internalNameToPointer(region, anInterface);
+            Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, " with interface: " + interFacePointer);
+
             interfaceBuilder.add(new KType.ClassType(interFacePointer, List.of()));
         }
         var interfaces = interfaceBuilder.build();
@@ -90,7 +92,7 @@ public class InterfaceLinker {
             }
             interfaces = builder.interfaces();
         } else if (node.superName != null) {
-            var superPointer = this.typeGen.internalNameToPointer(region, node.superName);
+            var superPointer = TypeGeneration.internalNameToPointer(region, node.superName);
             superType = new KType.ClassType(superPointer, List.of());
         } else if (!node.name.equals("java/lang/Object")) {
             Log.bytecode(region, node.name, "No super class found");
@@ -102,7 +104,7 @@ public class InterfaceLinker {
         var permittedSubclasses = ImmutableList.<ClassPointer>builder();
         if (node.permittedSubclasses != null) {
             for (var permittedSubclass : node.permittedSubclasses) {
-                var interfacePointer = this.typeGen.internalNameToPointer(region, permittedSubclass);
+                var interfacePointer = TypeGeneration.internalNameToPointer(region, permittedSubclass);
                 permittedSubclasses.add(interfacePointer);
             }
         }
@@ -304,10 +306,11 @@ public class InterfaceLinker {
             returnType = builder.returnType();
         }
         Log.endType(Log.LogTypes.JVM_CLASS_LOADING, "Loading method: " + methodNode.name);
+        var signature = new Signature(parameterTypes, returnType);
         return new JMethodModel(
                 name,
                 modifiers,
-                new Signature(parameterTypes, returnType),
+                signature,
                 parameterNames,
                 generics,
                 null,

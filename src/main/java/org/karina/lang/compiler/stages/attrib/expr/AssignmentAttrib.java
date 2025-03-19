@@ -2,10 +2,12 @@ package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.symbols.AssignmentSymbol;
@@ -25,23 +27,35 @@ public class AssignmentAttrib {
 
         var symbol = switch (left) {
             case KExpr.Literal(
-                    var _, var _, LiteralSymbol.VariableReference(var _, Variable variable)) -> {
-                if (!ctx.isMutable(variable)) {
-                    //if (ctx.canEscapeMutable(variable)) {
+                    _, _, var literalSymbol) -> {
+
+                if (literalSymbol instanceof LiteralSymbol.VariableReference(_, Variable variable)) {
+                    if (!ctx.isMutable(variable)) {
+                        //if (ctx.canEscapeMutable(variable)) {
                         //variable.markEscapeWrapped();
-                    //} else {
+                        //} else {
                         Log.attribError(
                                 new AttribError.FinalAssignment(
-                                        expr.region(), variable.region(),
-                                        variable.name()
-                                ));
+                                        expr.region(), variable.region(), variable.name()));
                         throw new Log.KarinaException();
-                    //}
+                        //}
+                    }
+                    yield new AssignmentSymbol.LocalVariable(variable);
+                } else if (literalSymbol instanceof LiteralSymbol.StaticFieldReference(var innerRegion, var fieldPointer, _)) {
+                    var fieldModel = ctx.model().getField(fieldPointer);
+                    if (Modifier.isFinal(fieldModel.modifiers())) {
+                            Log.attribError(
+                                    new AttribError.FinalAssignment(expr.region(), innerRegion, fieldPointer.name()));
+                            throw new Log.KarinaException();
+                    }
+                    yield new AssignmentSymbol.StaticField(fieldPointer);
+                } else {
+                    Log.attribError(new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));
+                    throw new Log.KarinaException();
                 }
-                yield new AssignmentSymbol.LocalVariable(variable);
             }
             case KExpr.GetMember(
-                    var lhsRegion, var object, var _, MemberSymbol.FieldSymbol(var pointer, var type, var owner)) -> {
+                    var lhsRegion, var object, _, _, MemberSymbol.FieldSymbol(var pointer, var type, var owner)) -> {
 
                 var fieldModel = ctx.model().getField(pointer);
                 if (Modifier.isFinal(fieldModel.modifiers())) {

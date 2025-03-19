@@ -45,7 +45,7 @@ public record StaticImportTable(
         return null;
     }
 
-    public static StaticImportTable fromImportTable(JKModel model, ImportTable importTable) {
+    public static StaticImportTable fromImportTable(ClassPointer referenceSite, JKModel model, ImportTable importTable) {
         var classes = ImmutableMap.<String, ClassPointer>builder();
 
         importTable.classes().forEach((name, ptr) -> {
@@ -63,7 +63,7 @@ public record StaticImportTable(
             staticMethods.put(name, ptr.reference());
         });
         importTable.untypedStaticMethods().forEach((name, ptr) -> {
-            staticMethods.put(name, ptr.reference().toTypedStaticCollection(model));
+            staticMethods.put(name, ptr.reference().toTypedStaticCollection(referenceSite, model));
         });
 
         return new StaticImportTable(classes.build(), staticMethods.build(), staticFields.build());

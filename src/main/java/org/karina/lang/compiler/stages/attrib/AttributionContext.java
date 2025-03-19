@@ -85,15 +85,15 @@ public record AttributionContext(
 //        return this.variables.canEscapeNonMutable(variable);
 //    }
 
-    public @Nullable KExpr getConversion(Region checkingRegion, KType left, KExpr right, boolean mutate) {
+    public @Nullable KExpr getConversion(Region checkingRegion, KType left, KExpr right, boolean mutate, boolean debug) {
         var rightType = right.type();
         left = left.unpack();
 
-        var unwrapped = unboxing(checkingRegion, left, right, mutate);
+        var unwrapped = unboxing(checkingRegion, left, right, mutate, debug);
         if (unwrapped != null) {
             return unwrapped;
         }
-        var boxed = boxing(checkingRegion, left, right, mutate);
+        var boxed = boxing(checkingRegion, left, right, mutate, debug);
         if (boxed != null) {
             return boxed;
         }
@@ -112,19 +112,36 @@ public record AttributionContext(
      * can convert from one type to another (implicit conversion)
      */
     public KExpr makeAssignment(Region checkingRegion, KType left, KExpr right) {
+        var sample = Log.addSuperSample("ASSIGNMENT");
         var rightType = right.type();
-        var conversion = getConversion(checkingRegion, left, right, true);
+        var conversion = getConversion(checkingRegion, left, right, true, true);
         if (conversion == null) {
             Log.attribError(new AttribError.TypeMismatch(checkingRegion, left, rightType));
             throw new Log.KarinaException();
         }
+        sample.endSample();
         return conversion;
     }
 
-    private @Nullable KExpr unboxing(Region checkingRegion, KType left, KExpr right, boolean mutate) {
+    private @Nullable KExpr unboxing(Region checkingRegion, KType left, KExpr right, boolean mutate, boolean debug) {
         var rightType = right.type();
 
-        if (!(left instanceof KType.PrimitiveType(var primitive) && rightType instanceof KType.ClassType classType)) {
+        if (!(left instanceof KType.PrimitiveType(var primitive))) {
+            return null;
+        }
+
+        if (rightType instanceof KType.Resolvable resolvable && !resolvable.isResolved() && !resolvable.canUsePrimitives()) {
+            var unboxFrom = BOX_MAPPING.get(primitive);
+            if (unboxFrom != null) {
+                var toType = new KType.ClassType(unboxFrom.pointer, List.of());
+                //we just say, that the type is now a Boxed version, and let the makeAssignment handle the rest
+                resolvable.tryResolve(checkingRegion, toType);
+
+                return makeAssignment(checkingRegion, left, right);
+            }
+        }
+
+        if (!(rightType instanceof KType.ClassType classType)) {
             return null;
         }
 
@@ -134,13 +151,15 @@ public record AttributionContext(
         }
 
         var classPointer = unboxing.pointer;
-        var isBoxedNumber =
+        var isBoxed =
                 classType.pointer().equals(classPointer) ||
                 (classType.pointer().path().equals(ClassPointer.NUMBER_PATH) && unboxing.isNumber);
 
-        if (isBoxedNumber) {
+        if (isBoxed) {
 
-            Log.recordType(Log.LogTypes.IMPLICIT_CONVERSION, "(ok) Implicit conversion from " + classPointer.path() + " to " + primitive);
+            if (debug) {
+                Log.recordType(Log.LogTypes.IMPLICIT_CONVERSION, "(ok) Implicit conversion from " + classPointer.path() + " to " + primitive);
+            }
 
             var pointer = MethodPointer.of(
                     right.region(),
@@ -168,13 +187,13 @@ public record AttributionContext(
             );
 
             //check again
-            return getConversion(checkingRegion, left, call, mutate);
+            return getConversion(checkingRegion, left, call, mutate, debug);
         }
 
         return null;
     }
 
-    private @Nullable KExpr boxing(Region checkingRegion, KType left, KExpr right, boolean mutate) {
+    private @Nullable KExpr boxing(Region checkingRegion, KType left, KExpr right, boolean mutate, boolean debug) {
         var rightType = right.type();
 
 
@@ -183,17 +202,14 @@ public record AttributionContext(
         }
 
         //this should cover generics as well
-        if (left instanceof KType.Resolvable resolvable) {
-            if (resolvable.isResolved()) {
-                return null;
-            }
+        if (left instanceof KType.Resolvable resolvable && !resolvable.isResolved() && !resolvable.canUsePrimitives()) {
             var boxed = BOX_MAPPING.get(primitive);
             if (boxed == null) {
                 return null;
             }
 
             var classTypeToConvert = new KType.ClassType(boxed.pointer, List.of());
-            var call = createUnboxCall(right, classTypeToConvert, primitive);
+            var call = createBoxingCall(right, classTypeToConvert, primitive, debug);
 
             //it should be resolvable, even tho currently, this should not happen
             if (!resolvable.canResolve(checkingRegion, classTypeToConvert)) {
@@ -206,7 +222,7 @@ public record AttributionContext(
             }
 
             //check again
-            return getConversion(checkingRegion, left, call, mutate);
+            return getConversion(checkingRegion, left, call, mutate, debug);
         }
 
 
@@ -221,10 +237,10 @@ public record AttributionContext(
                 return null;
             }
             var type = new KType.ClassType(boxing.pointer, List.of());
-            var call = createUnboxCall(right, type, primitive);
+            var call = createBoxingCall(right, type, primitive, debug);
 
             //check again
-            return getConversion(checkingRegion, left, call, mutate);
+            return getConversion(checkingRegion, left, call, mutate, debug);
         }
 
         return null;
@@ -247,13 +263,16 @@ public record AttributionContext(
     /**
      * Construct a call to a boxing method
      */
-    private static KExpr.Call createUnboxCall(
+    private static KExpr.Call createBoxingCall(
             KExpr right,
             KType.ClassType classType,
-            KType.KPrimitive primitive
+            KType.KPrimitive primitive,
+            boolean debug
     ) {
 
-        Log.recordType(Log.LogTypes.IMPLICIT_CONVERSION,"(ok) Implicit conversion from " + primitive + " to " + classType.pointer());
+        if (debug) {
+            Log.recordType(Log.LogTypes.IMPLICIT_CONVERSION,"(ok) Implicit conversion from " + primitive + " to " + classType.pointer());
+        }
 
         var pointer = MethodPointer.of(
                 right.region(),

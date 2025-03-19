@@ -95,8 +95,12 @@ public class SignatureVisitor {
             path = getPath(ctx.packageSpecifier());
         }
         var baseClass = parseSubClassSignature(ctx.simpleClassTypeSignature());
-        path = path.append(baseClass.name());
+        var split = baseClass.name().split("[/$]");
+        for (var s : split) {
+            path = path.append(s);
+        }
         var suffix = ctx.classTypeSignatureSuffix().stream().map(ref -> parseSubClassSignature(ref.simpleClassTypeSignature())).toList();
+
 
         var pointer = ClassPointer.of(this.region, path);
         return new TypeSignature.ClassTypeSignature(pointer, baseClass.typeArguments(), suffix);

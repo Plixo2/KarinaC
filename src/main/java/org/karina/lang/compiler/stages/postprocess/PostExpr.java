@@ -173,7 +173,7 @@ public class PostExpr {
                 var body = rewrite(aFor.body(), context);
                 yield new KExpr.For(
                         aFor.region(),
-                        aFor.name(),
+                        aFor.varPart(),
                         iter,
                         body,
                         aFor.symbol()
@@ -195,6 +195,7 @@ public class PostExpr {
                         getMember.region(),
                         left,
                         getMember.name(),
+                        false,
                         getMember.symbol()
                 );
             }
@@ -236,8 +237,7 @@ public class PostExpr {
                 var value = rewrite(aThrow.value(), context);
                 yield new KExpr.Throw(
                         aThrow.region(),
-                        value,
-                        aThrow.symbol()
+                        value
                 );
             }
             case KExpr.Unary unary -> {
@@ -254,7 +254,7 @@ public class PostExpr {
                 yield new KExpr.VariableDefinition(
                         variableDefinition.region(),
                         variableDefinition.name(),
-                        variableDefinition.hint(),
+                        variableDefinition.varHint(),
                         left,
                         variableDefinition.symbol()
                 );

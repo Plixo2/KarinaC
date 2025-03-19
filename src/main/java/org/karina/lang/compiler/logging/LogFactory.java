@@ -4,6 +4,8 @@ import org.karina.lang.compiler.logging.errors.Error;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Region;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,12 +64,10 @@ public class LogFactory<T extends LogBuilder> {
                 }
             }
             case ImportError errorType -> {
-                var importError = builder.setTitle("Import Error");
-                populateImportError(errorType, importError);
+                populateImportError(errorType, builder);
             }
             case AttribError errorType -> {
-                var linkError = builder.setTitle("Attribution Error");
-                populateLinkError(errorType, linkError);
+                populateLinkError(errorType, builder);
             }
         }
         return builder;
@@ -77,13 +77,20 @@ public class LogFactory<T extends LogBuilder> {
     private void populateLinkError(AttribError errorType, LogBuilder builder) {
 
         switch (errorType) {
-            case AttribError.NotAStruct notAClass -> {
-                builder.setTitle("Not a struct");
-                builder.append("Type '").append(notAClass.type()).append("' is not a struct");
+            case AttribError.NotAValidInterface notAValidInterface -> {
+                builder.setTitle("Not a valid interface");
+                builder.append("Type '").append(notAValidInterface.type())
+                       .append("' is not a valid interface for the given arguments");
+                builder.append(notAValidInterface.args().toString()).append(" -> ").append(notAValidInterface.returning());
+                builder.setPrimarySource(notAValidInterface.region());
+            }
+            case AttribError.NotAClass notAClass -> {
+                builder.setTitle("Not a class");
+                builder.append("Type '").append(notAClass.type()).append("' is not a Class");
                 builder.setPrimarySource(notAClass.region());
             }
             case AttribError.TypeCycle typeCycle -> {
-                builder.setTitle("Type Cycle");
+                builder.setTitle("Type cycle");
                 builder.append(typeCycle.message());
                 builder.append("Graph: ");
                 typeCycle.graph().forEach(builder::append);
@@ -96,30 +103,35 @@ public class LogFactory<T extends LogBuilder> {
                 builder.setPrimarySource(typeMismatch.region());
             }
             case AttribError.FinalAssignment finalAssignment -> {
+                builder.setTitle("Invalid assignment");
                 builder.append("Can't reassign final symbol '").append(finalAssignment.name()).append("'");
                 builder.setPrimarySource(finalAssignment.region());
                 builder.addSecondarySource(finalAssignment.regionOfFinalObject(), "Defined here: ");
             }
             case AttribError.ScopeFinalityAssignment scopeFinalityAssignment -> {
+                builder.setTitle("Invalid assignment");
                 builder.append("Cannot reassign a symbol used in a function expression'");
                 builder.append("Variable '").append(scopeFinalityAssignment.name()).append("' is define outside the expression");
                 builder.setPrimarySource(scopeFinalityAssignment.region());
             }
             case AttribError.DuplicateVariable duplicateVariable -> {
-                builder.append("Variable '").append(duplicateVariable.name()).append("' was already declared");
+                builder.setTitle("Duplicate variable");
+                builder.append("variable '").append(duplicateVariable.name()).append("' was already declared");
                 builder.setPrimarySource(duplicateVariable.second());
                 builder.addSecondarySource(duplicateVariable.first(), "Defined here: ");
             }
             case AttribError.UnknownIdentifier(var region, var name, var available) -> {
+                builder.setTitle("Unknown identifier");
                 builder.append("Unknown identifier '").append(name).append("'");
-                builder.setPrimarySource(region);
                 var suggestions = DidYouMean.suggestions(available, name, 5);
                 if (!suggestions.isEmpty()) {
                     var quoted = suggestions.stream().map(x -> "'" + x + "'").toList();
                     builder.append("Did you mean: ").append(quoted);
                 }
+                builder.setPrimarySource(region);
             }
             case AttribError.UnqualifiedSelf unqualifiedSelf -> {
+                builder.setTitle("Unqualified self");
                 builder.append("Invalid use of 'self' in a static context");
                 builder.setPrimarySource(unqualifiedSelf.region());
                 builder.addSecondarySource(unqualifiedSelf.method(), "in method: ");
@@ -130,15 +142,15 @@ public class LogFactory<T extends LogBuilder> {
                 builder.setPrimarySource(notAInterface.region());
             }
             case AttribError.ControlFlow controlFlow -> {
-                builder.setTitle("Control Flow");
+                builder.setTitle("Control flow");
                 builder.append(controlFlow.message());
                 builder.setPrimarySource(controlFlow.region());
             }
             case AttribError.SignatureMismatch signatureMismatch -> {
-                builder.setTitle("Signature Mismatch");
+                builder.setTitle("Signature mismatch");
                 builder.append("Could not match signature of method '").append(signatureMismatch.name()).append("'");
                 builder.append("Found Signature ").append(signatureMismatch.found());
-                builder.setPrimarySource(signatureMismatch.region());
+                builder.append("");
                 builder.append("Available Signatures:");
                 if (signatureMismatch.available().isEmpty()) {
                     builder.append("None");
@@ -147,13 +159,14 @@ public class LogFactory<T extends LogBuilder> {
                     var toStr = available.value().toString();
                     builder.addSecondarySource(available.region(), toStr + " in: ");
                 }
+                builder.setPrimarySource(signatureMismatch.region());
             }
             case AttribError.MissingConstructor missingConstructor -> {
-                builder.setTitle("Constructor Mismatch");
+                builder.setTitle("Constructor mismatch");
                 builder.append("Could not find Constructor of '").append(missingConstructor.object()).append("'");
                 builder.append("With parameters ").append(missingConstructor.names());
-                builder.setPrimarySource(missingConstructor.region());
                 builder.append("Available names:");
+
                 if (missingConstructor.available().isEmpty()) {
                     builder.append("None");
                 }
@@ -161,29 +174,63 @@ public class LogFactory<T extends LogBuilder> {
                     var toStr = available.value().toString();
                     builder.addSecondarySource(available.region(), toStr + " in: ");
                 }
+                builder.setPrimarySource(missingConstructor.region());
             }
             case AttribError.UnknownCast unknownCast -> {
-                builder.append("Unknown Cast");
+                builder.setTitle("Unknown cast");
                 builder.append("Cannot infer type of cast, give the type explicitly");
                 builder.setPrimarySource(unknownCast.region());
             }
-            case AttribError.UnknownField unknownField -> {
-                builder.append("Unknown Member '").append(unknownField.name()).append("'");
-                builder.setPrimarySource(unknownField.region());
+            case AttribError.InvalidNarrowingCast invalidNarrowingCast -> {
+                builder.setTitle("Invalid narrowing Cast");
+                builder.append("Uncheck narrowing casts are not allowed");
+                builder.setPrimarySource(invalidNarrowingCast.region());
+            }
+            case AttribError.UnknownMember unknownMember -> {
+                builder.setTitle("Unknown member");
+                builder.append("Unknown Member '").append(unknownMember.name()).append("'")
+                       .append(" of ").append(unknownMember.of());
+
+                var suggestionField = DidYouMean.suggestions(unknownMember.availableFields(), unknownMember.name(), 10);
+
+                if (!suggestionField.isEmpty()) {
+                    var quoted = suggestionField.stream().map(x -> "'" + x + "'").toList();
+                    builder.append("Available Fields: ").append(quoted);
+                }
+
+                var suggestionMethod = DidYouMean.suggestions(unknownMember.availableMethods(), unknownMember.name(), 10);
+
+                if (!suggestionMethod.isEmpty()) {
+                    var quoted = suggestionMethod.stream().map(x -> "'" + x + "'").toList();
+                    builder.append("Available Methods: ").append(quoted);
+                }
+
+                if (unknownMember.protectedPointer() != null) {
+                    builder.append("A member of the name '").append(unknownMember.name())
+                           .append("' exists, but is not accessible here: ");
+                    builder.append(unknownMember.protectedPointer());
+                }
+
+                builder.setPrimarySource(unknownMember.region());
+            }
+            case AttribError.DuplicateInterface duplicateInterface -> {
+                builder.setTitle("Duplicate interface");
+                builder.append("Duplicate Interface '").append(duplicateInterface.interfaceType()).append("'");
+                builder.setPrimarySource(duplicateInterface.region());
             }
             case AttribError.NotSupportedType notSupportedType -> {
-                builder.setTitle("Unsupported fieldType");
+                builder.setTitle("Unsupported type");
                 builder.append("Type '").append(notSupportedType.type())
                        .append("' is not supported here");
                 builder.setPrimarySource(notSupportedType.region());
             }
             case AttribError.NotSupportedExpression notSupportedExpression -> {
-                builder.setTitle("Unsupported use of Expression");
+                builder.setTitle("Unsupported use of expression");
                 builder.append(notSupportedExpression.readable());
                 builder.setPrimarySource(notSupportedExpression.region());
             }
             case AttribError.NotSupportedOperator notSupportedOperator -> {
-                builder.setTitle("Unsupported Operator");
+                builder.setTitle("Unsupported operator");
                 builder.append("Operator '").append(notSupportedOperator.operator().value())
                        .append("' cannot be applied to '").append(notSupportedOperator.left()).append("'")
                        .append(" and '").append(notSupportedOperator.right()).append("'");
@@ -203,55 +250,63 @@ public class LogFactory<T extends LogBuilder> {
 
     }
 
-    private void populateImportError(ImportError errorType, LogBuilder logBuilder) {
+    private void populateImportError(ImportError errorType, LogBuilder builder) {
 
         switch (errorType) {
             case ImportError.NoClassFound(var region, var path) -> {
+                builder.setTitle("No class found");
                 var target = path.mkString(".");
-                logBuilder.append("No Class found for path '").append(target).append("'");
-                logBuilder.setPrimarySource(region);
+                builder.append("No Class found for path '").append(target).append("'");
+                builder.setPrimarySource(region);
             }
             case ImportError.UnknownImportType(var region, var name, var available) -> {
-                logBuilder.append("Unknown fieldType '").append(name).append("'");
+                builder.setTitle("Unknown type");
+                builder.append("Unknown type '").append(name).append("'");
                 var suggestions = DidYouMean.suggestions(available, name, 5);
 
                 if (!suggestions.isEmpty()) {
                     var quoted = suggestions.stream().map(x -> "'" + x + "'").toList();
-                    logBuilder.append("Did you mean: ").append(quoted);
+                    builder.append("Did you mean: ").append(quoted);
                 }
-                logBuilder.setPrimarySource(region);
+                builder.setPrimarySource(region);
             }
             case ImportError.GenericCountMismatch(var region, var name, var expected, var found) -> {
-                logBuilder.append("Generic count mismatch for '").append(name).append("'");
-                logBuilder.append("Expected ").append(expected).append(" but found ").append(found);
-                logBuilder.setPrimarySource(region);
+                builder.setTitle("Generic count mismatch");
+                builder.append("Generic count mismatch for '").append(name).append("'");
+                builder.append("Expected ").append(expected).append(" but found ").append(found);
+                builder.setPrimarySource(region);
             }
             case ImportError.DuplicateItem(var first, var second, var item) -> {
-                logBuilder.append("Duplicate item '").append(item).append("'");
-                logBuilder.setPrimarySource(second);
-                logBuilder.addSecondarySource(first, "Defined here: ");
+                builder.setTitle("Duplicate item");
+                builder.append("Duplicate item '").append(item).append("'");
+                builder.setPrimarySource(second);
+                builder.addSecondarySource(first, "Defined here: ");
             }
             case ImportError.DuplicateItemWithMessage(var first, var second, var item, var message) -> {
-                logBuilder.append("Duplicate item '").append(item).append("'");
-                logBuilder.append(message);
-                logBuilder.setPrimarySource(second);
-                logBuilder.addSecondarySource(first, "Defined here: ");
+                builder.setTitle("Duplicate item");
+                builder.append("Duplicate item '").append(item).append("'");
+                builder.append(message);
+                builder.setPrimarySource(second);
+                builder.addSecondarySource(first, "Defined here: ");
             }
             case ImportError.NoItemFound(var region, var item, var cls) -> {
-                logBuilder.append("No item '").append(item).append("' found in class '")
+                builder.setTitle("No item found");
+                builder.append("No item '").append(item).append("' found in class '")
                           .append(cls.mkString(".")).append("'");
-                logBuilder.setPrimarySource(region);
+                builder.setPrimarySource(region);
+            }
+            case ImportError.InnerClassImport(Region region, ObjectPath cls) -> {
+                builder.setTitle("Inner class import");
+                builder.append("Inner class '").append(cls.mkString(".")).append("' cannot be imported directly");
+                builder.setPrimarySource(region);
             }
             case ImportError.InvalidName(var region, var name, var msg) -> {
-                logBuilder.append("Invalid name '").append(name).append("'");
+                builder.setTitle("Invalid name");
+                builder.append("Invalid name '").append(name).append("'");
                 if (msg != null) {
-                    logBuilder.append(msg);
+                    builder.append(msg);
                 }
-                logBuilder.setPrimarySource(region);
-            }
-            case ImportError.JavaNotSupported(var region) -> {
-                logBuilder.append("Java item are not supported yet");
-                logBuilder.setPrimarySource(region);
+                builder.setPrimarySource(region);
             }
         }
 

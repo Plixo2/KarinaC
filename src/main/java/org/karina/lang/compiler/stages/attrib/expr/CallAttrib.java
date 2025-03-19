@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
@@ -24,7 +25,10 @@ import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
 public class CallAttrib  {
     public static AttributionExpr attribCall(
-            @Nullable KType hint, AttributionContext ctx, KExpr.Call expr) {
+            @Nullable KType hint,
+            AttributionContext ctx,
+            KExpr.Call expr
+    ) {
 
         var left = attribExpr(null, ctx, expr.left()).expr();
         var genericsAnnotated = !expr.generics().isEmpty();
@@ -33,7 +37,7 @@ public class CallAttrib  {
         //OMG PATTERNS
         if (left instanceof KExpr.Literal(var ignored, var ignored2, LiteralSymbol.StaticMethodReference(var ignored3, MethodCollection collection))) {
             symbol = getStatic(ctx, expr, collection, genericsAnnotated, newArguments);
-        } else if (left instanceof KExpr.GetMember(var ignored, var object, var name, MemberSymbol.VirtualFunctionSymbol sym)) {
+        } else if (left instanceof KExpr.GetMember(var ignored, var object, var name, _, MemberSymbol.VirtualFunctionSymbol sym)) {
             symbol = getVirtual(ctx, expr, name, sym.classType(), sym.collection(), genericsAnnotated, newArguments);
             left = object;
         } else if (left.type() instanceof KType.FunctionType functionType) {
@@ -95,7 +99,7 @@ public class CallAttrib  {
             case InvocationType.SpecialInvoke specialInvoke -> {
                 if (!(specialInvoke.superType() instanceof KType.ClassType classType)) {
                     Log.attribError(
-                            new AttribError.NotAStruct(
+                            new AttribError.NotAClass(
                                     expr.region(),
                                     specialInvoke.superType()
                             )
@@ -112,7 +116,7 @@ public class CallAttrib  {
         Log.recordType(Log.LogTypes.CALLS, "Calling", name, "of object", superType);
 
         var superClassModel = ctx.model().getClass(superType.pointer());
-        var collection = superClassModel.getMethodCollection(name);
+        var collection = superClassModel.getMethodCollectionShallow(name);
         Log.beginType(Log.LogTypes.CALLS, "raw pointers");
 
         for (var pointer : collection) {
@@ -182,12 +186,14 @@ public class CallAttrib  {
             Log.temp(expr.region(), "Class generic count mismatch");
             throw new Log.KarinaException();
         }
-        //this maps the class fieldType generics
-        for (var i = 0; i < classModel.generics().size(); i++) {
-            var generic = classModel.generics().get(i);
-            var type = classType.generics().get(i);
-            mapped.put(generic, type);
-        }
+        //find all generic mappings for calling for application later
+        // including super classes and interfaces
+        putRecursiveGenerics(
+                ctx,
+                classType,
+                mapped,
+                new HashSet<>()
+        );
 
         var methodTypedReturn = matchCollection(ctx, collection, expr, mapped, genericsAnnotated);
         newArguments.addAll(methodTypedReturn.newArguments);
@@ -199,6 +205,36 @@ public class CallAttrib  {
                 methodTypedReturn.generics,
                 methodTypedReturn.returnType
         );
+    }
+
+    private static void putRecursiveGenerics(
+            AttributionContext ctx,
+            KType.ClassType classType,
+            HashMap<Generic, KType> mapped,
+            Set<ClassPointer> visited
+    ) {
+        if (visited.contains(classType.pointer())) {
+            return;
+        }
+
+        var classModel = ctx.model().getClass(classType.pointer());
+        for (var i = 0; i < classModel.generics().size(); i++) {
+            var generic = classModel.generics().get(i);
+            var type = classType.generics().get(i);
+            mapped.put(generic, type);
+        }
+
+
+        var superType = Types.getSuperType(ctx.model(), classType);
+        if (superType != null) {
+            putRecursiveGenerics(ctx, superType, mapped,  visited);
+        }
+
+        var interfaces = Types.getInterfaces(ctx.model(), classType);
+        for (var interfaceType : interfaces) {
+            putRecursiveGenerics(ctx, interfaceType, mapped, visited);
+        }
+
     }
 
 
@@ -262,6 +298,7 @@ public class CallAttrib  {
 
             return first;
         }
+        Log.record("Constructing error for", collection.name());
 
         var foundTypes = expr.arguments().stream().map(ref ->
                 attribExpr(null, ctx, ref).expr().type()
@@ -344,7 +381,7 @@ public class CallAttrib  {
 
                 var argument = arguments.get(i).getNew(mappedParameter);
 
-                var canConvert = ctx.getConversion(argument.region(), mappedParameter, argument, mutable) != null;
+                var canConvert = ctx.getConversion(argument.region(), mappedParameter, argument, mutable, false) != null;
                 if (!canConvert) {
                     Log.recordType(Log.LogTypes.CALLS, "Cannot assign " + mappedParameter + " cannot be assigned from " + argument.type());
                     canAssign = false;

@@ -3,11 +3,13 @@ package org.karina.lang.compiler.stages.parser.visitor;
 import com.google.common.collect.ImmutableList;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
+import org.karina.lang.compiler.symbols.MemberSymbol;
 import org.karina.lang.compiler.utils.*;
 
 import java.math.BigDecimal;
@@ -58,7 +60,7 @@ public class KarinaExprVisitor {
         } else if (ctx.CONTINUE() != null) {
             return new KExpr.Continue(region);
         } else if (ctx.throw_() != null) {
-            return new KExpr.Throw(region, visitExprWithBlock(ctx.throw_().exprWithBlock()), null);
+            return new KExpr.Throw(region, visitExprWithBlock(ctx.throw_().exprWithBlock()));
         } else {
             Log.syntaxError(region, "Invalid expression");
             throw new Log.KarinaException();
@@ -369,7 +371,7 @@ public class KarinaExprVisitor {
         var regionMerged = region.merge(prev.region());
         if (ctx.id() != null) {
             var name = this.conv.region(ctx.id());
-            return new KExpr.GetMember(regionMerged, prev, name, null);
+            return new KExpr.GetMember(regionMerged, prev, name, false, null);
         } else if (ctx.expressionList() != null) {
             var expressions = visitExprList(ctx.expressionList());
             List<KType> genHint;
@@ -378,6 +380,10 @@ public class KarinaExprVisitor {
             } else {
                 genHint = List.of();
             }
+            if (prev instanceof KExpr.GetMember(var regionInner, var left, var name, _, var symbol)) {
+                prev = new KExpr.GetMember(regionInner, left, name, true, symbol);
+            }
+
             return new KExpr.Call(regionMerged, prev, genHint, expressions, null);
         } else if (ctx.exprWithBlock() != null) {
             var index = visitExprWithBlock(ctx.exprWithBlock());
@@ -628,12 +634,18 @@ public class KarinaExprVisitor {
     private KExpr visitFor(KarinaParser.ForContext ctx) {
 
         var region = this.conv.toRegion(ctx);
-        var name = this.conv.region(ctx.id());
+
+        var varPart = ctx.optTypeName();
+        var varRegion = this.conv.toRegion(varPart);
+        var varName = this.conv.region(varPart.id());
+        var varType = varPart.type() == null ? null : this.typeVisitor.visitType(varPart.type());
+        var variable = new NameAndOptType(varRegion, varName, varType, null);
+
         var iter = visitExprWithBlock(ctx.exprWithBlock());
         var body = visitBlock(ctx.block());
         return new KExpr.For(
                 region,
-                name,
+                variable,
                 iter,
                 body,
                 null

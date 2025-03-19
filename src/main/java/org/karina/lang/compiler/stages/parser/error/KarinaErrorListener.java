@@ -10,6 +10,9 @@ import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.api.TextSource;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.BitSet;
 
 /**
@@ -62,6 +65,7 @@ public class KarinaErrorListener implements ANTLRErrorListener {
             Log.warn(region, "Missing Field, replaced with " + KarinaRecoveringStrategy.MISSING_FIELD);
             return;
         }
+
 
         if (this.throwErrors) {
             var name = "?";

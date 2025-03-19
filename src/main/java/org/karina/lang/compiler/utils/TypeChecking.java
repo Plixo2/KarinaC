@@ -2,6 +2,7 @@ package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.logging.FlightRecorder;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.objects.KType;
@@ -18,10 +19,18 @@ public record TypeChecking(JKModel model) {
      */
 
     public @Nullable KType superType(Region checkingRegion, KType a, KType b) {
-        if (canAssign(checkingRegion, a, b, false)) {
+        var sample = Log.addSuperSample("SUPER_TYPE");
+        var resultInner = superTypeInner(checkingRegion, a, b);
+        sample.endSample();
+        return resultInner;
+    }
+
+    private @Nullable KType superTypeInner(Region checkingRegion, KType a, KType b) {
+        var mutable = true;
+        if (canAssign(checkingRegion, a, b, mutable)) {
             Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + a);
             return a;
-        } else if (canAssign(checkingRegion, b, a, false)) {
+        } else if (canAssign(checkingRegion, b, a, mutable)) {
             Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + b);
             return b;
         }
@@ -30,12 +39,22 @@ public record TypeChecking(JKModel model) {
         a = a.unpack();
         b = b.unpack();
 
+        //TODO check for common interfaces
         if (a instanceof KType.FunctionType && b instanceof KType.FunctionType) {
             return KType.ROOT;
         }
         //when we have arrays, check for comment inner type, when not primitive
-        if (a instanceof KType.ArrayType && b instanceof KType.ArrayType) {
-            return KType.ROOT;
+        if (a instanceof KType.ArrayType(var innerA) && b instanceof KType.ArrayType(var innerB)) {
+            if (innerA.isPrimitive() || innerB.isPrimitive()) {
+                return KType.ROOT;
+            }
+
+            var inner = superType(checkingRegion, a, b);
+            if (inner == null) {
+                return KType.ROOT;
+            }
+            return new KType.ArrayType(inner);
+
         }
 
         //TODO when generics bounds implemented, return the most common super type, from left to right
@@ -57,7 +76,7 @@ public record TypeChecking(JKModel model) {
                 break; //skip, we might find a common interface. Object is the fallback anyway
             }
             for (KType.ClassType currentSuper : aSuperTypes) {
-                if (classStrictEquals(checkingRegion, currentSuper, current, false)) {
+                if (classStrictEquals(checkingRegion, currentSuper, current, mutable)) {
                     Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + current);
                     return current;
                 }
@@ -72,7 +91,7 @@ public record TypeChecking(JKModel model) {
 
         for (var interfaceA : interfacesA) {
             for (var interfaceB : interfacesB) {
-                if (classStrictEquals(checkingRegion, interfaceA, interfaceB, false)) {
+                if (classStrictEquals(checkingRegion, interfaceA, interfaceB, mutable)) {
                     Log.recordType(Log.LogTypes.BRANCH, "Common super type found for " + a + " and " + b + " is " + interfaceA);
                     return interfaceA;
                 }
@@ -83,6 +102,7 @@ public record TypeChecking(JKModel model) {
         Log.recordType(Log.LogTypes.BRANCH, "Interfaces of A: ", interfacesA);
         Log.recordType(Log.LogTypes.BRANCH, "Interfaces of B: ", interfacesB);
         return KType.ROOT;
+
     }
 
     //TODO ensure in the import stage, that no common interface are present with different generics
@@ -135,10 +155,12 @@ public record TypeChecking(JKModel model) {
      * {@code let a: left = right}
      */
     public boolean canAssign(Region checkingRegion, KType left, KType right, boolean mutable) {
+        var sample = Log.addSuperSample("TYPE_CHECKING");
         var logName = "type-checking (" + left + " from " + right + ")" + (mutable ? " mutable" : "");
         Log.beginType(Log.LogTypes.CHECK_TYPE, logName);
         var resultInner = canAssignInner(checkingRegion, left, right, mutable);
         Log.endType(Log.LogTypes.CHECK_TYPE, logName, "result: " + resultInner, checkingRegion, "left: " + left, "right: " + right);
+        sample.endSample();
         return resultInner;
     }
 
@@ -350,6 +372,9 @@ public record TypeChecking(JKModel model) {
      * Strict equals for classes, checks if the classes are the same, and if the generics are the same
      */
     private boolean classStrictEquals(Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
+        var sample = Log.addSuperSample("CLASS_STRICT_EQUALS");
+        Log.beginType(Log.LogTypes.CHECK_TYPE, "strict equals check");
+        Log.recordType(Log.LogTypes.CHECK_TYPE, "Class strict equals " + left + " and " + right);
         if (left.pointer().equals(right.pointer())) {
             if (left.generics().size() != right.generics().size()) {
                 Log.record("(warn) Generic mismatch, probably a Java side issue");
@@ -362,12 +387,19 @@ public record TypeChecking(JKModel model) {
                 var leftGeneric = left.generics().get(i);
                 var rightGeneric = right.generics().get(i);
                 if (!canAssignInner(checkingRegion, leftGeneric, rightGeneric, mutable)) {
+                    sample.endSample();
+                    Log.recordType(Log.LogTypes.CHECK_TYPE, "cannot assign generics", leftGeneric, "from", rightGeneric);
+                    Log.endType(Log.LogTypes.CHECK_TYPE, "strict equals check", false);
                     return false;
                 }
             }
+            sample.endSample();
 
+            Log.endType(Log.LogTypes.CHECK_TYPE, "strict equals check", true);
             return true;
         }
+        sample.endSample();
+        Log.endType(Log.LogTypes.CHECK_TYPE, "strict equals check", false, "Classes are not the same");
         return false;
     }
 

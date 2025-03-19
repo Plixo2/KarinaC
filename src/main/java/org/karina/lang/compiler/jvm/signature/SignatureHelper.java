@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
 import org.karina.lang.compiler.jvm.signature.model.TypeArgument;
+import org.karina.lang.compiler.jvm.signature.model.TypeParameter;
 import org.karina.lang.compiler.jvm.signature.model.TypeSignature;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.KType;
@@ -127,6 +128,35 @@ public class SignatureHelper {
         }
 
 
+        return genericsList;
+    }
+
+    public static ImmutableList<Generic> mapGenerics(
+            Region region,
+            String symbolName,
+            @Nullable JClassModel outer,
+            List<TypeParameter> varTypes
+    ) {
+        var generics = ImmutableList.<Generic>builder();
+        for (var generic : varTypes) {
+            generics.add(new Generic(region, generic.name()));
+        }
+        var genericsList = generics.build();
+        for (var i = 0; i < varTypes.size(); i++) {
+            var generic = varTypes.get(i);
+
+            KType superClass = null;
+            var genSuperClass = generic.superClass();
+            if (genSuperClass != null) {
+                superClass = SignatureHelper.toType(region, symbolName, outer, genericsList, genSuperClass);
+            }
+
+            var bounds = new ArrayList<KType>();
+            for (var bound : generic.interfaces()) {
+                bounds.add(SignatureHelper.toType(region, symbolName, outer, genericsList, bound));
+            }
+            genericsList.get(i).updateBounds(superClass, bounds);
+        }
         return genericsList;
     }
 

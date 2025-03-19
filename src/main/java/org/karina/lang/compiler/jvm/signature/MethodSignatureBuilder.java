@@ -21,11 +21,12 @@ public class MethodSignatureBuilder {
 
     public MethodSignatureBuilder(String name, Region region, MethodSignature signature, @Nullable JClassModel outer) {
 
-        var generics = ImmutableList.<Generic>builder();
-        for (var generic : signature.generics()) {
-            generics.add(new Generic(region, generic.name()));
-        }
-        this.generics = generics.build();
+        this.generics = SignatureHelper.mapGenerics(
+                region,
+                name,
+                outer,
+                signature.generics()
+        );
 
         var returnSignature = signature.returnSignature();
         if (returnSignature != null) {

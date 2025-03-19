@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.FlightRecorder;
 
 import java.io.PrintStream;
@@ -18,9 +19,11 @@ public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRe
         return this.records.iterator();
     }
 
-    public void add(FlightRecorder.SectionRecord record) {
-        this.records.add(record);
-        record.subSections().forEach(this::add);
+    public void add(@Nullable FlightRecorder.SectionRecord record) {
+        if (record != null) {
+            this.records.add(record);
+            record.subSections().forEach(this::add);
+        }
     }
 
     public static void print(FlightRecordCollection collection, boolean verbose, PrintStream stream) {
@@ -29,6 +32,11 @@ public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRe
                 continue;
             }
             stream.println(log.mkString(verbose));
+        }
+        for (var log : collection) {
+            if (!log.skipSample()) {
+                stream.println(log.mkSampleStr());
+            }
         }
     }
 
@@ -62,6 +70,12 @@ public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRe
                 continue;
             }
             stream.println(log.mkString(verbose, name, time, end, colorFormatter));
+        }
+
+        for (var log : collection) {
+            if (!log.skipSample()) {
+                stream.println(log.mkSampleStr(name, time));
+            }
         }
     }
 

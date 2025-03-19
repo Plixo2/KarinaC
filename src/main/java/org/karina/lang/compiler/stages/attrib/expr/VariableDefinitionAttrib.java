@@ -15,20 +15,19 @@ public class VariableDefinitionAttrib  {
     public static AttributionExpr attribVariableDefinition(
             @Nullable KType hint, AttributionContext ctx, KExpr.VariableDefinition expr) {
 
-        var valueExpr = attribExpr(expr.hint(), ctx, expr.value()).expr();
+        var valueExpr = attribExpr(expr.varHint(), ctx, expr.value()).expr();
 
-        var varTypeHint = expr.hint();
-        if (varTypeHint == null) {
-            varTypeHint = valueExpr.type();
-            if (varTypeHint.isVoid()) {
-                Log.attribError(new AttribError.NotSupportedType(expr.region(), varTypeHint));
+
+        var varType = expr.varHint();
+        if (varType == null) {
+            varType = valueExpr.type();
+            if (varType.isVoid()) {
+                Log.attribError(new AttribError.NotSupportedType(expr.region(), varType));
                 throw new Log.KarinaException();
             }
-
         } else {
-            valueExpr = ctx.makeAssignment(valueExpr.region(), varTypeHint, valueExpr);
+            valueExpr = ctx.makeAssignment(valueExpr.region(), varType, valueExpr);
         }
-        Log.recordType(Log.LogTypes.VARIABLE,"varTypeHint = " + varTypeHint + " of " + expr.name().value());
 
         if (valueExpr.type().isVoid()) {
             Log.attribError(new AttribError.NotSupportedType(expr.region(), valueExpr.type()));
@@ -39,6 +38,7 @@ public class VariableDefinitionAttrib  {
         if (expr.name().value().equals("_")) {
             return of(ctx, valueExpr);
         }
+        Log.recordType(Log.LogTypes.VARIABLE, "let " + expr.name().value(), varType, expr.region());
 
         var symbol = new Variable(
                 expr.name().region(),
@@ -52,7 +52,7 @@ public class VariableDefinitionAttrib  {
         return of(addedCtx, new KExpr.VariableDefinition(
                 expr.region(),
                 expr.name(),
-                expr.hint(),
+                expr.varHint(),
                 valueExpr,
                 symbol
         ));

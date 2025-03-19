@@ -117,7 +117,11 @@ public class KarinaEnumVisitor {
         var methods = ImmutableList.of(constructor);
 
 
-        var generics = ImmutableList.copyOf(genericsOuter.stream().map(ref -> new Generic(region, ref.name())).toList());
+        var generics = ImmutableList.copyOf(genericsOuter.stream().map(ref -> {
+            var generic = new Generic(region, ref.name());
+            generic.updateBounds(KType.ROOT, List.of());
+            return generic;
+        }).toList());
         var imports = ImmutableList.<KImport>of();
         var permittedSubClasses = ImmutableList.<ClassPointer>of();
 

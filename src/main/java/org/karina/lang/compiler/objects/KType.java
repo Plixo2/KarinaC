@@ -1,12 +1,9 @@
 package org.karina.lang.compiler.objects;
 
-import org.apache.commons.lang3.mutable.MutableLong;
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.jvm.JavaResource;
 import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -73,6 +70,16 @@ public sealed interface KType {
                 List.of(iter_type)
         );
     }
+    static ClassType CLASS_TYPE(KType clsType) {
+        return new ClassType(
+                ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE),
+                List.of(clsType)
+        );
+    }
+    ClassType THROWABLE = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH),
+            List.of()
+    );
 
     VoidType VOID = new VoidType();
 
@@ -81,6 +88,8 @@ public sealed interface KType {
         validatePointer(model, NUMBER);
         validatePointer(model, STRING);
         validatePointer(model, ITERABLE(ROOT));
+        validatePointer(model, CLASS_TYPE(ROOT));
+        validatePointer(model, THROWABLE);
 
         validatePointer(model, BOOLEAN);
         validatePointer(model, INTEGER);
@@ -173,7 +182,7 @@ public sealed interface KType {
     record FunctionType(
             List<KType> arguments,
             KType returnType,
-            List<KType> interfaces
+            List<? extends KType> interfaces
     ) implements KType {
 
         @Override
@@ -212,13 +221,15 @@ public sealed interface KType {
     // (i think only used for arrays?)
     final class Resolvable implements KType {
         private final boolean canUsePrimitives;
+        private final boolean canUseVoid;
 
         public Resolvable() {
-            this(false);
+            this(false, false);
         }
 
-        public Resolvable(boolean canUsePrimitives) {
+        public Resolvable(boolean canUsePrimitives, boolean canUseVoid) {
             this.canUsePrimitives = canUsePrimitives;
+            this.canUseVoid = canUseVoid;
         }
 
         public boolean canUsePrimitives() {
@@ -247,7 +258,7 @@ public sealed interface KType {
             if (resolved == this) {
                 return true;
             }
-            if (resolved.isVoid()) {
+            if (!this.canUseVoid && resolved.isVoid()) {
                 return false;
             }
 

@@ -31,17 +31,17 @@ public sealed interface KExpr {
 
 
     record Block(Region region, List<KExpr> expressions, @Nullable @Symbol KType symbol) implements KExpr {}
-    record VariableDefinition(Region region, RegionOf<String> name, @Nullable KType hint, KExpr value, @Nullable @Symbol Variable symbol) implements KExpr {}
+    record VariableDefinition(Region region, RegionOf<String> name, @Nullable KType varHint, KExpr value, @Nullable @Symbol Variable symbol) implements KExpr {}
     record Branch(Region region, KExpr condition, KExpr thenArm, @Nullable ElsePart elseArm, @Nullable BranchPattern branchPattern, @Nullable @Symbol BranchYieldSymbol symbol) implements KExpr {}
     record While(Region region, KExpr condition, KExpr body) implements KExpr {}
-    record For(Region region, RegionOf<String> name , KExpr iter, KExpr body, @Nullable @Symbol IteratorTypeSymbol symbol) implements KExpr {}
+    record For(Region region, NameAndOptType varPart, KExpr iter, KExpr body, @Nullable @Symbol IteratorTypeSymbol symbol) implements KExpr {}
     record Return(Region region, @Nullable KExpr value, @Nullable @Symbol KType yieldType) implements KExpr {}
     record Break(Region region) implements KExpr {}
     record Continue(Region region) implements KExpr {}
     record Binary(Region region, KExpr left, RegionOf<BinaryOperator> operator, KExpr right, @Nullable @Symbol BinOperatorSymbol symbol) implements KExpr {}
     record Unary(Region region, RegionOf<UnaryOperator> operator, KExpr value, @Nullable @Symbol UnaryOperatorSymbol symbol) implements KExpr {}
     record IsInstanceOf(Region region, KExpr left, KType isType) implements KExpr {}
-    record GetMember(Region region, KExpr left, RegionOf<String> name, @Nullable @Symbol MemberSymbol symbol) implements KExpr {}
+    record GetMember(Region region, KExpr left, RegionOf<String> name, boolean isNextACall, @Nullable @Symbol MemberSymbol symbol) implements KExpr {}
     record Call(Region region, KExpr left, List<KType> generics, List<KExpr> arguments, @Nullable @Symbol CallSymbol symbol) implements KExpr {}
     record GetArrayElement(Region region, KExpr left, KExpr index, @Nullable @Symbol KType elementType) implements KExpr {}
     record Cast(Region region, KExpr expression, CastTo cast, @Nullable @Symbol CastSymbol symbol) implements KExpr {}
@@ -56,8 +56,8 @@ public sealed interface KExpr {
     record StringInterpolation(Region region, ImmutableList<StringComponent> components) implements KExpr {}
     record Match(Region region, KExpr value, List<MatchPattern> cases) implements KExpr {}
     record CreateObject(Region region, KType createType, List<NamedExpression> parameters) implements KExpr {}
-    record Closure(Region region, List<NameAndOptType> args, @Nullable KType returnType, List<KType> interfaces, KExpr body, @Nullable @Symbol ClosureSymbol symbol) implements KExpr {}
-    record Throw(Region region, KExpr value, @Nullable @Symbol KType.ClassType symbol) implements KExpr {}
+    record Closure(Region region, List<NameAndOptType> args, @Nullable KType returnType, List<? extends KType> interfaces, KExpr body, @Nullable @Symbol ClosureSymbol symbol) implements KExpr {}
+    record Throw(Region region, KExpr value) implements KExpr {}
 
 
 }

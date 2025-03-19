@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.symbols;
 
+import org.checkerframework.checker.units.qual.A;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
@@ -7,6 +8,8 @@ import org.karina.lang.compiler.utils.MethodCollection;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
+
+import java.util.List;
 
 public sealed interface LiteralSymbol {
     Region region();
@@ -24,7 +27,8 @@ public sealed interface LiteralSymbol {
             }
             case StaticClassReference staticClassReference -> {
                 //todo class return
-                return KType.VOID;
+
+                return KType.CLASS_TYPE(staticClassReference.classType);
             }
             case StaticFieldReference staticFieldReference -> {
                 return staticFieldReference.fieldType();
@@ -37,6 +41,6 @@ public sealed interface LiteralSymbol {
 
     record VariableReference(Region region, Variable variable) implements LiteralSymbol { }
 
-    record StaticClassReference(Region region, ClassPointer classPointer) implements LiteralSymbol { }
+    record StaticClassReference(Region region, ClassPointer classPointer, KType classType) implements LiteralSymbol { }
 
 }

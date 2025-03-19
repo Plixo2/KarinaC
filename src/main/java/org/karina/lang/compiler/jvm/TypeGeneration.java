@@ -60,7 +60,7 @@ public class TypeGeneration {
 
 
 
-    public ClassPointer internalNameToPointer(Region region, String name) {
+    public static ClassPointer internalNameToPointer(Region region, String name) {
         var nameSplit = name.split("[/$]");
         var path = new ObjectPath();
         for (String s : nameSplit) {

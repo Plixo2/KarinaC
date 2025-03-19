@@ -56,7 +56,7 @@ public class AttributionItem {
             Log.temp(classModelNew.region(), "No symbol table was created");
             throw new Log.KarinaException();
         }
-        var importTable = StaticImportTable.fromImportTable(model, classModelNew.symbolTable());
+        var importTable = StaticImportTable.fromImportTable(classModel.pointer(), model, classModelNew.symbolTable());
 
         for (var method : classModel.methods()) {
             if (!(method instanceof KMethodModel kMethodModel)) {
@@ -77,7 +77,7 @@ public class AttributionItem {
 
         var logName = "method-" + methodModel.name() + "-" + methodModel.signature().toString() + " in " + classModel.name();
         Log.beginType(Log.LogTypes.METHOD_NAME, logName);
-        Log.recordType(Log.LogTypes.METHOD_NAME, "defined here ", methodModel.region());
+        Log.recordType(Log.LogTypes.METHOD_NAME, "defined here", methodModel.region());
 
         Variable self = null;
         if (!Modifier.isStatic(methodModel.modifiers())) {

@@ -22,14 +22,29 @@ public class ForAttrib  {
     // So that we can use this for destructuring, e.g. to use for instead Map.forEach(fn(k, v) { ... })
     public static AttributionExpr attribFor(@Nullable KType hint, AttributionContext ctx, KExpr.For expr) {
 
-        var iter = attribExpr(null, ctx, expr.iter()).expr();
+        KType varHint = null;
+
+        var annotatedHint = expr.varPart().type();
+        if (annotatedHint != null) {
+            //varHint = KType.ITERABLE(annotatedHint);
+            varHint = new KType.ArrayType(annotatedHint);
+        }
+
+        var iter = attribExpr(varHint, ctx, expr.iter()).expr();
 
         var typeOfLoop = getIteratorType(ctx, iter.type(), iter);
         iter = typeOfLoop.expr();
 
+        if (annotatedHint != null) {
+            if (!ctx.checking().canAssign(expr.region(), annotatedHint, typeOfLoop.varType(), true)) {
+                Log.attribError(new AttribError.TypeMismatch(expr.region(), annotatedHint, typeOfLoop.varType()));
+                throw new Log.KarinaException();
+            }
+        }
+
         var variable = new Variable(
-                expr.name().region(),
-                expr.name().value(),
+                expr.varPart().name().region(),
+                expr.varPart().name().value(),
                 typeOfLoop.varType(),
                 false, //effectively final
                 false
@@ -47,19 +62,16 @@ public class ForAttrib  {
             );
         }
 
-        AttributionContext bodyCtx;
+        var bodyCtx = ctx.setInLoop(true);
 
-        if (expr.name().value().equals("_")) {
-            bodyCtx = ctx;
-        } else {
-            bodyCtx = ctx.addVariable(variable);
+        if (!variable.name().equals("_")) {
+            bodyCtx = bodyCtx.addVariable(variable);
         }
-
         var body = attribExpr(null, bodyCtx, expr.body()).expr();
 
         return of(ctx, new KExpr.For(
                 expr.region(),
-                expr.name(),
+                expr.varPart(),
                 iter,
                 body,
                 symbol

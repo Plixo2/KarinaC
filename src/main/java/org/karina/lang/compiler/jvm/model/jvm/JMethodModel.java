@@ -8,21 +8,39 @@ import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.KExpr;
+import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.Region;
 
+import java.util.List;
 import java.util.Objects;
 
-@AllArgsConstructor
 public class JMethodModel implements MethodModel {
     private final String name;
     private final int modifiers;
     private final Signature signature;
+    private final ImmutableList<KType> erasedParameters;
     private final ImmutableList<String> parameters;
     private final ImmutableList<Generic> generics;
     private final @Nullable KExpr expression;
     private final Region region;
     private final ClassPointer classPointer;
+
+    public JMethodModel(
+            String name, int modifiers, Signature signature, ImmutableList<String> parameters,
+            ImmutableList<Generic> generics, @Nullable KExpr expression, Region region,
+            ClassPointer classPointer
+    ) {
+        this.name = name;
+        this.modifiers = modifiers;
+        this.signature = signature;
+        this.parameters = parameters;
+        this.generics = generics;
+        this.expression = expression;
+        this.region = region;
+        this.classPointer = classPointer;
+        this.erasedParameters = signature.parametersErased();
+    }
 
     @Override
     public int modifiers() {
@@ -37,6 +55,11 @@ public class JMethodModel implements MethodModel {
     @Override
     public ImmutableList<String> parameters() {
         return this.parameters;
+    }
+
+    @Override
+    public ImmutableList<KType> erasedParameters() {
+        return this.erasedParameters;
     }
 
     @Override

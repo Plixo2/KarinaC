@@ -8,6 +8,12 @@ import java.util.regex.Pattern;
 public record ObjectPath(List<String> elements) {
 
     public ObjectPath {
+//        for (var element : elements) {
+//            if (element.contains("$")) {
+//                throw new IllegalArgumentException("Element must not contain '$'");
+//            }
+//        }
+
         //copy to an immutable list
         Objects.requireNonNull(elements);
         elements = List.copyOf(elements);

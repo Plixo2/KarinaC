@@ -7,7 +7,6 @@ FN: 'fn';
 IS: 'is';
 IN: 'in';
 AS: 'as';
-OF: 'of';
 NULL: 'null';
 IMPORT: 'import';
 EXTENDS: 'extends';
@@ -97,7 +96,7 @@ STRING_LITERAL: '"' STRING_CHARACTERS? '"';
 CHAR_LITERAL: '\'' (CHAR_CHARACTERS | ESCAPED_DOLLAR | CHAR_VARIABLE)* '\'';
 
 fragment CHAR_VARIABLE: '$' (ID | 'expr' | 'type' | '\\' ESCAPED);
-fragment ESCAPED: FN | IS | IN | AS | OF | EXTEND
+fragment ESCAPED: FN | IS | IN | AS | EXTEND
                    | MATCH | OVERRIDE | VIRTUAL | YIELD
                    | STRUCT | RAISE | TRAIT | IMPL | LET
                    | MATCHES | SELF | STRING | JSON | BOOL | WHERE;

@@ -4,10 +4,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Simple FlightRecorder to measure the time taken by different sections of code
@@ -16,22 +13,22 @@ import java.util.Map;
  */
 public class FlightRecorder {
     SectionRecord topLevel = null;
-    private SectionRecord top = null;
+    private SectionRecord currentSection = null;
 
 
     public SectionRecord begin(String name) {
         var stackTrace = Thread.currentThread().getStackTrace();
         if (this.topLevel == null) {
             this.topLevel = new SectionRecord(name, stackTrace, null, System.nanoTime(), 0);
-            this.top = this.topLevel;
-            return this.top;
+            this.currentSection = this.topLevel;
+            return this.currentSection;
         }
         int depth = 0;
-        if (this.top != null) {
-            depth = this.top.depth + 1;
+        if (this.currentSection != null) {
+            depth = this.currentSection.depth + 1;
         }
 
-        return this.top = new SectionRecord(name, stackTrace, this.top, System.nanoTime(), depth);
+        return this.currentSection = new SectionRecord(name, stackTrace, this.currentSection, System.nanoTime(), depth);
     }
 
 
@@ -40,28 +37,35 @@ public class FlightRecorder {
      * The name isn't necessary, but it can be used to check if the section is being closed correctly
      */
     public void end(String name) {
-        if (this.top == null) {
+        if (this.currentSection == null) {
             return;
         }
-        var current = this.top;
+        var current = this.currentSection;
         if (current.name.equals(name)) {
             current.endTimeNano = System.nanoTime();
         } else {
           //  Log.warn("Ending section " + name + " but current section is " + current.name);
         }
 
-        this.top = current.parent;
+        this.currentSection = current.parent;
 
     }
 
+    public Sample beginSample(String name) {
+        return new Sample(name, System.nanoTime(), this.currentSection);
+    }
+    public Sample beginSuperSample(String name) {
+        return new Sample(name, System.nanoTime(), this.topLevel);
+    }
+
     public void endAll() {
-        while (this.top != null) {
-            this.end(this.top.name);
+        while (this.currentSection != null) {
+            this.end(this.currentSection.name);
         }
     }
 
     public void clear() {
-        this.top = null;
+        this.currentSection = null;
         this.topLevel = null;
     }
 
@@ -79,6 +83,8 @@ public class FlightRecorder {
         private final int depth;
         public boolean includeTime = true;
         public boolean hide = false;
+        //Samples with name, deltaTime in NS
+        private final Map<String, Long> samples;
 
         public SectionRecord(String name, StackTraceElement[] stackTrace, @Nullable SectionRecord parent, long startTimeNano, int depth) {
             this.parent = parent;
@@ -90,11 +96,41 @@ public class FlightRecorder {
             this.startTimeNano = startTimeNano;
             this.subSections = new ArrayList<>();
             this.depth = depth;
+            this.samples = new HashMap<>();
+        }
+
+        public boolean skipSample() {
+            return this.samples.isEmpty();
+        }
+
+        public String mkSampleStr() {
+            return mkSampleStr("", "");
+        }
+
+        public String mkSampleStr(String nameFormat, String timeFormat) {
+            var indent = "|  ".repeat(this.depth + 1);
+
+            var sampleStr = new StringBuilder();
+
+            var sampleIter = this.samples.entrySet().iterator();
+
+            while (sampleIter.hasNext()) {
+                var entry = sampleIter.next();
+                var deltaMS = entry.getValue() / 1_000_000.0f;
+                sampleStr.append(nameFormat).append(entry.getKey()).append(": ").append(timeFormat).append(deltaMS).append("ms");
+                if (sampleIter.hasNext()) {
+                    sampleStr.append(", ");
+                }
+            }
+
+            return nameFormat + indent + "[" + sampleStr + "]";
+
         }
 
         public String mkString(boolean verbose) {
            return mkString(verbose, "", "", "", null);
         }
+
 
         public String mkString(boolean verbose, String nameFormat, String timeFormat, String escape, @Nullable AbstractFormatter colorFormatter) {
             var indent = "|  ".repeat(this.depth);
@@ -117,6 +153,12 @@ public class FlightRecorder {
                 return String.format("%s%s%s: %s%.2fms%s", nameFormat, indent, nameStr, timeFormat, duration , suffix);
             }
         }
+
+
+        private void addSample(String name, long deltaNS) {
+            this.samples.merge(name, deltaNS, Long::sum);
+        }
+
     }
 
     private static String getTrace(StackTraceElement stackTrace) {
@@ -155,5 +197,27 @@ public class FlightRecorder {
         }
     }
 
+
+    public static class Sample {
+        public String name;
+        private final long startTimeNano;
+        private long endTimeNano;
+        private final @Nullable SectionRecord parent;
+
+        public Sample(String name, long startTimeNano, @Nullable SectionRecord parent) {
+            this.name = name;
+            this.startTimeNano = startTimeNano;
+            this.parent = parent;
+        }
+
+        public void endSample() {
+            this.endTimeNano = System.nanoTime();
+
+            var deltaNS = (this.endTimeNano - this.startTimeNano);
+            if (this.parent != null) {
+                this.parent.addSample(this.name, deltaNS);
+            }
+        }
+    }
 
 }

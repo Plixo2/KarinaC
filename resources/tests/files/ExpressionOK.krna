@@ -76,6 +76,7 @@ fn create<T>(value: T) -> int {
     let index = 0;
     let nested = ({
         let getElement = array[index]
+        0
     })
 
     let another = (1 + 2) * 3
@@ -87,6 +88,7 @@ fn create<T>(value: T) -> int {
     let instance = annotated is O
     let castThing: float = 1 as float
 
+    return castThing as int
 }
 
 fn binary() {

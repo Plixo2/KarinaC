@@ -110,6 +110,16 @@ public class ImportHelper {
             newCtx = newCtx.addStaticField(importRegion, field.name(), field.pointer(), true, false);
         }
 
+        //TODO should we allow this?
+        for (var inner : classModel.innerClasses()) {
+            if (inner.name().equals(namePredicate)) {
+                newCtx = newCtx.addClass(classModel.region(), inner.name(), inner.pointer(), true, false);
+                added = true;
+                break;
+            }
+        }
+
+
         if (!added) {
             Log.importError(new ImportError.NoItemFound(importRegion, namePredicate, classModel.pointer().path()));
             throw new Log.KarinaException();
@@ -136,6 +146,10 @@ public class ImportHelper {
                 newCtx = importItemsOfClass(modelClass, ctx);
             }
             case KImport.TypeImport.Base base -> {
+//                if (modelClass.outerClass() != null) {
+//                    Log.importError(new ImportError.InnerClassImport(kImport.region(), modelClass.pointer().path()));
+//                    throw new Log.KarinaException();
+//                }
                 //only the class itself
                 newCtx = newCtx.addClass(kImport.region(), modelClass.name(), modelClass.pointer(), true, false);
             }

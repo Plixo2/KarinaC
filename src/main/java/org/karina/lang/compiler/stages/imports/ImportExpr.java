@@ -74,7 +74,7 @@ public class ImportExpr {
 
     private static KExpr importThrow(ImportContext ctx, KExpr.Throw expr) {
         var value = importExpr(ctx, expr.value());
-        return new KExpr.Throw(expr.region(), value, null);
+        return new KExpr.Throw(expr.region(), value);
     }
 
     private static KExpr importAssignment(ImportContext ctx, KExpr.Assignment expr) {
@@ -204,7 +204,9 @@ public class ImportExpr {
         var cast = switch (expr.cast()) {
             case CastTo.AutoCast c -> c;
             case CastTo.CastToType(var to) -> {
-                var type = ctx.resolveType(expr.region(), to, INSTANCE_CHECK);
+                //dont use INSTANCE_CHECK as hint, we only allow casting to a super type, not a subtype
+                //or for primitive types
+                var type = ctx.resolveType(expr.region(), to);
                 yield new CastTo.CastToType(type);
             }
         };
@@ -288,8 +290,14 @@ public class ImportExpr {
     private static KExpr importFor(ImportContext ctx, KExpr.For expr) {
         var iter = importExpr(ctx, expr.iter());
         var body = importExpr(ctx, expr.body());
-        var name = expr.name();
-        return new KExpr.For(expr.region(), name, iter, body, null);
+        var varPart = expr.varPart();
+
+        if (varPart.type() != null) {
+            var importedType = ctx.resolveType(varPart.region(), varPart.type());
+            varPart = new NameAndOptType(varPart.region(), varPart.name(), importedType, null);
+        }
+
+        return new KExpr.For(expr.region(), varPart, iter, body, null);
     }
 
     private static KExpr importLiteral(ImportContext ctx, KExpr.Literal expr) {
@@ -379,10 +387,10 @@ public class ImportExpr {
     private static KExpr importVariableDefinition(ImportContext ctx, KExpr.VariableDefinition expr) {
         var value = importExpr(ctx, expr.value());
         KType hint;
-        if (expr.hint() == null) {
+        if (expr.varHint() == null) {
             hint = null;
         } else {
-            hint = ctx.resolveType(expr.region(), expr.hint());
+            hint = ctx.resolveType(expr.region(), expr.varHint());
         }
         var name = expr.name();
         return new KExpr.VariableDefinition(expr.region(), name, hint, value, null);
@@ -402,7 +410,7 @@ public class ImportExpr {
 
     private static KExpr importGetMember(ImportContext ctx, KExpr.GetMember expr) {
         var left = importExpr(ctx, expr.left());
-        return new KExpr.GetMember(expr.region(), left, expr.name(), null);
+        return new KExpr.GetMember(expr.region(), left, expr.name(), expr.isNextACall(), null);
     }
 
     private static KExpr importInstanceOf(ImportContext ctx, KExpr.IsInstanceOf expr) {

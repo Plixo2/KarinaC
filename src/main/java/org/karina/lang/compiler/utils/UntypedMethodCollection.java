@@ -29,10 +29,13 @@ public class UntypedMethodCollection {
                 this.classPointer + '}';
     }
 
-    public MethodCollection toTypedStaticCollection(JKModel model) {
+    public MethodCollection toTypedStaticCollection(ClassPointer referenceSite, JKModel model) {
+        var protection = new ProtectionChecking(model);
         var classModel = model.getClass(this.classPointer);
         var pointer = classModel.methods().stream().filter(ref -> {
-            return ref.name().equals(this.name) && Modifier.isStatic(ref.modifiers());
+            return ref.name().equals(this.name)
+                    && Modifier.isStatic(ref.modifiers())
+                    && protection.canReference(referenceSite, ref.classPointer(), ref.modifiers());
         }).map(MethodModel::pointer).toList();
 
         return new MethodCollection(this.name, pointer);

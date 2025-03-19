@@ -1,7 +1,6 @@
 package org.karina.lang.compiler.logging;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.api.Resource;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.logging.errors.Error;
@@ -57,7 +56,8 @@ public class Log {
         ASSERTIONS,
         STRING_INTERPOLATION,
         JVM_CLASS_LOADING,
-
+        CLOSURE,
+        MEMBER,
 
         ;
 
@@ -69,9 +69,13 @@ public class Log {
                 BRANCH,
                 SUPER_WARN,
                 ASSERTIONS
+                ,CLOSURE
+//    ,MEMBER
 //    ,CALLS
+// ,EXPR
 
-
+//                ,CHECK_TYPE
+//    ,JVM_CLASS_LOADING
         );
 
         public boolean isVisible() {
@@ -108,7 +112,16 @@ public class Log {
             FLIGHT_RECORDER.end(name);
         }
     }
-
+    public static FlightRecorder.Sample addSample(String name) {
+        synchronized (FLIGHT_RECORDER) {
+            return FLIGHT_RECORDER.beginSample(name);
+        }
+    }
+    public static FlightRecorder.Sample addSuperSample(String name) {
+        synchronized (FLIGHT_RECORDER) {
+            return FLIGHT_RECORDER.beginSuperSample(name);
+        }
+    }
 
     public static void end(String name, Object... args) {
         synchronized (FLIGHT_RECORDER) {

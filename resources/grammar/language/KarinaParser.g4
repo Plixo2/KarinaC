@@ -13,7 +13,7 @@ item: annotation* (function | struct | enum | interface);
 function: 'fn' id genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
 //boundWhere is not yet implemented
-struct: 'struct' id genericHintDefinition? '{' field* function* implementation* boundWhere* '}';
+struct: 'struct' id genericHintDefinition? ('{' field* function* implementation* boundWhere* '}')?;
 implementation: 'impl' structType ('{' function* '}')?;
 boundWhere : 'where' (('{' genericWithBounds '}') | genericWithBounds) ('{' function* '}');
 genericWithBounds: (genericWithBound (',' genericWithBound)*)?;
@@ -110,7 +110,7 @@ isShort: 'is' type (id | '(' optTypeList ')')?;
 while: 'while' exprWithBlock block;
 
 
-for: 'for' id 'in' exprWithBlock block;
+for: 'for' optTypeName 'in' exprWithBlock block;
 //TODO replace id in for with this
 //forIter: '(' optTypeList ')' | optTypeName;
 //usage:
@@ -146,7 +146,7 @@ optTypeList: (optTypeName (',' optTypeName)*)?;
 optTypeName: id (':' type)?;
 
 id: ID | 'expr' | 'type' | '\\' escaped | '_';
-escaped: FN | IS | IN | AS | OF | EXTEND
+escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
 | STRUCT | RAISE | TRAIT | IMPL | LET
 | MATCHES | SELF | STRING | JSON | BOOL | WHERE;

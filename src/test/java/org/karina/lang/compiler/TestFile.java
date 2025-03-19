@@ -82,7 +82,7 @@ public class TestFile {
 
         var message =
                 "Expected Fail for '" + this.name + "' of fieldType '" + errorType.getSimpleName() + "'" +
-                        " but got " + (lastError == null ? "no errors" : lastError.getClass().getSimpleName() + " " + suffix);
+                        " but got " + (lastError == null ? "no errors" : lastError.entry().getClass().getSimpleName() + " " + suffix);
         throw new AssertionError(message);
 
     }

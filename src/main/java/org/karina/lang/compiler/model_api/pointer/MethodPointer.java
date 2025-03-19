@@ -2,8 +2,12 @@ package org.karina.lang.compiler.model_api.pointer;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Region;
+
+import java.util.List;
 
 @Getter
 @Accessors(fluent = true)
@@ -12,12 +16,13 @@ public class MethodPointer {
     ClassPointer classPointer;
     String name;
     Signature signature;
+    List<KType> erasedParameters;
 
-    private MethodPointer(Region region, ClassPointer classPointer, String name, Signature signature) {
+    private MethodPointer(Region region, ClassPointer classPointer, String name, Signature signature,List<KType> erasedParameters) {
         this.region = region;
         this.classPointer = classPointer;
         this.name = name;
-        this.signature = signature;
+        this.erasedParameters = erasedParameters;
     }
 
     @Override
@@ -27,6 +32,11 @@ public class MethodPointer {
     }
 
     public static MethodPointer of(Region region, ClassPointer classPointer, String name, Signature signature) {
-        return new MethodPointer(region, classPointer, name, signature);
+        return new MethodPointer(region, classPointer, name, signature, signature.parametersErased());
+    }
+
+
+    public static MethodPointer of(Region region, ClassPointer classPointer, String name, Signature signature, List<KType> erasedParameters) {
+        return new MethodPointer(region, classPointer, name, signature, erasedParameters);
     }
 }

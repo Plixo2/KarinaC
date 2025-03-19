@@ -3,7 +3,6 @@ package org.karina.lang.compiler.model_api;
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.model.PhaseDebug;
-import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
@@ -47,7 +46,7 @@ public interface ClassModel {
     }
 
 
-    default MethodCollection getMethodCollection(String name) {
+    default MethodCollection getMethodCollectionShallow(String name) {
         var methods = new ArrayList<MethodPointer>();
         for (var method : methods()) {
             if (method.name().equals(name)) {

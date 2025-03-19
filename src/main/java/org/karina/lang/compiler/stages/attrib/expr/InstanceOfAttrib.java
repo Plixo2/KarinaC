@@ -40,7 +40,7 @@ public class InstanceOfAttrib  {
             }
             isTypeAttrib = new KType.ClassType(classType.pointer(), newGenerics);
         } else {
-            Log.attribError(new AttribError.NotAStruct(
+            Log.attribError(new AttribError.NotAClass(
                     region,
                     isType
             ));
