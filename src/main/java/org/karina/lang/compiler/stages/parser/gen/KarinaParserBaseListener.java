@@ -449,6 +449,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterJsonMethod(KarinaParser.JsonMethodContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitJsonMethod(KarinaParser.JsonMethodContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterJsonValue(KarinaParser.JsonValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -792,6 +804,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitArray(KarinaParser.ArrayContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSuperCall(KarinaParser.SuperCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSuperCall(KarinaParser.SuperCallContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

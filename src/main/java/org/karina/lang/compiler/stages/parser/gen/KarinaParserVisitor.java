@@ -227,6 +227,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitJsonType(KarinaParser.JsonTypeContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KarinaParser#jsonMethod}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitJsonMethod(KarinaParser.JsonMethodContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KarinaParser#jsonValue}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -400,6 +406,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitArray(KarinaParser.ArrayContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#superCall}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSuperCall(KarinaParser.SuperCallContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#expressionList}.
 	 * @param ctx the parse tree

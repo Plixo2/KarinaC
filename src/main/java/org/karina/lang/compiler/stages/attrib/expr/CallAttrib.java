@@ -88,16 +88,14 @@ public class CallAttrib  {
         var name = switch (invocationType) {
             case InvocationType.NewInit newInit -> "<init>";
             case InvocationType.SpecialInvoke specialInvoke -> specialInvoke.name();
-            case InvocationType.Unknown unknown -> null;
         };
-        if (name == null) {
-            Log.temp(expr.region(), "Invalid invocation type");
-            throw new Log.KarinaException();
-        }
         var superType = switch (invocationType) {
-            case InvocationType.NewInit newInit -> newInit.classType();
+            case InvocationType.NewInit newInit -> {
+                yield newInit.classType();
+            }
             case InvocationType.SpecialInvoke specialInvoke -> {
                 if (!(specialInvoke.superType() instanceof KType.ClassType classType)) {
+                    //check if supertype
                     Log.attribError(
                             new AttribError.NotAClass(
                                     expr.region(),

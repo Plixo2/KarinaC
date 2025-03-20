@@ -113,7 +113,7 @@ public class KarinaEnumVisitor {
             }
         }
 
-        var constructor = KarinaStructVisitor.createConstructor(region, currentClass, fields.build(), Modifier.PUBLIC, null);
+        var constructor = KarinaStructVisitor.createDefaultConstructor(region, currentClass, fields.build(), Modifier.PUBLIC, superClass);
         var methods = ImmutableList.of(constructor);
 
 

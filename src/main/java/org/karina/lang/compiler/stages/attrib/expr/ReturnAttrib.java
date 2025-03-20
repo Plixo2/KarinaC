@@ -24,7 +24,7 @@ public class ReturnAttrib  {
             value = ctx.makeAssignment(expr.region(), ctx.returnType(), value);
         } else {
             value = null;
-            yieldType = KType.VOID;
+            yieldType = KType.NONE;
 
             if (!ctx.returnType().isVoid()) {
                 Log.attribError(new AttribError.ControlFlow(expr.region(), "Invalid return statement"));

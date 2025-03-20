@@ -8,6 +8,5 @@ public sealed interface InvocationType {
 
     record NewInit(KType.ClassType classType) implements InvocationType {}
     record SpecialInvoke(String name, KType superType) implements InvocationType {}
-    record Unknown() implements InvocationType {}
 
 }

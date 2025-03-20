@@ -83,8 +83,7 @@ public class SignatureHelper {
                     outerIter = outerIter.outerClass();
                 }
 
-//                //error
-//                //TODO make better
+
                 var names = getAll(outer, generics).stream().map(Generic::name).toList();
                 var nested = nestNamesA(outer);
                 var outerName = outer == null ? "null" : outer.name();

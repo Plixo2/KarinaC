@@ -11,7 +11,7 @@ public class Expressions {
     static KType getType(KExpr expr) {
         switch (expr) {
             case KExpr.Assignment _ -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.Binary binary -> {
                 if (binary.symbol() == null) {
@@ -38,7 +38,7 @@ public class Expressions {
                 return branch.symbol().type();
             }
             case KExpr.Break aBreak -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.Call call -> {
                 if (call.symbol() == null) {
@@ -62,7 +62,7 @@ public class Expressions {
                 return closure.symbol().type();
             }
             case KExpr.Continue aContinue -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.CreateArray createArray -> {
                 if (createArray.symbol() == null) {
@@ -81,7 +81,7 @@ public class Expressions {
 //                return createObject.symbol();
             }
             case KExpr.For aFor -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.GetArrayElement getArrayElement -> {
                 if (getArrayElement.elementType() == null) {
@@ -119,7 +119,7 @@ public class Expressions {
                 return number.symbol().type();
             }
             case KExpr.Return aReturn -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.Self self -> {
                 if (self.symbol() == null) {
@@ -143,17 +143,16 @@ public class Expressions {
                 return unary.symbol().type();
             }
             case KExpr.VariableDefinition variableDefinition -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.While aWhile -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.Throw aThrow -> {
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.SpecialCall aSpecialCall -> {
-                //TODO replace with error, as this should not be called
-                return KType.VOID;
+                return KType.NONE;
             }
             case KExpr.StringInterpolation stringInterpolation -> {
                 return KType.STRING;

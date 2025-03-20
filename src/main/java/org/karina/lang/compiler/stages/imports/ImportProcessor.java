@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.stages.imports;
 
+import com.google.common.base.Strings;
 import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.utils.Unique;
@@ -362,19 +363,26 @@ public class ImportProcessor {
                 var parameters = methodModel.signature().parameters();
                 var erased = parameters.stream().map(Types::erase).toList();
 
-                MethodModel firstWithSignature = null;
+                NameAndSignature firstWithSignature = null;
                 for (var currentSignature : currentSignatures) {
                     if (Types.signatureEquals(currentSignature.signature(), erased)) {
-                        firstWithSignature = currentSignature.model();
+                        firstWithSignature = currentSignature;
                         break;
                     }
                 }
-
                 if (firstWithSignature != null) {
+                    var erasedStr = String.join(",",
+                            erased.stream().map(Object::toString).toList()
+                    );
+                    var equals = String.join(",",
+                            firstWithSignature.signature().stream().map(Object::toString).toList()
+                    );
+                    var duplicate = "fn " + methodModel.name() + "(" + erasedStr + ")";
+                    var first = "fn " + methodModel.name() + "(" + equals + ")";
                     Log.importError(new ImportError.DuplicateItem(
                             methodModel.region(),
                             methodModel.region(),
-                            methodModel.name()
+                            duplicate + " / " + first
                     ));
                     throw new Log.KarinaException();
                 }

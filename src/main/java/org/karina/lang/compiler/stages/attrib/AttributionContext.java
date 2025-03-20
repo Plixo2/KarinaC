@@ -59,7 +59,8 @@ public record AttributionContext(
             var existingVariable = Objects.requireNonNull(this.variables.get(variable.name()));
             Log.attribError(
                     new AttribError.DuplicateVariable(
-                            existingVariable.region(), variable.region(),
+                            existingVariable.region(),
+                            variable.region(),
                             variable.name()
                     ));
             throw new Log.KarinaException();

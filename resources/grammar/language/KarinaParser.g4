@@ -10,7 +10,7 @@ commaWordChain: id (',' id)*;
 item: annotation* (function | struct | enum | interface);
 
 
-function: 'fn' id genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
+function: 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
 //boundWhere is not yet implemented
 struct: 'struct' id genericHintDefinition? ('{' field* function* implementation* boundWhere* '}')?;
@@ -68,8 +68,6 @@ typeList: (type (',' type)*)?;
 genericHint: '<' (type (',' type)* )? '>';
 genericHintDefinition: '<' (id (',' id)* )? '>';
 
-
-
 dotWordChain: id ('.' id)*;
 
 annotation: '@' id ('=' jsonValue)?;
@@ -79,9 +77,10 @@ jsonObj : '{' (jsonPair ((',')? jsonPair)*)? '}';
 jsonPair : (STRING_LITERAL | id) ':' jsonValue;
 jsonArray : '[' (jsonValue ((',')? jsonValue)*)? ']';
 
-jsonExpression: 'expr' '{' expression '}';
+jsonExpression: 'expr' block;
 jsonType: 'type' '{' type '}';
-jsonValue: STRING_LITERAL | NUMBER | jsonObj | jsonArray | 'true' | 'false' | 'null' | jsonExpression | jsonType;
+jsonMethod: 'fn' '{' function '}';
+jsonValue: STRING_LITERAL | NUMBER | jsonObj | jsonArray | 'true' | 'false' | 'null' | jsonExpression | jsonType | jsonMethod;
 
 
 block: '{' (expression ';'?)* '}';
@@ -111,13 +110,7 @@ while: 'while' exprWithBlock block;
 
 
 for: 'for' optTypeName 'in' exprWithBlock block;
-//TODO replace id in for with this
-//forIter: '(' optTypeList ')' | optTypeName;
-//usage:
-//for (a, b) in c
-//for (a: int, b: int) in c
-//for id in c
-//for id: int in c
+//TODO tuple destructuring
 
 throw: 'raise' exprWithBlock;
 
@@ -129,10 +122,11 @@ additiveExpression: multiplicativeExpression (('+' | '-' | '&') additiveExpressi
 multiplicativeExpression: unaryExpression (('*' | '/' | '%') multiplicativeExpression)?;
 unaryExpression: ('-' | '!')? factor;
 factor: object postFix* (('=' exprWithBlock) | isInstanceOf)?;
-postFix: '.' id | '.' 'class' | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type;
-object: array | '(' exprWithBlock ')' | NUMBER | id (('.' id)* genericHint? '{' initList '}')? | STRING_LITERAL | CHAR_LITERAL | 'self' | 'super' | 'true' | 'false';
+postFix: '.' (id | 'class') | '.' 'class' | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type;
+object: array | '(' exprWithBlock ')' | NUMBER | id (('.' id)* genericHint? '{' initList '}')? | STRING_LITERAL | CHAR_LITERAL | 'self' | superCall | 'true' | 'false';
 array: ('<' type '>')? '[' expressionList ']';
 
+superCall: 'super' '<' structType  '>' ('.' id)?;
 //interpolation: '\''  '\'';
 
 expressionList: (exprWithBlock (',' exprWithBlock)*)?;

@@ -1,7 +1,5 @@
 package org.karina.lang.compiler.logging;
 
-import org.karina.lang.compiler.objects.KTree;
-
 import java.util.*;
 
 /**
@@ -22,25 +20,6 @@ public final class DidYouMean {
                 .sorted(Comparator.comparingInt(x -> calculate(x, target)))
                 .limit(limit).toList();
 
-    }
-
-    /**
-     * Finds all types with the same path, or all names, if {@code path} is null.
-     */
-    private static void findType(String name, KTree.KPackage root, List<KTree.KTypeItem> result) {
-
-        for (var subPackage : root.subPackages()) {
-            findType(name, subPackage, result);
-        }
-        for (var unit : root.units()) {
-            for (var item : unit.items()) {
-                if (item instanceof KTree.KTypeItem typeItem) {
-                    if (name == null || typeItem.name().value().equals(name)) {
-                        result.add(typeItem);
-                    }
-                }
-            }
-        }
     }
 
 

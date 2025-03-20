@@ -10,7 +10,6 @@ import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.Region;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -179,7 +178,7 @@ public class ClassInStream {
             case 11 -> new KType.PrimitiveType(KType.KPrimitive.INT);
             case 12 -> new KType.PrimitiveType(KType.KPrimitive.LONG);
             case 13 -> new KType.PrimitiveType(KType.KPrimitive.SHORT);
-            case 14 -> KType.VOID;
+            case 14 -> KType.NONE;
             default -> {
                 throw new IOException("Unknown fieldType: " + type);
             }

@@ -23,7 +23,13 @@ public class KarinaMethodVisitor {
     }
 
     public KMethodModel visit(ClassPointer owningClass,  ImmutableList<KAnnotation> annotations, KarinaParser.FunctionContext function) {
-        var name = this.context.escapeID(function.id());
+        String name;
+        if (function.id() != null) {
+            name = this.context.escapeID(function.id());
+        } else {
+            name = "<init>";
+        }
+
         var region = this.context.toRegion(function);
 
         var generics = ImmutableList.<Generic>of();
@@ -67,7 +73,7 @@ public class KarinaMethodVisitor {
         if (function.type() != null) {
             returnType = this.base.typeVisitor.visitType(function.type());
         } else {
-            returnType = KType.VOID;
+            returnType = KType.NONE;
         }
 
         var parameters = ImmutableList.<KType>builder();

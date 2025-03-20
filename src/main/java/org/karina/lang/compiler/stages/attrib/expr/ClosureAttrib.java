@@ -237,7 +237,7 @@ public class ClosureAttrib  {
             returnType = fromHint.returnType();
         }
         if (returnType == null) {
-            returnType = KType.VOID;
+            returnType = KType.NONE;
         }
 
         return new ArgsAndReturnType(newArgs, returnType);

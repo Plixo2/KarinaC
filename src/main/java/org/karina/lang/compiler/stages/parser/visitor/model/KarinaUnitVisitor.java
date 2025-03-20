@@ -64,10 +64,10 @@ public class KarinaUnitVisitor {
 
         var methods = ImmutableList.<KMethodModel>builder();
         var generics = ImmutableList.<Generic>of();
-
+        var superClass = KType.ROOT;
         var currentClass = ClassPointer.of(region, this.path);
         var constructor =
-                KarinaStructVisitor.createConstructor(region, currentClass, List.of(), Modifier.PRIVATE, null);
+                KarinaStructVisitor.createDefaultConstructor(region, currentClass, List.of(), Modifier.PRIVATE, superClass);
         methods.add(constructor);
         for (var itemContext : ctx.item()) {
             if (itemContext.function() != null) {
@@ -88,7 +88,6 @@ public class KarinaUnitVisitor {
 
             var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
-        var superClass = KType.ROOT;
 
         var innerClassesToFill = new ArrayList<KClassModel>();
         var annotations = ImmutableList.<KAnnotation>of();

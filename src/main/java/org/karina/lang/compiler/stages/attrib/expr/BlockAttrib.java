@@ -31,7 +31,7 @@ public class BlockAttrib {
         }
         KType returningType;
         if (newExpressions.isEmpty()) {
-            returningType = KType.VOID;
+            returningType = KType.NONE;
         } else {
             returningType = newExpressions.getLast().type();
         }

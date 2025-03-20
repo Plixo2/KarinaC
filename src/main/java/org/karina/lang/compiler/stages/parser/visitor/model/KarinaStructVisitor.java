@@ -74,8 +74,18 @@ public class KarinaStructVisitor {
             }
         }
 
+        boolean containsConstructor = false;
         for (var functionContext : ctx.function()) {
-            methods.add(this.base.methodVisitor.visit(currentClass, ImmutableList.of(), functionContext));
+            var methodModel = this.base.methodVisitor.visit(
+                    currentClass,
+                    ImmutableList.of(),
+                    functionContext
+            );
+            methods.add(methodModel);
+
+            if (methodModel.name().equals("<init>")) {
+                containsConstructor = true;
+            }
         }
 
         var fields = ImmutableList.<KFieldModel>builder();
@@ -85,9 +95,10 @@ public class KarinaStructVisitor {
         }
 
 
-
-        var constructor = createConstructor(region, currentClass, fields.build(), Modifier.PUBLIC, superAnnotation);
-        methods.add(constructor);
+        if (!containsConstructor) {
+            var constructor = createDefaultConstructor(region, currentClass, fields.build(), Modifier.PUBLIC, superClass);
+            methods.add(constructor);
+        }
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
@@ -132,72 +143,43 @@ public class KarinaStructVisitor {
 
     }
 
-    public static KMethodModel createConstructor(
+    public static KMethodModel createDefaultConstructor(
             Region region,
             ClassPointer classPointer,
             List<KFieldModel> fields,
             int mods,
-            @Nullable SuperAnnotation superAnnotation
+            KType superClass
     ) {
         var name = "<init>";
 
-        var callRegion = region;
-        if (superAnnotation != null) {
-            region = superAnnotation.region();
-            callRegion = superAnnotation.expr().region();
-        }
-
         var paramTypes = ImmutableList.copyOf(fields.stream().map(KFieldModel::type).toList());
         var paramNames = ImmutableList.copyOf(fields.stream().map(KFieldModel::name).toList());
-        var signature = new Signature(paramTypes, KType.VOID);
+        var signature = new Signature(paramTypes, KType.NONE);
         var generics = ImmutableList.<Generic>of();
 
         //TODO fill super call with parameters,
         var expressions = new ArrayList<KExpr>();
 
-        KType superType = KType.ROOT;
-
-        if (superAnnotation != null) {
-            superType = superAnnotation.superType();
-        }
-
         var superLiteral = new KExpr.SpecialCall(
-                callRegion,
+                region,
                 new InvocationType.SpecialInvoke(
                         "<init>",
-                        superType
+                        superClass
                 )
         );
         var arguments = List.<KExpr>of();
 
-        if (superAnnotation != null) {
-            var expr = superAnnotation.expr();
-//            if (expr instanceof KExpr.Block block && !block.expressions().isEmpty()) {
-//                expr = block.expressions().getLast();
-//            }
-
-            if (!(expr instanceof KExpr.Call call)) {
-                Log.temp(expr.region(), "Expected a call expression");
-                throw new Log.KarinaException();
-            }
-            if (!(call.left() instanceof KExpr.SpecialCall(_, InvocationType.Unknown()))) {
-                Log.temp(expr.region(), "Expected a call to super");
-                throw new Log.KarinaException();
-            }
-            arguments = call.arguments();
-        }
-
         for (var field : fields) {
             var self = new KExpr.Self(region, null);
             var fieldName = RegionOf.region(region, field.name());
-            var lhs = new KExpr.GetMember(region, self, fieldName, false, null);
             var rhs = new KExpr.Literal(region, field.name(), null);
+            var lhs = new KExpr.GetMember(region, self, fieldName, false, null);
             var assign = new KExpr.Assignment(region, lhs, rhs, null);
             expressions.add(assign);
         }
 
 
-        var superCall = new KExpr.Call(callRegion, superLiteral, List.of(), arguments, null);
+        var superCall = new KExpr.Call(region, superLiteral, List.of(), arguments, null);
         expressions.add(superCall);
 
         var expression = new KExpr.Block(region, expressions, null);
@@ -235,4 +217,6 @@ public class KarinaStructVisitor {
         }
 
     }
+
+
 }

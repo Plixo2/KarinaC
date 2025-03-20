@@ -4,9 +4,6 @@ import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.utils.MethodCollection;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.utils.UpstreamMethodPointer;
-
-import java.util.List;
 
 public sealed interface MemberSymbol {
     KType type();
@@ -22,7 +19,7 @@ public sealed interface MemberSymbol {
 
         @Override
         public KType type() {
-            return KType.VOID;
+            return KType.NONE;
         }
     }
 

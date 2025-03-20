@@ -368,6 +368,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 */
 	void exitJsonType(KarinaParser.JsonTypeContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KarinaParser#jsonMethod}.
+	 * @param ctx the parse tree
+	 */
+	void enterJsonMethod(KarinaParser.JsonMethodContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#jsonMethod}.
+	 * @param ctx the parse tree
+	 */
+	void exitJsonMethod(KarinaParser.JsonMethodContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KarinaParser#jsonValue}.
 	 * @param ctx the parse tree
 	 */
@@ -657,6 +667,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitArray(KarinaParser.ArrayContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link KarinaParser#superCall}.
+	 * @param ctx the parse tree
+	 */
+	void enterSuperCall(KarinaParser.SuperCallContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#superCall}.
+	 * @param ctx the parse tree
+	 */
+	void exitSuperCall(KarinaParser.SuperCallContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link KarinaParser#expressionList}.
 	 * @param ctx the parse tree

@@ -2,7 +2,6 @@
 import java.lang.String valueOf
 import karina.lang.Result { safeCall }
 import karina.lang.Result { Ok, Err }
-import src.Main.Inner
 import java.util.function.Supplier
 import java.lang.System out
 import karina.lang.Option
@@ -10,14 +9,14 @@ import karina.lang.Option
 import java.util.ArrayList
 import java.util.List
 import java.util.Arrays
-import src.Errors
+import src.errors
 
-import src.Files
+import src.files
 
 fn main() {
-    let path = Files.getPath("Hello").expect("a valid path")
-    println(Files.exists(path))
-    Files.loadFile(path)
+    let path = files.getPath("Hello").expect("a valid path")
+    println(files.exists(path))
+    files.loadFile(path)
 
 
    // let a: int = 1
@@ -195,28 +194,33 @@ fn completePath<W>(s: W) {
 
 struct ObjectToBase {
     element: int
-}
 
-
-/*
-@Init = {
-    type: type { ObjectToBase }
-    args: {
-        number: type { int }
-        name: type { string }
-        value: type { int }
+    fn (self, value: string) {
+        self.element = value.length()
+        super<Object>()
     }
-    invocation: expr { super(value) }
+
+    fn (self, length: int) {
+        self.element = length
+    }
 }
-*/
 
 
 @Super = {
     type: type { ObjectToBase }
-    invocation: expr { super(value.length()) }
 }
 struct BasedObject {
     value: string
+
+    fn (self, value: string) {
+        let len = value.length()
+        super<ObjectToBase>(len)
+    }
+    fn (self, value: string?) {
+        super<ObjectToBase>(value.map(fn(v) v.length()).orElse(0))
+    }
+
+
 }
 
 fn getAsAny<T>(t: T) -> ? = t
@@ -225,15 +229,16 @@ struct Other<W> {}
 
 @Super = {
     type: type { Other<int> }
-    invocation: expr { super() }
 }
 struct Inner {
     a: int
-    b: src.Main.Inner
+    b: src.main.Inner
     type: int
 
     fn function(self, _: int) {
-
+        let initBasedObject = BasedObject {
+            value: Option.Some { _: "Hello" }
+        }
     }
 
     fn staticMethodReference() {

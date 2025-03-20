@@ -5,9 +5,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
-import org.karina.lang.compiler.jvm.signature.model.ClassSignature;
 import org.karina.lang.compiler.jvm.signature.model.MethodSignature;
-import org.karina.lang.compiler.jvm.signature.model.TypeSignature;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.Region;
@@ -32,7 +30,7 @@ public class MethodSignatureBuilder {
         if (returnSignature != null) {
             this.returnType = SignatureHelper.toType(region, name, outer, this.generics, returnSignature);
         } else {
-            this.returnType = KType.VOID;
+            this.returnType = KType.NONE;
         }
         var parameters = ImmutableList.<KType>builder();
 

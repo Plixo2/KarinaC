@@ -7,7 +7,6 @@ import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.*;
@@ -139,7 +138,7 @@ public class AttributionItem {
                     expression = new KExpr.Return(
                             methodModel.region(),
                             null,
-                            KType.VOID
+                            KType.NONE
                     );
                 } else {
                     expression = contextNew.makeAssignment(methodModel.region(), returnType, expression);

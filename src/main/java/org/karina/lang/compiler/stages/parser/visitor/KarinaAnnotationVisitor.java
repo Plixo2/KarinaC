@@ -73,7 +73,7 @@ public class KarinaAnnotationVisitor {
 
     private AnnotationAST visitExpression(KarinaParser.JsonExpressionContext ctx) {
         var region = this.conv.toRegion(ctx);
-        var expr = this.exprVisitor.visitExpression(ctx.expression());
+        var expr = this.exprVisitor.visitBlock(ctx.block());
         return new AnnotationAST.Expression(region, expr);
 
     }

@@ -27,7 +27,7 @@ fn loadFile(path: Path) -> Result<string, IOException> {
 fn test(f: java.lang.module.ModuleDescriptor.Exports.Modifier) {
     let syn = Option.instanceOf(String, Modifier.SYNTHETIC)
 
-    if syn is Object o {
+    if syn as Object is String o {
 
     } else is String {
 
@@ -35,7 +35,6 @@ fn test(f: java.lang.module.ModuleDescriptor.Exports.Modifier) {
 }
 
 fn getPath(path: string) -> Result<Path, InvalidPathException> {
-
     Result.ok(Path.of(path, []))
 }
 

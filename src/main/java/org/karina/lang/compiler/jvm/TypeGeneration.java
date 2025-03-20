@@ -1,8 +1,5 @@
 package org.karina.lang.compiler.jvm;
 
-import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.JKModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -23,7 +20,7 @@ public class TypeGeneration {
 
     public KType fromType(Region region, Type desc) {
         return switch (desc.getSort()) {
-            case VOID -> KType.VOID;
+            case VOID -> KType.NONE;
             case BOOLEAN -> new KType.PrimitiveType(KType.KPrimitive.BOOL);
             case CHAR -> new KType.PrimitiveType(KType.KPrimitive.CHAR);
             case BYTE -> new KType.PrimitiveType(KType.KPrimitive.BYTE);

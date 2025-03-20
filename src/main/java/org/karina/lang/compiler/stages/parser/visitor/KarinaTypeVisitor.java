@@ -52,7 +52,7 @@ public class KarinaTypeVisitor {
 
         var region = this.conv.toRegion(ctx);
         if (ctx.VOID() != null) {
-            return KType.VOID;
+            return KType.NONE;
         } else if (ctx.INT() != null) {
             return new KType.PrimitiveType(KType.KPrimitive.INT);
         } else if (ctx.DOUBLE() != null) {
@@ -110,7 +110,7 @@ public class KarinaTypeVisitor {
         var interfaces = ctx.interfaceImpl() != null ? visitInterfaceImpl(ctx.interfaceImpl()) : List.<KType>of();
         var args = visitTypeList(ctx.typeList());
 
-        var returnType = ctx.type() != null ? visitType(ctx.type()) : KType.VOID;
+        var returnType = ctx.type() != null ? visitType(ctx.type()) : KType.NONE;
         List<KType> interfacesCast = interfaces.stream().map(ref -> (KType)ref).toList();
         return new KType.FunctionType(args, returnType, interfacesCast);
 

@@ -372,6 +372,10 @@ public class KarinaExprVisitor {
         if (ctx.id() != null) {
             var name = this.conv.region(ctx.id());
             return new KExpr.GetMember(regionMerged, prev, name, false, null);
+        } else if (ctx.CLASS() != null) {
+            var nameRegion = this.conv.toRegion(ctx.CLASS());
+            var name = RegionOf.region(nameRegion, "class");
+            return new KExpr.GetMember(regionMerged, prev, name, false, null);
         } else if (ctx.expressionList() != null) {
             var expressions = visitExprList(ctx.expressionList());
             List<KType> genHint;
@@ -467,8 +471,8 @@ public class KarinaExprVisitor {
             return visitTickedString(ctx.CHAR_LITERAL());
         } else if (ctx.SELF() != null) {
             return new KExpr.Self(region, null);
-        } else if (ctx.SUPER() != null) {
-            return new KExpr.SpecialCall(region, new InvocationType.Unknown());
+        } else if (ctx.superCall() != null) {
+            return visitCallExpr(ctx.superCall());
         } else if (ctx.FALSE() != null) {
             return new KExpr.Boolean(region, false);
         } else if (ctx.TRUE() != null) {
@@ -478,6 +482,19 @@ public class KarinaExprVisitor {
             throw new Log.KarinaException();
         }
 
+    }
+
+    private KExpr visitCallExpr(KarinaParser.SuperCallContext ctx) {
+        var region = this.conv.toRegion(ctx);
+        var structType = this.typeVisitor.visitStructType(ctx.structType());
+        String name;
+        if (ctx.id() != null) {
+            name = this.conv.escapeID(ctx.id());
+        } else {
+            name = "<init>";
+        }
+
+        return new KExpr.SpecialCall(region, new InvocationType.SpecialInvoke(name, structType));
     }
 
     private KExpr visitString(TerminalNode ctx) {

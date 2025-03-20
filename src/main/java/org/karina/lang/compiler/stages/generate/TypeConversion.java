@@ -2,7 +2,6 @@ package org.karina.lang.compiler.stages.generate;
 
 import com.sun.jdi.*;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.stages.postprocess.PostExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.objectweb.asm.Opcodes;
@@ -30,7 +29,8 @@ public class TypeConversion {
                 return Type.getObjectType(toJVMPath(classType.pointer().path()));
             }
             case KType.FunctionType functionType -> {
-                return getType(PostExpr.toClassType(functionType));
+                throw new NullPointerException("FunctionType is not supported");
+                //                return getType(PostExpr.toClassType(functionType));
             }
             case KType.GenericLink genericLink -> {
                 return Type.getType(Object.class);

@@ -9,8 +9,8 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
 import org.karina.lang.compiler.stages.imports.ImportProcessor;
 import org.karina.lang.compiler.stages.parser.TextToClassVisitor;
-import org.karina.lang.compiler.stages.postprocess.PostProcessor;
 
+import java.lang.ref.Cleaner;
 import java.nio.file.Path;
 
 public class KarinaDefaultCompiler {
@@ -18,7 +18,6 @@ public class KarinaDefaultCompiler {
     private final TextToClassVisitor parser;
     private final ImportProcessor importProcessor;
     private final AttributionProcessor attributionProcessor;
-    private final PostProcessor postProcessor;
     private final BytecodeProcessor backend;
 
     private final Path outPath;
@@ -31,7 +30,6 @@ public class KarinaDefaultCompiler {
         this.parser = new TextToClassVisitor();
         this.importProcessor = new ImportProcessor();
         this.attributionProcessor = new AttributionProcessor();
-        this.postProcessor = new PostProcessor();
         this.backend = new BytecodeProcessor();
     }
 

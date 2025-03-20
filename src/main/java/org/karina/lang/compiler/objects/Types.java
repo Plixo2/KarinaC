@@ -3,9 +3,9 @@ package org.karina.lang.compiler.objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.logging.FlightRecorder;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class Types {
             case KType.UnprocessedType unprocessedType -> {
                 yield KType.ROOT;
             }
-            case KType.VoidType _ -> KType.VOID;
+            case KType.VoidType _ -> KType.NONE;
         };
     }
 
@@ -238,7 +238,7 @@ public class Types {
                 Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
                 throw new Log.KarinaException();
             }
-            case KType.VoidType _ -> KType.VOID;
+            case KType.VoidType _ -> KType.NONE;
         };
         sample.endSample();
         return replaced;
@@ -309,6 +309,28 @@ public class Types {
         sample.endSample();
         return classType;
     }
+
+    public static boolean isSuperTypeOrInterface(JKModel model, ClassPointer element, ClassPointer toTest) {
+
+        if (element.equals(toTest)) {
+            return true;
+        }
+
+        var next = model.getClass(element).superClass();
+        if (next != null) {
+            return isSuperTypeOrInterface(model, next.pointer(), toTest);
+        }
+
+        var interfaces = model.getClass(element).interfaces();
+        for (var interfaceOf : interfaces) {
+            if (isSuperTypeOrInterface(model, interfaceOf.pointer(), toTest)) {
+                return true;
+            }
+        }
+        return false;
+
+    }
+
 
 
 }

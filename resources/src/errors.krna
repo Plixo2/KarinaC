@@ -2,11 +2,14 @@
 
 @Super = {
     type: type { java.lang.RuntimeException }
-    invocation: expr { super(message, cause.nullable()) }
 }
 struct RuntimeError {
     message: string
     cause: Throwable?
+
+    fn (self, message: string, cause: Throwable?) {
+        super<java.lang.RuntimeException>(message, cause.nullable())
+    }
 }
 
 

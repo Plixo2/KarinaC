@@ -1,10 +1,8 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
-import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
@@ -43,7 +41,7 @@ public class GetMemberAttrib  {
             if (left.type().isVoid()) {
                 Log.attribError(new AttribError.NotSupportedType(
                         expr.left().region(),
-                        KType.VOID
+                        KType.NONE
                 ));
             } else {
                 Log.attribError(new AttribError.NotAClass(expr.left().region(), left.type()));
@@ -132,12 +130,14 @@ public class GetMemberAttrib  {
             return null;
         }
         if (literalSymbol instanceof LiteralSymbol.StaticClassReference(
-                Region regionInner, ClassPointer classPointer, var classType
+                Region regionInner, ClassPointer classPointer, var classType, var implicitGetClass
         )) {
             if (name.equals("class")) {
-                var symbol = new LiteralSymbol.StaticClassReference(regionInner, classPointer, classType);
+                var symbol = new LiteralSymbol.StaticClassReference(regionInner, classPointer, classType, true);
                 var newLiteral = new KExpr.Literal(region, name, symbol);
                 return of(ctx, newLiteral);
+            } else if (implicitGetClass) {
+                return null;
             }
 
             //TODO search in super types for fields and functions

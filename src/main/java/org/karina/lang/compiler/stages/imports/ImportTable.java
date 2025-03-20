@@ -65,7 +65,7 @@ public record ImportTable(
             case KType.UnprocessedType unprocessedType -> {
                 yield importUnprocessedType(unprocessedType.region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
             }
-            case KType.VoidType _ -> KType.VOID;
+            case KType.VoidType _ -> KType.NONE;
         };
     }
 

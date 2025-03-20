@@ -7,7 +7,7 @@ import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 
 import java.lang.reflect.Modifier;
 
-//TODO Nest-Based Access Control
+
 @RequiredArgsConstructor
 public class ProtectionChecking {
     private final JKModel model;

@@ -6,6 +6,8 @@ import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KAnnotation;
 import org.karina.lang.compiler.utils.KImport;
@@ -50,7 +52,16 @@ public class KarinaInterfaceVisitor {
 
         var methods = ImmutableList.<KMethodModel>builder();
         for (var functionContext : ctx.function()) {
-            methods.add(this.base.methodVisitor.visit(currentClass, ImmutableList.of(), functionContext));
+            var method = this.base.methodVisitor.visit(
+                    currentClass, ImmutableList.of(),
+                    functionContext
+            );
+            methods.add(method);
+
+            if (method.name().equals("<init>")) {
+                Log.attribError(new AttribError.UnqualifiedSelf(region, method.region()));
+                throw new Log.KarinaException();
+            }
         }
 
         var fields = ImmutableList.<KFieldModel>of();

@@ -59,9 +59,7 @@ public class ImportExpr {
                         name,  ctx.resolveType(expr.region(), tpe)
                 );
             }
-            case InvocationType.Unknown unknown -> unknown;
         };
-
 
 
         return new KExpr.SpecialCall(

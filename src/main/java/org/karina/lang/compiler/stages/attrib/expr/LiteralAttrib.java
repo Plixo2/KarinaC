@@ -35,7 +35,7 @@ public class LiteralAttrib  {
         } else if (staticClass != null) {
             var classModel = ctx.model().getClass(staticClass);
             var referenceClass = Types.erasedClass(classModel);
-            symbol = new LiteralSymbol.StaticClassReference(expr.region(), staticClass, referenceClass);
+            symbol = new LiteralSymbol.StaticClassReference(expr.region(), staticClass, referenceClass, false);
         } else if (staticMethodCollection != null) {
             symbol = new LiteralSymbol.StaticMethodReference(expr.region(), staticMethodCollection);
         } else if (staticField != null) {

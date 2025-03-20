@@ -6,8 +6,8 @@ public sealed interface BranchYieldSymbol {
     default KType type() {
         return switch (this) {
             case YieldValue(var type) -> type;
-            case Returns ignored -> KType.VOID;
-            case None ignored -> KType.VOID;
+            case Returns ignored -> KType.NONE;
+            case None ignored -> KType.NONE;
         };
     }
 

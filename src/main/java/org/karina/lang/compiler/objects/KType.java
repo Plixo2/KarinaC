@@ -81,7 +81,7 @@ public sealed interface KType {
             List.of()
     );
 
-    VoidType VOID = new VoidType();
+    VoidType NONE = new VoidType();
 
     static void validateBuildIns(JKModel model) {
         validatePointer(model, ROOT);

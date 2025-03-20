@@ -9,7 +9,7 @@ import org.karina.lang.compiler.objects.annotations.AnnotationValue;
 
 import java.util.HashMap;
 
-public record SuperAnnotation(Region region, KType superType, KExpr expr) {
+public record SuperAnnotation(Region region, KType superType) {
 
     public static SuperAnnotation fromAnnotation(AnnotationValue value) {
 
@@ -28,22 +28,13 @@ public record SuperAnnotation(Region region, KType superType, KExpr expr) {
             throw new Log.KarinaException();
         }
 
-        KExpr expr;
-        if (entries.containsKey("invocation")) {
-            expr = intoKExpr(entries.get("invocation"));
-            entries.remove("invocation");
-        } else {
-            Log.temp(value.region(), "missing 'invocation' field");
-            throw new Log.KarinaException();
-        }
-
         if (!entries.isEmpty()) {
             Log.temp(value.region(), "Unexpected fields: " + entries.keySet());
             throw new Log.KarinaException();
         }
 
 
-        return new SuperAnnotation(value.region(), type, expr);
+        return new SuperAnnotation(value.region(), type);
     }
 
     private static KExpr intoKExpr(AnnotationValue value) {

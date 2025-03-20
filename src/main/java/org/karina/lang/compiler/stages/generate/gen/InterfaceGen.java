@@ -4,7 +4,6 @@ import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.stages.generate.TypeConversion;
-import org.karina.lang.compiler.objects.KTree;
 import org.karina.lang.compiler.objects.KType;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -18,22 +17,22 @@ public class InterfaceGen {
         this.backend = backend;
     }
 
-    public JarCompilation.JarOutput addInterface(KTree.KInterface kInterface) {
-        var classNode = new ClassNode();
-        var selfType =
-                new KType.ClassType(ClassPointer.of(null, kInterface.path()), List.of());
-        for (var items : kInterface.functions()) {
-            if (items instanceof KTree.KFunction function) {
-                var method = this.backend.methodGen.createMethod(selfType, true, function);
-                classNode.methods.add(method);
-            }
-        }
-        classNode.sourceFile = kInterface.region().source().resource().identifier();
-        classNode.access = Opcodes.ACC_PUBLIC  | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT;
-        classNode.name = TypeConversion.toJVMPath(kInterface.path());
-        classNode.version = BytecodeProcessor.CLASS_VERSION;
-        classNode.superName = "java/lang/Object";
-        return BytecodeProcessor.getJarOutput(classNode,classNode.name + ".class");
-    }
+//    public JarCompilation.JarOutput addInterface(KTree.KInterface kInterface) {
+//        var classNode = new ClassNode();
+//        var selfType =
+//                new KType.ClassType(ClassPointer.of(null, kInterface.path()), List.of());
+//        for (var items : kInterface.functions()) {
+//            if (items instanceof KTree.KFunction function) {
+//                var method = this.backend.methodGen.createMethod(selfType, true, function);
+//                classNode.methods.add(method);
+//            }
+//        }
+//        classNode.sourceFile = kInterface.region().source().resource().identifier();
+//        classNode.access = Opcodes.ACC_PUBLIC  | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT;
+//        classNode.name = TypeConversion.toJVMPath(kInterface.path());
+//        classNode.version = BytecodeProcessor.CLASS_VERSION;
+//        classNode.superName = "java/lang/Object";
+//        return BytecodeProcessor.getJarOutput(classNode,classNode.name + ".class");
+//    }
 
 }
