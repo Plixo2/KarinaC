@@ -1,12 +1,12 @@
 package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
-import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.*;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 public class AttributionItem {
 
-    public static KClassModel attribClass(JKModel model, KClassModel outerClass, KClassModel classModel) {
+    public static KClassModel attribClass(Model model, KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
 
         var logName = "class-" + classModel.name();
         Log.beginType(Log.LogTypes.CLASS_NAME, logName);
@@ -25,7 +25,6 @@ public class AttributionItem {
         var methodsToFill = new ArrayList<KMethodModel>();
         var innerToFill = new ArrayList<KClassModel>();
         var classModelNew = new KClassModel(
-                PhaseDebug.TYPED,
                 classModel.name(),
                 classModel.path(),
                 classModel.modifiers(),
@@ -47,7 +46,7 @@ public class AttributionItem {
         //todo inner classes
 
         for (var kClassModel : classModel.innerClasses()) {
-            var inner = attribClass(model, classModelNew, kClassModel);
+            var inner = attribClass(model, classModelNew, kClassModel, modelBuilder);
             innerToFill.add(inner);
         }
 
@@ -67,12 +66,13 @@ public class AttributionItem {
         }
         Log.endType(Log.LogTypes.CLASS_NAME, logName);
 
+        modelBuilder.addClass(classModelNew);
         return classModelNew;
     }
 
 
 
-    private static KMethodModel attribMethod(JKModel model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
+    private static KMethodModel attribMethod(Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
 
         var logName = "method-" + methodModel.name() + "-" + methodModel.signature().toString() + " in " + classModel.name();
         Log.beginType(Log.LogTypes.METHOD_NAME, logName);
@@ -143,15 +143,6 @@ public class AttributionItem {
                 } else {
                     expression = contextNew.makeAssignment(methodModel.region(), returnType, expression);
 
-/*                    if (!typeChecking.canAssign(methodModel.region(), returnType, expression.type(), false)) {
-                        Log.attribError(new AttribError.TypeMismatch(
-                                methodModel.region(),
-                                returnType,
-                                expression.type()
-                        ));
-                        throw new Log.KarinaException();
-                    }*/
-
                     expression = new KExpr.Return(
                             expression.region(),
                             expression,
@@ -161,9 +152,8 @@ public class AttributionItem {
             }
         }
 
-
         if (methodModel.name().equals("<init>")) {
-            //test
+            //TODO test
         }
         Log.endType(Log.LogTypes.METHOD_NAME, logName);
 

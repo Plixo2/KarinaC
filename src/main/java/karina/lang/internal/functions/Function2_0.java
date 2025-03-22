@@ -1,4 +1,4 @@
-package karina.lang.functions;
+package karina.lang.internal.functions;
 
 import java.util.function.BiConsumer;
 

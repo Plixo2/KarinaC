@@ -2,7 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
@@ -31,7 +31,13 @@ public class KarinaInterfaceVisitor {
         this.context = regionContext;
     }
 
-    public KClassModel visit(@Nullable KClassModel owningClass, ObjectPath owningPath, ImmutableList<KAnnotation> annotations, KarinaParser.InterfaceContext ctx) {
+    public KClassModel visit(
+            @Nullable KClassModel owningClass,
+            ObjectPath owningPath,
+            ImmutableList<KAnnotation> annotations,
+            KarinaParser.InterfaceContext ctx,
+            ModelBuilder modelBuilder
+    ) {
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
@@ -76,7 +82,6 @@ public class KarinaInterfaceVisitor {
         var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
         var classModel = new KClassModel(
-                PhaseDebug.LOADED,
                 name,
                 path,
                 mods,
@@ -95,7 +100,7 @@ public class KarinaInterfaceVisitor {
                 region,
                 null
         );
-
+        modelBuilder.addClass(classModel);
 
         return classModel;
     }

@@ -11,8 +11,6 @@ import java.util.regex.Pattern;
 public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRecord> {
     private List<FlightRecorder.SectionRecord> records = new ArrayList<>();
 
-    public FlightRecordCollection() {
-    }
 
     @Override
     public @NotNull Iterator<FlightRecorder.SectionRecord> iterator() {

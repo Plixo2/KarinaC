@@ -2,7 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
@@ -30,7 +30,13 @@ public class KarinaStructVisitor {
         this.context = regionContext;
     }
 
-    public KClassModel visit(@Nullable KClassModel owningClass, ObjectPath owningPath, ImmutableList<KAnnotation> annotations, KarinaParser.StructContext ctx) {
+    public KClassModel visit(
+            @Nullable KClassModel owningClass,
+            ObjectPath owningPath,
+            ImmutableList<KAnnotation> annotations,
+            KarinaParser.StructContext ctx,
+            ModelBuilder modelBuilder
+    ) {
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
@@ -111,8 +117,7 @@ public class KarinaStructVisitor {
 
 
 
-        return new KClassModel(
-                PhaseDebug.LOADED,
+        var newModel = new KClassModel(
                 name,
                 path,
                 mods,
@@ -131,6 +136,9 @@ public class KarinaStructVisitor {
                 region,
                 null
         );
+        modelBuilder.addClass(newModel);
+
+        return newModel;
     }
 
     private KFieldModel visitField(KarinaParser.FieldContext ctx, ClassPointer owningClass) {

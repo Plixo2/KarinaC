@@ -1,20 +1,14 @@
-package org.karina.lang.compiler.jvm;
+package org.karina.lang.compiler.jvm.loading;
 
 import org.karina.lang.compiler.jvm.binary.out.ModelWriter;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
-import org.karina.lang.compiler.jvm.loading.BytecodeLoading;
-import org.karina.lang.compiler.jvm.loading.InterfaceLinker;
-import org.karina.lang.compiler.jvm.loading.OpenSet;
-import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
+import org.karina.lang.compiler.model_api.Model;
 
 import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.jar.JarFile;
 import java.util.zip.GZIPOutputStream;
 
@@ -37,7 +31,7 @@ public class ModelLoader {
         return resource;
     }
 
-    private JKModel writeJar() {
+    private Model writeJar() {
 //        var startTime = System.currentTimeMillis();
 //        var modelBuilder = new JKModelBuilder();
 //        var maxClassVersion = 0;
@@ -77,11 +71,11 @@ public class ModelLoader {
         throw new NullPointerException("Not implemented");
     }
 
-    public JKModel loadJavaBase() {
+    public Model loadJavaBase() {
         return loadFromResource("java_base.jar");
     }
 
-    public JKModel loadKarinaBase() {
+    public Model loadKarinaBase() {
         return loadFromResource("karina_base.jar");
     }
 
@@ -102,7 +96,7 @@ public class ModelLoader {
 //        return model;
 
 
-    public JKModel loadFromResource(String resource) {
+    public Model loadFromResource(String resource) {
         Log.begin("read-jar");
         var jdkSet = new OpenSet();
         var file = new File(getJarURL(resource).getFile());
@@ -115,13 +109,12 @@ public class ModelLoader {
         Log.end("read-jar");
 
         Log.begin("link-jar");
-        var builder = new JKModelBuilder(PhaseDebug.JVM);
+        var builder = new ModelBuilder();
         var linker = new InterfaceLinker();
 
 
         for (var topClass : jdkSet.removeTopClasses()) {
-            var linkerClass = linker.createClass(null, topClass, jdkSet, new HashSet<>());
-            builder.addClassWithChildren(linkerClass);
+            var linkerClass = linker.createClass(null, topClass, jdkSet, new HashSet<>(), builder);
         }
 
         for (var value : jdkSet.getOpenSet().values()) {
@@ -138,7 +131,7 @@ public class ModelLoader {
         return build;
     }
 
-    private void writeBinary(JKModel model, long hash, String path) {
+    private void writeBinary(Model model, long hash, String path) {
         var file = new java.io.File(path);
         if (!file.exists()) {
             try {
@@ -163,7 +156,7 @@ public class ModelLoader {
         }
     }
 //
-//    private JKModel readBinary(String path) {
+//    private Model readBinary(String path) {
 //        var file = new File(path);
 //        if (!file.exists()) {
 //            Log.fileError(new FileLoadError.NotFound(file));

@@ -1,12 +1,10 @@
 package org.karina.lang.compiler.jvm.loading;
 
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.jvm.signature.FieldSignatureBuilder;
 import org.karina.lang.compiler.jvm.signature.MethodSignatureBuilder;
-import org.karina.lang.compiler.jvm.signature.model.FieldSignature;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.jvm.TypeGeneration;
 import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
@@ -14,22 +12,15 @@ import org.karina.lang.compiler.jvm.model.jvm.JFieldModel;
 import org.karina.lang.compiler.jvm.model.jvm.JMethodModel;
 import org.karina.lang.compiler.jvm.signature.ClassSignatureBuilder;
 import org.karina.lang.compiler.jvm.signature.SignatureVisitor;
-import org.karina.lang.compiler.jvm.signature.model.ClassSignature;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceClassVisitor;
-import org.objectweb.asm.util.TraceMethodVisitor;
 
-import java.io.*;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +36,7 @@ public class InterfaceLinker {
         this.typeGen = new TypeGeneration();
     }
 
-    public JClassModel createClass(@Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited) {
+    public JClassModel createClass(@Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder) {
         var node = cls.node();
 
         Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading class: " + node.name);
@@ -132,32 +123,7 @@ public class InterfaceLinker {
                 source,
                 region
         );
-
-       /* if (Objects.equals(path.mkString("/"), "java/util/ArrayList")) {
-            var fileName = new File("resources/method.txt");
-            Log.warn(fileName.getAbsoluteFile());
-            try {
-                fileName.createNewFile();
-                try (FileWriter writer = new FileWriter(fileName.getAbsoluteFile());
-                     BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
-
-                    // Loop through methods
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-
-                    // Use ASM Textifier to print method in readable format
-                    TraceClassVisitor tmv = new TraceClassVisitor(pw);
-                    node.accept(tmv);
-                    pw.flush();
-
-                    bufferedWriter.write(sw.toString());
-                    bufferedWriter.flush();
-                }
-            } catch (Exception e) {
-                Log.warn(path);
-                throw new RuntimeException(e);
-            }
-        }*/
+        modelBuilder.addClass(classModel);
 
         for (var field : node.fields) {
             fieldsToFill.add(buildField(classModel, region, field));
@@ -191,7 +157,7 @@ public class InterfaceLinker {
                     Log.bytecode(region, node.name, "Cannot load inner class: " + innerClass.name);
                     throw new Log.KarinaException();
                 }
-                var aClass = createClass(classModel, loadedClass, openSet, visited);
+                var aClass = createClass(classModel, loadedClass, openSet, visited, modelBuilder);
                 innerClassesToFill.add(aClass);
             }
         }

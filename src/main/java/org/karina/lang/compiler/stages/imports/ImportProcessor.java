@@ -1,13 +1,11 @@
 package org.karina.lang.compiler.stages.imports;
 
-import com.google.common.base.Strings;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.logging.ErrorCollector;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Unique;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.ImportError;
-import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
@@ -25,8 +23,8 @@ import java.util.function.Function;
 
 public class ImportProcessor {
 
-    public JKModel importTree(JKModel model) throws Log.KarinaException {
-        var build = new JKModelBuilder(PhaseDebug.IMPORTED);
+    public Model importTree(Model model) throws Log.KarinaException {
+        var build = new ModelBuilder();
         Log.begin("import");
 
         var prelude = Prelude.fromModel(model);
@@ -46,11 +44,10 @@ public class ImportProcessor {
 
                 collector.collect(() -> {
                     var withPrelude = ImportHelper.importPrelude(kClassModel, importContext, prelude);
-                    var classModel = ImportItem.importClass(kClassModel, null, withPrelude, prelude);
-                    build.addClassWithChildren(classModel);
+                    ImportItem.importClass(kClassModel, null, withPrelude, prelude, build);
                 });
             }
-            for (var bytecodeClass : model.getBytecodeClasses()) {
+            for (var bytecodeClass : model.getBinaryClasses()) {
                 build.addClass(bytecodeClass);
             }
         }
@@ -63,7 +60,8 @@ public class ImportProcessor {
         var newModel = build.build();
         Log.begin("validate");
         try (var collector = new ErrorCollector()) {
-            for (var kClassModel : newModel.getUserClasses()) {
+            var userClasses = newModel.getUserClasses();
+            for (var kClassModel : userClasses) {
                 if (!kClassModel.isTopLevel()) {
                     continue;
                 }
@@ -80,7 +78,7 @@ public class ImportProcessor {
 
 
     //All Types are validated after importing, so all ClassPointers are valid
-    private void validateClassModel(JKModel model, KClassModel classModel) {
+    private void validateClassModel(Model model, KClassModel classModel) {
         validateSuperClassCycle(model, classModel, new HashSet<>());
         validateInterfaceCycle(model, classModel, new HashSet<>());
 
@@ -293,7 +291,7 @@ public class ImportProcessor {
 
     }
 
-    private void validateSuperClassCycle(JKModel model, ClassModel cls, Set<ClassPointer> visited) {
+    private void validateSuperClassCycle(Model model, ClassModel cls, Set<ClassPointer> visited) {
         if (visited.contains(cls.pointer())) {
             Log.temp(cls.region(), "Cycle in super class hierarchy");
             throw new Log.KarinaException();
@@ -307,7 +305,7 @@ public class ImportProcessor {
         }
     }
 
-    private void validateInterfaceCycle(JKModel model, ClassModel cls, Set<ClassPointer> visited) {
+    private void validateInterfaceCycle(Model model, ClassModel cls, Set<ClassPointer> visited) {
         if (visited.contains(cls.pointer())) {
             Log.temp(cls.region(), "Cycle in interface hierarchy");
             throw new Log.KarinaException();
@@ -380,7 +378,7 @@ public class ImportProcessor {
                     var duplicate = "fn " + methodModel.name() + "(" + erasedStr + ")";
                     var first = "fn " + methodModel.name() + "(" + equals + ")";
                     Log.importError(new ImportError.DuplicateItem(
-                            methodModel.region(),
+                            firstWithSignature.model.region(),
                             methodModel.region(),
                             duplicate + " / " + first
                     ));
@@ -407,4 +405,8 @@ public class ImportProcessor {
         throw new Log.KarinaException();
     }
 
+    //TODO validation
+    //can extends
+    //can implement
+    //valid field
 }

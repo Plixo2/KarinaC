@@ -1,6 +1,5 @@
 package org.karina.lang.compiler.stages.generate;
 
-import com.sun.jdi.*;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -107,7 +106,7 @@ public class TypeConversion {
 
     public static String toJVMPath(ObjectPath path) {
         var builder = new StringBuilder();
-        var iterator = path.elements().iterator();
+        var iterator = path.iterator();
         while (iterator.hasNext()) {
             builder.append(toJVMName(iterator.next()));
             if (iterator.hasNext()) {

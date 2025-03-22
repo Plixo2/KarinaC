@@ -62,14 +62,15 @@ public class Log {
         ;
 
         public static final Set<LogTypes> VISIBLE = Set.of(
-                VARIABLE,
-                IMPLICIT_CONVERSION,
-                AMBIGUOUS,
-                METHOD_NAME,
-                BRANCH,
-                SUPER_WARN,
-                ASSERTIONS
-                ,CLOSURE
+                VARIABLE
+               // , IMPLICIT_CONVERSION
+               // , AMBIGUOUS
+             //   , METHOD_NAME
+              //  , BRANCH
+               // , SUPER_WARN
+              //  , ASSERTIONS
+                , CLOSURE
+//                ,CHECK_TYPE
 //    ,MEMBER
 //    ,CALLS
 // ,EXPR

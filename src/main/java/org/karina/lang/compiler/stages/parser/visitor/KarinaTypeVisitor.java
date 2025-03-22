@@ -110,7 +110,14 @@ public class KarinaTypeVisitor {
         var interfaces = ctx.interfaceImpl() != null ? visitInterfaceImpl(ctx.interfaceImpl()) : List.<KType>of();
         var args = visitTypeList(ctx.typeList());
 
+
         var returnType = ctx.type() != null ? visitType(ctx.type()) : KType.NONE;
+
+        if (returnType != null && returnType.isPrimitive()) {
+            Log.attribError(new AttribError.NotSupportedType(this.conv.toRegion(ctx.type()), returnType));
+            throw new Log.KarinaException();
+        }
+
         List<KType> interfacesCast = interfaces.stream().map(ref -> (KType)ref).toList();
         return new KType.FunctionType(args, returnType, interfacesCast);
 
@@ -120,7 +127,7 @@ public class KarinaTypeVisitor {
 
         return ctx.type().stream().map(ref -> {
             var mapped = visitType(ref);
-            if (mapped.isVoid()) {
+            if (mapped.isVoid() || mapped.isPrimitive()) {
                 var innerRegion = this.conv.toRegion(ref);
                 Log.attribError(new AttribError.NotSupportedType(innerRegion, mapped));
                 throw new Log.KarinaException();

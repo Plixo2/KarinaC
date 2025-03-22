@@ -2,9 +2,9 @@ package org.karina.lang.compiler.objects;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.JKModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 
@@ -175,7 +175,7 @@ public class Types {
      * <p>
      * Used to map generics to their actual types
      * </p>
-     * See {@link Types#projectGenerics(JKModel, KType.ClassType, KType.ClassType)}
+     * See {@link Types#projectGenerics(Model, KType.ClassType, KType.ClassType)}
      * to construct generics from a ClassType, where the generics are not linked to the correct mapping.
      * (only used for interfaces and super classes)
      */
@@ -247,7 +247,7 @@ public class Types {
     /**
      * Returns the correctly mapped superClass of cls
      */
-    public static @Nullable KType.ClassType getSuperType(JKModel model, KType.ClassType cls) {
+    public static @Nullable KType.ClassType getSuperType(Model model, KType.ClassType cls) {
         var rightModel = model.getClass(cls.pointer());
         var superClass = rightModel.superClass();
 
@@ -261,7 +261,7 @@ public class Types {
     /**
      * Returns the correctly mapped direct interfaces of cls (non recursive)
      */
-    public static List<KType.ClassType> getInterfaces(JKModel model, KType.ClassType cls) {
+    public static List<KType.ClassType> getInterfaces(Model model, KType.ClassType cls) {
         var rightModel = model.getClass(cls.pointer());
         var list = new ArrayList<KType.ClassType>();
 
@@ -278,15 +278,14 @@ public class Types {
      * mapped with the information from the classModel
      */
     public static @NotNull KType.ClassType projectGenerics(
-            JKModel model,
+            Model model,
             KType.ClassType owningClass,
             KType.ClassType classToMap
     ) {
         var sample = Log.addSuperSample("GENERIC_MODEL_PROJECTION");
-        ClassModel classModel = model.getClass(owningClass.pointer());
         var genericMap = new HashMap<Generic, KType>();
 
-        var testingModelToGetIndexFrom = model.getClass(classModel.pointer());
+        var testingModelToGetIndexFrom = model.getClass(owningClass.pointer());
         for (var generic : classToMap.generics()) {
             if (!(generic instanceof KType.GenericLink(Generic link))) {
                 continue;
@@ -294,7 +293,12 @@ public class Types {
 
             var index = testingModelToGetIndexFrom.generics().indexOf(link);
             if (index == -1) {
-                Log.temp(testingModelToGetIndexFrom.region(), "Generic not found in model, this should not happen");
+                var message = "Generic " + link.name() + " not found"
+                        + " of " + classToMap
+                        + " in " + testingModelToGetIndexFrom.pointer()
+                        + " generics: " + testingModelToGetIndexFrom.generics()
+                        ;
+                Log.temp(testingModelToGetIndexFrom.region(), message);
                 throw new Log.KarinaException();
             }
 
@@ -310,7 +314,7 @@ public class Types {
         return classType;
     }
 
-    public static boolean isSuperTypeOrInterface(JKModel model, ClassPointer element, ClassPointer toTest) {
+    public static boolean isSuperTypeOrInterface(Model model, ClassPointer element, ClassPointer toTest) {
 
         if (element.equals(toTest)) {
             return true;

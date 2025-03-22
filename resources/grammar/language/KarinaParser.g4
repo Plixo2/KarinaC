@@ -68,7 +68,7 @@ typeList: (type (',' type)*)?;
 genericHint: '<' (type (',' type)* )? '>';
 genericHintDefinition: '<' (id (',' id)* )? '>';
 
-dotWordChain: id ('.' id)*;
+dotWordChain: id ('::' id)*;
 
 annotation: '@' id ('=' jsonValue)?;
 
@@ -92,7 +92,7 @@ expression: varDef | closure | 'return' exprWithBlock? | match | if | while | fo
 varDef: 'let' id (':' type)? '=' (exprWithBlock);
 
 closure : 'fn' '(' optTypeList ')' ('->' type)? interfaceImpl? exprWithBlock;
-interfaceImpl: 'impl' structTypeList;
+interfaceImpl: 'impl' (structTypeList | '(' structTypeList ')');
 structTypeList: structType (',' structType)*;
 
 match: 'match' exprWithBlock '{' matchCase* '}';
@@ -123,7 +123,7 @@ multiplicativeExpression: unaryExpression (('*' | '/' | '%') multiplicativeExpre
 unaryExpression: ('-' | '!')? factor;
 factor: object postFix* (('=' exprWithBlock) | isInstanceOf)?;
 postFix: '.' (id | 'class') | '.' 'class' | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type;
-object: array | '(' exprWithBlock ')' | NUMBER | id (('.' id)* genericHint? '{' initList '}')? | STRING_LITERAL | CHAR_LITERAL | 'self' | superCall | 'true' | 'false';
+object: '(' exprWithBlock ')' | NUMBER | id (('::' id)* genericHint? '{' initList '}')? | STRING_LITERAL | CHAR_LITERAL | 'self' | superCall | 'true' | 'false' | array;
 array: ('<' type '>')? '[' expressionList ']';
 
 superCall: 'super' '<' structType  '>' ('.' id)?;

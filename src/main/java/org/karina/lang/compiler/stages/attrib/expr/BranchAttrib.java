@@ -146,10 +146,11 @@ public class BranchAttrib  {
 
 
                     Log.recordType(Log.LogTypes.BRANCH,"permittedSubclasses of if branch = " + permittedSubclasses, "of " + classModel.pointer());
+                    Log.recordType(Log.LogTypes.BRANCH,"true pattern type " + trueBranchPattern.type());
+                    Log.recordType(Log.LogTypes.BRANCH,"false pattern type " + elsePattern.type());
 
                     if (permittedSubclasses.size() == 2) {
                         if (trueBranchPattern.type() instanceof KType.ClassType innerTrueCase) {
-
                             var removed = permittedSubclasses.remove(innerTrueCase.pointer());
                             Log.recordType(Log.LogTypes.BRANCH,"removing true case: " + removed);
                         }

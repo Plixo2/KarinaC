@@ -3,7 +3,7 @@ package org.karina.lang.compiler.objects;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.jvm.JavaResource;
-import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -64,6 +64,12 @@ public sealed interface KType {
             ClassPointer.of(JAVA_LIB, ClassPointer.BOOLEAN_PATH),
             List.of()
     );
+
+    ClassType THROWABLE = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH),
+            List.of()
+    );
+
     static ClassType ITERABLE(KType iter_type) {
         return new ClassType(
                 ClassPointer.of(JAVA_LIB, ClassPointer.ITERABLE_PATH),
@@ -76,14 +82,20 @@ public sealed interface KType {
                 List.of(clsType)
         );
     }
-    ClassType THROWABLE = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH),
-            List.of()
-    );
+
+    static @Nullable ClassPointer FUNCTION_BASE(Model model, int args, boolean doesReturn) {
+        final String FUNCTIONS_NAME = "Function";
+        var name = FUNCTIONS_NAME + args + "_" + (doesReturn ? "1" : "0");
+
+
+        var objectPath = ClassPointer.FUNCTIONS_BASE.append(name);
+        Log.recordType(Log.LogTypes.CLOSURE, objectPath.toString());
+        return model.getClassPointer(KARINA_LIB, objectPath);
+    }
 
     VoidType NONE = new VoidType();
 
-    static void validateBuildIns(JKModel model) {
+    static void validateBuildIns(Model model) {
         validatePointer(model, ROOT);
         validatePointer(model, NUMBER);
         validatePointer(model, STRING);
@@ -98,13 +110,15 @@ public sealed interface KType {
         validatePointer(model, DOUBLE);
 
     }
-    private static void validatePointer(JKModel model, ClassType classType) {
-        var classModel = model.classModels().get(classType.pointer().path());
+    private static void validatePointer(Model model, ClassType classType) {
+        var classPointer = model.getClassPointer(JAVA_LIB, classType.pointer().path());
 
-        if (classModel == null) {
+        if (classPointer == null) {
             Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class not found");
             throw new Log.KarinaException();
-        } else if (classModel.generics().size() != classType.generics().size()) {
+        }
+        var classModel = model.getClass(classPointer);
+        if (classModel.generics().size() != classType.generics().size()) {
             Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class has wrong number of generics");
             throw new Log.KarinaException();
         }
@@ -250,7 +264,8 @@ public sealed interface KType {
          * Make sure to call this before calling {@link #tryResolve}
          */
         public boolean canResolve(Region checkingRegion, KType resolved) {
-
+            //TODO this?
+            resolved = resolved.unpack();
             /*
              * return true if the resolved type refers to itself.
              * this is valid, but we still don't want to resolve it to anything in 'tryResolve'
@@ -300,7 +315,8 @@ public sealed interface KType {
 
                 graph.add("    ".repeat(typeDependency.level()) + typeDependency.type() + suffix);
             }
-            var msg = "Lazy Type cycle: " + readable;
+            var from = "while trying to assign " + this + " to " + resolved;
+            var msg = "Lazy Type cycle: " + readable + " (" + from + ")";
             Log.attribError(new AttribError.TypeCycle(checkingRegion, msg, graph));
             throw new Log.KarinaException();
         }
@@ -313,6 +329,7 @@ public sealed interface KType {
          * Test with {@link #isResolved} to be sure if it was resolved after calling this method.
          */
         public void tryResolve(Region region, KType resolved) {
+            resolved = resolved.unpack();
 
             if (this.resolved != null) {
                 Log.temp(region, "Type already resolved");

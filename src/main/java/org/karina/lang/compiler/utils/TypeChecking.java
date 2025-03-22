@@ -1,9 +1,9 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.JKModel;
 import org.karina.lang.compiler.logging.FlightRecorder;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.objects.Types;
@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-public record TypeChecking(JKModel model) {
+public record TypeChecking(Model model) {
 
     /**
      * Returns the most common super type of the two types.
@@ -264,6 +264,7 @@ public record TypeChecking(JKModel model) {
                             yield false;
                         }
                     }
+                    //test all interfaces, direct and indirect
                     var leftReturnType = functionType.returnType();
                     var rightReturnType = rightFunctionType.returnType();
                     var returnResult = canAssignInner(checkingRegion, leftReturnType, rightReturnType, mutable);
@@ -303,10 +304,11 @@ public record TypeChecking(JKModel model) {
 
         if (Modifier.isInterface(classModelLeft.modifiers())) {
             for (var anInterface : right.interfaces()) {
-                if (anInterface instanceof KType.ClassType leftInterfaceClassType) {
-                    var replacedInterface = Types.projectGenerics(this.model, left, leftInterfaceClassType);
+                if (anInterface instanceof KType.ClassType rightInterfaceClassType) {
+                  //  Log.recordType(Log.LogTypes.CHECK_TYPE, "test if interface " + left + " implements " + rightInterfaceClassType);
+                   // var replacedInterface = Types.projectGenerics(this.model, left, rightInterfaceClassType);
 
-                    if (doesImplementInterface(checkingRegion, left, replacedInterface, mutable)) {
+                    if (doesImplementInterface(checkingRegion, left, rightInterfaceClassType, mutable)) {
                         return true;
                     }
                 }

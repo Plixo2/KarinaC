@@ -48,7 +48,7 @@ dependencies {
 
 }
 
-tasks.register('fatJar', Jar) {
+tasks.register('FAT-JAR', Jar) {
     manifest {
         attributes 'Main-Class': 'org.karina.lang.compiler.boot.Main'
     }
@@ -59,7 +59,7 @@ tasks.register('fatJar', Jar) {
     with jar
 }
 
-tasks.register('buildLSP', Jar) {
+tasks.register('LSP', Jar) {
 
     manifest {
         attributes 'Main-Class': 'org.karina.lang.lsp.Main'
@@ -73,12 +73,31 @@ tasks.register('buildLSP', Jar) {
     archiveFileName = 'karina-lsp.jar'
 }
 
+tasks.register('KARINA-BASE', Jar) {
+
+    archiveBaseName = 'karina-lang'
+
+    from sourceSets.main.output
+    include 'karina/lang/**'
+
+    destinationDirectory = file("${projectDir}/src/main/resources")
+
+    archiveFileName = 'karina_base.jar'
+
+    doLast {
+        println "Built karina.lang JAR: ${archiveFileName.get()}"
+        println "Location: ${destinationDirectory.get()}/${archiveFileName.get()}"
+    }
+}
+
+
 test {
     useJUnitPlatform()
     testLogging {
         events "passed", "skipped", "failed"
     }
 }
+
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs += '--enable-preview'
 }

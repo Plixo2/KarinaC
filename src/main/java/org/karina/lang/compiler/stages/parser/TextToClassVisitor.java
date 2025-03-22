@@ -3,11 +3,10 @@ package org.karina.lang.compiler.stages.parser;
 import org.karina.lang.compiler.api.FileNode;
 import org.karina.lang.compiler.api.FileTreeNode;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
+import org.karina.lang.compiler.model_api.Model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +17,14 @@ import java.util.List;
  */
 public class TextToClassVisitor {
 
-    public JKModel textIntoClasses(FileTreeNode<TextSource> fileTree) {
+    public Model textIntoClasses(FileTreeNode<TextSource> fileTree) {
         try (var errorCollection = new ErrorCollector()) {
             return this.parseFiles(fileTree, errorCollection);
         }
     }
 
-    private JKModel parseFiles(FileTreeNode<TextSource> fileTree, ErrorCollector collector) {
-        JKModelBuilder builder = new JKModelBuilder(PhaseDebug.LOADED);
+    private Model parseFiles(FileTreeNode<TextSource> fileTree, ErrorCollector collector) {
+        ModelBuilder builder = new ModelBuilder();
         for (var file : getFiles(fileTree)) {
             Log.begin("parse-" + file.name());
             collector.collect(() -> {

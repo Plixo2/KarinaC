@@ -1,7 +1,9 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
@@ -14,10 +16,7 @@ import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.symbols.ClosureSymbol;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
@@ -138,11 +137,47 @@ public class ClosureAttrib  {
             var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
             if (alreadyAdded) {
                 Log.recordType(Log.LogTypes.CLOSURE, "hint interface already added");
-            } else  if (canUseInterface(expr.region(), ctx, args, returnType, classType)) {
+            } else if (canUseInterface(expr.region(), ctx, args, returnType, classType)) {
                 Log.recordType(Log.LogTypes.CLOSURE, "Using hint as interface");
                 interfaces.add(classType);
             }
             Log.endType(Log.LogTypes.CLOSURE, "Checking hint interface");
+        }
+
+        var doesReturn = !returnType.isVoid();
+        var classPointer = KType.FUNCTION_BASE(ctx.model(), args.size(), doesReturn);
+        if (classPointer != null) {
+            var totalGenerics = args.size() + (doesReturn ? 1 : 0);
+
+            var model = ctx.model().getClass(classPointer);
+            if (model.generics().size() != totalGenerics) {
+                Log.temp(expr.region(), "Expected " + totalGenerics + " generics, but got " + model.generics().size());
+                throw new Log.KarinaException();
+            }
+
+            var generics = new ArrayList<KType>();
+            for (var i = 0; i < totalGenerics; i++) {
+                generics.add(new KType.Resolvable());
+            }
+
+            var classType = new KType.ClassType(classPointer, generics);
+            var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
+            if (!alreadyAdded) {
+                if (canUseInterface(expr.region(), ctx, args, returnType, classType)) {
+                    Log.recordType(Log.LogTypes.CLOSURE, "Using default as interface");
+                    interfaces.add(classType);
+                } else {
+                    Log.recordType(Log.LogTypes.CLOSURE, "(error) Could not use default as interface");
+                    Log.warn("Could not use default as interface");
+                }
+            } else {
+                Log.recordType(Log.LogTypes.CLOSURE, "default already added");
+            }
+
+        } else {
+            //create custom classes
+            Log.warn("(warn) Could not create function base class for " + args + " -> " + returnType);
+            Log.recordType(Log.LogTypes.CLOSURE, "Could not create function base class for " + args + " -> " + returnType);
         }
 
         var functionType = new KType.FunctionType(
@@ -390,4 +425,5 @@ public class ClosureAttrib  {
     record ParamsAndReturn(List<KType> params, @Nullable KType returnType) {}
 
     private record ArgsAndReturnType(List<NameAndOptType> args, KType returnType) {}
+
 }

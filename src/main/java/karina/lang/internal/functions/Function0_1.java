@@ -1,4 +1,4 @@
-package karina.lang.functions;
+package karina.lang.internal.functions;
 
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;

@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
@@ -92,6 +93,10 @@ public class KarinaExprVisitor {
         var thenBlock = visitBlock(ctx.block());
         BranchPattern branchPattern = null;
         if (condition instanceof KExpr.IsInstanceOf(Region instanceRegion, KExpr left, KType isType)) {
+            if (isType.isVoid() || isType.isPrimitive()) {
+                Log.attribError(new AttribError.NotSupportedType(instanceRegion, isType));
+                throw new Log.KarinaException();
+            }
             if (ctx.id() != null) {
                 condition = left;
                 branchPattern = new BranchPattern.Cast(
@@ -119,6 +124,11 @@ public class KarinaExprVisitor {
             if (shortPattern != null) {
                 var regionShortPattern = this.conv.toRegion(shortPattern);
                 var isType = this.typeVisitor.visitType(shortPattern.type());
+                if (isType.isVoid() || isType.isPrimitive()) {
+                    var regionInner = this.conv.toRegion(shortPattern.type());
+                    Log.attribError(new AttribError.NotSupportedType(regionInner, isType));
+                    throw new Log.KarinaException();
+                }
                 if (shortPattern.id() != null) {
                     elseBranchPattern = new BranchPattern.Cast(
                             regionShortPattern,
@@ -625,11 +635,25 @@ public class KarinaExprVisitor {
         KType returnType;
         if (ctx.type() != null) {
             returnType = this.typeVisitor.visitType(ctx.type());
+            if (returnType.isPrimitive()) {
+                Log.attribError(new AttribError.NotSupportedType(this.conv.toRegion(ctx.type()), returnType));
+                throw new Log.KarinaException();
+            }
         } else {
             returnType = null;
         }
+
+
         var args = visitOptTypeList(ctx.optTypeList());
         var body = visitExprWithBlock(ctx.exprWithBlock());
+
+        for (var arg : args) {
+            if (arg.type() != null && arg.type().isPrimitive()) {
+                Log.attribError(new AttribError.NotSupportedType(arg.region(), arg.type()));
+                throw new Log.KarinaException();
+            }
+        }
+
         List<KType> interfaces;
         if (ctx.interfaceImpl() != null) {
             interfaces = this.typeVisitor.visitInterfaceImpl(ctx.interfaceImpl()).stream().map(ref -> (KType)ref).toList();

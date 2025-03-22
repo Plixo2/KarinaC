@@ -2,10 +2,10 @@ package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.JKModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
@@ -20,7 +20,7 @@ import java.util.Objects;
 
 // Method scope is the enclosing method or function expression
 public record AttributionContext(
-        JKModel model,
+        Model model,
         @Nullable Variable selfVariable,
         boolean isLoop,
         @Nullable MethodModel owningMethod,

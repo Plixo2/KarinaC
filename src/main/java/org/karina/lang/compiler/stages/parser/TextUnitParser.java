@@ -3,7 +3,7 @@ package org.karina.lang.compiler.stages.parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.stages.parser.error.KarinaErrorListener;
 import org.karina.lang.compiler.stages.parser.error.KarinaRecoveringStrategy;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
@@ -33,7 +33,7 @@ public class TextUnitParser {
         this.visitor = new KarinaUnitVisitor(regionConverter, name, path);
     }
 
-    public void visit(JKModelBuilder builder) {
+    public void visit(ModelBuilder builder) {
         this.visitor.visit(this.karinaParser.unit(), builder);
     }
 

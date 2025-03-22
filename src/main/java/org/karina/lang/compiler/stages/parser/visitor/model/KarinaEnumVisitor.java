@@ -2,7 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
@@ -29,7 +29,13 @@ public class KarinaEnumVisitor {
         this.context = regionContext;
     }
 
-    public KClassModel visit(@Nullable KClassModel owningClass, ObjectPath owningPath,  ImmutableList<KAnnotation> annotations, KarinaParser.EnumContext ctx) {
+    public KClassModel visit(
+            @Nullable KClassModel owningClass,
+            ObjectPath owningPath,
+            ImmutableList<KAnnotation> annotations,
+            KarinaParser.EnumContext ctx,
+            ModelBuilder modelBuilder
+    ) {
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
@@ -61,7 +67,6 @@ public class KarinaEnumVisitor {
         var permittedSubClassesToFill = new ArrayList<ClassPointer>();
         var nestMembersToFill = new ArrayList<ClassPointer>();
         var classModel = new KClassModel(
-                PhaseDebug.LOADED,
                 name,
                 path,
                 mods,
@@ -82,17 +87,25 @@ public class KarinaEnumVisitor {
         );
 
         for (var enumMemberContext : ctx.enumMember()) {
-            var enumMember = innerEnumClass(classModel, currentClassPointer, path, enumMemberContext, generics);
+            var enumMember = innerEnumClass(classModel, currentClassPointer, path, enumMemberContext, generics, modelBuilder);
             innerClassesToFill.add(enumMember);
             permittedSubClassesToFill.add(enumMember.pointer());
             nestMembersToFill.add(enumMember.pointer());
         }
+        modelBuilder.addClass(classModel);
 
 
         return classModel;
     }
 
-    private KClassModel innerEnumClass(KClassModel enumClass, ClassPointer enumInterfacePointer, ObjectPath owningPath, KarinaParser.EnumMemberContext ctx, List<Generic> genericsOuter) {
+    private KClassModel innerEnumClass(
+            KClassModel enumClass,
+            ClassPointer enumInterfacePointer,
+            ObjectPath owningPath,
+            KarinaParser.EnumMemberContext ctx,
+            List<Generic> genericsOuter,
+            ModelBuilder modelBuilder
+    ) {
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
 
@@ -131,8 +144,7 @@ public class KarinaEnumVisitor {
 
         var annotations = ImmutableList.<KAnnotation>of();
         var nestMembers =  new ArrayList<ClassPointer>();
-        return new KClassModel(
-                PhaseDebug.LOADED,
+        var enumClassInner = new KClassModel(
                 name,
                 path,
                 mods,
@@ -151,6 +163,9 @@ public class KarinaEnumVisitor {
                 region,
                 null
         );
+        modelBuilder.addClass(enumClassInner);
+
+        return enumClassInner;
 
     }
 

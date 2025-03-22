@@ -1,74 +1,85 @@
 package org.karina.lang.compiler.utils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import com.google.common.hash.HashCode;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.*;
 import java.util.regex.Pattern;
 
-public record ObjectPath(List<String> elements) {
-
-    public ObjectPath {
-//        for (var element : elements) {
-//            if (element.contains("$")) {
-//                throw new IllegalArgumentException("Element must not contain '$'");
-//            }
-//        }
-
-        //copy to an immutable list
-        Objects.requireNonNull(elements);
-        elements = List.copyOf(elements);
-        if (elements.stream().anyMatch(Objects::isNull)) {
-            throw new IllegalArgumentException("Elements must not be null");
-        }
-    }
-
+public final class ObjectPath {
+    @Getter
+    @Accessors(fluent = true)
+    final String[] elements;
+    final int hashCode;
     public ObjectPath(String... elements) {
-        this(List.of(elements));
+        this.elements = Arrays.copyOf(elements, elements.length);
+        this.hashCode = hashCode(elements);
     }
+
+    public ObjectPath(List<String> list) {
+        var elementCount = list.size();
+        var elements = new String[elementCount];
+        for (var i = 0; i < elementCount; i++) {
+            elements[i] = list.get(i);
+        }
+        this.elements = elements;
+        this.hashCode = hashCode(elements);
+    }
+
+
 
     public ObjectPath join(ObjectPath other) {
 
-        var strings = new ArrayList<>(this.elements);
-        strings.addAll(other.elements);
+        var strings = Arrays.copyOf(this.elements, this.elements.length + other.elements.length);
+        System.arraycopy(other.elements, 0, strings, this.elements.length, other.elements.length);
+
         return new ObjectPath(strings);
 
     }
 
     public ObjectPath append(String element) {
-
-        var strings = new ArrayList<>(this.elements);
-        strings.add(element);
+        var strings = Arrays.copyOf(this.elements, this.elements.length + 1);
+        strings[this.elements.length] = element;
         return new ObjectPath(strings);
 
     }
 
     public ObjectPath tail() {
 
-        if (this.elements.isEmpty()) {
+        if (this.isEmpty()) {
             throw new IllegalStateException("Can't take tail of empty path");
         }
-        return new ObjectPath(this.elements.subList(1, this.elements.size()));
-
+        var strings = Arrays.copyOfRange(this.elements, 1, this.elements.length);
+        return new ObjectPath(strings);
     }
 
     public String first() {
-        return this.elements.getFirst();
+        if (this.isEmpty()) {
+            throw new IllegalStateException("Can't take first of empty path");
+        }
+        return this.elements[0];
     }
 
     public String last() {
-        return this.elements.getLast();
+        if (this.isEmpty()) {
+            throw new IllegalStateException("Can't take last of empty path");
+        }
+        return this.elements[this.elements.length - 1];
     }
 
     public ObjectPath everythingButLast() {
-        return new ObjectPath(this.elements.subList(0, this.elements.size() - 1));
+        var strings = Arrays.copyOf(this.elements, this.elements.length - 1);
+        return new ObjectPath(strings);
     }
 
     public boolean isEmpty() {
-        return this.elements.isEmpty();
+        return this.elements.length == 0;
     }
 
     public int size() {
-        return this.elements.size();
+        return this.elements.length;
     }
 
     public String mkString() {
@@ -91,51 +102,51 @@ public record ObjectPath(List<String> elements) {
 
     @Override
     public boolean equals(Object object) {
-        if (object instanceof ObjectPath(List<String> elements1)) {
-            var thisElements = this.elements;
-            if (thisElements.size() != elements1.size()) {
+        if (object == this) {
+            return true;
+        } else if (object == null) {
+            return false;
+        } else if (object instanceof ObjectPath that) {
+            if (that.hashCode != this.hashCode) {
                 return false;
             }
-            for (var i = 0; i < thisElements.size(); i++) {
-                if (!thisElements.get(i).equals(elements1.get(i))) {
-                    return false;
-                }
-            }
-            return true;
+            return Arrays.equals(that.elements, this.elements);
         } else if (object instanceof String[] strings) {
-            if (this.elements.size() != strings.length) {
-                return false;
-            }
-            for (var i = 0; i < strings.length; i++) {
-                if (!this.elements.get(i).equals(strings[i])) {
-                    return false;
-                }
-            }
-            return true;
+            return Arrays.equals(strings, this.elements);
+        } else {
+            return false;
         }
-
-        return false;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.elements);
+        return this.hashCode;
     }
 
     public boolean startsWith(String... prefixes) {
-        if (prefixes.length > this.elements.size()) {
+        if (prefixes.length > this.elements.length) {
             return false;
         }
         for (var i = 0; i < prefixes.length; i++) {
-            if (!this.elements.get(i).equals(prefixes[i])) {
+            if (!this.elements[i].equals(prefixes[i])) {
                 return false;
             }
         }
         return true;
     }
 
-    public int length() {
-        return this.elements.size();
+    public Iterator<String> iterator() {
+        return Arrays.stream(this.elements).iterator();
+    }
+    public List<String> asList() {
+        return List.of(this.elements);
     }
 
+    private static int hashCode(String[] elements) {
+        return Arrays.hashCode(elements);
+    }
+
+    // [TYPE_CHECKING: 8107.9033ms, ASSIGNMENT: 4890.042ms, GENERIC_TYPE_PROJECTION: 812.1217ms, GET_CLASS: 2886.3596ms, GENERIC_MODEL_PROJECTION: 3020.275ms, SUPER_TYPE: 99.46831ms, ASM_PARSE: 600.58417ms, CLASS_STRICT_EQUALS: 2431.0127ms]
+    // 54 seconds
+    // 43,6
 }

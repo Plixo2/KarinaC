@@ -104,5 +104,12 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         return new None<>();
     }
 
+    static <T> Option<T>[] newArray(Class<T> ignoredCls, int size) {
+        return Values.newArray(size, _ -> none());
+    }
+
+    static <T> Option<T>[] newArray(int size) {
+        return Values.newArray(size, _ -> none());
+    }
 
 }

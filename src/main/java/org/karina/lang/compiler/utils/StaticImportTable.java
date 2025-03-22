@@ -2,7 +2,7 @@ package org.karina.lang.compiler.utils;
 
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.stages.imports.ImportTable;
@@ -45,7 +45,7 @@ public record StaticImportTable(
         return null;
     }
 
-    public static StaticImportTable fromImportTable(ClassPointer referenceSite, JKModel model, ImportTable importTable) {
+    public static StaticImportTable fromImportTable(ClassPointer referenceSite, Model model, ImportTable importTable) {
         var classes = ImmutableMap.<String, ClassPointer>builder();
 
         importTable.classes().forEach((name, ptr) -> {

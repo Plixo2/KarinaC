@@ -1,13 +1,11 @@
 package org.karina.lang.compiler.jvm.model.karina;
 
 import com.google.common.collect.ImmutableList;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
@@ -23,7 +21,6 @@ import java.util.List;
 
 @RequiredArgsConstructor
 public class KClassModel implements ClassModel {
-    private final PhaseDebug phase;
     private final String name;
     private final ObjectPath path;
     private final int modifiers;
@@ -57,10 +54,6 @@ public class KClassModel implements ClassModel {
         return this.imports;
     }
 
-    @Override
-    public PhaseDebug phase() {
-        return this.phase;
-    }
 
     @Override
     public String name() {

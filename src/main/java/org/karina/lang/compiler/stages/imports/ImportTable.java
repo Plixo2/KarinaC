@@ -4,8 +4,9 @@ import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.logging.errors.ImportError;
-import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
@@ -21,7 +22,7 @@ import java.util.*;
  * This filled-in table will be passes to all items and subclasses
  */
 public record ImportTable(
-        JKModel model,
+        Model model,
         ImmutableMap<String, ImportEntry<ClassPointer>> classes,
         ImmutableMap<String, ImportEntry<Generic>> generics,
         //list of UntypedMethodCollection, as we dont know the signature yet see 'UntypedMethodCollection'
@@ -29,7 +30,7 @@ public record ImportTable(
         ImmutableMap<String, ImportEntry<MethodCollection>> typedStaticMethods,
         ImmutableMap<String, ImportEntry<FieldPointer>> staticFields
 ) {
-    public ImportTable(JKModel model) {
+    public ImportTable(Model model) {
         this(model, ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of());
     }
 
@@ -52,7 +53,39 @@ public record ImportTable(
             case KType.FunctionType functionType -> {
                 var returnType = importType(region, functionType.returnType());
                 var arguments = functionType.arguments().stream().map(ref -> importType(region, ref)).toList();
-                var interfaces = functionType.interfaces().stream().map(ref -> importType(region, ref)).toList();
+                var interfaces = new ArrayList<>(functionType.interfaces().stream().map(ref -> {
+                    var imported = importType(region, ref);
+                    if (!(imported instanceof KType.ClassType classType)) {
+                        Log.attribError(new AttribError.NotAClass(region, imported));
+                        throw new Log.KarinaException();
+                    }
+                    return classType;
+                }).toList());
+
+                var doesReturn = !returnType.isVoid();
+                var defaultInterface = KType.FUNCTION_BASE(this.model, arguments.size(), doesReturn);
+                if (defaultInterface != null) {
+                    //TODO extract, duplicate in ClosureAttrib
+                    var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(defaultInterface));
+                    if (!alreadyAdded) {
+                        var totalGenerics = arguments.size() + (doesReturn ? 1 : 0);
+
+                        var classModel = this.model.getClass(defaultInterface);
+                        if (classModel.generics().size() != totalGenerics) {
+                            Log.temp(region, "Expected " + totalGenerics + " generics, but got " + classModel.generics().size());
+                            throw new Log.KarinaException();
+                        }
+
+                        var generics = new ArrayList<KType>();
+                        for (var i = 0; i < totalGenerics; i++) {
+                            generics.add(new KType.Resolvable());
+                        }
+                        var classType = new KType.ClassType(defaultInterface, generics);
+
+                        interfaces.add(classType);
+                    }
+                }
+
                 yield new KType.FunctionType(arguments, returnType, interfaces);
             }
             case KType.GenericLink genericLink -> genericLink;
@@ -169,8 +202,11 @@ public record ImportTable(
 
     public Set<String> availableTypeNames() {
         var keys = new HashSet<>(this.classes.keySet());
-        for (var objectPath : this.model.classModels().keySet()) {
-            keys.add(objectPath.mkString("."));
+        for (var objectPath : this.model.getBinaryClasses()) {
+            keys.add(objectPath.path().mkString("."));
+        }
+        for (var objectPath : this.model.getUserClasses()) {
+            keys.add(objectPath.path().mkString("."));
         }
 
         keys.addAll(this.generics.keySet());

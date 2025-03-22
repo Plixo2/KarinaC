@@ -1,11 +1,10 @@
 package org.karina.lang.compiler.jvm.binary.in;
 
 import org.jetbrains.annotations.NotNull;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
-import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
+import org.karina.lang.compiler.model_api.Model;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -25,8 +24,8 @@ public class ModelReader {
 
     }
 
-    public JKModel read(File file) throws IOException {
-        var builder = new JKModelBuilder(PhaseDebug.JVM);
+    public Model read(File file) throws IOException {
+        var builder = new ModelBuilder();
 
         var outerReader = new ClassReader(this.stream);
         var offsets = outerReader.readIntList();
@@ -43,7 +42,7 @@ public class ModelReader {
                     try {
                         var innerReader = getClassReader(finalIndex, offsets, remainingBytes);
                         var bytecodeClass = innerReader.read();
-                        builder.addClassWithChildren(bytecodeClass);
+                        //builder.addClassWithChildren(bytecodeClass);
                     } catch (IOException e) {
                         Log.fileError(new FileLoadError.IO(file, e));
                         throw new Log.KarinaException();

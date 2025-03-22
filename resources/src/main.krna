@@ -1,22 +1,29 @@
 
-import java.lang.String valueOf
-import karina.lang.Result { safeCall }
-import karina.lang.Result { Ok, Err }
-import java.util.function.Supplier
-import java.lang.System out
-import karina.lang.Option
+import java::lang::String valueOf
+import karina::lang::Result { safeCall }
+import karina::lang::Result { Ok, Err }
+import java::util::function::Supplier
+import java::lang::System out
+import karina::lang::Option
 //import src.Main.Option { some, none }
-import java.util.ArrayList
-import java.util.List
-import java.util.Arrays
-import src.errors
+import java::util::ArrayList
+import java::util::List
+import java::util::Arrays
+import src::errors
 
-import src.files
+import src::files
 
 fn main() {
     let path = files.getPath("Hello").expect("a valid path")
     println(files.exists(path))
     files.loadFile(path)
+    let null_val = Values.Null()
+    let optionArrayInt = Option.newArray(Integer, 10)
+    let optionArray = Option.newArray(10)
+    let arrayInt = Values.newArray(Integer, 10, fn(_) Values.Null())
+    let arrayId = Values.newArray(10, fn(a) a)
+    let arrayIdIndirect = Values.newArray(10,  identity())
+    let stringsFromIndex = Values.newArray(10, fn(index) String.valueOf(index))
 
 
    // let a: int = 1
@@ -40,7 +47,7 @@ fn get() -> ? {
         println('$firstChar$rest')
     }
 
-    let map = java.util.HashMap<> {}
+    let map = java::util::HashMap<> {}
 
     //map.put("Hello", 10)
 
@@ -85,15 +92,15 @@ fn get() -> ? {
 
 fn test() -> bool {
 
-    let box = fn(value: int) -> Integer { value }
+    let box = fn(value: Integer) -> Integer { value }
 
-    let s: Integer? = Option.Some { _: (Integer.valueOf(10)) } as Option<Integer>
+    let s: Integer? = Option::Some { _: (Integer.valueOf(10)) } as Option<Integer>
 
     let s2: TestInterface<Integer, String> = Test { inner: box(10) }
 
-    let i: int = if s is Option.Some some {
+    let i: int = if s is Option::Some some {
         some.value.intValue()
-    } else is Option.None {
+    } else is Option::None {
         -1000
     }
 
@@ -145,7 +152,10 @@ fn test() -> bool {
 
     //box(10) == 10
 
+
     let asInt: int = array_assign[2] + 0 + array_assign[1]
+
+    let customList: List<Boolean> = ArrayList{}
 
     any != a
 }
@@ -165,7 +175,7 @@ struct Inf<T> {
     }
 
     fn ret(self) -> Inf<T>? {
-        Option.Some { value: self }
+        Option::Some { value: self }
     }
 
     fn testTwo<W>(self, other: Inf<W>) {
@@ -182,7 +192,14 @@ interface TestInterface<T, B> {
 
 }
 
+fn identity<T>() -> (fn(T) -> T impl java::util::function::Function<T,T>) {
+    fn(t) t
+}
 
+
+//fn identity<T>() -> java.util.function.Function<T,T> {
+//    fn(t) t
+//}
 
 struct ObjectSome {
     \fn: string
@@ -228,16 +245,16 @@ fn getAsAny<T>(t: T) -> ? = t
 struct Other<W> {}
 
 @Super = {
-    type: type { Other<int> }
+    type: type { Other<Integer> }
 }
 struct Inner {
     a: int
-    b: src.main.Inner
+    b: src::main::Inner
     type: int
 
     fn function(self, _: int) {
         let initBasedObject = BasedObject {
-            value: Option.Some { _: "Hello" }
+            value: Option::Some { _: "Hello" }
         }
     }
 
@@ -271,7 +288,7 @@ fn expect<T, E>(result: Result<T, E>, message: string) -> T {
     } else is Err e {
         let suffix = if message.isEmpty() { "" } else { ': $message' }
 
-        raise java.lang.RuntimeException {
+        raise java::lang::RuntimeException {
             message: 'Could not unwrap Result$suffix',
             cause: Option.instanceOf(Throwable, e.error).nullable()
         }

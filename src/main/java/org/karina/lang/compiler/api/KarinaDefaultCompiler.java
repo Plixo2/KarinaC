@@ -1,16 +1,17 @@
 package org.karina.lang.compiler.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.ModelLoader;
-import org.karina.lang.compiler.jvm.model.JKModel;
+import org.karina.lang.compiler.jvm.loading.ModelLoader;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
 import org.karina.lang.compiler.stages.imports.ImportProcessor;
+import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.TextToClassVisitor;
 
-import java.lang.ref.Cleaner;
 import java.nio.file.Path;
 
 public class KarinaDefaultCompiler {
@@ -18,6 +19,7 @@ public class KarinaDefaultCompiler {
     private final TextToClassVisitor parser;
     private final ImportProcessor importProcessor;
     private final AttributionProcessor attributionProcessor;
+    private final LoweringProcessor lowering;
     private final BytecodeProcessor backend;
 
     private final Path outPath;
@@ -30,6 +32,7 @@ public class KarinaDefaultCompiler {
         this.parser = new TextToClassVisitor();
         this.importProcessor = new ImportProcessor();
         this.attributionProcessor = new AttributionProcessor();
+        this.lowering = new LoweringProcessor();
         this.backend = new BytecodeProcessor();
     }
 
@@ -49,7 +52,7 @@ public class KarinaDefaultCompiler {
             Log.end("jar-load");
 
 
-            var bytecodeClasses = JKModel.merge(javaBase, karinaBase);
+            var bytecodeClasses = ModelBuilder.merge(javaBase, karinaBase);
             KType.validateBuildIns(bytecodeClasses);
 
 
@@ -58,7 +61,7 @@ public class KarinaDefaultCompiler {
             Log.end("parsing");
 
             Log.begin("merging");
-            var languageModel = JKModel.merge(userModel, bytecodeClasses);
+            var languageModel = ModelBuilder.merge(userModel, bytecodeClasses);
             Log.end("merging", "with " + languageModel.getClassCount() + " classes");
 
             Log.begin("importing");
@@ -66,9 +69,21 @@ public class KarinaDefaultCompiler {
             Log.end("importing", "with " + importedTree.getClassCount() + " classes");
 
             Log.begin("attribution");
-            var attributedTree = this.attributionProcessor.attribTree(importedTree);
-            Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
+//            for (var i = 0; i < 10000; i++) {
+//                if (i % 100 == 0) {
+//                    System.out.println("Iteration " + i);
+//                }
 
+                var attributedTree = this.attributionProcessor.attribTree(importedTree);
+//            }
+            Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
+//            Log.end("attribution");
+
+            Log.begin("lowering");
+
+            var loweredTree = this.lowering.lowerTree(attributedTree);
+
+            Log.end("lowering", "with " + attributedTree.getClassCount() + " classes");
 
 
             warnings.addAll(Log.getWarnings());

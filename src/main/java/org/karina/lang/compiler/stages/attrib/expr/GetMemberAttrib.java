@@ -320,6 +320,7 @@ public class GetMemberAttrib  {
                 fieldNames,
                 nonAccessibleStr
         ));
+
     }
 
     private static void putAllFields(
@@ -336,11 +337,11 @@ public class GetMemberAttrib  {
 
         for (var fieldModel : classModel.fields()) {
             var modifiers = fieldModel.modifiers();
-            if (Modifier.isStatic(modifiers)) {
+            if (staticOnly != Modifier.isStatic(modifiers)) {
                 continue;
             }
-            if (!ctx.protection().canReference(referenceSite, fieldModel.classPointer(), modifiers)
-                    || (staticOnly && !Modifier.isStatic(modifiers))) {
+
+            if (!ctx.protection().canReference(referenceSite, fieldModel.classPointer(), modifiers)) {
                 if (fieldModel.name().equals(name)) {
                     nonAccessible.add(fieldModel);
                 }
@@ -379,12 +380,11 @@ public class GetMemberAttrib  {
 
         for (var method : classModel.methods()) {
             var modifiers = method.modifiers();
-            if (Modifier.isStatic(modifiers)) {
+            if (staticOnly != Modifier.isStatic(modifiers)) {
                 continue;
             }
 
-            if (!ctx.protection().canReference(referenceSite, method.classPointer(), modifiers)
-                    || (staticOnly && !Modifier.isStatic(modifiers))) {
+            if (!ctx.protection().canReference(referenceSite, method.classPointer(), modifiers)) {
                 if (method.name().equals(name)) {
                     nonAccessible.add(method);
                 }

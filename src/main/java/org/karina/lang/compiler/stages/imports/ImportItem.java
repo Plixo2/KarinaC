@@ -2,7 +2,7 @@ package org.karina.lang.compiler.stages.imports;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
@@ -22,7 +22,7 @@ public class ImportItem {
 
 
 
-    public static KClassModel importClass(KClassModel classModel, @Nullable KClassModel outerClass, ImportTable ctx, Prelude prelude) {
+    public static KClassModel importClass(KClassModel classModel, @Nullable KClassModel outerClass, ImportTable ctx, Prelude prelude, ModelBuilder modelBuilder) {
 
         ImportHelper.testName(classModel.region(), classModel.name());
 
@@ -109,7 +109,6 @@ public class ImportItem {
         var innerClassesToBeFilled = new ArrayList<KClassModel>();
 
         var newClassModel = new KClassModel(
-                PhaseDebug.IMPORTED,
                 classModel.name(),
                 classModel.path(),
                 classModel.modifiers(),
@@ -129,10 +128,12 @@ public class ImportItem {
                 context
         );
 
+
         //recursively import inner classes, done after, so we can pass the new class model as the outer class
         for (var innerClass : classModel.innerClasses()) {
-            innerClassesToBeFilled.add(importClass(innerClass, newClassModel, context, prelude));
+            innerClassesToBeFilled.add(importClass(innerClass, newClassModel, context, prelude, modelBuilder));
         }
+        modelBuilder.addClass(newClassModel);
 
         Log.endType(Log.LogTypes.IMPORTS, logName);
         return newClassModel;

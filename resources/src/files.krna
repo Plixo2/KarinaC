@@ -1,21 +1,21 @@
 
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.InvalidPathException
+import java::io::IOException
+import java::nio::file::Files
+import java::nio::file::Path
+import java::nio::file::InvalidPathException
 
-import java.lang.module.ModuleDescriptor.Exports.Modifier
+import java::lang::module::ModuleDescriptor::Exports::Modifier
 //Paths.get("path/to/your/file.txt")
 
 fn loadFile(path: Path) -> Result<string, IOException> {
-    let call = fn() impl karina.lang.functions.Function0_1<String> {
+    let call = fn() {
         let content = String { _: Files.readAllBytes(path) } ;
         content
     }
 
-    if Result.safeCall(call) is Result.Ok ok {
+    if Result.safeCall(call) is Result::Ok ok {
         Result.ok(ok.value)
-    } else is Result.Err e {
+    } else is Result::Err e {
         if e.error is IOException io {
             Result.err(io)
         } else {
@@ -24,7 +24,7 @@ fn loadFile(path: Path) -> Result<string, IOException> {
     }
 }
 
-fn test(f: java.lang.module.ModuleDescriptor.Exports.Modifier) {
+fn test(f: java::lang::module::ModuleDescriptor::Exports::Modifier) {
     let syn = Option.instanceOf(String, Modifier.SYNTHETIC)
 
     if syn as Object is String o {

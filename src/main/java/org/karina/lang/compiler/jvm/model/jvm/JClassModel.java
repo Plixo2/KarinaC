@@ -3,7 +3,6 @@ package org.karina.lang.compiler.jvm.model.jvm;
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
@@ -14,7 +13,6 @@ import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @AllArgsConstructor
@@ -39,10 +37,6 @@ public class JClassModel implements ClassModel {
         return this.version;
     }
 
-    @Override
-    public PhaseDebug phase() {
-        return PhaseDebug.JVM;
-    }
 
     @Override
     public String name() {

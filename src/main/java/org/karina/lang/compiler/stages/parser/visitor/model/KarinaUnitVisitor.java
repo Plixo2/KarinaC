@@ -1,9 +1,8 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
@@ -54,7 +53,7 @@ public class KarinaUnitVisitor {
 
     }
 
-    public ClassPointer visit(KarinaParser.UnitContext ctx, JKModelBuilder builder) {
+    public ClassPointer visit(KarinaParser.UnitContext ctx, ModelBuilder builder) {
         var region = this.conv.toRegion(ctx);
         int mods = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
 
@@ -94,7 +93,6 @@ public class KarinaUnitVisitor {
 
         var nestMembersToFill = new ArrayList<ClassPointer>();
         var classModel = new KClassModel(
-                PhaseDebug.LOADED,
                 this.name,
                 this.path,
                 mods,
@@ -114,6 +112,8 @@ public class KarinaUnitVisitor {
                 null
         );
 
+
+
         for (var itemContext : ctx.item()) {
             var annotationsInner = ImmutableList.<KAnnotation>builder();
 
@@ -125,13 +125,13 @@ public class KarinaUnitVisitor {
             }
             var kAnnotations = annotationsInner.build();
             if (itemContext.struct() != null) {
-                var struct = this.structVisitor.visit(classModel, this.path, kAnnotations, itemContext.struct());
+                var struct = this.structVisitor.visit(classModel, this.path, kAnnotations, itemContext.struct(), builder);
                 innerClassesToFill.add(struct);
             } else if (itemContext.enum_() != null) {
-                var enum_ = this.enumVisitor.visit(classModel, this.path, kAnnotations , itemContext.enum_());
+                var enum_ = this.enumVisitor.visit(classModel, this.path, kAnnotations , itemContext.enum_(), builder);
                 innerClassesToFill.add(enum_);
             } else if (itemContext.interface_() != null) {
-                var interface_ = this.interfaceVisitor.visit(classModel, this.path, kAnnotations, itemContext.interface_());
+                var interface_ = this.interfaceVisitor.visit(classModel, this.path, kAnnotations, itemContext.interface_(), builder);
                 innerClassesToFill.add(interface_);
             } else if (itemContext.function() == null) {
                 Log.syntaxError(this.conv.toRegion(itemContext), "Invalid item");
@@ -150,7 +150,7 @@ public class KarinaUnitVisitor {
             deepInnerClass.updateNestMembers(nestMembersToFill);
         }
 
-        builder.addClassWithChildren(classModel);
+        builder.addClass(classModel);
 
         return classModel.pointer();
     }
@@ -207,10 +207,9 @@ public class KarinaUnitVisitor {
 
     public List<KType> visitGenericHint(KarinaParser.GenericHintContext ctx) {
 
-
         return ctx.type().stream().map(ref -> {
             var mapped = this.typeVisitor.visitType(ref);
-            if (mapped.isVoid()) {
+            if (mapped.isVoid() || mapped.isPrimitive()) {
                 var innerRegion = this.conv.toRegion(ref);
                 Log.attribError(new AttribError.NotSupportedType(innerRegion, mapped));
                 throw new Log.KarinaException();

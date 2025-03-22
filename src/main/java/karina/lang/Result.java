@@ -1,6 +1,6 @@
 package karina.lang;
 
-import karina.lang.functions.Function0_1;
+import karina.lang.internal.functions.Function0_1;
 
 public sealed interface Result<T, E> permits Result.Ok, Result.Err {
 

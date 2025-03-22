@@ -106,7 +106,6 @@ public class CallAttrib  {
                 }
                 yield classType;
             }
-            default -> throw new IllegalStateException("Unexpected value: " + invocationType);
         };
 
         //TODO when calling onto super, invoke the super constructor,

@@ -280,7 +280,7 @@ public class LogFactory<T extends LogBuilder> {
                 builder.setTitle("Duplicate item");
                 builder.append("Duplicate item '").append(item).append("'");
                 builder.setPrimarySource(second);
-                builder.addSecondarySource(first, "Defined here: ");
+                builder.addSecondarySource(first, "First defined here: ");
             }
             case ImportError.DuplicateItemWithMessage(var first, var second, var item, var message) -> {
                 builder.setTitle("Duplicate item");

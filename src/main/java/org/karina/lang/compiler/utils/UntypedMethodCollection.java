@@ -2,9 +2,9 @@ package org.karina.lang.compiler.utils;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.jvm.model.JKModel;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 
@@ -29,7 +29,7 @@ public class UntypedMethodCollection {
                 this.classPointer + '}';
     }
 
-    public MethodCollection toTypedStaticCollection(ClassPointer referenceSite, JKModel model) {
+    public MethodCollection toTypedStaticCollection(ClassPointer referenceSite, Model model) {
         var protection = new ProtectionChecking(model);
         var classModel = model.getClass(this.classPointer);
         var pointer = classModel.methods().stream().filter(ref -> {

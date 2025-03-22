@@ -2,7 +2,6 @@ package org.karina.lang.compiler.model_api;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.api.TextSource;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.function.Predicate;
 
 public interface ClassModel {
-    PhaseDebug phase();
     String name();
     int modifiers();
     ObjectPath path();

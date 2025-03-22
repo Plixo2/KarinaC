@@ -31,9 +31,11 @@ public class ClassPointer {
     public static final ObjectPath THROWABLE_PATH = new ObjectPath("java", "lang", "Throwable");
     public static final ObjectPath CLASS_TYPE = new ObjectPath("java", "lang", "Class");
 
+    public static final ObjectPath FUNCTIONS_BASE = new ObjectPath("karina", "lang", "internal", "functions");
+
 
     public static boolean shouldIncludeInPrelude(ObjectPath pointer) {
-        if (pointer.length() != 3) {
+        if (pointer.size() != 3) {
             return false;
         }
         return pointer.startsWith("java", "lang") || pointer.startsWith("karina", "lang");

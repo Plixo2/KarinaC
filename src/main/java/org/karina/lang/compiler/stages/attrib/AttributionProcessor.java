@@ -1,28 +1,25 @@
 package org.karina.lang.compiler.stages.attrib;
 
-import org.karina.lang.compiler.jvm.model.PhaseDebug;
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.jvm.model.JKModel;
-import org.karina.lang.compiler.jvm.model.JKModelBuilder;
+import org.karina.lang.compiler.jvm.model.ModelBuilder;
+import org.karina.lang.compiler.model_api.Model;
 
 public class AttributionProcessor {
 
-    public JKModel attribTree(JKModel model) throws Log.KarinaException {
-        var build = new JKModelBuilder(PhaseDebug.TYPED);
+    public Model attribTree(Model model) throws Log.KarinaException {
+        var build = new ModelBuilder();
         try (var collector = new ErrorCollector()) {
-            var userClasses = model.getUserClasses();
-            for (var kClassModel : userClasses) {
+            for (var kClassModel : model.getUserClasses()) {
+
                 if (!kClassModel.isTopLevel()) {
                     continue;
                 }
                 collector.collect(() -> {
-                    var newClassModel = AttributionItem.attribClass(model, null, kClassModel);
-                    build.addClassWithChildren(newClassModel);
+                    AttributionItem.attribClass(model, null, kClassModel , build);
                 });
             }
-            for (var bytecodeClass : model.getBytecodeClasses()) {
+            for (var bytecodeClass : model.getBinaryClasses()) {
                 build.addClass(bytecodeClass);
             }
         }

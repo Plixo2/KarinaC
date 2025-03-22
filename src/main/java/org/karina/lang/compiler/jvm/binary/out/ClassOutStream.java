@@ -52,7 +52,7 @@ public class ClassOutStream {
     }
 
     public void writeObjectPath(ObjectPath path) throws IOException {
-        writeStrings(path.elements());
+        writeStrings(path.asList());
     }
 
     public void writeSignature(Signature signature) throws IOException {

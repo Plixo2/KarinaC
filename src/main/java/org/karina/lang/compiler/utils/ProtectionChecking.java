@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.utils;
 
 import lombok.RequiredArgsConstructor;
-import org.karina.lang.compiler.jvm.model.JKModel;
 import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 
 import java.lang.reflect.Modifier;
@@ -10,7 +10,7 @@ import java.lang.reflect.Modifier;
 
 @RequiredArgsConstructor
 public class ProtectionChecking {
-    private final JKModel model;
+    private final Model model;
 
     public boolean canReference(ClassPointer referenceSite, ClassPointer definitionSite, int modifier) {
         if (Modifier.isPublic(modifier)) {
