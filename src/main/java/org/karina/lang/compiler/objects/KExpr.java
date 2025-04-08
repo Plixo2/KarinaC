@@ -2,6 +2,7 @@ package org.karina.lang.compiler.objects;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.symbols.*;
@@ -50,6 +51,7 @@ public sealed interface KExpr {
     record Number(Region region, BigDecimal number, boolean decimalAnnotated, @Nullable @Symbol NumberSymbol symbol) implements KExpr {}
     record Boolean(Region region, boolean value) implements KExpr {}
     record Literal(Region region, String name, @Nullable @Symbol LiteralSymbol symbol) implements KExpr {}
+    record StaticPath(Region region, ObjectPath path, @Nullable ClassPointer importedPointer) implements KExpr {}
     record Self(Region region, @Nullable @Symbol Variable symbol) implements KExpr {}
     record SpecialCall(Region region, InvocationType invocationType) implements KExpr {}
     record StringExpr(Region region, String value, boolean isChar) implements KExpr {}
@@ -57,6 +59,7 @@ public sealed interface KExpr {
     record Match(Region region, KExpr value, List<MatchPattern> cases) implements KExpr {}
     record CreateObject(Region region, KType createType, List<NamedExpression> parameters) implements KExpr {}
     record Closure(Region region, List<NameAndOptType> args, @Nullable KType returnType, List<? extends KType> interfaces, KExpr body, @Nullable @Symbol ClosureSymbol symbol) implements KExpr {}
+    record Unwrap(Region region, KExpr left, @Nullable @Symbol UnwrapSymbol symbol) implements KExpr {}
     record Throw(Region region, KExpr value) implements KExpr {}
 
 

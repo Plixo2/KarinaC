@@ -300,6 +300,21 @@ public class LogFactory<T extends LogBuilder> {
                 builder.append("Inner class '").append(cls.mkString(".")).append("' cannot be imported directly");
                 builder.setPrimarySource(region);
             }
+            case ImportError.InvalidAlias(Region region, String givenAlias, String foundClassName) -> {
+                builder.setTitle("Invalid alias");
+                builder.append("Cannot alias class '").append(foundClassName)
+                       .append("' as '").append(givenAlias).append("'");
+                builder.append("The alias must contain the class name '").append(foundClassName).append("'");
+
+                builder.setPrimarySource(region);
+            }
+            case ImportError.UnnecessaryAlias(Region region1, String givenAlias) -> {
+                builder.setTitle("Unnecessary alias");
+                builder.append("Unnecessary alias '").append(givenAlias).append("'");
+                builder.append("Cannot use an alias without conflicts");
+                builder.setPrimarySource(region1);
+            }
+
             case ImportError.InvalidName(var region, var name, var msg) -> {
                 builder.setTitle("Invalid name");
                 builder.append("Invalid name '").append(name).append("'");

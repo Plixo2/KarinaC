@@ -24,6 +24,8 @@ public sealed interface ImportError extends Error {
     record InvalidName(Region region, String name, @Nullable String message) implements ImportError {}
 
     record InnerClassImport(Region region, ObjectPath cls) implements ImportError {}
+    record InvalidAlias(Region region, String givenAlias, String foundClassName) implements ImportError {}
+    record UnnecessaryAlias(Region region, String givenAlias) implements ImportError {}
 
 
 }
