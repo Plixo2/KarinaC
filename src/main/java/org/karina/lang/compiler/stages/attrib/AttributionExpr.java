@@ -27,7 +27,7 @@ public final class AttributionExpr {
     }
 
     /**
-     * Only call this method once per expression, since {@link org.karina.lang.compiler.objects.KType.Resolvable#tryResolve}
+     * Only call this method once per expression, since {@link KType.Resolvable#tryResolve}
      * and {@link Variable#incrementUsageCount} are mutable.
      * @param hint Optional hint. When provided, and this function returns a expression with that type,
      *             is HAS to be valid. When the expressions is of another type, it still can be valid.
@@ -71,7 +71,9 @@ public final class AttributionExpr {
             case KExpr.VariableDefinition variableDefinition -> VariableDefinitionAttrib.attribVariableDefinition(hint, ctx, variableDefinition);
             case KExpr.While aWhile -> WhileAttrib.attribWhile(hint, ctx, aWhile);
             case KExpr.Throw aThrow -> ThrowAttrib.attribThrow(hint, ctx, aThrow);
+            case KExpr.Unwrap unwrap -> UnwrapAttrib.attribUnwrap(hint, ctx, unwrap);
             case KExpr.SpecialCall aSuper -> SpecialCallAttrib.attribSpecialCall(hint, ctx, aSuper);
+            case KExpr.StaticPath staticPath -> StaticPathAttrib.attribStaticPath(hint, ctx, staticPath);
         };
         Log.endType(Log.LogTypes.EXPR, logName);
         return newExpr;

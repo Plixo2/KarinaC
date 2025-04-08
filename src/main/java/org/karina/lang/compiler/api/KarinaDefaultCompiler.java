@@ -83,11 +83,18 @@ public class KarinaDefaultCompiler {
 
             var loweredTree = this.lowering.lowerTree(attributedTree);
 
-            Log.end("lowering", "with " + attributedTree.getClassCount() + " classes");
+            Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
 
+            var amountFiles = files.leafCount();
+            var amountDefined = userModel.getUserClasses().size();
+            var amountCompiled = loweredTree.getUserClasses().size();
+
+            var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
+
+            Log.record(amountMessage);
+            Log.end("compile");
 
             warnings.addAll(Log.getWarnings());
-            Log.end("compile");
             if (recorder != null) {
                 recorder.add(Log.getRecordedLogs());
             }

@@ -18,6 +18,8 @@ public record DefaultFileTree(
         List<FileNode<TextSource>> leafs
 ) implements FileTreeNode<TextSource> {
 
+
+
     @Override
     public String toString() {
         return toString(0);
@@ -29,6 +31,7 @@ public record DefaultFileTree(
         sb.append("  ".repeat(indent));
         sb.append(this.path);
         sb.append("\n");
+
         for (var child : this.children) {
             sb.append(child.toString(indent + 1));
         }
@@ -39,6 +42,15 @@ public record DefaultFileTree(
         }
         return sb.toString();
 
+    }
+
+    @Override
+    public int leafCount() {
+        var count = this.leafs.size();
+        for (var child : this.children()) {
+            count += child.leafCount();
+        }
+        return count;
     }
 
     /**

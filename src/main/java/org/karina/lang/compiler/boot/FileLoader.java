@@ -78,9 +78,6 @@ public class FileLoader {
         var file = new File(path);
         var folderName = getFileNameWithoutExtension(file.getName());
         Log.begin("file-load-" + folderName);
-        if (objectPath == null) {
-            objectPath = new ObjectPath(folderName);
-        }
         if (!file.exists()) {
             throw new FileNotFoundException(
                     file.toString()
@@ -108,7 +105,7 @@ public class FileLoader {
 
     private static DefaultFileTree loadTreeFiles(
             File[] files,
-            ObjectPath objectPath,
+            @Nullable ObjectPath objectPath,
             String folderName,
             Predicate<String> filePredicate
     ) throws IOException {
@@ -125,7 +122,7 @@ public class FileLoader {
             if (name.isEmpty()) {
                 continue;
             }
-            var childPath = objectPath.append(name);
+            var childPath = objectPath == null ? new ObjectPath(name): objectPath.append(name);
             if (subFile.isDirectory()) {
                 var child = loadTree(childPath, subFile.getAbsolutePath(), filePredicate);
                 children.add(child);

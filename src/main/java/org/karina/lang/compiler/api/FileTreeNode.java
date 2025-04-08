@@ -9,4 +9,5 @@ public interface FileTreeNode<T> {
     String name();
     List<? extends FileTreeNode<T>> children();
     List<? extends FileNode<T>> leafs();
+    int leafCount();
 }

@@ -7,6 +7,7 @@ import org.karina.lang.compiler.logging.LogBuilder;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -19,7 +20,9 @@ public class Main {
     private static final Path log = Path.of("resources/flight.txt");
     private static final String mainClass = "src.Main";
 
+
     public static void main(String[] args) throws IOException {
+
 
         var welcome_small =
                 """
