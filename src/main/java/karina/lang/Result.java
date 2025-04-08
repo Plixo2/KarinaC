@@ -2,6 +2,7 @@ package karina.lang;
 
 import karina.lang.internal.functions.Function0_1;
 
+//Build-in Result type, needed for ? unwrapping
 public sealed interface Result<T, E> permits Result.Ok, Result.Err {
 
     final class Ok<T,E> implements Result<T, E> {
