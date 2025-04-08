@@ -4,7 +4,7 @@ options { tokenVocab=KarinaLexer; }
 
 unit: import_* item* EOF;
 
-import_: 'import' dotWordChain ('*' | id | '{' commaWordChain '}')?;
+import_: 'import' dotWordChain ('*' | id | '{' commaWordChain '}' | 'as' id)?;
 commaWordChain: id (',' id)*;
 
 item: annotation* (function | struct | enum | interface);
@@ -28,7 +28,7 @@ field: id ':' type;
 enum: 'enum' id genericHintDefinition? '{' enumMember* function* implementation* boundWhere* '}';
 enumMember: id ('(' parameterList ')')?;
 
-interface : 'interface' id genericHintDefinition? '{' function* interfaceExtension* '}';
+interface : 'interface' id genericHintDefinition? ('{' function* interfaceExtension* '}')?;
 interfaceExtension: 'impl' structType;
 
 selfParameterList: ((parameter | 'self') (',' parameter)*)?;
@@ -122,12 +122,15 @@ additiveExpression: multiplicativeExpression (('+' | '-' | '&') additiveExpressi
 multiplicativeExpression: unaryExpression (('*' | '/' | '%') multiplicativeExpression)?;
 unaryExpression: ('-' | '!')? factor;
 factor: object postFix* (('=' exprWithBlock) | isInstanceOf)?;
-postFix: '.' (id | 'class') | '.' 'class' | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type;
-object: '(' exprWithBlock ')' | NUMBER | id (('::' id)* genericHint? '{' initList '}')? | STRING_LITERAL | CHAR_LITERAL | 'self' | superCall | 'true' | 'false' | array;
+postFix: '.' (id | 'class') | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type | '?' ;
+object: '(' exprWithBlock ')' | NUMBER | id ('::' id)* (genericHint? '{' initList '}')? | STRING_LITERAL | CHAR_LITERAL | 'self' | superCall | 'true' | 'false' | array;
 array: ('<' type '>')? '[' expressionList ']';
 
 superCall: 'super' '<' structType  '>' ('.' id)?;
-//interpolation: '\''  '\'';
+// where a ?? b
+//
+//listA <<< listB
+//listA << element
 
 expressionList: (exprWithBlock (',' exprWithBlock)*)?;
 

@@ -17,6 +17,9 @@ public record KImport(
         record All() implements TypeImport { }
         //import classes and static methods inside a class via name
         record Names(ImmutableList<String> names) implements TypeImport {}
+
+        //import the class with a alias
+        record BaseAs(Region region, String alias) implements TypeImport { }
     }
 
 }
