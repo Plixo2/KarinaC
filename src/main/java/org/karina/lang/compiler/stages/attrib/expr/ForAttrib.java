@@ -51,15 +51,16 @@ public class ForAttrib  {
         );
 
         IteratorTypeSymbol symbol;
-        if (typeOfLoop.arrayType() != null) {
-            symbol = new IteratorTypeSymbol.ForArray(
-                    variable,
-                    typeOfLoop.arrayType()
-            );
+
+        if (typeOfLoop.symType == IteratorTypeSymbol.ForArray.class) {
+            symbol = new IteratorTypeSymbol.ForArray(variable);
+        } else if (typeOfLoop.symType == IteratorTypeSymbol.ForIterable.class) {
+            symbol = new IteratorTypeSymbol.ForIterable(variable);
+        } else if (typeOfLoop.symType == IteratorTypeSymbol.ForRange.class) {
+            symbol = new IteratorTypeSymbol.ForRange(variable);
         } else {
-            symbol = new IteratorTypeSymbol.ForIterable(
-                    variable
-            );
+            Log.temp(expr.region(), "Unknown iterator type symbol");
+            throw new Log.KarinaException();
         }
 
         var bodyCtx = ctx.setInLoop(true);
@@ -79,27 +80,43 @@ public class ForAttrib  {
     }
 
     private static IteratorExpr getIteratorType(AttributionContext ctx, KType type, KExpr iter) {
-        if (type instanceof KType.ArrayType arrayType) {
+        if (type instanceof KType.ArrayType(KType elementType)) {
             return new IteratorExpr(
-                iter,
-                arrayType.elementType(),
-                arrayType
+                    iter,
+                    elementType,
+                    IteratorTypeSymbol.ForArray.class
             );
         } else {
+            if (type instanceof KType.ClassType classType) {
+                if (KType.KARINA_RANGE.pointer().equals(classType.pointer())) {
+                    return new IteratorExpr(
+                            iter,
+                            KType.INT,
+                            IteratorTypeSymbol.ForRange.class
+                    );
+                }
+            }
+
             var iter_type = new KType.Resolvable();
             var iterable_interface = KType.ITERABLE(iter_type);
             var expr = ctx.makeAssignment(iter.region(), iterable_interface, iter);
 
             return new IteratorExpr(
-                expr,
-                iter_type,
-                null
+                    expr,
+                    iter_type,
+                    IteratorTypeSymbol.ForIterable.class
             );
         }
     }
 
     //When ArrayType is null, its a iterable
-    private record IteratorExpr(KExpr expr, KType varType, @Nullable KType.ArrayType arrayType) { }
+
+    /**
+     * Represents the type of the iterator expression
+     * @param expr
+     * @param varType
+     */
+    private record IteratorExpr(KExpr expr, KType varType, Class<? extends IteratorTypeSymbol> symType) { }
 
 
 

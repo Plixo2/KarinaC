@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class LongReference {
+public final class LongReference {
     public long value;
 
     public LongReference(long value) {

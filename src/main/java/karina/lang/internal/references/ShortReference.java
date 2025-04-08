@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class ShortReference {
+public final class ShortReference {
     public short value;
 
     public ShortReference(short value) {

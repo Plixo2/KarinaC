@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class CharacterReference {
+public final class CharacterReference {
     public char value;
 
 

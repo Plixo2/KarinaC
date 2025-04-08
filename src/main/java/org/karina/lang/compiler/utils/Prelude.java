@@ -39,6 +39,8 @@ public class Prelude {
 
         var consolePath = new ObjectPath("karina", "lang", "Console");
         putAllMethodsFromKarinaClass(model, consolePath, methods);
+        var rangePath = new ObjectPath("karina", "lang", "Range");
+        putAllMethodsFromKarinaClass(model, rangePath, methods);
 
 
         return new Prelude(classes.build(), fields.build(), methods.build());
@@ -68,6 +70,9 @@ public class Prelude {
         }
     }
 
+    /**
+     * Import all public static methods from a given class
+     */
     private static void putAllMethodsFromKarinaClass(Model model, ObjectPath path,  ImmutableList.Builder<MethodPointer> collection) {
         var classPointer = model.getClassPointer(KType.KARINA_LIB, path);
 

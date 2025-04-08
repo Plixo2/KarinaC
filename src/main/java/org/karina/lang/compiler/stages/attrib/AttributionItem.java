@@ -43,7 +43,6 @@ public class AttributionItem {
                 classModel.region(),
                 classModel.symbolTable()
         );
-        //todo inner classes
 
         for (var kClassModel : classModel.innerClasses()) {
             var inner = attribClass(model, classModelNew, kClassModel, modelBuilder);

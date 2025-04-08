@@ -11,11 +11,13 @@ import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KImport;
 import org.karina.lang.compiler.utils.Prelude;
 import org.karina.lang.compiler.utils.Region;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class ImportItem {
@@ -54,9 +56,18 @@ public class ImportItem {
 
         Log.beginType(Log.LogTypes.IMPORTS, "imports statements");
         //add manual imports
-        for (var kImport : classModel.imports()) {
+
+
+        var importTypeSplit = classModel.imports().stream().collect(Collectors.partitioningBy(
+                o -> o.importType() instanceof KImport.TypeImport.BaseAs
+        ));
+        for (var kImport : importTypeSplit.get(false)) {
             context = ImportHelper.addImport(classModel.region(), kImport, context);
         }
+        for (var kImport : importTypeSplit.get(true)) {
+            context = ImportHelper.addImport(classModel.region(), kImport, context);
+        }
+
         if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.logImport();
         Log.endType(Log.LogTypes.IMPORTS, "imports statements");
 

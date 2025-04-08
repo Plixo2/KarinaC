@@ -43,7 +43,7 @@ public class VariableDefinitionAttrib  {
         var symbol = new Variable(
                 expr.name().region(),
                 expr.name().value(),
-                valueExpr.type(),
+                varType,
                 true,
                 false
         );

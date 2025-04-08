@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class ObjectReference<T> {
+public final class ObjectReference<T> {
     public T value;
 
     public ObjectReference(T value) {

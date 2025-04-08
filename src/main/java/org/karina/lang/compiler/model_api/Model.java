@@ -12,9 +12,6 @@ import org.karina.lang.compiler.utils.Region;
 import java.util.List;
 
 public interface Model {
-    int BUCKET_TOP_USER = 0;
-    int BUCKET_USER = 1;
-    int BINARY_CLASS = 2;
 
     //tests if a class exists
     @Nullable ClassPointer getClassPointer(Region region, ObjectPath objectPath);

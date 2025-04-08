@@ -5,6 +5,8 @@ import lombok.experimental.Accessors;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -29,9 +31,13 @@ public class ClassPointer {
     public static final ObjectPath NUMBER_PATH = new ObjectPath("java", "lang", "Number");
     public static final ObjectPath ITERABLE_PATH = new ObjectPath("java", "lang", "Iterable");
     public static final ObjectPath THROWABLE_PATH = new ObjectPath("java", "lang", "Throwable");
-    public static final ObjectPath CLASS_TYPE = new ObjectPath("java", "lang", "Class");
+    public static final ObjectPath CLASS_TYPE_PATH = new ObjectPath("java", "lang", "Class");
 
     public static final ObjectPath FUNCTIONS_BASE = new ObjectPath("karina", "lang", "internal", "functions");
+    public static final ObjectPath OPTION_PATH = new ObjectPath("karina", "lang", "Option");
+    public static final ObjectPath RESULT_PATH = new ObjectPath("karina", "lang", "Result");
+
+    public static final ObjectPath RANGE_PATH = new ObjectPath("karina", "lang", "Range");
 
 
     public static boolean shouldIncludeInPrelude(ObjectPath pointer) {

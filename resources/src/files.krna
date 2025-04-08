@@ -4,8 +4,9 @@ import java::nio::file::Files
 import java::nio::file::Path
 import java::nio::file::InvalidPathException
 
-import java::lang::module::ModuleDescriptor::Exports::Modifier
 //Paths.get("path/to/your/file.txt")
+import errors::Modifier
+import java::lang::module::ModuleDescriptor::Exports::Modifier as ModuleModifier
 
 fn loadFile(path: Path) -> Result<string, IOException> {
     let call = fn() {
@@ -25,7 +26,7 @@ fn loadFile(path: Path) -> Result<string, IOException> {
 }
 
 fn test(f: java::lang::module::ModuleDescriptor::Exports::Modifier) {
-    let syn = Option.instanceOf(String, Modifier.SYNTHETIC)
+    let syn = Option.instanceOf(String, java::lang::module::ModuleDescriptor::Exports::Modifier.SYNTHETIC)
 
     if syn as Object is String o {
 

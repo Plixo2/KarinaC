@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class DoubleReference {
+public final class DoubleReference {
     public double value;
 
     public DoubleReference(double value) {

@@ -11,7 +11,7 @@ public sealed interface MemberSymbol {
     record ArrayLength(Region region) implements MemberSymbol {
         @Override
         public KType type() {
-            return new KType.PrimitiveType(KType.KPrimitive.INT);
+            return KType.INT;
         }
     }
     record FieldSymbol(FieldPointer pointer, KType type, KType.ClassType classType) implements MemberSymbol { }

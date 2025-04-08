@@ -1,16 +1,35 @@
 package karina.lang.grammar;
 
-import karina.lang.Option;
 import karina.lang.Result;
 
 import java.io.InputStream;
 
-public final class GrammarNotationParser {
+public interface GrammarNotationParser {
 
-    private GrammarNotationParser() {}
+    static GrammarNotationParser of(TokenSet tokenSet) {
+        return extend(RuleSet.empty(), tokenSet);
+    }
+    static GrammarNotationParser extend(RuleSet extend, TokenSet tokenSet) {
+        return new GrammarNotationParserImpl(extend, tokenSet);
+    }
 
-    static Result<RuleSet, Object> parse(InputStream inputStream) {
-        throw new NullPointerException("Not implemented");
+
+    Result<RuleSet, Object> parse(InputStream inputStream);
+
+
+    class GrammarNotationParserImpl implements GrammarNotationParser {
+        private final RuleSet ruleSet;
+        private final TokenSet tokenSet;
+
+        public GrammarNotationParserImpl(RuleSet ruleSet, TokenSet tokenSet) {
+            this.ruleSet = ruleSet;
+            this.tokenSet = tokenSet;
+        }
+
+        @Override
+        public Result<RuleSet, Object> parse(InputStream inputStream) {
+            return null;
+        }
     }
 
 }

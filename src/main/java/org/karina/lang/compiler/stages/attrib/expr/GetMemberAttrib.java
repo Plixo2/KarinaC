@@ -103,7 +103,12 @@ public class GetMemberAttrib  {
             if (name.equals("size")) {
                 var symbol = new MemberSymbol.ArrayLength(region);
                 return of(ctx, new KExpr.GetMember(region, left, RegionOf.region(region, name), false, symbol));
-            } else {
+            } else if (name.equals("class")){
+                var classType = KType.CLASS_TYPE(arrayType);
+                var symbol = new LiteralSymbol.StaticClassReference(region, classType.pointer(), arrayType, true);
+                var newLiteral = new KExpr.Literal(region, name, symbol);
+                return of(ctx, newLiteral);
+            }else {
                 Log.attribError(new AttribError.UnknownMember(
                         region,
                         arrayType.toString(),

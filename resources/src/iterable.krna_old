@@ -1,0 +1,80 @@
+
+import java::lang::Iterable
+import java::util::Iterator
+import java::util::Comparator
+
+interface View<T> {
+    fn getNullable(self, index: int) -> T
+    fn get(self, index: int) -> Option<T>
+    fn size(self) -> int
+    fn map<R>(self, function: fn(T) -> R) -> View<R>
+    fn filter(self, predicate: fn(T) -> Boolean) -> View<T>
+    fn subView(self, fromIndex: int, toIndex: int) -> View<T>
+    fn contains(self, element: T) -> Boolean
+    fn doesMatchAny(self, predicate: fn(T) -> Boolean) -> Boolean
+    fn doesMatchAll(self, predicate: fn(T) -> Boolean) -> Boolean
+    fn getFirst(self, predicate: fn(T) -> Boolean) -> Option<T>
+    fn getLast(self, predicate: fn(T) -> Boolean) -> Option<T>
+    fn indexOf(self, element: T) -> int
+    fn indexOf(self, predicate: fn(T) -> Boolean) -> int
+    fn lastIndexOf(self, element: T) -> int
+    fn lastIndexOf(self, predicate: fn(T) -> Boolean) -> int
+    fn first(self) -> Option<T>
+    fn last(self) -> Option<T>
+    fn tail(self) -> Option<View<T>>
+    fn isEmpty(self) -> Boolean
+    fn isNotEmpty(self) -> Boolean
+    fn sorted(self, comparator: Comparator<T>) -> View<T>
+    fn reversed(self) -> View<T>
+    fn mkString(self, separator: string) -> string
+
+    fn toArray(self, cls: java::lang::Class<T>) -> [T]
+
+    /*
+    fn mkString(self: View<string>, separator: string) -> string {
+        self.toArray(String).join(separator)
+    }
+    */
+
+    impl Iterable<T>
+}
+
+interface List<T> {
+    fn push(self, element: T)
+    fn append(self, elements: View<T>)
+    fn pop(self) -> Option<T>
+    fn removeAt(self, index: int) -> Option<T>
+
+    fn remove(self, element: T) -> Boolean
+    fn removeAll(self, elements: View<T>) -> Boolean
+    fn clear(self)
+    fn set(self, index: int, element: T)
+
+    fn copy(self) -> List<T>
+
+    fn copyOf<T>(javaList: java::util::List<T>) -> List<T> {
+        raise java::lang::UnsupportedOperationException {}
+    }
+
+    fn copyOf<T>(array: [T]) -> List<T> {
+        raise java::lang::UnsupportedOperationException {}
+    }
+
+    fn copyOf<T>(view: View<T>) -> List<T> {
+        raise java::lang::UnsupportedOperationException {}
+    }
+
+    fn copyOf<T>(iterator: Iterator<T>) -> List<T> {
+        raise java::lang::UnsupportedOperationException {}
+    }
+
+    fn of<T>() -> List<T> {
+        raise java::lang::UnsupportedOperationException {}
+    }
+
+    fn of<T>(element: T) -> List<T> {
+        raise java::lang::UnsupportedOperationException {}
+    }
+
+    impl View<T>
+}

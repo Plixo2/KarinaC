@@ -47,7 +47,22 @@ public class ImportExpr {
             case KExpr.While aWhile -> importWhile(ctx, aWhile);
             case KExpr.Throw aThrow -> importThrow(ctx, aThrow);
             case KExpr.SpecialCall aSpecialCall -> importSuper(ctx, aSpecialCall);
+            case KExpr.Unwrap unwrap -> importUnwrap(ctx, unwrap);
+            case KExpr.StaticPath staticPath -> importPath(ctx, staticPath);
         };
+    }
+
+    private static KExpr importPath(ImportContext ctx, KExpr.StaticPath staticPath) {
+
+        var pointer = ctx.getClassPointer(staticPath.region(), staticPath.path());
+
+        return new KExpr.StaticPath(staticPath.region(), staticPath.path(), pointer);
+    }
+
+    private static KExpr importUnwrap(ImportContext ctx, KExpr.Unwrap unwrap) {
+        var left = importExpr(ctx, unwrap.left());
+
+        return new KExpr.Unwrap(unwrap.region(), left, null);
     }
 
     private static KExpr importSuper(ImportContext ctx, KExpr.SpecialCall expr) {
@@ -60,7 +75,6 @@ public class ImportExpr {
                 );
             }
         };
-
 
         return new KExpr.SpecialCall(
                 expr.region(),

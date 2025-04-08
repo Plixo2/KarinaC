@@ -28,7 +28,7 @@ public class Expressions {
                 return block.symbol();
             }
             case KExpr.Boolean _ -> {
-                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+                return KType.BOOL;
             }
             case KExpr.Branch branch -> {
                 if (branch.symbol() == null) {
@@ -98,7 +98,7 @@ public class Expressions {
                 return getMember.symbol().type();
             }
             case KExpr.IsInstanceOf isInstanceOf -> {
-                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+                return KType.BOOL;
             }
             case KExpr.Literal literal -> {
                 if (literal.symbol() == null) {
@@ -130,10 +130,17 @@ public class Expressions {
             }
             case KExpr.StringExpr stringExpr -> {
                 if (stringExpr.isChar()) {
-                    return new KType.PrimitiveType(KType.KPrimitive.CHAR);
+                    return KType.CHAR;
                 } else {
                     return KType.STRING;
                 }
+            }
+            case KExpr.Unwrap unwrap -> {
+                if (unwrap.symbol() == null) {
+                    Log.temp(expr.region(), "Symbol is null");
+                    return null;
+                }
+                return unwrap.symbol().unpackedType();
             }
             case KExpr.Unary unary -> {
                 if (unary.symbol() == null) {
@@ -156,6 +163,9 @@ public class Expressions {
             }
             case KExpr.StringInterpolation stringInterpolation -> {
                 return KType.STRING;
+            }
+            case KExpr.StaticPath staticPath -> {
+                return KType.NONE;
             }
         }
     }
@@ -208,6 +218,8 @@ public class Expressions {
             case KExpr.VariableDefinition variableDefinition ->false;
             case KExpr.While aWhile -> false;
             case KExpr.SpecialCall aSpecialCall -> false;
+            case KExpr.Unwrap unwrap -> false;
+            case KExpr.StaticPath staticPath -> false;
         };
     }
 

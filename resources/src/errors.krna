@@ -1,5 +1,9 @@
 
 
+struct Modifier {
+
+}
+
 @Super = {
     type: type { java::lang::RuntimeException }
 }

@@ -20,7 +20,7 @@ public sealed interface BinOperatorSymbol {
         record StrictNotEqual(Region region) implements ObjectEquals {}
 
         default KType type() {
-            return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+            return KType.BOOL;
         }
 
         static @Nullable ObjectEquals fromOperator(RegionOf<BinaryOperator> operator) {
@@ -69,9 +69,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+                return KType.BOOL;
             } else {
-                return new KType.PrimitiveType(KType.KPrimitive.FLOAT);
+                return KType.FLOAT;
             }
         }
 
@@ -136,9 +136,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+                return KType.BOOL;
             } else {
-                return new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
+                return KType.DOUBLE;
             }
         }
 
@@ -202,9 +202,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+                return KType.BOOL;
             } else {
-                return new KType.PrimitiveType(KType.KPrimitive.LONG);
+                return KType.LONG;
             }
         }
 
@@ -269,9 +269,9 @@ public sealed interface BinOperatorSymbol {
                 default -> false;
             };
             if (returnBool) {
-                return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+                return KType.BOOL;
             } else {
-                return new KType.PrimitiveType(KType.KPrimitive.INT);
+                return KType.INT;
             }
         }
 
@@ -318,7 +318,7 @@ public sealed interface BinOperatorSymbol {
 
         @Override
         default KType type() {
-            return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+            return KType.BOOL;
         }
 
         static @Nullable BinOperatorSymbol.BoolOP fromOperator(RegionOf<BinaryOperator> operator) {

@@ -7,6 +7,7 @@ import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Variable;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 public sealed interface LiteralSymbol {

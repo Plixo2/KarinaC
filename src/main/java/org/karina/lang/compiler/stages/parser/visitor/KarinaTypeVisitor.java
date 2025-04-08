@@ -6,8 +6,6 @@ import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
-import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.RegionOf;
 
 import java.util.List;
 
@@ -25,7 +23,6 @@ public class KarinaTypeVisitor {
 
     public KType visitType(KarinaParser.TypeContext ctx) {
 
-        var region = this.conv.toRegion(ctx);
         var inner = visitInnerType(ctx.typeInner());
 
         if (ctx.typePostFix() != null) {
@@ -34,15 +31,8 @@ public class KarinaTypeVisitor {
                 Log.syntaxError(this.conv.toRegion(ctx), "Invalid optional type");
                 throw new Log.KarinaException();
             }
-            var questionMarkRegion = this.conv.toRegion(ctx.typePostFix());
-            //we just use the name Option. This lets the user define there own Option type,
-            // even tho it is provided by the standard library
-            return new KType.UnprocessedType(
-                    region,
-                    RegionOf.region(questionMarkRegion, new ObjectPath("Option")),
-                    List.of(inner)
-            );
-
+            //link to karina standard library option type
+            return KType.KARINA_OPTION(inner);
         }
 
         return inner;
@@ -54,21 +44,21 @@ public class KarinaTypeVisitor {
         if (ctx.VOID() != null) {
             return KType.NONE;
         } else if (ctx.INT() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.INT);
+            return KType.INT;
         } else if (ctx.DOUBLE() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
+            return KType.DOUBLE;
         } else if (ctx.SHORT() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.SHORT);
+            return KType.SHORT;
         } else if (ctx.BYTE() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.BYTE);
+            return KType.BYTE;
         } else if (ctx.CHAR() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.CHAR);
+            return KType.CHAR;
         } else if (ctx.LONG() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.LONG);
+            return KType.LONG;
         } else if (ctx.FLOAT() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.FLOAT);
+            return KType.FLOAT;
         } else if (ctx.BOOL() != null) {
-            return new KType.PrimitiveType(KType.KPrimitive.BOOL);
+            return KType.BOOL;
         } else if (ctx.STRING() != null) {
             return KType.STRING;
         } else if (ctx.structType() != null) {

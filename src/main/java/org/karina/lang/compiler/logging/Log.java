@@ -58,6 +58,7 @@ public class Log {
         JVM_CLASS_LOADING,
         CLOSURE,
         MEMBER,
+        LOWERING,
 
         ;
 
@@ -69,8 +70,9 @@ public class Log {
               //  , BRANCH
                // , SUPER_WARN
               //  , ASSERTIONS
-                , CLOSURE
+//                , CLOSURE
 //                ,CHECK_TYPE
+                ,LOWERING
 //    ,MEMBER
 //    ,CALLS
 // ,EXPR

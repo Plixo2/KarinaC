@@ -1,0 +1,9 @@
+
+
+struct Region {
+    resource: Resource
+    from: int
+    to: int
+}
+
+interface Resource

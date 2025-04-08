@@ -187,7 +187,16 @@ public class KarinaUnitVisitor {
         var names = ImmutableList.<String>builder();
 
         if (ctx.id() != null) {
-            names.add(this.conv.escapeID(ctx.id()));
+            if (ctx.AS() != null) {
+                var aliasRegion = this.conv.region(ctx.id());
+                return new KImport(
+                        region,
+                        new KImport.TypeImport.BaseAs(aliasRegion.region(), aliasRegion.value()),
+                        path
+                );
+            } else {
+                names.add(this.conv.escapeID(ctx.id()));
+            }
         } else if (ctx.commaWordChain() != null) {
             ctx.commaWordChain().id().forEach(id -> names.add(this.conv.escapeID(id)));
         } else {

@@ -170,14 +170,14 @@ public class ClassInStream {
                 var name = readString();
                 yield new KType.GenericLink(new Generic(source.emptyRegion(), name));
             }
-            case 6 -> new KType.PrimitiveType(KType.KPrimitive.BOOL);
-            case 7 -> new KType.PrimitiveType(KType.KPrimitive.BYTE);
-            case 8 -> new KType.PrimitiveType(KType.KPrimitive.CHAR);
-            case 9 -> new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
-            case 10 -> new KType.PrimitiveType(KType.KPrimitive.FLOAT);
-            case 11 -> new KType.PrimitiveType(KType.KPrimitive.INT);
-            case 12 -> new KType.PrimitiveType(KType.KPrimitive.LONG);
-            case 13 -> new KType.PrimitiveType(KType.KPrimitive.SHORT);
+            case 6 -> KType.BOOL;
+            case 7 -> KType.BYTE;
+            case 8 -> KType.CHAR;
+            case 9 -> KType.DOUBLE;
+            case 10 -> KType.FLOAT;
+            case 11 -> KType.INT;
+            case 12 -> KType.LONG;
+            case 13 -> KType.SHORT;
             case 14 -> KType.NONE;
             default -> {
                 throw new IOException("Unknown fieldType: " + type);

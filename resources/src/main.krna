@@ -5,13 +5,13 @@ import karina::lang::Result { Ok, Err }
 import java::util::function::Supplier
 import java::lang::System out
 import karina::lang::Option
-//import src.Main.Option { some, none }
+//import Main.Option { some, none }
 import java::util::ArrayList
 import java::util::List
 import java::util::Arrays
-import src::errors
+import errors
 
-import src::files
+import files
 
 fn main() {
     let path = files.getPath("Hello").expect("a valid path")
@@ -94,7 +94,7 @@ fn test() -> bool {
 
     let box = fn(value: Integer) -> Integer { value }
 
-    let s: Integer? = Option::Some { _: (Integer.valueOf(10)) } as Option<Integer>
+    let s: Integer? = Option::Some { _: 10 } as Integer?
 
     let s2: TestInterface<Integer, String> = Test { inner: box(10) }
 
@@ -104,6 +104,11 @@ fn test() -> bool {
         -1000
     }
 
+    for ww in range(0, 10).reversed() {
+        let asL: Number = 10 as long
+        let array = [1, 2, 3]
+        array[asL]
+    }
 
     let unbox_int: int = Integer.valueOf(10)
     let unbox_long: long = Long.valueOf(10)
@@ -147,7 +152,6 @@ fn test() -> bool {
         return false
     }
 
-
     let array_assign: [Integer] = [1, 2, 3]
 
     //box(10) == 10
@@ -157,7 +161,22 @@ fn test() -> bool {
 
     let customList: List<Boolean> = ArrayList{}
 
+
     any != a
+}
+
+
+fn create() -> Integer? {
+    let getValue = fn() Option.some(100)
+    let toStr = fn(a: Integer) String.valueOf(a)
+    let opt = getValue().map(toStr)?
+
+    let optStr = Option::Some { _: "Hello" } as string?
+    let unwrapped = optStr?
+    let unwrapped2 = Option::Some { _: Option::Some { _: "Hello" } }.value?
+    let sizeOf = optStr?.length()
+
+    Option::Some { _: sizeOf * 2 }
 }
 
 struct Test<W> {
@@ -205,6 +224,16 @@ struct ObjectSome {
     \fn: string
 }
 
+fn curry_test() {
+    let add = fn(a: Integer, b: Integer) -> Integer a.intValue() + b
+    let add10 = curry(add, 10)
+    let result = add10(20)
+}
+
+fn curry<T, U, V>(a: fn(T, U) -> V, b: T) -> (fn(U) -> V) {
+    fn(u) a(b, u)
+}
+
 fn completePath<W>(s: W) {
 
 }
@@ -249,7 +278,7 @@ struct Other<W> {}
 }
 struct Inner {
     a: int
-    b: src::main::Inner
+    b: main::Inner
     type: int
 
     fn function(self, _: int) {

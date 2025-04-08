@@ -37,11 +37,11 @@ public record AttributionContext(
 
     private final static Map<KType.KPrimitive, PrimitiveUnboxing> BOX_MAPPING = Map.of(
             org.karina.lang.compiler.objects.KType.KPrimitive.INT, new PrimitiveUnboxing(
-                    org.karina.lang.compiler.objects.KType.INTEGER.pointer(), "intValue", true),
-            KType.KPrimitive.LONG, new PrimitiveUnboxing(KType.LONG.pointer(), "longValue", true),
-            KType.KPrimitive.DOUBLE, new PrimitiveUnboxing(KType.DOUBLE.pointer(), "doubleValue", true),
-            KType.KPrimitive.FLOAT, new PrimitiveUnboxing(KType.FLOAT.pointer(), "floatValue", true),
-            KType.KPrimitive.BOOL, new PrimitiveUnboxing(KType.BOOLEAN.pointer(), "booleanValue", false)
+                    org.karina.lang.compiler.objects.KType.INTEGER_CLASS.pointer(), "intValue", true),
+            KType.KPrimitive.LONG, new PrimitiveUnboxing(KType.LONG_CLASS.pointer(), "longValue", true),
+            KType.KPrimitive.DOUBLE, new PrimitiveUnboxing(KType.DOUBLE_CLASS.pointer(), "doubleValue", true),
+            KType.KPrimitive.FLOAT, new PrimitiveUnboxing(KType.FLOAT_CLASS.pointer(), "floatValue", true),
+            KType.KPrimitive.BOOL, new PrimitiveUnboxing(KType.BOOLEAN_CLASS.pointer(), "booleanValue", false)
     );
 
     public AttributionContext setInLoop(boolean isLoop) {

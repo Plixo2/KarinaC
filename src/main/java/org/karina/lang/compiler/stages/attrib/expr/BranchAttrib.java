@@ -27,7 +27,7 @@ public class BranchAttrib  {
     public static AttributionExpr attribBranch(
             @Nullable KType hint, AttributionContext ctx, KExpr.Branch expr) {
 
-        var boolType = new KType.PrimitiveType(KType.KPrimitive.BOOL);
+        var boolType = KType.BOOL;
         var conditionHint = expr.branchPattern() == null ? boolType : null;
         var condition = attribExpr(conditionHint, ctx, expr.condition()).expr();
 

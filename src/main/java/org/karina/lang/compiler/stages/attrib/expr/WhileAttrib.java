@@ -14,7 +14,7 @@ public class WhileAttrib  {
             AttributionContext ctx,
             KExpr.While expr)
     {
-        var boolType = new KType.PrimitiveType(KType.KPrimitive.BOOL);
+        var boolType = KType.BOOL;
         var condition = attribExpr(boolType, ctx, expr.condition()).expr();
         condition = ctx.makeAssignment(expr.condition().region(), boolType, condition);
 

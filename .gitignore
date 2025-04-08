@@ -66,3 +66,4 @@ resources/TestA.java
 resources/TODO.txt
 src/main/java/test/Inner.java
 src/main/java/test/pack/Pack.java
+src/main/java/org/karina/lang/bench/Benchmark.java

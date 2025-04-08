@@ -146,10 +146,6 @@ public class ImportHelper {
                 newCtx = importItemsOfClass(modelClass, ctx);
             }
             case KImport.TypeImport.Base base -> {
-//                if (modelClass.outerClass() != null) {
-//                    Log.importError(new ImportError.InnerClassImport(kImport.region(), modelClass.pointer().path()));
-//                    throw new Log.KarinaException();
-//                }
                 //only the class itself
                 newCtx = newCtx.addClass(kImport.region(), modelClass.name(), modelClass.pointer(), true, false);
             }
@@ -157,8 +153,27 @@ public class ImportHelper {
                 for (var name : names.names()) {
                     //all items by name
                     newCtx = importItemsOfClassByName(modelClass, newCtx, name, kImport.region());
-
                 }
+            }
+            case KImport.TypeImport.BaseAs baseAs -> {
+                var name = modelClass.name();
+                if (!baseAs.alias().toLowerCase().contains(name.toLowerCase())) {
+                    Log.importError(new ImportError.InvalidAlias(
+                            baseAs.region(),
+                            baseAs.alias(),
+                            modelClass.name()
+                    ));
+                    throw new Log.KarinaException();
+                }
+                if (!newCtx.classes().containsKey(name)) {
+                    Log.importError(new ImportError.UnnecessaryAlias(
+                            baseAs.region(),
+                            baseAs.alias()
+                    ));
+                    throw new Log.KarinaException();
+                }
+
+                newCtx = newCtx.addClass(kImport.region(),baseAs.alias(), modelClass.pointer(), true, false);
             }
         }
 

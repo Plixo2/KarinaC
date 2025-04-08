@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 import org.karina.lang.compiler.objects.KType;
 
 
-@RequiredArgsConstructor
 @Getter
 @Accessors(fluent = true)
 public class Variable {
@@ -16,6 +15,26 @@ public class Variable {
     private final @NotNull KType type;
     private final boolean mutable;
     private final boolean parameter;
+    private final boolean isSynthetic;
+
+    public Variable(
+            @NotNull Region region, @NotNull String name, @NotNull KType type, boolean mutable,
+            boolean parameter
+    ) {
+        this(region, name, type, mutable, parameter, false);
+    }
+
+    public Variable(
+            @NotNull Region region, @NotNull String name, @NotNull KType type, boolean mutable,
+            boolean parameter, boolean isSynthetic
+    ) {
+        this.region = region;
+        this.name = name;
+        this.type = type;
+        this.mutable = mutable;
+        this.parameter = parameter;
+        this.isSynthetic = isSynthetic;
+    }
 
     //used for capturing
     private int usageCount = 0;

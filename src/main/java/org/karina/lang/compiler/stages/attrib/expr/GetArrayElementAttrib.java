@@ -26,7 +26,7 @@ public class GetArrayElementAttrib  {
             throw new Log.KarinaException();
         }
 
-        var intType = new KType.PrimitiveType(KType.KPrimitive.INT);
+        var intType = KType.INT;
 
         var index = attribExpr(intType, ctx, expr.index()).expr();
 

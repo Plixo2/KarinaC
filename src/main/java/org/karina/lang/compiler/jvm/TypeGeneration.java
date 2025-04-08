@@ -21,14 +21,14 @@ public class TypeGeneration {
     public KType fromType(Region region, Type desc) {
         return switch (desc.getSort()) {
             case VOID -> KType.NONE;
-            case BOOLEAN -> new KType.PrimitiveType(KType.KPrimitive.BOOL);
-            case CHAR -> new KType.PrimitiveType(KType.KPrimitive.CHAR);
-            case BYTE -> new KType.PrimitiveType(KType.KPrimitive.BYTE);
-            case SHORT -> new KType.PrimitiveType(KType.KPrimitive.SHORT);
-            case INT -> new KType.PrimitiveType(KType.KPrimitive.INT);
-            case FLOAT -> new KType.PrimitiveType(KType.KPrimitive.FLOAT);
-            case LONG -> new KType.PrimitiveType(KType.KPrimitive.LONG);
-            case DOUBLE -> new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
+            case BOOLEAN -> KType.BOOL;
+            case CHAR -> KType.CHAR;
+            case BYTE -> KType.BYTE;
+            case SHORT -> KType.SHORT;
+            case INT -> KType.INT;
+            case FLOAT -> KType.FLOAT;
+            case LONG -> KType.LONG;
+            case DOUBLE -> KType.DOUBLE;
             case ARRAY -> {
                 var elementType = fromType(region, desc.getElementType().getDescriptor());
                 yield new KType.ArrayType(elementType);

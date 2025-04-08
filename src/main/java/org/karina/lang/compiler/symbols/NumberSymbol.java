@@ -15,10 +15,10 @@ public sealed interface NumberSymbol {
 
     default KType type() {
         return switch (this) {
-            case DoubleValue _ -> new KType.PrimitiveType(KType.KPrimitive.DOUBLE);
-            case FloatValue _ -> new KType.PrimitiveType(KType.KPrimitive.FLOAT);
-            case IntegerValue _ -> new KType.PrimitiveType(KType.KPrimitive.INT);
-            case LongValue _ -> new KType.PrimitiveType(KType.KPrimitive.LONG);
+            case DoubleValue _ -> KType.DOUBLE;
+            case FloatValue _ -> KType.FLOAT;
+            case IntegerValue _ -> KType.INT;
+            case LongValue _ -> KType.LONG;
         };
     }
 }

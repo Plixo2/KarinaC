@@ -17,13 +17,13 @@ public class UnaryAttrib  {
             @Nullable KType hint, AttributionContext ctx, KExpr.Unary expr) {
 
         if (expr.operator().value() == UnaryOperator.NOT) {
-            hint = new KType.PrimitiveType(KType.KPrimitive.BOOL);
+            hint = KType.BOOL;
         }
 
         var value = attribExpr(hint, ctx, expr.value()).expr();
 
         if (expr.operator().value() == UnaryOperator.NOT) {
-            value = ctx.makeAssignment(expr.region(), new KType.PrimitiveType(KType.KPrimitive.BOOL), value);
+            value = ctx.makeAssignment(expr.region(), KType.BOOL, value);
         } else if (!(value.type() instanceof KType.PrimitiveType) && hint != null) {
             //we try to fill in extra information when using resolvable.
             value = ctx.makeAssignment(expr.region(), hint, value);

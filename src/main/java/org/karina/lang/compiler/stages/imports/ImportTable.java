@@ -19,14 +19,15 @@ import java.util.*;
  * Import table for a single file.
  * This structure is immutable (without inner mutability).
  * Top level classes will append to this table and will get a new table in return.
- * This filled-in table will be passes to all items and subclasses
+ * This filled-in table will be passes to all items and subclasses, that will append to it.
  */
 public record ImportTable(
         Model model,
         ImmutableMap<String, ImportEntry<ClassPointer>> classes,
         ImmutableMap<String, ImportEntry<Generic>> generics,
-        //list of UntypedMethodCollection, as we dont know the signature yet see 'UntypedMethodCollection'
+        //list of UntypedMethodCollection, as we dont know the signature yet, see 'UntypedMethodCollection'
         ImmutableMap<String, ImportEntry<UntypedMethodCollection>> untypedStaticMethods,
+        //for prelude methods, we know the signature
         ImmutableMap<String, ImportEntry<MethodCollection>> typedStaticMethods,
         ImmutableMap<String, ImportEntry<FieldPointer>> staticFields
 ) {
@@ -111,9 +112,7 @@ public record ImportTable(
 
         //first check if the first element is imported, or a generic
         var head = path.first();
-        boolean hasPathDefined = !path.tail().isEmpty();
-        ClassPointer classPointer = null;
-        if (!hasPathDefined) {
+        if (path.tail().isEmpty()) {
             //first check if it is a generic
             var generic = getGeneric(head);
             if (generic != null) {
@@ -128,28 +127,9 @@ public record ImportTable(
                 }
                 return new KType.GenericLink(generic);
             }
-            //otherwise check if it is a class with a imported name
-            classPointer = this.getClass(head);
-        } else {
-            //otherwise check for the full qualified name recursively
-            classPointer = getClassNested(head, path.tail());
         }
+        var classPointer = getClassPointer(region, path);
 
-        //TODO what does getClassNested and what does getClassPointer?
-        // shouldn't be EVERY class already in the model?
-
-        if (classPointer == null) {
-            //otherwise check for the full qualified directly
-            classPointer = this.model.getClassPointer(region, path);
-        }
-
-
-        if (classPointer == null) {
-            //error reporting. Collect all names and give them as suggestions
-            var available = availableTypeNames();
-            Log.importError(new ImportError.UnknownImportType(region, path.mkString("."), available));
-            throw new Log.KarinaException();
-        }
 
         var classModel = this.model.getClass(classPointer);
 
@@ -199,14 +179,37 @@ public record ImportTable(
 
     }
 
+    public ClassPointer getClassPointer(Region region, ObjectPath path) {
+
+        var head = path.first();
+        boolean hasPathDefined = !path.tail().isEmpty();
+        ClassPointer classPointer;
+        if (!hasPathDefined) {
+            classPointer = this.getClass(head);
+        } else {
+            classPointer = this.getClassNested(head, path.tail());
+            if (classPointer == null) {
+                classPointer = this.model.getClassPointer(region, path);
+            }
+        }
+
+        if (classPointer == null) {
+            //error reporting. Collect all names and give them as suggestions
+            var available = availableTypeNames();
+            Log.importError(new ImportError.UnknownImportType(region, path.mkString("."), available));
+            throw new Log.KarinaException();
+        }
+
+        return classPointer;
+    }
 
     public Set<String> availableTypeNames() {
         var keys = new HashSet<>(this.classes.keySet());
         for (var objectPath : this.model.getBinaryClasses()) {
-            keys.add(objectPath.path().mkString("."));
+            keys.add(objectPath.path().mkString("::"));
         }
         for (var objectPath : this.model.getUserClasses()) {
-            keys.add(objectPath.path().mkString("."));
+            keys.add(objectPath.path().mkString("::"));
         }
 
         keys.addAll(this.generics.keySet());

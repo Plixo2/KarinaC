@@ -1,9 +1,7 @@
 package org.karina.lang.compiler.utils;
 
-import com.google.common.hash.HashCode;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -12,10 +10,10 @@ public final class ObjectPath {
     @Getter
     @Accessors(fluent = true)
     final String[] elements;
-    final int hashCode;
+    final int hashCode1;
     public ObjectPath(String... elements) {
         this.elements = Arrays.copyOf(elements, elements.length);
-        this.hashCode = hashCode(elements);
+        this.hashCode1 = hashCode(elements);
     }
 
     public ObjectPath(List<String> list) {
@@ -25,7 +23,7 @@ public final class ObjectPath {
             elements[i] = list.get(i);
         }
         this.elements = elements;
-        this.hashCode = hashCode(elements);
+        this.hashCode1 = hashCode(elements);
     }
 
 
@@ -107,7 +105,7 @@ public final class ObjectPath {
         } else if (object == null) {
             return false;
         } else if (object instanceof ObjectPath that) {
-            if (that.hashCode != this.hashCode) {
+            if (that.hashCode1 != this.hashCode1) {
                 return false;
             }
             return Arrays.equals(that.elements, this.elements);
@@ -120,7 +118,7 @@ public final class ObjectPath {
 
     @Override
     public int hashCode() {
-        return this.hashCode;
+        return this.hashCode1;
     }
 
     public boolean startsWith(String... prefixes) {
@@ -146,7 +144,4 @@ public final class ObjectPath {
         return Arrays.hashCode(elements);
     }
 
-    // [TYPE_CHECKING: 8107.9033ms, ASSIGNMENT: 4890.042ms, GENERIC_TYPE_PROJECTION: 812.1217ms, GET_CLASS: 2886.3596ms, GENERIC_MODEL_PROJECTION: 3020.275ms, SUPER_TYPE: 99.46831ms, ASM_PARSE: 600.58417ms, CLASS_STRICT_EQUALS: 2431.0127ms]
-    // 54 seconds
-    // 43,6
 }

@@ -1,0 +1,96 @@
+
+
+import org::karina::lang::region::Region
+import org::karina::lang::type::Type
+
+import karina::lang::collections::View
+
+struct ObjectPath {
+    elements: [string]
+
+    fn of(array: [string]) -> ObjectPath {
+        ObjectPath { elements: array }
+    }
+
+    fn of(list: View<string>) -> ObjectPath {
+        ObjectPath { elements: list.toArray(String) }
+    }
+
+
+}
+
+struct ClassPointer {
+    region: Region
+    path: ObjectPath
+}
+
+struct FieldPointer {
+    region: Region
+    classPointer: ClassPointer
+    fieldName: string
+}
+
+struct MethodPointer {
+    region: Region
+    classPointer: ClassPointer
+    methodName: string
+    erasedParameterTypes: [Type]
+}
+
+struct Modifiers {
+    bits: int
+}
+
+struct Generic {
+    region: Region
+    name: string
+}
+
+interface ClassModel {
+    fn region(self) -> Region
+    fn name(self) -> string
+    fn path(self) -> ObjectPath
+    fn modifiers(self) -> Modifiers
+    fn superType(self) -> Type::ClassType
+    fn outer(self) -> ClassModel
+    fn interfaces(self) -> View<Type::ClassType>
+    fn innerClasses(self) -> View<ClassPointer>
+    fn fields(self) -> View<FieldModel>
+    fn methods(self) -> View<MethodModel>
+    fn typeParameters(self) -> View<Generic>
+    fn permittedSubclasses(self) -> View<ClassPointer>
+    fn nestHostMembers(self) -> View<ClassPointer>
+    fn pointer(self) -> ClassPointer
+    fn validated(self) -> bool
+}
+
+interface MethodModel {
+    fn region(self) -> Region
+    fn name(self) -> string
+    fn modifiers(self) -> Modifiers
+    fn parametersNames(self) -> View<string>
+    fn parametersTypes(self) -> View<Type>
+    fn typeParameters(self) -> View<Generic>
+    fn classPointer(self) -> ClassPointer
+    fn pointer(self) -> MethodPointer
+    fn validated(self) -> bool
+}
+
+interface FieldModel {
+    fn region(self) -> Region
+    fn name(self) -> string
+    fn modifiers(self) -> Modifiers
+    fn type(self) -> Type
+    fn classPointer(self) -> ClassPointer
+    fn pointer(self) -> FieldPointer
+    fn validated(self) -> bool
+}
+
+interface Model {
+    fn getClassPointer(self, region: Region, path: ObjectPath) -> ClassPointer
+    fn getClass(self, pointer: ClassPointer) -> ClassModel
+    fn getMethod(self, pointer: MethodPointer) -> MethodModel
+    fn getField(self, pointer: FieldPointer) -> FieldModel
+    fn validatedClasses(self) -> View<ClassModel>
+    fn unvalidatedClasses(self) -> View<ClassModel>
+}

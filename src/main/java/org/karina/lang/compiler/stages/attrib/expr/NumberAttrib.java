@@ -1,6 +1,5 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
-import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
@@ -9,10 +8,8 @@ import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.symbols.NumberSymbol;
-import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.util.Map;
-import java.util.Set;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
@@ -83,9 +80,9 @@ public class NumberAttrib  {
 
 
     private static final Map<KType.KPrimitive, ClassPointer> PRIMITIVE_CONVERSIONS = Map.of(
-            KType.KPrimitive.INT, KType.INTEGER.pointer(),
-            KType.KPrimitive.LONG, KType.LONG.pointer(),
-            KType.KPrimitive.FLOAT, KType.FLOAT.pointer(),
-            KType.KPrimitive.DOUBLE, KType.DOUBLE.pointer()
+            KType.KPrimitive.INT, KType.INTEGER_CLASS.pointer(),
+            KType.KPrimitive.LONG, KType.LONG_CLASS.pointer(),
+            KType.KPrimitive.FLOAT, KType.FLOAT_CLASS.pointer(),
+            KType.KPrimitive.DOUBLE, KType.DOUBLE_CLASS.pointer()
     );
 }

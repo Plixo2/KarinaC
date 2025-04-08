@@ -40,33 +40,38 @@ public sealed interface KType {
             List.of()
     );
 
-    ClassType DOUBLE = new ClassType(
+    ClassType DOUBLE_CLASS = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.DOUBLE_PATH),
             List.of()
     );
 
-    ClassType FLOAT = new ClassType(
+    ClassType FLOAT_CLASS = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.FLOAT_PATH),
             List.of()
     );
 
-    ClassType LONG = new ClassType(
+    ClassType LONG_CLASS = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.LONG_PATH),
             List.of()
     );
 
-    ClassType INTEGER = new ClassType(
+    ClassType INTEGER_CLASS = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.INTEGER_PATH),
             List.of()
     );
 
-    ClassType BOOLEAN = new ClassType(
+    ClassType BOOLEAN_CLASS = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.BOOLEAN_PATH),
             List.of()
     );
 
     ClassType THROWABLE = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH),
+            List.of()
+    );
+
+    ClassType KARINA_RANGE = new ClassType(
+            ClassPointer.of(KARINA_LIB, ClassPointer.RANGE_PATH),
             List.of()
     );
 
@@ -78,10 +83,23 @@ public sealed interface KType {
     }
     static ClassType CLASS_TYPE(KType clsType) {
         return new ClassType(
-                ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE),
+                ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE_PATH),
                 List.of(clsType)
         );
     }
+    static ClassType KARINA_OPTION(KType inner) {
+        return new ClassType(
+                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_PATH),
+                List.of(inner)
+        );
+    }
+    static ClassType KARINA_RESULT(KType ok, KType err) {
+        return new ClassType(
+                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_PATH),
+                List.of(ok, err)
+        );
+    }
+
 
     static @Nullable ClassPointer FUNCTION_BASE(Model model, int args, boolean doesReturn) {
         final String FUNCTIONS_NAME = "Function";
@@ -94,6 +112,14 @@ public sealed interface KType {
     }
 
     VoidType NONE = new VoidType();
+    PrimitiveType INT = new PrimitiveType(KPrimitive.INT);
+    PrimitiveType DOUBLE = new PrimitiveType(KPrimitive.DOUBLE);
+    PrimitiveType LONG = new PrimitiveType(KPrimitive.LONG);
+    PrimitiveType FLOAT = new PrimitiveType(KPrimitive.FLOAT);
+    PrimitiveType CHAR = new PrimitiveType(KPrimitive.CHAR);
+    PrimitiveType BYTE = new PrimitiveType(KPrimitive.BYTE);
+    PrimitiveType SHORT = new PrimitiveType(KPrimitive.SHORT);
+    PrimitiveType BOOL = new PrimitiveType(KPrimitive.BOOL);
 
     static void validateBuildIns(Model model) {
         validatePointer(model, ROOT);
@@ -103,15 +129,18 @@ public sealed interface KType {
         validatePointer(model, CLASS_TYPE(ROOT));
         validatePointer(model, THROWABLE);
 
-        validatePointer(model, BOOLEAN);
-        validatePointer(model, INTEGER);
-        validatePointer(model, LONG);
-        validatePointer(model, FLOAT);
-        validatePointer(model, DOUBLE);
+        validatePointer(model, BOOLEAN_CLASS);
+        validatePointer(model, INTEGER_CLASS);
+        validatePointer(model, LONG_CLASS);
+        validatePointer(model, FLOAT_CLASS);
+        validatePointer(model, DOUBLE_CLASS);
 
+        validatePointer(model, KARINA_RANGE);
+        validatePointer(model, KARINA_OPTION(ROOT));
+        validatePointer(model, KARINA_RESULT(ROOT, ROOT));
     }
     private static void validatePointer(Model model, ClassType classType) {
-        var classPointer = model.getClassPointer(JAVA_LIB, classType.pointer().path());
+        var classPointer = model.getClassPointer(classType.pointer().region(), classType.pointer().path());
 
         if (classPointer == null) {
             Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class not found");
@@ -122,8 +151,9 @@ public sealed interface KType {
             Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class has wrong number of generics");
             throw new Log.KarinaException();
         }
-
     }
+
+
 
 
     default KType unpack() {

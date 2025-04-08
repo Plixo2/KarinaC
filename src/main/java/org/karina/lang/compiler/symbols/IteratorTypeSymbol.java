@@ -7,7 +7,8 @@ import org.karina.lang.compiler.utils.Variable;
 public sealed interface IteratorTypeSymbol {
     Variable variable();
 
-    record ForArray(Variable variable, KType.ArrayType arrayType) implements IteratorTypeSymbol {}
+    record ForArray(Variable variable) implements IteratorTypeSymbol {}
     record ForIterable(Variable variable) implements IteratorTypeSymbol {}
+    record ForRange(Variable variable) implements IteratorTypeSymbol {}
 
 }

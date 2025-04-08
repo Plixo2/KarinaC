@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class BooleanReference {
+public final class BooleanReference {
     public boolean value;
 
     public BooleanReference(boolean value) {

@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class ByteReference {
+public final class ByteReference {
     public byte value;
 
     public ByteReference(byte value) {

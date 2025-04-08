@@ -1,6 +1,6 @@
 package karina.lang.internal.references;
 
-public class IntegerReference {
+public final class IntegerReference {
     public int value;
 
     public IntegerReference(int value) {

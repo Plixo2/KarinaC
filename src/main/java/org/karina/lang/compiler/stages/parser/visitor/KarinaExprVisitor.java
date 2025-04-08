@@ -3,14 +3,12 @@ package org.karina.lang.compiler.stages.parser.visitor;
 import com.google.common.collect.ImmutableList;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.text.StringEscapeUtils;
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.objects.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
-import org.karina.lang.compiler.symbols.MemberSymbol;
 import org.karina.lang.compiler.utils.*;
 
 import java.math.BigDecimal;
@@ -386,6 +384,8 @@ public class KarinaExprVisitor {
             var nameRegion = this.conv.toRegion(ctx.CLASS());
             var name = RegionOf.region(nameRegion, "class");
             return new KExpr.GetMember(regionMerged, prev, name, false, null);
+        } else if (ctx.CHAR_QUESTION() != null) {
+            return new KExpr.Unwrap(regionMerged, prev, null);
         } else if (ctx.expressionList() != null) {
             var expressions = visitExprList(ctx.expressionList());
             List<KType> genHint;
@@ -443,7 +443,6 @@ public class KarinaExprVisitor {
                 throw new Log.KarinaException();
             }
         } else if (ctx.id() != null && !ctx.id().isEmpty()) {
-            var text = this.conv.escapeID(ctx.id().getFirst());
             if (ctx.initList() != null) {
                 //
                 List<KType> generics;
@@ -473,7 +472,13 @@ public class KarinaExprVisitor {
                         inits
                 );
             } else {
-                return new KExpr.Literal(region, text, null);
+                if (ctx.id().size() > 1) {
+                    var elements = ctx.id().stream().map(this.conv::escapeID).toList();
+                    return new KExpr.StaticPath(region, new ObjectPath(elements), null);
+                } else {
+                    var text = this.conv.escapeID(ctx.id().getFirst());
+                    return new KExpr.Literal(region, text, null);
+                }
             }
         } else if (ctx.STRING_LITERAL() != null) {
             return visitString(ctx.STRING_LITERAL());
