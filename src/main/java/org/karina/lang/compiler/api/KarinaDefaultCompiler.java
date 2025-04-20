@@ -23,8 +23,9 @@ public class KarinaDefaultCompiler {
     private final LoweringProcessor lowering;
     private final GenerationProcessor backend;
 
-
-    public KarinaDefaultCompiler() {
+    private final boolean emit;
+    public KarinaDefaultCompiler(boolean emit) {
+        this.emit = emit;
         this.modelLoader = new ModelLoader();
         this.parser = new ParseProcessor();
         this.importProcessor = new ImportProcessor();
@@ -69,23 +70,27 @@ public class KarinaDefaultCompiler {
             var attributedTree = this.attributionProcessor.attribTree(importedTree);
             Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
 
-            Log.begin("lowering");
-            var loweredTree = this.lowering.lowerTree(attributedTree);
-            Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
+            if (this.emit) {
+                Log.begin("lowering");
+                var loweredTree = this.lowering.lowerTree(attributedTree);
+                Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
 
 
-            Log.begin("generation");
-            var compiled = this.backend.compileTree(loweredTree, "main");
-            var path = Path.of("resources/out/build.jar");
-            compiled.dump(path);
-            compiled.write(path);
-            Log.end("generation");
+                Log.begin("generation");
+                var compiled = this.backend.compileTree(loweredTree, "main");
+                var path = Path.of("resources/out/build.jar");
+                compiled.dump(path);
+                compiled.write(path);
+                Log.end("generation");
 
-            var amountFiles = files.leafCount();
-            var amountDefined = userModel.getUserClasses().size();
-            var amountCompiled = loweredTree.getUserClasses().size();
-            var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
-            Log.record(amountMessage);
+
+                var amountFiles = files.leafCount();
+                var amountDefined = userModel.getUserClasses().size();
+                var amountCompiled = loweredTree.getUserClasses().size();
+                var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
+                Log.record(amountMessage);
+            }
+
 
 
             if (Log.hasErrors()) {

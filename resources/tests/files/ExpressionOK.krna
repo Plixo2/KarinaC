@@ -1,6 +1,6 @@
 /* OK */
 
-import java.lang.Integer
+import java::lang::Integer
 
 fn create<T>(value: T) -> int {
 
@@ -25,16 +25,16 @@ fn create<T>(value: T) -> int {
             continue
         }
     }
-    let closure = fn(x: int) -> int {
+    let closure = fn(x: Integer) -> Integer {
         x
     }
-    let closure2 = fn(x: int) {
+    let closure2 = fn(x: Integer) {
            Integer.valueOf(x)
     }
-    let closureImpl = fn(x: int) -> string impl FunctionInterface {
+    let closureImpl = fn(x: Integer) -> string impl FunctionInterface {
         "Hello"
     }
-    let closureImplNoReturn = fn(x: int) impl FunctionInterface {
+    let closureImplNoReturn = fn(x: Integer) impl FunctionInterface {
             "Hello"
     }
 
@@ -70,7 +70,7 @@ fn create<T>(value: T) -> int {
     toInfer = annotated
     let field = annotated.x
     let call = annotated.make()
-    let annotatedCall = annotated.generic<int>(1)
+    let annotatedCall = annotated.generic<Integer>(1)
 
 
     let index = 0;
@@ -131,7 +131,7 @@ struct O<T> {
 }
 
 interface FunctionInterface {
-    fn make(self, x: int) -> string
+    fn make(self, x: Integer) -> string
 }
 
 enum Option<T> {

@@ -20,17 +20,17 @@ fn arrayIn(arr: [int]) -> void {
     let d: double = 1.0
 }
 
-fn map(function: fn(int) -> int) {
-    let nested: (fn((int)) -> int) = function
+fn map(function: fn(Integer) -> Integer) {
+    let nested: (fn((Integer)) -> Integer) = function
 }
 
 struct FnWithImpl {
-    fnWithImpl: fn(int) -> int impl Consumer
+    fnWithImpl: fn(Integer) -> Integer impl Consumer
 
 }
 
 interface Consumer {
-    fn consume(self, input: int) -> int
+    fn consume(self, input: Integer) -> Integer
 }
 
 

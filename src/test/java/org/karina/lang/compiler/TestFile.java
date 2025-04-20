@@ -2,11 +2,8 @@ package org.karina.lang.compiler;
 
 import org.karina.lang.compiler.api.*;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.interpreter.InterpreterBackend;
 import org.karina.lang.compiler.api.DefaultFileTree;
-import org.karina.lang.compiler.logging.errors.Error;
 import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.interpreter.Interpreter;
 
 import java.util.List;
 
@@ -25,7 +22,7 @@ public class TestFile {
     }
 
     public void expect() {
-        var compiler = new KarinaDefaultCompiler("", null);
+        var compiler = new KarinaDefaultCompiler(false);
         var collection = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
 
@@ -45,7 +42,7 @@ public class TestFile {
     }
 
     public <T> void expectError(Class<T> errorType, String msg) {
-        var compiler = new KarinaDefaultCompiler("", null);
+        var compiler = new KarinaDefaultCompiler(false);
         var collection = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
 

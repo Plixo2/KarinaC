@@ -37,7 +37,7 @@ public class Main {
 
 
         Log.begin("all");
-        var compiler = new KarinaDefaultCompiler();
+        var compiler = new KarinaDefaultCompiler(true);
 
         Log.begin("file-load");
         var fileTree = FileLoader.loadTree(

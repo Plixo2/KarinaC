@@ -222,6 +222,9 @@ public class Types {
                 var link = genericLink.link();
                 var newType = generics.get(link);
                 if (newType != null) {
+                    if (newType == genericLink) {
+                        yield newType;
+                    }
                     yield projectGenerics(newType, generics);
                 } else {
                     yield genericLink;

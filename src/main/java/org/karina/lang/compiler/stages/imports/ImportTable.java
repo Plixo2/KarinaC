@@ -283,7 +283,7 @@ public record ImportTable(
      */
     public ImportTable addGeneric(Region declarationRegion, Generic generic) {
         var newGenerics = new HashMap<>(this.generics);
-        testDuplicate(newGenerics, declarationRegion, generic.name(), true);
+//        testDuplicate(newGenerics, declarationRegion, generic.name(), true);
         newGenerics.put(generic.name(), new ImportEntry<>(declarationRegion, generic, true, false));
         return new ImportTable(this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }

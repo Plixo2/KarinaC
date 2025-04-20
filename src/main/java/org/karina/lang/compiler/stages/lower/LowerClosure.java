@@ -1,9 +1,7 @@
 package org.karina.lang.compiler.stages.lower;
 
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.Debug;
 import org.jetbrains.annotations.NotNull;
-import org.karina.lang.bench.DebugWriter;
 import org.karina.lang.compiler.jvm.model.MutableModel;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
