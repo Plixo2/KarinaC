@@ -10,7 +10,7 @@ commaWordChain: id (',' id)*;
 item: annotation* (function | struct | enum | interface);
 
 
-function: 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
+function: OVERRIDE? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
 //boundWhere is not yet implemented
 struct: 'struct' id genericHintDefinition? ('{' field* function* implementation* boundWhere* '}')?;

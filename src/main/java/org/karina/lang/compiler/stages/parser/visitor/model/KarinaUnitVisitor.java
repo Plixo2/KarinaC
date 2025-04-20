@@ -55,7 +55,7 @@ public class KarinaUnitVisitor {
 
     public ClassPointer visit(KarinaParser.UnitContext ctx, ModelBuilder builder) {
         var region = this.conv.toRegion(ctx);
-        int mods = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
+        int mods = Modifier.PUBLIC | Modifier.FINAL;
 
         var imports = ImmutableList.copyOf(ctx.import_().stream().map(this::visitImport).toList());
         var interfaces = ImmutableList.<KType.ClassType>of();

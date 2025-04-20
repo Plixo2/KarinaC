@@ -35,10 +35,18 @@ public class BlockAttrib {
         } else {
             returningType = newExpressions.getLast().type();
         }
+        boolean doesReturn;
+        if (newExpressions.isEmpty()) {
+            doesReturn = false;
+        } else {
+            doesReturn = newExpressions.getLast().doesReturn();
+        }
+
         return of(ctx, new KExpr.Block(
                 expr.region(),
                 newExpressions,
-                returningType
+                returningType,
+                doesReturn
         ));
 
     }

@@ -163,7 +163,8 @@ public class CallAttrib  {
         return new CallSymbol.CallSuper(
                 methodTypedReturn.pointer,
                 methodTypedReturn.generics,
-                yielding
+                yielding,
+                invocationType
         );
     }
 

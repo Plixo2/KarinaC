@@ -13,7 +13,7 @@ public sealed interface AssignmentSymbol {
     record ArrayElement(KExpr array, KExpr index, KType elementType) implements AssignmentSymbol { }
 
     record Field(KExpr object, FieldPointer pointer, KType fieldType, KType fieldOwner) implements AssignmentSymbol { }
-    record StaticField(FieldPointer pointer) implements AssignmentSymbol { }
+    record StaticField(FieldPointer pointer, KType fieldType) implements AssignmentSymbol { }
 
 
 }

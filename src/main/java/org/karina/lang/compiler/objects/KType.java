@@ -93,6 +93,18 @@ public sealed interface KType {
                 List.of(inner)
         );
     }
+    static ClassType KARINA_OPTION_SOME(KType inner) {
+        return new ClassType(
+                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_SOME_PATH),
+                List.of(inner)
+        );
+    }
+    static ClassType KARINA_OPTION_NONE(KType inner) {
+        return new ClassType(
+                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_NONE_PATH),
+                List.of(inner)
+        );
+    }
     static ClassType KARINA_RESULT(KType ok, KType err) {
         return new ClassType(
                 ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_PATH),
@@ -137,6 +149,8 @@ public sealed interface KType {
 
         validatePointer(model, KARINA_RANGE);
         validatePointer(model, KARINA_OPTION(ROOT));
+        validatePointer(model, KARINA_OPTION_SOME(ROOT));
+        validatePointer(model, KARINA_OPTION_NONE(ROOT));
         validatePointer(model, KARINA_RESULT(ROOT, ROOT));
     }
     private static void validatePointer(Model model, ClassType classType) {

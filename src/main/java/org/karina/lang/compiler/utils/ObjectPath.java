@@ -2,6 +2,7 @@ package org.karina.lang.compiler.utils;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.karina.lang.compiler.logging.Log;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -14,6 +15,12 @@ public final class ObjectPath {
     public ObjectPath(String... elements) {
         this.elements = Arrays.copyOf(elements, elements.length);
         this.hashCode1 = hashCode(elements);
+
+        for (var element : this.elements) {
+            if (element.contains("$")) {
+               // Log.warn(Arrays.toString(this.elements), "Path contains $ character: " + element);
+            }
+        }
     }
 
     public ObjectPath(List<String> list) {
@@ -96,6 +103,11 @@ public final class ObjectPath {
     public static ObjectPath fromString(String str, String split) {
         return new ObjectPath(str.split(Pattern.quote(split)));
     }
+
+    public static ObjectPath fromJavaPath(String str) {
+        return new ObjectPath(str.split("[/$]"));
+    }
+
 
 
     @Override

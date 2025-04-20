@@ -1,11 +1,18 @@
 package org.karina.lang.compiler.stages.generate;
 
+import org.jetbrains.annotations.NotNull;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.objects.Types;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.signature.SignatureWriter;
 
+import java.util.List;
 import java.util.Set;
 
 public class TypeConversion {
@@ -19,6 +26,10 @@ public class TypeConversion {
             "strictfp", "volatile", "const", "float", "native", "super", "while"
     );
 
+    public static Type getType(ClassPointer classPointer) {
+        return Type.getObjectType(toJVMPath(classPointer.path()));
+    }
+
     public static Type getType(KType type) {
         switch (type) {
             case KType.ArrayType arrayType -> {
@@ -28,7 +39,10 @@ public class TypeConversion {
                 return Type.getObjectType(toJVMPath(classType.pointer().path()));
             }
             case KType.FunctionType functionType -> {
-                throw new NullPointerException("FunctionType is not supported");
+                if (functionType.interfaces().isEmpty()) {
+                    throw new NullPointerException("invalid");
+                }
+                return getType(functionType.interfaces().getFirst());
                 //                return getType(PostExpr.toClassType(functionType));
             }
             case KType.GenericLink genericLink -> {
@@ -59,7 +73,7 @@ public class TypeConversion {
                 throw new Log.KarinaException();
             }
             case KType.VoidType voidType -> {
-                throw new NullPointerException("VoidType is not supported");
+                return Type.VOID_TYPE;
             }
         }
     }
@@ -68,23 +82,23 @@ public class TypeConversion {
         return Type.getType("[" + getType(arrayType.elementType()));
     }
 
-    public static String toJVMName(String name) {
-        if (KEYWORDS.contains(name)) {
-            name =  "K" + name;
-        }
-        var buff = new StringBuilder(name.length());
-        for (int i = 0; i < name.length(); i++) {
-            var c = name.charAt(i);
-            boolean isAccepted = c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (i != 0 && c >= '0' && c <= '9');
-            if (isAccepted) {
-                buff.append(c);
-            } else {
-                buff.append("K");
-                buff.append(padLeft(Integer.toHexString(c), 4, "0"));
-            }
-        }
-        return buff.toString();
-    }
+//    public static String toJVMName(String name) {
+//        if (KEYWORDS.contains(name)) {
+//            name =  "K" + name;
+//        }
+//        var buff = new StringBuilder(name.length());
+//        for (int i = 0; i < name.length(); i++) {
+//            var c = name.charAt(i);
+//            boolean isAccepted = c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (i != 0 && c >= '0' && c <= '9');
+//            if (isAccepted) {
+//                buff.append(c);
+//            } else {
+//                buff.append("K");
+//                buff.append(padLeft(Integer.toHexString(c), 4, "0"));
+//            }
+//        }
+//        return buff.toString();
+//    }
 
     private static String padLeft(String str, int length, String pad) {
 
@@ -108,7 +122,7 @@ public class TypeConversion {
         var builder = new StringBuilder();
         var iterator = path.iterator();
         while (iterator.hasNext()) {
-            builder.append(toJVMName(iterator.next()));
+            builder.append(iterator.next());
             if (iterator.hasNext()) {
                 builder.append("/");
             }
@@ -130,5 +144,23 @@ public class TypeConversion {
             default -> throw new IllegalArgumentException("Unsupported fieldType for NEWARRAY: " + type);
         };
     }
+    public static String getDesc(MethodPointer pointer, KType returnType) {
+        var erasedReturnType = Types.erase(returnType);
+        return TypeConversion.getDesc(pointer.erasedParameters(), erasedReturnType);
+    }
+    public static String getDesc(@NotNull Signature signature) {
+        return TypeConversion.getDesc(signature.parametersErased(), signature.returnType());
+    }
+    public static String getDesc(List<KType> params, KType returnType) {
+        var returnT = getType(Types.erase(returnType));
+        var paramsT = new Type[params.size()];
+        for (var i = 0; i < params.size(); i++) {
+            paramsT[i] = getType(Types.erase(params.get(i)));
+        }
+
+        return Type.getMethodDescriptor(returnT, paramsT);
+    }
+
+
 
 }

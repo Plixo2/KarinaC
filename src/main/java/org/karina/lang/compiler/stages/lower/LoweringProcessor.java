@@ -11,7 +11,6 @@ public class LoweringProcessor {
         var build = new ModelBuilder();
         try (var collector = new ErrorCollector()) {
             for (var kClassModel : model.getUserClasses()) {
-
                 if (!kClassModel.isTopLevel()) {
                     continue;
                 }

@@ -121,7 +121,8 @@ public class InterfaceLinker {
                 permittedSubclasses.build(),
                 nestMembers,
                 source,
-                region
+                region,
+                node
         );
         modelBuilder.addClass(classModel);
 

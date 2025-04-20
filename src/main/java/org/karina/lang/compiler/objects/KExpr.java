@@ -31,12 +31,12 @@ public sealed interface KExpr {
     }
 
 
-    record Block(Region region, List<KExpr> expressions, @Nullable @Symbol KType symbol) implements KExpr {}
+    record Block(Region region, List<KExpr> expressions, @Nullable @Symbol KType symbol, @Symbol boolean doesReturn) implements KExpr {}
     record VariableDefinition(Region region, RegionOf<String> name, @Nullable KType varHint, KExpr value, @Nullable @Symbol Variable symbol) implements KExpr {}
     record Branch(Region region, KExpr condition, KExpr thenArm, @Nullable ElsePart elseArm, @Nullable BranchPattern branchPattern, @Nullable @Symbol BranchYieldSymbol symbol) implements KExpr {}
     record While(Region region, KExpr condition, KExpr body) implements KExpr {}
     record For(Region region, NameAndOptType varPart, KExpr iter, KExpr body, @Nullable @Symbol IteratorTypeSymbol symbol) implements KExpr {}
-    record Return(Region region, @Nullable KExpr value, @Nullable @Symbol KType yieldType) implements KExpr {}
+    record Return(Region region, @Nullable KExpr value, @Nullable @Symbol KType returnType) implements KExpr {}
     record Break(Region region) implements KExpr {}
     record Continue(Region region) implements KExpr {}
     record Binary(Region region, KExpr left, RegionOf<BinaryOperator> operator, KExpr right, @Nullable @Symbol BinOperatorSymbol symbol) implements KExpr {}

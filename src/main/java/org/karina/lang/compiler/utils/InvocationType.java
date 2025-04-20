@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.utils;
 
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.KType;
 
 
@@ -7,6 +8,13 @@ import org.karina.lang.compiler.objects.KType;
 public sealed interface InvocationType {
 
     record NewInit(KType.ClassType classType) implements InvocationType {}
-    record SpecialInvoke(String name, KType superType) implements InvocationType {}
+    record SpecialInvoke(String name, KType superType) implements InvocationType {
+        public SpecialInvoke {
+//            if (name.equals("<init>")) {
+//                Log.internal(new IllegalStateException("SpecialInvoke cannot be <init>"));
+//                throw new Log.KarinaException();
+//            }
+        }
+    }
 
 }

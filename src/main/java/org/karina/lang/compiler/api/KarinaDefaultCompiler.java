@@ -3,37 +3,34 @@ package org.karina.lang.compiler.api;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.loading.ModelLoader;
 import org.karina.lang.compiler.jvm.model.ModelBuilder;
-import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
+import org.karina.lang.compiler.stages.generate.GenerationProcessor;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
 import org.karina.lang.compiler.stages.imports.ImportProcessor;
 import org.karina.lang.compiler.stages.lower.LoweringProcessor;
-import org.karina.lang.compiler.stages.parser.TextToClassVisitor;
+import org.karina.lang.compiler.stages.parser.ParseProcessor;
 
+import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 
 public class KarinaDefaultCompiler {
     private final ModelLoader modelLoader;
-    private final TextToClassVisitor parser;
+
+    private final ParseProcessor parser;
     private final ImportProcessor importProcessor;
     private final AttributionProcessor attributionProcessor;
     private final LoweringProcessor lowering;
-    private final BytecodeProcessor backend;
+    private final GenerationProcessor backend;
 
-    private final Path outPath;
-    private final String mainClass;
 
-    public KarinaDefaultCompiler(String mainClass, Path outPath) {
-        this.mainClass = mainClass;
-        this.outPath = outPath;
+    public KarinaDefaultCompiler() {
         this.modelLoader = new ModelLoader();
-        this.parser = new TextToClassVisitor();
+        this.parser = new ParseProcessor();
         this.importProcessor = new ImportProcessor();
         this.attributionProcessor = new AttributionProcessor();
         this.lowering = new LoweringProcessor();
-        this.backend = new BytecodeProcessor();
+        this.backend = new GenerationProcessor();
     }
 
     public boolean compile(FileTreeNode<TextSource> files, DiagnosticCollection collection, DiagnosticCollection warnings, @Nullable FlightRecordCollection recorder) {
@@ -57,7 +54,7 @@ public class KarinaDefaultCompiler {
 
 
             Log.begin("parsing");
-            var userModel = this.parser.textIntoClasses(files);
+            var userModel = this.parser.parseTree(files);
             Log.end("parsing");
 
             Log.begin("merging");
@@ -69,58 +66,52 @@ public class KarinaDefaultCompiler {
             Log.end("importing", "with " + importedTree.getClassCount() + " classes");
 
             Log.begin("attribution");
-//            for (var i = 0; i < 10000; i++) {
-//                if (i % 100 == 0) {
-//                    System.out.println("Iteration " + i);
-//                }
-
-                var attributedTree = this.attributionProcessor.attribTree(importedTree);
-//            }
+            var attributedTree = this.attributionProcessor.attribTree(importedTree);
             Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
-//            Log.end("attribution");
 
             Log.begin("lowering");
-
             var loweredTree = this.lowering.lowerTree(attributedTree);
-
             Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
+
+
+            Log.begin("generation");
+            var compiled = this.backend.compileTree(loweredTree, "main");
+            var path = Path.of("resources/out/build.jar");
+            compiled.dump(path);
+            compiled.write(path);
+            Log.end("generation");
 
             var amountFiles = files.leafCount();
             var amountDefined = userModel.getUserClasses().size();
             var amountCompiled = loweredTree.getUserClasses().size();
-
             var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
-
             Log.record(amountMessage);
-            Log.end("compile");
 
-            warnings.addAll(Log.getWarnings());
-            if (recorder != null) {
-                recorder.add(Log.getRecordedLogs());
-            }
+
             if (Log.hasErrors()) {
                 Log.internal(new IllegalStateException("Errors in log, this should not happen"));
+                throw new Log.KarinaException();
             }
+
             return true;
         } catch (Exception error) {
             if (!(error instanceof Log.KarinaException)) {
                 Log.internal(error);
             }
-
-            Log.end("compile");
-            if (recorder != null) {
-                recorder.add(Log.getRecordedLogs());
-            }
-
-            warnings.addAll(Log.getWarnings());
             if (!Log.hasErrors()) {
                 Log.internal(new IllegalStateException("An exception was thrown, but no errors were logged"));
             }
-            collection.addAll(Log.getEntries());
-
 
             return false;
         } finally {
+
+            warnings.addAll(Log.getWarnings());
+            if (recorder != null) {
+                recorder.add(Log.getRecordedLogs());
+            }
+            collection.addAll(Log.getEntries());
+
+            Log.end("compile");
             Log.clearLogs();
         }
 

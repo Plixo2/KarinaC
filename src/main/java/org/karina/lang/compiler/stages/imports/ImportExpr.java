@@ -110,7 +110,7 @@ public class ImportExpr {
                 });
             }
         }
-        return new KExpr.Block(expr.region(), expressions, null);
+        return new KExpr.Block(expr.region(), expressions, null, false);
     }
 
     private static KExpr importBoolean(ImportContext ctx, KExpr.Boolean expr) {

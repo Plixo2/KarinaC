@@ -208,7 +208,8 @@ public class ImportItem {
                 expression,
                 method.annotations(),
                 method.region(),
-                method.classPointer()
+                method.classPointer(),
+                List.of()
         );
     }
 

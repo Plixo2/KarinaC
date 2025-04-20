@@ -76,4 +76,10 @@ public record StaticImportTable(
         return keys;
     }
 
+    public final static StaticImportTable EMPTY = new StaticImportTable(
+            ImmutableMap.of(),
+            ImmutableMap.of(),
+            ImmutableMap.of()
+    );
+
 }

@@ -135,7 +135,7 @@ public class KClassModel implements ClassModel {
     }
 
     public void updateNestMembers(List<ClassPointer> pointers) {
-        this.nestMembers.clear();
+//        this.nestMembers.clear();
         for (var pointer : pointers) {
             if (pointer.equals(this.pointer())) {
                 continue;

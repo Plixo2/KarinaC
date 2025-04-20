@@ -19,6 +19,8 @@ import org.karina.lang.compiler.utils.*;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class LoweringItem {
     public static KClassModel lowerClass(
@@ -91,19 +93,20 @@ public class LoweringItem {
 
     private static KMethodModel lowerMethod(Model model, KClassModel classModel, KMethodModel methodModel, MutableInt synCounter, ClassLookup newClasses) {
 
-        var outerClasses = new ArrayList<ClassModel>();
-
-        var outer = classModel;
-        while (outer != null) {
-            outerClasses.add(outer);
-            outer = outer.outerClass();
-        }
-
-        var ctx = new LoweringContext(newClasses, synCounter, model, methodModel, outerClasses);
+        var ctx = new LoweringContext(
+                newClasses,
+                synCounter,
+                model,
+                methodModel,
+                methodModel,
+                classModel,
+                classModel,
+                List.of()
+        );
 
         var expression = methodModel.expression();
         if (expression != null) {
-            //expression = AttributionExpr.attribExpr(returnType, contextNew, expression).expr();
+            expression = LowerExpr.lower(ctx, expression);
         }
 
         return new KMethodModel(
@@ -115,7 +118,8 @@ public class LoweringItem {
                 expression,
                 methodModel.annotations(),
                 methodModel.region(),
-                methodModel.classPointer()
+                methodModel.classPointer(),
+                methodModel.getParamVariables()
         );
     }
 }

@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.symbols;
 
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.utils.InvocationType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.objects.KType;
@@ -18,7 +19,9 @@ public sealed interface CallSymbol {
 
     record CallVirtual(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
     record CallInterface(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
-    record CallSuper(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
+
+
+    record CallSuper(MethodPointer pointer, List<KType> generics, KType returnType, InvocationType invocationType) implements CallSymbol { }
     record CallDynamic(Region region, KType returnType) implements CallSymbol { }
 
 }

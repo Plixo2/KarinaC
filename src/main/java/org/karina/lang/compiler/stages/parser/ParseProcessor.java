@@ -15,9 +15,9 @@ import java.util.List;
 /**
  * Helper for parsing source code into a {@link org.karina.lang.compiler.model_api.ClassModel}.
  */
-public class TextToClassVisitor {
+public class ParseProcessor {
 
-    public Model textIntoClasses(FileTreeNode<TextSource> fileTree) {
+    public Model parseTree(FileTreeNode<TextSource> fileTree) {
         try (var errorCollection = new ErrorCollector()) {
             return this.parseFiles(fileTree, errorCollection);
         }

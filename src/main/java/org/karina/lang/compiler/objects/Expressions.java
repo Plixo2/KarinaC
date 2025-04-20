@@ -174,12 +174,7 @@ public class Expressions {
     static boolean doesReturn(KExpr expr) {
         return switch (expr) {
             case KExpr.Block block -> {
-                //TODO replace with symbol
-                if (block.expressions().isEmpty()) {
-                    yield false;
-                } else {
-                    yield doesReturn(block.expressions().getLast());
-                }
+                yield block.doesReturn();
             }
             case KExpr.Branch branch -> {
                 if (branch.symbol() == null) {

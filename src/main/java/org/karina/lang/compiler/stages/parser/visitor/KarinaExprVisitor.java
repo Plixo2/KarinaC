@@ -70,7 +70,7 @@ public class KarinaExprVisitor {
     public KExpr visitBlock(KarinaParser.BlockContext ctx) {
 
         var expressions = ctx.expression().stream().map(this::visitExpression).toList();
-        return new KExpr.Block(this.conv.toRegion(ctx), expressions,  null);
+        return new KExpr.Block(this.conv.toRegion(ctx), expressions,  null, false);
 
     }
 
@@ -575,7 +575,7 @@ public class KarinaExprVisitor {
                 i = next;
 
                 components.add(
-                        new StringComponent.VariableComponent(region, name, null)
+                        new StringComponent.ExpressionComponent(region, name, null)
                 );
                 previousAddedIndexEnd = next;
             }

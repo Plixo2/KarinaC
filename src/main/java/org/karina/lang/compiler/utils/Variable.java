@@ -49,7 +49,8 @@ public class Variable {
 
     @Override
     public String toString() {
-        return "Variable{" + "type=" + type + ", name='" + name + '\'' + '}';
+        return "Variable{" + "region=" + region + ", name='" + name + '\'' + ", type=" + type +
+                ", mutable=" + mutable + ", parameter=" + parameter + ", isSynthetic=" +
+                isSynthetic + ", usageCount=" + usageCount + '}';
     }
-
 }

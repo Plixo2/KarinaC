@@ -16,6 +16,7 @@ public interface Model {
     //tests if a class exists
     @Nullable ClassPointer getClassPointer(Region region, ObjectPath objectPath);
     ClassModel getClass(ClassPointer pointer);
+    @Nullable ClassModel getClassNullable(ClassPointer pointer);
     MethodModel getMethod(MethodPointer model);
     FieldModel getField(FieldPointer pointer);
     int getClassCount();

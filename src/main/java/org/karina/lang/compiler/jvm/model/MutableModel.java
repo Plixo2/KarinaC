@@ -1,10 +1,11 @@
 package org.karina.lang.compiler.jvm.model;
 
+import org.apache.commons.lang3.stream.Streams;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.table.ClassLookup;
-import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
+import org.karina.lang.compiler.jvm.model.table.ClassLookup;
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
@@ -17,24 +18,24 @@ import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.List;
+import java.util.stream.Stream;
 
-/**
- * Java-Karina Model
- * Represents ALL class models of the program.
- * @param data
- */
-public record JKModel(ClassLookup data) implements Model {
+public record MutableModel(Model oldLookup, ClassLookup newLookup) implements Model {
 
-    public JKModel {
-        if (!data.locked()) {
-            Log.internal(new IllegalStateException("Model not locked"));
+    public MutableModel {
+        if (newLookup.locked()) {
+            Log.internal(new IllegalStateException("New classes are locked"));
             throw new Log.KarinaException();
         }
     }
 
     @Override
     public @Nullable ClassPointer getClassPointer(Region region, ObjectPath objectPath) {
-        if (this.data.contains(objectPath)) {
+        var oldPointer = this.oldLookup.getClassPointer(region, objectPath);
+        if (oldPointer != null) {
+            return ClassPointer.of(region, objectPath);
+        }
+        if (this.newLookup.contains(objectPath)) {
             return ClassPointer.of(region, objectPath);
         }
         return null;
@@ -43,7 +44,10 @@ public record JKModel(ClassLookup data) implements Model {
     @Override
     public ClassModel getClass(ClassPointer pointer) {
         var sample = Log.addSuperSample("GET_CLASS");
-        var classModel = this.data.get(pointer.path());
+        var classModel = this.oldLookup.getClassNullable(pointer);
+        if (classModel == null) {
+            classModel = this.newLookup.get(pointer.path());
+        }
 
         if (classModel == null) {
             Log.temp(pointer.region(), "Class not found, this should not happen: " + pointer.path());
@@ -55,7 +59,11 @@ public record JKModel(ClassLookup data) implements Model {
 
     @Override
     public @Nullable ClassModel getClassNullable(ClassPointer pointer) {
-        return this.data.get(pointer.path());
+        var oldClassModel = this.oldLookup.getClassNullable(pointer);
+        if (oldClassModel != null) {
+            return oldClassModel;
+        }
+        return this.newLookup.get(pointer.path());
     }
 
 
@@ -93,18 +101,23 @@ public record JKModel(ClassLookup data) implements Model {
 
     @Override
     public int getClassCount() {
-        return this.data.count();
+        return this.oldLookup.getClassCount() + this.newLookup.count();
     }
 
     @Override
     public List<KClassModel> getUserClasses() {
-        return this.data.userClasses();
+        return Stream.concat(
+                this.oldLookup.getUserClasses().stream(),
+                this.newLookup.userClasses().stream()
+        ).toList();
     }
 
     @Override
     public List<JClassModel> getBinaryClasses() {
-        return this.data.binaryClasses();
+        return Stream.concat(
+                this.oldLookup.getBinaryClasses().stream(),
+                this.newLookup.binaryClasses().stream()
+        ).toList();
     }
-
 
 }

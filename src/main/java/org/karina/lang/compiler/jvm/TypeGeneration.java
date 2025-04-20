@@ -58,11 +58,7 @@ public class TypeGeneration {
 
 
     public static ClassPointer internalNameToPointer(Region region, String name) {
-        var nameSplit = name.split("[/$]");
-        var path = new ObjectPath();
-        for (String s : nameSplit) {
-            path = path.append(s);
-        }
+        var path = ObjectPath.fromJavaPath(name);
         //TODO test existance of class
         return ClassPointer.of(region, path);
     }

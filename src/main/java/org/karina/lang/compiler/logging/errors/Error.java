@@ -4,9 +4,9 @@ import org.karina.lang.compiler.api.Resource;
 import org.karina.lang.compiler.utils.Region;
 
 public sealed interface Error
-        permits AttribError, Error.BytecodeLoading, Error.Warn, Error.InternalException,
-        Error.InvalidState, Error.ParseError, Error.SyntaxError, Error.TemporaryErrorRegion,
-        FileLoadError, ImportError {
+        permits AttribError, Error.BytecodeLoading, Error.InternalException, Error.InvalidState,
+        Error.ParseError, Error.SyntaxError, Error.TemporaryErrorRegion, Error.Warn, FileLoadError,
+        ImportError, LowerError {
 
     record TemporaryErrorRegion(Region region, String message) implements Error {}
     record Warn(String message) implements Error {}

@@ -48,7 +48,8 @@ public class AssignmentAttrib {
                                     new AttribError.FinalAssignment(expr.region(), innerRegion, fieldPointer.name()));
                             throw new Log.KarinaException();
                     }
-                    yield new AssignmentSymbol.StaticField(fieldPointer);
+                    var fieldType = fieldModel.type(); //no need for replacement
+                    yield new AssignmentSymbol.StaticField(fieldPointer, fieldType);
                 } else {
                     Log.attribError(new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));
                     throw new Log.KarinaException();

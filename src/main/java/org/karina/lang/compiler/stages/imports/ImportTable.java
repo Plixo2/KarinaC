@@ -65,26 +65,31 @@ public record ImportTable(
 
                 var doesReturn = !returnType.isVoid();
                 var defaultInterface = KType.FUNCTION_BASE(this.model, arguments.size(), doesReturn);
-                if (defaultInterface != null) {
-                    //TODO extract, duplicate in ClosureAttrib
-                    var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(defaultInterface));
-                    if (!alreadyAdded) {
-                        var totalGenerics = arguments.size() + (doesReturn ? 1 : 0);
+                if (defaultInterface == null) {
+                    Log.temp(region, "Cannot find default interface for " + arguments.size() + " arguments and return type " + returnType);
+                    throw new Log.KarinaException();
+                }
+                //TODO extract, duplicate in ClosureAttrib
+                var alreadyAdded =
+                        interfaces.stream().anyMatch(ref -> ref.pointer().equals(defaultInterface));
+                if (!alreadyAdded) {
+                    var totalGenerics = arguments.size() + (doesReturn ? 1 : 0);
 
-                        var classModel = this.model.getClass(defaultInterface);
-                        if (classModel.generics().size() != totalGenerics) {
-                            Log.temp(region, "Expected " + totalGenerics + " generics, but got " + classModel.generics().size());
-                            throw new Log.KarinaException();
-                        }
-
-                        var generics = new ArrayList<KType>();
-                        for (var i = 0; i < totalGenerics; i++) {
-                            generics.add(new KType.Resolvable());
-                        }
-                        var classType = new KType.ClassType(defaultInterface, generics);
-
-                        interfaces.add(classType);
+                    var classModel = this.model.getClass(defaultInterface);
+                    if (classModel.generics().size() != totalGenerics) {
+                        Log.temp(region, "Expected " + totalGenerics + " generics, but got " +
+                                classModel.generics().size()
+                        );
+                        throw new Log.KarinaException();
                     }
+
+                    var generics = new ArrayList<KType>();
+                    for (var i = 0; i < totalGenerics; i++) {
+                        generics.add(new KType.Resolvable());
+                    }
+                    var classType = new KType.ClassType(defaultInterface, generics);
+
+                    interfaces.add(classType);
                 }
 
                 yield new KType.FunctionType(arguments, returnType, interfaces);

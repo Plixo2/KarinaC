@@ -3,6 +3,7 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
@@ -51,7 +52,7 @@ public class GetMemberAttrib  {
         var classModel = ctx.model().getClass(classType.pointer());
 
         var methods = new ArrayList<UpstreamMethodPointer>();
-        putMethodCollectionDeep(ctx, classType, name, methods, new HashSet<>(), true);
+        putMethodCollectionDeep(ctx.owningClass(), ctx.protection(), ctx.model(), classType, name, methods, new HashSet<>(), true);
         for (var method : methods) {
             Log.recordType(Log.LogTypes.CALLS, "available pointer", method);
         }
@@ -229,22 +230,23 @@ public class GetMemberAttrib  {
     }
 
     private static void putMethodCollectionDeep(
-            AttributionContext ctx,
+            @Nullable ClassPointer referenceSite,
+            @Nullable ProtectionChecking protectionChecking,
+            Model model,
             KType.ClassType classType,
-            String name,
+            @Nullable String name,
             ArrayList<UpstreamMethodPointer> collection,
             Set<ClassPointer> visited,
             boolean start
     ) {
         var logName = "collect in class " + classType;
         Log.beginType(Log.LogTypes.MEMBER, logName);
-        Log.recordType(Log.LogTypes.MEMBER, "name", name, "start", start);
+        Log.recordType(Log.LogTypes.MEMBER, "name", Objects.requireNonNullElse(name, "<all>"), "start", start);
         if (visited.contains(classType.pointer())) {
             return;
         }
 
-        var referenceSite = ctx.owningClass();
-        var classModel = ctx.model().getClass(classType.pointer());
+        var classModel = model.getClass(classType.pointer());
 
 
         for (var method : classModel.methods()) {
@@ -252,12 +254,15 @@ public class GetMemberAttrib  {
             if (Modifier.isStatic(modifiers)) {
                 continue;
             }
-
-            if (!method.name().equals(name)) {
-                continue;
+            if (name != null) {
+                if (!method.name().equals(name)) {
+                    continue;
+                }
             }
-            if (!ctx.protection().canReference(referenceSite, method.classPointer(), modifiers)) {
-                continue;
+            if (protectionChecking != null && referenceSite != null) {
+                if (!protectionChecking.canReference(referenceSite, method.classPointer(), modifiers)) {
+                    continue;
+                }
             }
             boolean contains = false;
             for (var pointer : collection) {
@@ -275,14 +280,14 @@ public class GetMemberAttrib  {
         }
 
         //check for super classes and interfaces
-        var superType = Types.getSuperType(ctx.model(), classType);
+        var superType = Types.getSuperType(model, classType);
         if (superType != null) {
-            putMethodCollectionDeep(ctx, superType, name, collection, visited, false);
+            putMethodCollectionDeep(referenceSite, protectionChecking, model, superType, name, collection, visited, false);
         }
 
-        var interfaces = Types.getInterfaces(ctx.model(), classType);
+        var interfaces = Types.getInterfaces(model, classType);
         for (var interfaceType : interfaces) {
-            putMethodCollectionDeep(ctx, interfaceType, name, collection, visited, false);
+            putMethodCollectionDeep(referenceSite, protectionChecking, model, interfaceType, name, collection, visited, false);
         }
         Log.endType(Log.LogTypes.MEMBER, logName);
     }

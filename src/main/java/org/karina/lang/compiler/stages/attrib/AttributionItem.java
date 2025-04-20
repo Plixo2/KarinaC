@@ -6,6 +6,7 @@ import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
@@ -20,7 +21,12 @@ public class AttributionItem {
 
         var logName = "class-" + classModel.name();
         Log.beginType(Log.LogTypes.CLASS_NAME, logName);
-        var fields = ImmutableList.<KFieldModel>of();
+        var fields = ImmutableList.<KFieldModel>builder();
+        for (var field : classModel.fields()) {
+            if (field instanceof KFieldModel fieldModel) {
+                fields.add(fieldModel);
+            }
+        }
 
         var methodsToFill = new ArrayList<KMethodModel>();
         var innerToFill = new ArrayList<KClassModel>();
@@ -32,7 +38,7 @@ public class AttributionItem {
                 outerClass,
                 classModel.interfaces(),
                 innerToFill,
-                fields,
+                fields.build(),
                 methodsToFill,
                 classModel.generics(),
                 classModel.imports(),
@@ -71,7 +77,7 @@ public class AttributionItem {
 
 
 
-    private static KMethodModel attribMethod(Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
+    public static KMethodModel attribMethod(Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
 
         var logName = "method-" + methodModel.name() + "-" + methodModel.signature().toString() + " in " + classModel.name();
         Log.beginType(Log.LogTypes.METHOD_NAME, logName);
@@ -106,6 +112,10 @@ public class AttributionItem {
                 protection
         );
 
+        var variables = new ArrayList<Variable>();
+        if (self != null) {
+            variables.add(self);
+        }
 
         for (int i = 0; i < parameters.size(); i++) {
             var parameter = parameters.get(i);
@@ -120,6 +130,7 @@ public class AttributionItem {
             if (name.equals("_")) {
                  continue;
             }
+            variables.add(variable);
             contextNew = contextNew.addVariable(variable);
         }
 
@@ -134,25 +145,25 @@ public class AttributionItem {
             if (!expression.doesReturn()) {
                 if (isVoid) {
                     //we dont care about the yield type, if the method is void
-                    expression = new KExpr.Return(
-                            methodModel.region(),
-                            null,
-                            KType.NONE
-                    );
+                    var aReturn = new KExpr.Return(methodModel.region(), null, KType.NONE);
+                    expression = add(expression, aReturn, KType.NONE);
                 } else {
                     expression = contextNew.makeAssignment(methodModel.region(), returnType, expression);
 
-                    expression = new KExpr.Return(
-                            expression.region(),
-                            expression,
-                            expression.type()
-                    );
+                    expression = new KExpr.Return(expression.region(), expression, expression.type());
                 }
             }
         }
 
-        if (methodModel.name().equals("<init>")) {
-            //TODO test
+        if (methodModel.isConstructor()) {
+             if (!returnType.isVoid()) {
+                 Log.attribError(new AttribError.NotSupportedType(
+                         methodModel.region(),
+                         returnType
+                 ));
+                 throw new Log.KarinaException();
+             }
+
         }
         Log.endType(Log.LogTypes.METHOD_NAME, logName);
 
@@ -165,9 +176,16 @@ public class AttributionItem {
                 expression,
                 methodModel.annotations(),
                 methodModel.region(),
-                methodModel.classPointer()
-                //TODO add variables
+                methodModel.classPointer(),
+                variables
         );
+    }
+
+    private static KExpr add(KExpr prev, KExpr last, KType type) {
+        var expr = new ArrayList<KExpr>();
+        expr.add(prev);
+        expr.add(last);
+        return new KExpr.Block(prev.region(), expr, type, true);
     }
 
 

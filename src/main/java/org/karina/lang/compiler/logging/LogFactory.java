@@ -1,9 +1,7 @@
 package org.karina.lang.compiler.logging;
 
+import org.karina.lang.compiler.logging.errors.*;
 import org.karina.lang.compiler.logging.errors.Error;
-import org.karina.lang.compiler.logging.errors.FileLoadError;
-import org.karina.lang.compiler.logging.errors.ImportError;
-import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
@@ -64,17 +62,29 @@ public class LogFactory<T extends LogBuilder> {
                 }
             }
             case ImportError errorType -> {
-                populateImportError(errorType, builder);
+                createImportError(errorType, builder);
             }
             case AttribError errorType -> {
-                populateLinkError(errorType, builder);
+                createAttribError(errorType, builder);
+            }
+            case LowerError lowerError -> {
+                createLowerError(lowerError, builder);
             }
         }
         return builder;
 
     }
+    private void createLowerError(LowerError errorType, LogBuilder builder) {
+        switch (errorType) {
+            case LowerError.NotValidAnymore notValidAnymore -> {
+                builder.setTitle("Cannot be Expressed");
+                builder.append(notValidAnymore.message());
+                builder.setPrimarySource(notValidAnymore.region());
+            }
+        }
+    }
 
-    private void populateLinkError(AttribError errorType, LogBuilder builder) {
+    private void createAttribError(AttribError errorType, LogBuilder builder) {
 
         switch (errorType) {
             case AttribError.NotAValidInterface notAValidInterface -> {
@@ -250,7 +260,7 @@ public class LogFactory<T extends LogBuilder> {
 
     }
 
-    private void populateImportError(ImportError errorType, LogBuilder builder) {
+    private void createImportError(ImportError errorType, LogBuilder builder) {
 
         switch (errorType) {
             case ImportError.NoClassFound(var region, var path) -> {

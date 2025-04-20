@@ -42,7 +42,7 @@ public class KarinaStructVisitor {
         var path = owningPath.append(name);
         //assume to be valid, as you can only get this, if the class is valid
         var currentClass = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC | Modifier.STATIC;
+        var mods = Modifier.PUBLIC;
 
         var superClass = KType.ROOT;
 
@@ -176,6 +176,10 @@ public class KarinaStructVisitor {
                 )
         );
         var arguments = List.<KExpr>of();
+        var superCall = new KExpr.Call(region, superLiteral, List.of(), arguments, null);
+        expressions.add(superCall);
+
+
 
         for (var field : fields) {
             var self = new KExpr.Self(region, null);
@@ -187,10 +191,9 @@ public class KarinaStructVisitor {
         }
 
 
-        var superCall = new KExpr.Call(region, superLiteral, List.of(), arguments, null);
-        expressions.add(superCall);
 
-        var expression = new KExpr.Block(region, expressions, null);
+
+        var expression = new KExpr.Block(region, expressions, null, false);
 
         return new KMethodModel(
                 name,
@@ -201,7 +204,8 @@ public class KarinaStructVisitor {
                 expression,
                 ImmutableList.of(),
                 region,
-                classPointer
+                classPointer,
+                List.of()
         );
     }
 

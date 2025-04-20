@@ -2,11 +2,9 @@ package org.karina.lang.compiler.logging;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.logging.errors.*;
 import org.karina.lang.compiler.logging.errors.Error;
-import org.karina.lang.compiler.logging.errors.FileLoadError;
-import org.karina.lang.compiler.logging.errors.ImportError;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.Region;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -59,6 +57,7 @@ public class Log {
         CLOSURE,
         MEMBER,
         LOWERING,
+        GENERATION
 
         ;
 
@@ -72,7 +71,8 @@ public class Log {
               //  , ASSERTIONS
 //                , CLOSURE
 //                ,CHECK_TYPE
-                ,LOWERING
+                ,LOWERING,
+                GENERATION
 //    ,MEMBER
 //    ,CALLS
 // ,EXPR
@@ -224,6 +224,10 @@ public class Log {
 
     public static void syntaxError(Region region, String message) {
         addError(new Error.SyntaxError(region, message));
+    }
+
+    public static void lowerError(LowerError error) {
+        addError(error);
     }
 
     public static void attribError(AttribError error) {

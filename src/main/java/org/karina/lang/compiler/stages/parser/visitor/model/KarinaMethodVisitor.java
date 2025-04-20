@@ -2,6 +2,8 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KAnnotation;
@@ -10,8 +12,10 @@ import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.utils.Region;
 
 import java.lang.reflect.Modifier;
+import java.util.List;
 
 public class KarinaMethodVisitor {
     private final RegionContext context;
@@ -28,6 +32,12 @@ public class KarinaMethodVisitor {
             name = this.context.escapeID(function.id());
         } else {
             name = "<init>";
+        }
+
+        if (function.OVERRIDE() != null) {
+            var region = this.context.toRegion(function.OVERRIDE());
+            Log.importError(new ImportError.InvalidName(region, "override", "Override is not allowed here"));
+            throw new Log.KarinaException();
         }
 
         var region = this.context.toRegion(function);
@@ -62,7 +72,8 @@ public class KarinaMethodVisitor {
                 expr,
                 annotations,
                 region,
-                owningClass
+                owningClass,
+                List.of()
         );
 
     }

@@ -8,8 +8,8 @@ import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
+import org.karina.lang.compiler.symbols.LiteralSymbol;
 import org.karina.lang.compiler.utils.StringComponent;
-import org.karina.lang.compiler.utils.Variable;
 
 import java.util.HashSet;
 
@@ -27,8 +27,8 @@ public class StringInterpolationAttrib {
                     case StringComponent.StringLiteralComponent stringLiteralComponent -> {
                         Log.record("Literal: '" + stringLiteralComponent.value() + "'");
                     }
-                    case StringComponent.VariableComponent variableComponent -> {
-                        Log.record("Variable: '" + variableComponent.name() + "'");
+                    case StringComponent.ExpressionComponent expressionComponent -> {
+                        Log.record("Variable: '" + expressionComponent.name() + "'");
                     }
                 }
             }
@@ -42,7 +42,7 @@ public class StringInterpolationAttrib {
                 case StringComponent.StringLiteralComponent stringLiteralComponent -> {
                     newComponents.add(stringLiteralComponent);
                 }
-                case StringComponent.VariableComponent(var region, var name, _) -> {
+                case StringComponent.ExpressionComponent(var region, var name, _) -> {
 
                     var variable = ctx.variables().get(name);
                     if (variable == null) {
@@ -50,11 +50,16 @@ public class StringInterpolationAttrib {
                         Log.attribError(new AttribError.UnknownIdentifier(region, name, available));
                         throw new Log.KarinaException();
                     }
+                    var literal = new KExpr.Literal(
+                            region,
+                            variable.name(),
+                            new LiteralSymbol.VariableReference(region, variable)
+                    );
                     newComponents.add(
-                            new StringComponent.VariableComponent(
+                            new StringComponent.ExpressionComponent(
                                     region,
                                     name,
-                                    variable
+                                    literal
                             )
                     );
 

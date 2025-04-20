@@ -2,6 +2,7 @@ package org.karina.lang.compiler.jvm.model.jvm;
 
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
@@ -12,6 +13,7 @@ import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
+import org.objectweb.asm.tree.ClassNode;
 
 import java.util.List;
 
@@ -32,6 +34,8 @@ public class JClassModel implements ClassModel {
     private final ImmutableList<ClassPointer> nestMembers;
     private final TextSource resource;
     private final Region region;
+    @Getter
+    private final ClassNode classNode;
 
     public int version() {
         return this.version;

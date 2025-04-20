@@ -40,7 +40,7 @@ public class KarinaEnumVisitor {
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClassPointer = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT | Modifier.STATIC;
+        var mods = Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT;
 
         KType.ClassType superClass = KType.ROOT;
 
@@ -112,7 +112,7 @@ public class KarinaEnumVisitor {
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
         KType.ClassType superClass = KType.ROOT;
-        var mods = Modifier.PUBLIC | Modifier.FINAL | Modifier.STATIC;
+        var mods = Modifier.PUBLIC | Modifier.FINAL;
 
 
         var innerClasses = ImmutableList.<KClassModel>of();

@@ -35,6 +35,8 @@ public class ClassPointer {
 
     public static final ObjectPath FUNCTIONS_BASE = new ObjectPath("karina", "lang", "internal", "functions");
     public static final ObjectPath OPTION_PATH = new ObjectPath("karina", "lang", "Option");
+    public static final ObjectPath OPTION_SOME_PATH = new ObjectPath("karina", "lang", "Option", "Some");
+    public static final ObjectPath OPTION_NONE_PATH = new ObjectPath("karina", "lang", "Option", "None");
     public static final ObjectPath RESULT_PATH = new ObjectPath("karina", "lang", "Result");
 
     public static final ObjectPath RANGE_PATH = new ObjectPath("karina", "lang", "Range");

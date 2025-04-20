@@ -1,28 +1,22 @@
-package org.karina.lang.compiler.stages.generate.gen;
+package org.karina.lang.compiler.stages.generate;
 
-import org.karina.lang.compiler.stages.generate.BytecodeProcessor;
-import org.karina.lang.compiler.stages.generate.BytecodeContext;
-import org.karina.lang.compiler.stages.generate.TypeConversion;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.objects.BinaryOperator;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.symbols.*;
+import org.karina.lang.compiler.utils.InvocationType;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
 import java.util.Objects;
 
-public class ExpressionGen {
-    BytecodeProcessor backend;
+public class GenerateExpr {
 
-    public ExpressionGen(BytecodeProcessor backend) {
-        this.backend = backend;
-    }
 
-    public void addExpression(KExpr expr, BytecodeContext ctx) {
-        /*
+    public static void addExpression(KExpr expr, GenerationContext ctx) {
+
         var region = expr.region();
         var currentLine = region.start().line() + 1;
         if (currentLine != ctx.getLastLineNumber()) {
@@ -51,15 +45,26 @@ public class ExpressionGen {
                         ctx.add(new FieldInsnNode(
                                 Opcodes.PUTFIELD,
                                 owner.getInternalName(),
-                                TypeConversion.toJVMName(field.name()),
+                                field.pointer().name(),
                                 fieldType.getDescriptor()
                         ));
                     }
                     case AssignmentSymbol.LocalVariable localVariable -> {
                         addExpression(assignment.right(), ctx);
-                        var index = ctx.getVariableIndex(localVariable.variable());
+                        var index = ctx.getVariableIndex(assignment.region(), localVariable.variable());
                         var type = TypeConversion.getType(localVariable.variable().type());
                         ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ISTORE), index));
+                    }
+                    case AssignmentSymbol.StaticField staticField -> {
+                        addExpression(assignment.right(), ctx);
+                        var owner = TypeConversion.getType(staticField.pointer().classPointer());
+                        var fieldType = TypeConversion.getType(staticField.fieldType());
+                        ctx.add(new FieldInsnNode(
+                                Opcodes.PUTSTATIC,
+                                owner.getInternalName(),
+                                staticField.pointer().name(),
+                                fieldType.getDescriptor()
+                        ));
                     }
                 }
 
@@ -91,10 +96,10 @@ public class ExpressionGen {
                         }
                     }
                     case BinOperatorSymbol.DoubleOP doubleOP -> {
-                        binary(doubleOP.operator(), BinaryOperatorSet.DOUBLE, ctx);
+                        binary(binary.operator().value(), BinaryOperatorSet.DOUBLE, ctx);
                     }
                     case BinOperatorSymbol.FloatOP floatOP -> {
-                        binary(floatOP.operator(), BinaryOperatorSet.FLOAT, ctx);
+                        binary(binary.operator().value(), BinaryOperatorSet.FLOAT, ctx);
                     }
                     case BinOperatorSymbol.IntOP intOP -> {
                         switch (intOP) {
@@ -146,7 +151,11 @@ public class ExpressionGen {
                         }
                     }
                     case BinOperatorSymbol.LongOP longOP -> {
-                        binary(longOP.operator(), BinaryOperatorSet.LONG, ctx);
+                        binary(binary.operator().value(), BinaryOperatorSet.LONG, ctx);
+                    }
+                    case BinOperatorSymbol.ObjectEquals objectEquals -> {
+                        Log.temp(expr.region(), "Cannot be expressed");
+                        throw new Log.KarinaException();
                     }
                 }
 
@@ -206,7 +215,10 @@ public class ExpressionGen {
                 ctx.add(new JumpInsnNode(Opcodes.GOTO, ctx.getBreakTarget()));
             }
             case KExpr.Call call -> {
-                assert call.symbol() != null;
+                if (call.symbol() == null) {
+                    Log.temp(expr.region(), "No given symbol");
+                    throw new Log.KarinaException();
+                }
                 switch (call.symbol()) {
                     case CallSymbol.CallDynamic callDynamic -> {
                         Log.temp(expr.region(), "Cannot be expressed");
@@ -215,92 +227,144 @@ public class ExpressionGen {
                     case CallSymbol.CallInterface callInterface -> {
                         addExpression(call.left(), ctx);
 
-                        for (var argument : call.arguments()) {
-                            addExpression(argument, ctx);
-                        }
-
-                        var path = callInterface.path();
+                        var path = callInterface.pointer().classPointer().path().append(callInterface.pointer().name());
                         var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
-                        var desc = this.backend.getMethodDescriptor(callInterface.argTypeStatic(), callInterface.returnTypeStatic());
-                        ctx.add(new MethodInsnNode(
-                                Opcodes.INVOKEINTERFACE,
-                                owner.getInternalName(),
-                                TypeConversion.toJVMName(path.last()),
-                                desc,
-                                true
-                        ));
-                    }
-                    case CallSymbol.CallStatic callStatic -> {
-                        var path = callStatic.path();
-                        var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
-                        var desc = this.backend.getMethodDescriptor(callStatic.argTypeStatic(), callStatic.returnTypeStatic());
-                        var name = TypeConversion.toJVMName(path.last());
+                        var desc = TypeConversion.getDesc(callInterface.pointer(), callInterface.pointer().returnType());
+                        var name = callInterface.pointer().name();
 
-                        var opcode = Opcodes.INVOKESTATIC;
-                        if (name.equals("println")) {
-                            ctx.add(new FieldInsnNode(
-                                    Opcodes.GETSTATIC,
-                                    "java/lang/System",
-                                    "out",
-                                    "Ljava/io/PrintStream;"
-                            ));
-
-                            name = "println";
-                            desc = "(Ljava/lang/Object;)V";
-                            owner = Type.getObjectType("java/io/PrintStream");
-                            opcode = Opcodes.INVOKEVIRTUAL;
-
-                        } else if (name.equals("intToString")) {
-                            name = "toString";
-                            desc = "(I)Ljava/lang/String;";
-                            owner = Type.getObjectType("java/lang/Integer");
-                        } else if (name.equals("arrayToString")) {
-                            name = "toString";
-                            desc = "([Ljava/lang/Object;)Ljava/lang/String;";
-                            owner = Type.getObjectType("java/util/Arrays");
-                        }
-
+                        var opcode = Opcodes.INVOKEINTERFACE;
 
                         for (var argument : call.arguments()) {
                             addExpression(argument, ctx);
                         }
-
 
                         ctx.add(new MethodInsnNode(
                                 opcode,
-                                owner.getInternalName(), name,
+                                owner.getInternalName(),
+                                name,
                                 desc,
-                                callStatic.inInterface()
+                                true
                         ));
+                        if (!callInterface.pointer().returnType().isPrimitive() && !callInterface.pointer().returnType().isVoid()) {
+                            var type = TypeConversion.getType(callInterface.returnType());
+                            ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                        }
+                    }
+                    case CallSymbol.CallStatic callStatic -> {
+                        var path = callStatic.pointer().classPointer().path().append(callStatic.pointer().name());
+                        var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
+                        var desc = TypeConversion.getDesc(callStatic.pointer(), callStatic.pointer().returnType());
+                        var name = callStatic.pointer().name();
+
+                        var opcode = Opcodes.INVOKESTATIC;
+
+                        for (var argument : call.arguments()) {
+                            addExpression(argument, ctx);
+                        }
+
+                        ctx.add(new MethodInsnNode(
+                                opcode,
+                                owner.getInternalName(),
+                                name,
+                                desc,
+                                false
+                        ));
+                        if (!callStatic.pointer().returnType().isPrimitive() && !callStatic.pointer().returnType().isVoid()) {
+                            var type = TypeConversion.getType(callStatic.returnType());
+                            ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                        }
                     }
                     case CallSymbol.CallVirtual callVirtual -> {
                         addExpression(call.left(), ctx);
 
+                        var path = callVirtual.pointer().classPointer().path().append(callVirtual.pointer().name());
+                        var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
+                        var desc = TypeConversion.getDesc(callVirtual.pointer(), callVirtual.pointer().returnType());
+                        var name = callVirtual.pointer().name();
+
                         for (var argument : call.arguments()) {
                             addExpression(argument, ctx);
                         }
 
-                        var path = callVirtual.path();
-                        var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
-                        var desc = this.backend.getMethodDescriptor(callVirtual.argTypeStatic(), callVirtual.returnTypeStatic());
                         ctx.add(new MethodInsnNode(
                                 Opcodes.INVOKEVIRTUAL,
                                 owner.getInternalName(),
-                                TypeConversion.toJVMName(path.last()),
+                                name,
                                 desc,
                                 false
                         ));
+                        if (!callVirtual.pointer().returnType().isPrimitive() && !callVirtual.pointer().returnType().isVoid()) {
+                            var type = TypeConversion.getType(callVirtual.returnType());
+                            ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                        }
+                    }
+                    case CallSymbol.CallSuper callSuper -> {
+                        switch (callSuper.invocationType()) {
+                            case InvocationType.NewInit newInit -> {
+
+                                var internalName = TypeConversion.getType(newInit.classType()).getInternalName();
+                                var desc = TypeConversion.getDesc(callSuper.pointer(), KType.NONE);
+                                ctx.add(new TypeInsnNode(Opcodes.NEW, internalName));
+
+                                ctx.add(new InsnNode(Opcodes.DUP));
+
+                                for (var argument : call.arguments()) {
+                                    addExpression(argument, ctx);
+                                }
+
+                                ctx.add(new MethodInsnNode(
+                                        Opcodes.INVOKESPECIAL,
+                                        internalName,
+                                        "<init>",
+                                        desc,
+                                        false
+                                ));
+                            }
+                            case InvocationType.SpecialInvoke specialInvoke -> {
+                                Log.recordType(Log.LogTypes.GENERATION, "Special", specialInvoke.name());
+                                //Load 'this'
+                                ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
+//                                addExpression(call.left(), ctx);
+
+                                var internalName = TypeConversion.getType(specialInvoke.superType()).getInternalName();
+                                var desc = TypeConversion.getDesc(callSuper.pointer(), callSuper.pointer().returnType());
+
+                                for (var argument : call.arguments()) {
+                                    addExpression(argument, ctx);
+                                }
+
+                                ctx.add(new MethodInsnNode(
+                                        Opcodes.INVOKESPECIAL,
+                                        internalName,
+                                        specialInvoke.name(),
+                                        desc,
+                                        false
+                                ));
+                                if (!callSuper.pointer().returnType().isPrimitive() && !callSuper.pointer().returnType().isVoid()) {
+                                    var type = TypeConversion.getType(callSuper.returnType());
+                                    ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                                }
+                            }
+                        }
                     }
                 }
             }
             case KExpr.Cast cast -> {
                 addExpression(cast.expression(), ctx);
                 assert cast.symbol() != null;
-                var from = cast.symbol().fromNumeric();
-                var to = cast.symbol().toNumeric();
-                var code = numericCast(from, to);
-                if (code != Opcodes.NOP) {
-                    ctx.add(new InsnNode(code));
+                switch (cast.symbol()) {
+                    case CastSymbol.PrimitiveCast primitiveCast -> {
+                        var from = primitiveCast.fromNumeric();
+                        var to = primitiveCast.toNumeric();
+                        var code = numericCast(from, to);
+                        if (code != Opcodes.NOP) {
+                            ctx.add(new InsnNode(code));
+                        }
+                    }
+                    case CastSymbol.UpCast upCast -> {
+                        var type = TypeConversion.getType(upCast.toType());
+                        ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                    }
                 }
             }
             case KExpr.Closure closure -> {
@@ -333,31 +397,33 @@ public class ExpressionGen {
 
             }
             case KExpr.CreateObject createObject -> {
-                assert createObject.symbol() != null;
-                var type = TypeConversion.getType(createObject.symbol());
-                ctx.add(new TypeInsnNode(Opcodes.NEW, type.getInternalName()));
-
-                ctx.add(new InsnNode(Opcodes.DUP));
-                ctx.add(new MethodInsnNode(
-                        Opcodes.INVOKESPECIAL,
-                        type.getInternalName(),
-                        "<init>",
-                        "()V",
-                        false
-                ));
-
-                for (var parameter : createObject.parameters()) {
-                    ctx.add(new InsnNode(Opcodes.DUP));
-                    addExpression(parameter.expr(), ctx);
-                    assert parameter.symbol() != null;
-                    var parameterType = TypeConversion.getType(parameter.symbol());
-                    ctx.add(new FieldInsnNode(
-                            Opcodes.PUTFIELD,
-                            type.getInternalName(),
-                            TypeConversion.toJVMName(parameter.name().value()),
-                            parameterType.getDescriptor()
-                    ));
-                }
+                Log.temp(expr.region(), "Cannot be expressed");
+                throw new Log.KarinaException();
+//                assert createObject.symbol() != null;
+//                var type = TypeConversion.getType(createObject.symbol());
+//                ctx.add(new TypeInsnNode(Opcodes.NEW, type.getInternalName()));
+//
+//                ctx.add(new InsnNode(Opcodes.DUP));
+//                ctx.add(new MethodInsnNode(
+//                        Opcodes.INVOKESPECIAL,
+//                        type.getInternalName(),
+//                        "<init>",
+//                        "()V",
+//                        false
+//                ));
+//
+//                for (var parameter : createObject.parameters()) {
+//                    ctx.add(new InsnNode(Opcodes.DUP));
+//                    addExpression(parameter.expr(), ctx);
+//                    assert parameter.symbol() != null;
+//                    var parameterType = TypeConversion.getType(parameter.symbol());
+//                    ctx.add(new FieldInsnNode(
+//                            Opcodes.PUTFIELD,
+//                            type.getInternalName(),
+//                            TypeConversion.toJVMName(parameter.name().value()),
+//                            parameterType.getDescriptor()
+//                    ));
+//                }
 
             }
             case KExpr.For aFor -> {
@@ -380,17 +446,15 @@ public class ExpressionGen {
                     }
                     case MemberSymbol.FieldSymbol fieldSymbol -> {
                         addExpression(getMember.left(), ctx);
-                        var owner = TypeConversion.getType(fieldSymbol.owner());
-                        var fieldType = TypeConversion.getType(fieldSymbol.fieldType());
+                        var owner = TypeConversion.getType(fieldSymbol.pointer().classPointer());
+                        var fieldType = TypeConversion.getType(fieldSymbol.type());
+                        var name = fieldSymbol.pointer().name();
                         ctx.add(new FieldInsnNode(
                                 Opcodes.GETFIELD,
                                 owner.getInternalName(),
-                                TypeConversion.toJVMName(fieldSymbol.name()),
+                                name,
                                 fieldType.getDescriptor()
                         ));
-                    }
-                    case MemberSymbol.InterfaceFunctionSymbol interfaceFunctionSymbol -> {
-                        throw new NullPointerException("Cannot be expressed");
                     }
                     case MemberSymbol.VirtualFunctionSymbol virtualFunctionSymbol -> {
                         throw new NullPointerException("Cannot be expressed");
@@ -408,13 +472,24 @@ public class ExpressionGen {
                         throw new NullPointerException("Cannot be expressed");
                     }
                     case LiteralSymbol.StaticClassReference staticClassReference -> {
+                        //TODO convert to .class
                         throw new NullPointerException("Cannot be expressed");
                     }
                     case LiteralSymbol.VariableReference variableReference -> {
                         var variable = variableReference.variable();
-                        var index = ctx.getVariableIndex(variable);
+                        var index = ctx.getVariableIndex(literal.region(), variable);
                         var type = TypeConversion.getType(variable.type());
                         ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ILOAD), index));
+                    }
+                    case LiteralSymbol.StaticFieldReference staticFieldReference -> {
+                        var owner = TypeConversion.getType(staticFieldReference.fieldPointer().classPointer());
+                        var fieldType = TypeConversion.getType(staticFieldReference.fieldType());
+                        ctx.add(new FieldInsnNode(
+                                Opcodes.GETSTATIC,
+                                owner.getInternalName(),
+                                staticFieldReference.fieldPointer().name(),
+                                fieldType.getDescriptor()
+                        ));
                     }
                 }
             }
@@ -443,9 +518,8 @@ public class ExpressionGen {
             case KExpr.Return aReturn -> {
                 if (aReturn.value() != null) {
                     addExpression(aReturn.value(), ctx);
-                    assert aReturn.yieldType() != null;
-                    var returnCode =
-                            TypeConversion.getType(aReturn.yieldType()).getOpcode(Opcodes.IRETURN);
+                    assert aReturn.returnType() != null;
+                    var returnCode = TypeConversion.getType(aReturn.returnType()).getOpcode(Opcodes.IRETURN);
                     ctx.add(new InsnNode(returnCode));
                 } else {
                     ctx.add(new InsnNode(Opcodes.RETURN));
@@ -492,9 +566,27 @@ public class ExpressionGen {
                 assert symbol != null;
                 ctx.putVariable(symbol);
                 addExpression(variableDefinition.value(), ctx);
-                var target = ctx.getVariableIndex(symbol);
+                var target = ctx.getVariableIndex(variableDefinition.region(), symbol);
                 var type = TypeConversion.getType(symbol.type());
+
+                LabelNode start = new LabelNode();
+                ctx.add(start);
+                LabelNode end = new LabelNode();
+
+
+
+                LocalVariableNode localVariableNode = new LocalVariableNode(
+                        symbol.name(),
+                        type.getDescriptor(),
+                        null,
+                        start,
+                        end,
+                        target
+                );
+                ctx.getLocalVariables().add(localVariableNode);
+
                 ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ISTORE), target));
+                ctx.add(end);
             }
             case KExpr.While aWhile -> {
 
@@ -511,11 +603,24 @@ public class ExpressionGen {
                 ctx.add(endOfLoop);
 
             }
-            case KExpr.Super aSuper -> {
-                throw new NullPointerException("Cannot be expressed");
+            case KExpr.SpecialCall specialCall -> {
+                Log.temp(expr.region(), "Cannot be expressed");
+                throw new Log.KarinaException();
+            }
+            case KExpr.StaticPath staticPath -> {
+                Log.temp(expr.region(), "Cannot be expressed");
+                throw new Log.KarinaException();
+            }
+            case KExpr.StringInterpolation stringInterpolation -> {
+                Log.temp(expr.region(), "Cannot be expressed");
+                throw new Log.KarinaException();
+            }
+            case KExpr.Unwrap unwrap -> {
+                Log.temp(expr.region(), "Cannot be expressed");
+                throw new Log.KarinaException();
             }
         }
-        */
+
     }
 
     private static int numericCast(KType.KPrimitive from, KType.KPrimitive to) {
@@ -582,7 +687,7 @@ public class ExpressionGen {
         return Opcodes.NOP;
     }
 
-    private static void binary(BinaryOperator operator, BinaryOperatorSet set, BytecodeContext ctx) {
+    private static void binary(BinaryOperator operator, BinaryOperatorSet set, GenerationContext ctx) {
         switch (operator) {
             case ADD -> {
                 ctx.add(new InsnNode(set.add()));
@@ -641,7 +746,7 @@ public class ExpressionGen {
         }
     }
 
-    private static void addEquals(BytecodeContext ctx, LabelNode falseLabel) {
+    private static void addEquals(GenerationContext ctx, LabelNode falseLabel) {
         var end = new LabelNode();
         ctx.add(new LdcInsnNode(1));
         ctx.add(new JumpInsnNode(Opcodes.GOTO, end));

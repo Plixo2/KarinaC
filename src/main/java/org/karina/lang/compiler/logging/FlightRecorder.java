@@ -44,7 +44,7 @@ public class FlightRecorder {
         if (current.name.equals(name)) {
             current.endTimeNano = System.nanoTime();
         } else {
-          //  Log.warn("Ending section " + name + " but current section is " + current.name);
+//            Log.warn("Ending section " + name + " but current section is " + current.name);
         }
 
         this.currentSection = current.parent;

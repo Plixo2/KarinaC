@@ -42,7 +42,7 @@ public class KarinaInterfaceVisitor {
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT | Modifier.STATIC;
+        var mods = Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT;
 
         KType.ClassType superClass = KType.ROOT;
 

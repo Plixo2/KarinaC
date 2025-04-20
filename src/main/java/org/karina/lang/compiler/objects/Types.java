@@ -53,8 +53,11 @@ public class Types {
             }
             case KType.PrimitiveType primitiveType -> primitiveType;
             case KType.Resolvable resolvable -> {
-                //this should not happen
-                yield KType.ROOT;
+                if (resolvable.get() != null) {
+                    yield erase(resolvable.get());
+                } else {
+                    yield KType.ROOT;
+                }
             }
             case KType.UnprocessedType unprocessedType -> {
                 yield KType.ROOT;
@@ -77,6 +80,8 @@ public class Types {
         if (a == b) {
             return true;
         }
+//        a = a.unpack();
+//        b = b.unpack();
         //check for class, so cast is valid
         if (a.getClass() != b.getClass()) {
             return false;
@@ -217,7 +222,7 @@ public class Types {
                 var link = genericLink.link();
                 var newType = generics.get(link);
                 if (newType != null) {
-                    yield newType;
+                    yield projectGenerics(newType, generics);
                 } else {
                     yield genericLink;
                 }

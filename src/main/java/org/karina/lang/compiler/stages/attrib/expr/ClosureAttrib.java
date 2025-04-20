@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
+import com.google.errorprone.annotations.Var;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
@@ -26,7 +27,8 @@ public class ClosureAttrib  {
         var logName = "Attributing closure";
         Log.beginType(Log.LogTypes.CLOSURE, logName);
         var owningMethod = ctx.owningMethod();
-        Log.recordType(Log.LogTypes.CLOSURE, "Closure", expr.region(), "in", ctx.owningClass(), "/", owningMethod != null ? owningMethod.name() : null);
+        var region = expr.region();
+        Log.recordType(Log.LogTypes.CLOSURE, "Closure", region, "in", ctx.owningClass(), "/", owningMethod != null ? owningMethod.name() : null);
 
         for (var arg : expr.args()) {
             checkForPreexistingVariable(ctx, arg.name());
@@ -76,6 +78,7 @@ public class ClosureAttrib  {
         Log.recordType(Log.LogTypes.CLOSURE, "parameter types pre body",
                 argsAndReturnType.args.stream().map(NameAndOptType::type).toList()
         );
+
         var newBody = attribExpr(returnType, bodyContext, expr.body()).expr();
         Log.recordType(Log.LogTypes.CLOSURE, "parameter types post body",
                 argsAndReturnType.args.stream().map(NameAndOptType::type).toList()
@@ -92,29 +95,33 @@ public class ClosureAttrib  {
             }
         }
 
-        if (!newBody.doesReturn() && !returnType.isVoid()) {
-            newBody = ctx.makeAssignment(newBody.region(), returnType, newBody);
-        }
+//        if (!newBody.doesReturn() && !returnType.isVoid()) {
+//            newBody = ctx.makeAssignment(newBody.region(), returnType, newBody);
+//        }
+
+        newBody = makeCorrectReturnType(newBody, returnType, ctx);
+
+
         var args = newArgs.stream().map(NameAndOptType::type).toList();
 
-        var interfaces = new ArrayList<KType.ClassType>();
+        List<KType.ClassType> interfaces = new ArrayList<>();
 
         for (var anInterface : expr.interfaces()) {
             Log.beginType(Log.LogTypes.CLOSURE, "Checking annotated interface");
             if (!(anInterface instanceof KType.ClassType classType)) {
                 Log.record("Impl is not a class");
-                Log.attribError(new AttribError.NotAClass(expr.region(), anInterface));
+                Log.attribError(new AttribError.NotAClass(region, anInterface));
                 throw new Log.KarinaException();
             }
             var model = ctx.model().getClass(classType.pointer());
             if (!Modifier.isInterface(model.modifiers())) {
                 Log.record("Impl is not a interface");
-                Log.attribError(new AttribError.NotAInterface(expr.region(), classType));
+                Log.attribError(new AttribError.NotAInterface(region, classType));
                 throw new Log.KarinaException();
             }
-            if (!canUseInterface(expr.region(), ctx, args, returnType, classType)) {
+            if (!canUseInterface(region, ctx, args, returnType, classType)) {
                 Log.record("Impl is not a matching interface");
-                Log.attribError(new AttribError.NotAValidInterface(expr.region(), args, returnType, classType));
+                Log.attribError(new AttribError.NotAValidInterface(region, args, returnType, classType));
                 throw new Log.KarinaException();
             }
             Log.endType(Log.LogTypes.CLOSURE, "Checking annotated interface");
@@ -123,7 +130,7 @@ public class ClosureAttrib  {
             var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
             if (alreadyAdded) {
                 Log.record("Interface already added");
-                Log.attribError(new AttribError.DuplicateInterface(expr.region(), classType));
+                Log.attribError(new AttribError.DuplicateInterface(region, classType));
                 throw new Log.KarinaException();
             }
 
@@ -137,7 +144,7 @@ public class ClosureAttrib  {
             var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
             if (alreadyAdded) {
                 Log.recordType(Log.LogTypes.CLOSURE, "hint interface already added");
-            } else if (canUseInterface(expr.region(), ctx, args, returnType, classType)) {
+            } else if (canUseInterface(region, ctx, args, returnType, classType)) {
                 Log.recordType(Log.LogTypes.CLOSURE, "Using hint as interface");
                 interfaces.add(classType);
             }
@@ -145,13 +152,17 @@ public class ClosureAttrib  {
         }
 
         var doesReturn = !returnType.isVoid();
-        var classPointer = KType.FUNCTION_BASE(ctx.model(), args.size(), doesReturn);
-        if (classPointer != null) {
+        var primaryInterface = KType.FUNCTION_BASE(ctx.model(), args.size(), doesReturn);
+        if (primaryInterface == null) {
+            Log.temp(region, "Cannot find default interface for " + args.size() + " arguments and return type " + returnType);
+            throw new Log.KarinaException();
+        }
+        {
             var totalGenerics = args.size() + (doesReturn ? 1 : 0);
 
-            var model = ctx.model().getClass(classPointer);
+            var model = ctx.model().getClass(primaryInterface);
             if (model.generics().size() != totalGenerics) {
-                Log.temp(expr.region(), "Expected " + totalGenerics + " generics, but got " + model.generics().size());
+                Log.temp(region, "Expected " + totalGenerics + " generics, but got " + model.generics().size());
                 throw new Log.KarinaException();
             }
 
@@ -160,10 +171,10 @@ public class ClosureAttrib  {
                 generics.add(new KType.Resolvable());
             }
 
-            var classType = new KType.ClassType(classPointer, generics);
+            var classType = new KType.ClassType(primaryInterface, generics);
             var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
             if (!alreadyAdded) {
-                if (canUseInterface(expr.region(), ctx, args, returnType, classType)) {
+                if (canUseInterface(region, ctx, args, returnType, classType)) {
                     Log.recordType(Log.LogTypes.CLOSURE, "Using default as interface");
                     interfaces.add(classType);
                 } else {
@@ -174,11 +185,8 @@ public class ClosureAttrib  {
                 Log.recordType(Log.LogTypes.CLOSURE, "default already added");
             }
 
-        } else {
-            //create custom classes
-            Log.warn("(warn) Could not create function base class for " + args + " -> " + returnType);
-            Log.recordType(Log.LogTypes.CLOSURE, "Could not create function base class for " + args + " -> " + returnType);
         }
+        interfaces = sortInterfaces(ctx, primaryInterface, interfaces);
 
         var functionType = new KType.FunctionType(
                 args,
@@ -193,7 +201,7 @@ public class ClosureAttrib  {
         Log.endType(Log.LogTypes.CLOSURE, logName);
 
         return of(ctx, new KExpr.Closure(
-                expr.region(),
+                region,
                 newArgs,
                 returnType,
                 interfaces,
@@ -203,19 +211,28 @@ public class ClosureAttrib  {
 
     }
 
+    private static KExpr makeCorrectReturnType(KExpr expression, KType returnType, AttributionContext contextNew) {
+        var isVoid = returnType.isVoid();
+
+        if (!expression.doesReturn()) {
+            if (isVoid) {
+                //we dont care about the yield type, if the method is void
+                var aReturn = new KExpr.Return(expression.region(), null, KType.NONE);
+                expression = add(expression, aReturn, KType.NONE);
+            } else {
+                expression = contextNew.makeAssignment(expression.region(), returnType, expression);
+                expression = new KExpr.Return(expression.region(), expression, expression.type());
+            }
+        }
+        return expression;
+    }
+
     /**
      * Constructs a new set of arguments with a potential hint, otherwise use the default arguments. 
      * When a parameter type is already present, it will be used, otherwise the type of the hint will be used
      * When no valid hint is present, all non annotated arguments will be of type Resolvable
      */
     private static ArgsAndReturnType getNewArgs(AttributionContext ctx, @Nullable KType hint, KExpr.Closure expr) {
-        /*if (hint == null) {
-            if (!expr.interfaces().isEmpty()) {
-                hint = expr.interfaces().getFirst();
-            }
-        } else if (hint instanceof KType.ClassType classType) {
-
-        }*/
         if (!expr.interfaces().isEmpty()) {
             hint = expr.interfaces().getFirst();
         }
@@ -391,6 +408,7 @@ public class ClosureAttrib  {
             return null;
         }
 
+
         var mapped = new HashMap<Generic, KType>();
         for (var i = 0; i < classModel.generics().size(); i++) {
             var generic = classModel.generics().get(i);
@@ -426,4 +444,22 @@ public class ClosureAttrib  {
 
     private record ArgsAndReturnType(List<NameAndOptType> args, KType returnType) {}
 
+    private static List<KType.ClassType> sortInterfaces(AttributionContext ctx, ClassPointer primary, List<KType.ClassType> interfaces) {
+
+        return interfaces.stream().sorted(Comparator.comparingInt(ref -> {
+            if (ref.pointer().equals(primary)) {
+                return 0;
+            } else {
+                return 1;
+            }
+        })).toList();
+
+    }
+
+    private static KExpr add(KExpr prev, KExpr last, KType type) {
+        var expr = new ArrayList<KExpr>();
+        expr.add(prev);
+        expr.add(last);
+        return new KExpr.Block(prev.region(), expr, type, true);
+    }
 }

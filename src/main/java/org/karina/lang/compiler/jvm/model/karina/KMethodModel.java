@@ -2,6 +2,8 @@ package org.karina.lang.compiler.jvm.model.karina;
 
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Signature;
@@ -12,6 +14,9 @@ import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.Variable;
+
+import java.util.List;
 
 public class KMethodModel implements MethodModel {
     private final String name;
@@ -20,15 +25,21 @@ public class KMethodModel implements MethodModel {
     private final ImmutableList<String> parameters;
     private final ImmutableList<KType> erasedParameters;
     private final ImmutableList<Generic> generics;
-    private final @Nullable KExpr expression;
+    @Setter
+    private @Nullable KExpr expression;
     private final ImmutableList<KAnnotation> annotations;
     private final Region region;
     private final ClassPointer classPointer;
+    @Getter
+    private final List<Variable> paramVariables;
+
+//    @Getter
+//    private @Nullable KType overrideOf;
 
     public KMethodModel(
             String name, int modifiers, Signature signature, ImmutableList<String> parameters,
             ImmutableList<Generic> generics, @Nullable KExpr expression,
-            ImmutableList<KAnnotation> annotations, Region region, ClassPointer classPointer
+            ImmutableList<KAnnotation> annotations, Region region, ClassPointer classPointer, List<Variable> paramVariables
     ) {
         this.name = name;
         this.modifiers = modifiers;
@@ -40,6 +51,7 @@ public class KMethodModel implements MethodModel {
         this.region = region;
         this.classPointer = classPointer;
         this.erasedParameters = signature.parametersErased();
+        this.paramVariables = paramVariables;
     }
 
     @Override
@@ -88,8 +100,8 @@ public class KMethodModel implements MethodModel {
                 this.region,
                 this.classPointer,
                 this.name,
-                this.signature,
-                this.erasedParameters
+                this.erasedParameters,
+                this.signature.returnType()
         );
     }
 

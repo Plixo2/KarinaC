@@ -16,15 +16,15 @@ public class ReturnAttrib  {
             @Nullable KType hint, AttributionContext ctx, KExpr.Return expr) {
 
         KExpr value;
-        KType yieldType;
+        KType returnType;
         if (expr.value() != null) {
             value = AttributionExpr.attribExpr(ctx.returnType(), ctx, expr.value()).expr();
-            yieldType = value.type();
+            returnType = value.type();
 
             value = ctx.makeAssignment(expr.region(), ctx.returnType(), value);
         } else {
             value = null;
-            yieldType = KType.NONE;
+            returnType = KType.NONE;
 
             if (!ctx.returnType().isVoid()) {
                 Log.attribError(new AttribError.ControlFlow(expr.region(), "Invalid return statement"));
@@ -35,7 +35,7 @@ public class ReturnAttrib  {
         return of(ctx, new KExpr.Return(
                 expr.region(),
                 value,
-                yieldType
+                returnType
         ));
     }
 
