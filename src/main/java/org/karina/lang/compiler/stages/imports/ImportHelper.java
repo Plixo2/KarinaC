@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.imports;
 
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Unique;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
@@ -234,6 +235,31 @@ public class ImportHelper {
             Log.invalidName(region, name);
             throw new Log.KarinaException();
         }
+    }
+
+    public static void logFullModel(Model model) {
+        if (!Log.LogTypes.LOADED_CLASSES.isVisible()) {
+            return;
+        }
+
+        Log.begin("full-model");
+
+        Log.begin("JVM Classes");
+        var jvmClasses = model.getBinaryClasses();
+        for (var userClass : jvmClasses) {
+            Log.record(userClass.pointer());
+        }
+        Log.end("JVM Classes", jvmClasses.size());
+
+        Log.begin("User Classes");
+        var userClasses = model.getUserClasses();
+        for (var userClass : userClasses) {
+            Log.record(userClass.pointer());
+        }
+        Log.end("User Classes", userClasses.size());
+
+
+        Log.end("full-model", model.getClassCount());
     }
 
 }

@@ -1,0 +1,20 @@
+
+
+struct Modifier {
+
+}
+
+@Super = {
+    type: type { java::lang::RuntimeException }
+}
+struct RuntimeError {
+    message: string
+    cause: Throwable?
+
+    fn (self, message: string, cause: Throwable?) {
+        super<java::lang::RuntimeException>(message, cause.nullable())
+    }
+}
+
+
+struct Data

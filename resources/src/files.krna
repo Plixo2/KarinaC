@@ -1,0 +1,50 @@
+
+import java::io::IOException
+import java::nio::file::Files
+import java::nio::file::Path
+import java::nio::file::InvalidPathException
+
+//Paths.get("path/to/your/file.txt")
+import errors::Modifier
+//import java::lang::module::ModuleDescriptor$Exports$Modifier as ModuleModifier
+
+fn loadFile(path: Path) -> Result<string, IOException> {
+    let call = fn() {
+        let content = String { _: Files.readAllBytes(path) } ;
+        content
+    }
+
+/*
+    if Result.safeCall(call) is Result::Ok ok {
+        Result.ok(ok.value)
+    } else is Result::Err e {
+        if e.error is IOException io {
+            Result.err(io)
+        } else {
+            raise e.error
+        }
+    }
+*/
+    Result$Ok { _: "" }
+}
+
+fn test(f: java::lang::module::ModuleDescriptor$Exports$Modifier) {
+    let syn = Option.instanceOf(String, java::lang::module::ModuleDescriptor$Exports$Modifier.SYNTHETIC)
+
+/*
+    if syn as Object is String o {
+
+    } else is String {
+
+    }
+*/
+}
+
+fn getPath(path: string) -> Result<Path, InvalidPathException> {
+    Result.ok(Path.of(path, []))
+}
+
+fn exists(path: Path) -> bool {
+    Files.exists(path, [])
+}
+

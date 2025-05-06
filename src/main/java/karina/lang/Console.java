@@ -11,7 +11,7 @@ import java.util.Set;
 
 //Build-in Utility class for auto importing of print, println, and toString methods
 public final class Console {
-    private static final NumberFormat NUMBER_FORMAT = new DecimalFormat("#,###.############");
+//    private static final NumberFormat NUMBER_FORMAT = new DecimalFormat("#,###.############");
 
     public static void println() {
         System.out.println();
@@ -113,10 +113,6 @@ public final class Console {
     }
 
     public static String toString(Object object) {
-        if (object instanceof Number number) {
-            var formatted = NUMBER_FORMAT.format(number);
-            return formatted.replace(",", "_");
-        }
         return switch (object) {
             case Object[] objects -> toDeepString(objects);
             case int[] a -> Arrays.toString(a);

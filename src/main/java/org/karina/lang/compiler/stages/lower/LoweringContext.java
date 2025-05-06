@@ -31,8 +31,18 @@ public record LoweringContext(
         List<ClosureReplacement> toReplace
 ) {
 
-    public KType.ClassType getOrCreateInterface(KType.FunctionType functionType) {
-        throw new NullPointerException("Not implemented");
+    public KType.ClassType getOrCreateInterface(Region region, KType.FunctionType functionType) {
+        if (functionType.interfaces().isEmpty()) {
+            Log.temp(region, "Function type has no interfaces");
+            throw new Log.KarinaException();
+        }
+
+        if (functionType.interfaces().getFirst() instanceof KType.ClassType classType) {
+            return classType;
+        }
+        Log.temp(region, "Function interface is not a class type");
+        throw new Log.KarinaException();
+
     }
 
 

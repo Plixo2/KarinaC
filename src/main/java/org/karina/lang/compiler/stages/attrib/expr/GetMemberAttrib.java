@@ -239,6 +239,7 @@ public class GetMemberAttrib  {
             Set<ClassPointer> visited,
             boolean start
     ) {
+
         var logName = "collect in class " + classType;
         Log.beginType(Log.LogTypes.MEMBER, logName);
         Log.recordType(Log.LogTypes.MEMBER, "name", Objects.requireNonNullElse(name, "<all>"), "start", start);
@@ -248,8 +249,7 @@ public class GetMemberAttrib  {
 
         var classModel = model.getClass(classType.pointer());
 
-
-        for (var method : classModel.methods()) {
+        outer: for (var method : classModel.methods()) {
             var modifiers = method.modifiers();
             if (Modifier.isStatic(modifiers)) {
                 continue;
@@ -261,22 +261,22 @@ public class GetMemberAttrib  {
             }
             if (protectionChecking != null && referenceSite != null) {
                 if (!protectionChecking.canReference(referenceSite, method.classPointer(), modifiers)) {
+                    Log.recordType(Log.LogTypes.MEMBER, "Cannot access ", method.pointer());
                     continue;
                 }
             }
-            boolean contains = false;
             for (var pointer : collection) {
                 var signature = pointer.pointer().erasedParameters();
                 if (Types.signatureEquals(signature, method.pointer().erasedParameters())) {
-                    contains = true;
-                    break;
+                    Log.recordType(Log.LogTypes.MEMBER, "Skipping member method ", method.pointer());
+                    continue outer;
                 }
-            }
-            if (contains) {
-                continue;
             }
             var mappedUpstreamType = new UpstreamMethodPointer(method.pointer(), classType);
             collection.add(mappedUpstreamType);
+        }
+        for (var upstreamMethodPointer : collection) {
+            Log.recordType(Log.LogTypes.MEMBER, "found direct", upstreamMethodPointer.mappedUpstreamType());
         }
 
         //check for super classes and interfaces
@@ -289,6 +289,10 @@ public class GetMemberAttrib  {
         for (var interfaceType : interfaces) {
             putMethodCollectionDeep(referenceSite, protectionChecking, model, interfaceType, name, collection, visited, false);
         }
+        for (var upstreamMethodPointer : collection) {
+            Log.recordType(Log.LogTypes.MEMBER, "found overall", upstreamMethodPointer.mappedUpstreamType());
+        }
+
         Log.endType(Log.LogTypes.MEMBER, logName);
     }
 

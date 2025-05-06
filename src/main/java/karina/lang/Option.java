@@ -3,6 +3,7 @@ package karina.lang;
 import karina.lang.internal.functions.Function0_1;
 import karina.lang.internal.functions.Function1_1;
 
+import java.lang.reflect.Array;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -122,11 +123,19 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     }
 
     static <T> Option<T>[] newArray(Class<T> ignoredCls, int size) {
-        return Values.newArray(size, _ -> none());
+        Option<T>[] array = (Option<T>[]) Array.newInstance(Option.class, size);
+        for (int i = 0; i < size; i++) {
+            array[i] = none();
+        }
+        return array;
     }
 
     static <T> Option<T>[] newArray(int size) {
-        return Values.newArray(size, _ -> none());
+        Option<T>[] array = (Option<T>[]) Array.newInstance(Option.class, size);
+        for (int i = 0; i < size; i++) {
+            array[i] = none();
+        }
+        return array;
     }
 
 }

@@ -7,6 +7,7 @@ import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.stages.generate.GenerationProcessor;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
+import org.karina.lang.compiler.stages.imports.ImportHelper;
 import org.karina.lang.compiler.stages.imports.ImportProcessor;
 import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.ParseProcessor;
@@ -23,9 +24,9 @@ public class KarinaDefaultCompiler {
     private final LoweringProcessor lowering;
     private final GenerationProcessor backend;
 
-    private final boolean emit;
-    public KarinaDefaultCompiler(boolean emit) {
-        this.emit = emit;
+    private final @Nullable String emitDirectory;
+    public KarinaDefaultCompiler(@Nullable String emitDirectory) {
+        this.emitDirectory = emitDirectory;
         this.modelLoader = new ModelLoader();
         this.parser = new ParseProcessor();
         this.importProcessor = new ImportProcessor();
@@ -51,6 +52,7 @@ public class KarinaDefaultCompiler {
 
 
             var bytecodeClasses = ModelBuilder.merge(javaBase, karinaBase);
+            ImportHelper.logFullModel(bytecodeClasses);
             KType.validateBuildIns(bytecodeClasses);
 
 
@@ -70,7 +72,7 @@ public class KarinaDefaultCompiler {
             var attributedTree = this.attributionProcessor.attribTree(importedTree);
             Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
 
-            if (this.emit) {
+            if (this.emitDirectory != null) {
                 Log.begin("lowering");
                 var loweredTree = this.lowering.lowerTree(attributedTree);
                 Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
@@ -78,9 +80,10 @@ public class KarinaDefaultCompiler {
 
                 Log.begin("generation");
                 var compiled = this.backend.compileTree(loweredTree, "main");
-                var path = Path.of("resources/out/build.jar");
+                var path = Path.of(this.emitDirectory);
                 compiled.dump(path);
                 compiled.write(path);
+                Log.record("compiled to " + path.toAbsolutePath());
                 Log.end("generation");
 
 

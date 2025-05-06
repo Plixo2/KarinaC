@@ -9,7 +9,6 @@ commaWordChain: id (',' id)*;
 
 item: annotation* (function | struct | enum | interface);
 
-
 function: OVERRIDE? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
 //boundWhere is not yet implemented
@@ -146,4 +145,4 @@ id: ID | 'expr' | 'type' | '\\' escaped | '_';
 escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
 | STRUCT | RAISE | TRAIT | IMPL | LET
-| MATCHES | SELF | STRING | JSON | BOOL | WHERE;
+| SELF | STRING | JSON | BOOL | WHERE;

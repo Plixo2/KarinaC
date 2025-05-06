@@ -156,14 +156,19 @@ public class AttributionItem {
         }
 
         if (methodModel.isConstructor()) {
-             if (!returnType.isVoid()) {
-                 Log.attribError(new AttribError.NotSupportedType(
+            if (Modifier.isStatic(methodModel.modifiers())) {
+                Log.attribError(new AttribError.NotSupportedExpression(
+                        methodModel.region(),
+                        "Constructor cannot be static"
+                ));
+                throw new Log.KarinaException();
+            } else if (!returnType.isVoid()) {
+                 Log.attribError(new AttribError.NotSupportedExpression(
                          methodModel.region(),
-                         returnType
+                         "Constructor must return void"
                  ));
                  throw new Log.KarinaException();
              }
-
         }
         Log.endType(Log.LogTypes.METHOD_NAME, logName);
 

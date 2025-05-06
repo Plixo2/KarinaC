@@ -1,30 +1,30 @@
-package org.karina.lang.compiler.stages.lower;
+package org.karina.lang.compiler.utils;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.KType;
 import org.karina.lang.compiler.objects.Types;
-import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.UpstreamMethodPointer;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
 
-public class SyntheticMethods {
+public class MethodHelper {
 
-    public static void implementForClass(KClassModel classModel, Model model) {
-
-        if (Modifier.isAbstract(classModel.modifiers())) {
-            return;
-        }
-
-        var classType = classModel.getDefaultClassType();
-        var toImplement = getMethodsToImplementForClass(model, classType);
-
-
-    }
+//    public static void implementForClass(KClassModel classModel, Model model) {
+//
+//        if (Modifier.isAbstract(classModel.modifiers())) {
+//            return;
+//        }
+//
+//        var classType = classModel.getDefaultClassType();
+//        var toImplement = getMethodsToImplementForClass(model, classType, true);
+//
+//
+//    }
 
     //want a list of all objects:
     //MethodPointer pointing to where the abstract method was defined
@@ -36,13 +36,20 @@ public class SyntheticMethods {
     //find all methods in the class that are marked abstract
     //Call this methods recursive for the superclass and all interfaces
     //Filter the list when a method is implemented in the current class
+//
+    public static List<MethodToImplement> getMethodsToImplementForClass(Model model, KType.ClassType classType) {
+        return getMethodsToImplementForClass(model, classType, true, true);
+    }
 
+    public static List<MethodToImplement> getImplementForClass(Model model, KType.ClassType classType) {
+        return getMethodsToImplementForClass(model, classType , true, false);
+    }
 
     //TODO what if a abstract methods defines generics types with bounds???
-    private static List<MethodToImplement> getMethodsToImplementForClass(Model model, KType.ClassType classType) {
+    private static List<MethodToImplement> getMethodsToImplementForClass(Model model, KType.ClassType classType, boolean first, boolean removeImplementedOnFirst) {
 
         var currentClassModel = model.getClass(classType.pointer());
-        if (!Modifier.isAbstract(currentClassModel.modifiers())) {
+        if (!Modifier.isAbstract(currentClassModel.modifiers()) && !first) {
             return List.of();
         }
 
@@ -63,6 +70,9 @@ public class SyntheticMethods {
         var currentDefined = new ArrayList<MethodToImplement>();
 
         for (var method : currentClassModel.methods()) {
+            if (Modifier.isStatic(method.modifiers())) {
+                continue;
+            }
 
             var pointer = method.pointer();
             var returnType = Types.projectGenerics(method.signature().returnType(), mapped);
@@ -74,7 +84,7 @@ public class SyntheticMethods {
                 argumentTypes[i] = type;
             }
 
-            var methodToImplement = new MethodToImplement(method.name(), pointer, returnType, argumentTypes);
+            var methodToImplement = new MethodToImplement(method.name(), pointer, returnType, argumentTypes, null);
 
             if (Modifier.isAbstract(method.modifiers())) {
                 currentAbstractMethods.add(methodToImplement);
@@ -85,27 +95,32 @@ public class SyntheticMethods {
         var superMethods = new ArrayList<MethodToImplement>();
         var superClass = Types.getSuperType(model, classType);
         if (superClass != null) {
-            superMethods.addAll(getMethodsToImplementForClass(model, superClass));
+            superMethods.addAll(getMethodsToImplementForClass(model, superClass, false, removeImplementedOnFirst));
         }
 
         var interfaces = Types.getInterfaces(model, classType);
         for (var anInterface : interfaces) {
-            superMethods.addAll(getMethodsToImplementForClass(model, anInterface));
+            superMethods.addAll(getMethodsToImplementForClass(model, anInterface, false, removeImplementedOnFirst));
         }
 
         //only add methods, that are not implemented in the current class
         for (var method : superMethods) {
-            if (isImplemented(method, currentDefined)) {
-                continue;
+            var implementedMethod = isImplemented(method, currentDefined);
+            if (implementedMethod != null) {
+                if (first && !removeImplementedOnFirst) {
+                    currentAbstractMethods.add(method.project(mapped, implementedMethod));
+                }
+            } else {
+                currentAbstractMethods.add(method.project(mapped, null));
             }
-            currentAbstractMethods.add(method.project(mapped));
+
         }
 
 
         return currentAbstractMethods;
     }
 
-    private static boolean isImplemented(MethodToImplement method, List<MethodToImplement> currentMethods) {
+    public static @Nullable MethodToImplement isImplemented(MethodToImplement method, List<MethodToImplement> currentMethods) {
         outer: for (var currentMethod : currentMethods) {
             if (!method.name.equals(currentMethod.name)) {
                 continue;
@@ -124,16 +139,25 @@ public class SyntheticMethods {
                     continue outer;
                 }
             }
-            return true;
+            return currentMethod;
         }
 
-        return false;
+        return null;
     }
 
-    private record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes) {
+    public record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes, MethodToImplement implementing) {
 
+//        public static MethodToImplement fromDefaultMethod(MethodModel methodModel) {
+//            var returnType = methodModel.signature().returnType();
+//            var argumentTypes = new KType[methodModel.signature().parameters().size()];
+//            for (var i = 0; i < methodModel.signature().parameters().size(); i++) {
+//                var parameter = methodModel.signature().parameters().get(i);
+//                argumentTypes[i] = parameter;
+//            }
+//            return new MethodToImplement(methodModel.name(), methodModel.pointer(), returnType, argumentTypes);
+//        }
 
-        private MethodToImplement project(Map<Generic, KType> mapping) {
+        private MethodToImplement project(Map<Generic, KType> mapping, MethodToImplement implementing) {
             var retProj = Types.projectGenerics(this.returnType, mapping);
             var argumentTypes = new KType[this.argumentTypes.length];
             for (var i = 0; i < this.argumentTypes.length; i++) {
@@ -142,7 +166,24 @@ public class SyntheticMethods {
                 argumentTypes[i] = type;
             }
 
-            return new MethodToImplement(this.name, this.originalMethodPointer, retProj, argumentTypes);
+            return new MethodToImplement(this.name, this.originalMethodPointer, retProj, argumentTypes, implementing);
+        }
+
+        @Override
+        public String toString() {
+            return "MethodToImplement{" + "name='" + this.name + '\'' + ", originalMethodPointer=" +
+                    this.originalMethodPointer + ", returnType=" + this.returnType + ", argumentTypes=" +
+                    Arrays.toString(this.argumentTypes) + '}';
+        }
+
+        public String toReadableString() {
+            var string = String.join(
+                    ", ",
+                    Arrays.stream(this.argumentTypes)
+                            .map(KType::toString)
+                            .toList()
+            );
+            return this.name + "(" + string + ") -> " + this.returnType;
         }
     }
 

@@ -30,7 +30,6 @@ CLASS: 'class';
 LET: 'let';
 IF: 'if';
 ELSE: 'else';
-MATCHES: 'matches';
 WHILE: 'while';
 FOR: 'for';
 SUPER: 'super';
@@ -92,7 +91,6 @@ CHAR_SEMICOLON:';';
 CHAR_ESCAPE:'\\';
 
 
-
 STRING_LITERAL: '"' STRING_CHARACTERS? '"';
 CHAR_LITERAL: '\'' (CHAR_CHARACTERS | ESCAPED_DOLLAR | CHAR_VARIABLE)* '\'';
 
@@ -100,7 +98,7 @@ fragment CHAR_VARIABLE: '$' (ID | 'expr' | 'type' | '\\' ESCAPED);
 fragment ESCAPED: FN | IS | IN | AS | EXTEND
                    | MATCH | OVERRIDE | VIRTUAL | YIELD
                    | STRUCT | RAISE | TRAIT | IMPL | LET
-                   | MATCHES | SELF | STRING | JSON | BOOL | WHERE;
+                   | SELF | STRING | JSON | BOOL | WHERE;
 fragment ESCAPED_DOLLAR: '\\$';
 fragment CHAR_CHARACTERS: CHAR_CHARACTER+;
 fragment CHAR_CHARACTER: ~[$'\\\r\n] | ESCAPE_SEQUENCE;
@@ -127,7 +125,7 @@ FLOAT_NUMBER: ('-')? DIGITS '.' DIGITS EXPONENT?
 fragment DIGITS: DIGIT+;
 fragment EXPONENT : [eE] [+-]? DIGITS;
 
-ID: [a-zA-Z_][a-zA-Z_0-9]* ;
+ID: [a-zA-Z_][a-zA-Z_0-9$]* ;
 WS: [ \t\r\n\u000C]+ -> skip;
 COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;

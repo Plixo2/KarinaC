@@ -71,10 +71,15 @@ public class CallAttrib  {
         newArguments.addAll(methodTypedReturn.newArguments);
         Log.recordType(Log.LogTypes.CALLS, "returning of static method", methodTypedReturn.pointer, methodTypedReturn.returnType);
 
+        var isInterface = Modifier.isInterface(
+                ctx.model().getClass(methodTypedReturn.pointer.classPointer()).modifiers()
+        );
+
         return new CallSymbol.CallStatic(
                 methodTypedReturn.pointer,
                 methodTypedReturn.generics,
-                methodTypedReturn.returnType
+                methodTypedReturn.returnType,
+                isInterface
         );
     }
 
@@ -197,11 +202,15 @@ public class CallAttrib  {
         newArguments.addAll(methodTypedReturn.newArguments);
         Log.recordType(Log.LogTypes.CALLS, "returning of virtual method", methodTypedReturn.pointer, methodTypedReturn.returnType);
 
+        var isInterface = Modifier.isInterface(
+                ctx.model().getClass(methodTypedReturn.pointer.classPointer()).modifiers()
+        );
 
         return new CallSymbol.CallVirtual(
                 methodTypedReturn.pointer,
                 methodTypedReturn.generics,
-                methodTypedReturn.returnType
+                methodTypedReturn.returnType,
+                isInterface
         );
     }
 
@@ -381,7 +390,7 @@ public class CallAttrib  {
 
                 var canConvert = ctx.getConversion(argument.region(), mappedParameter, argument, mutable, false) != null;
                 if (!canConvert) {
-                    Log.recordType(Log.LogTypes.CALLS, "Cannot assign " + mappedParameter + " cannot be assigned from " + argument.type());
+                    Log.recordType(Log.LogTypes.CALLS, mappedParameter + " cannot be assigned from " + argument.type());
                     canAssign = false;
                     break;
                 }

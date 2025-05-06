@@ -34,6 +34,70 @@ import java.util.function.Supplier;
  */
 public class Log {
 
+    private static final Set<LogTypes> LOG_OVERRIDE;
+
+    static {
+        var property = System.getProperty("karina.logging", "none");
+
+        LOG_OVERRIDE = switch (property) {
+            case "none" -> Set.of();
+            //only missing JVM_CLASS_LOADING
+            case "verbose" -> Set.of(
+                    LogTypes.CHECK_TYPE,
+                    LogTypes.METHOD_NAME,
+                    LogTypes.CLASS_NAME,
+                    LogTypes.CALLS,
+                    LogTypes.EXPR,
+                    LogTypes.VARIABLE,
+                    LogTypes.IMPORTS,
+                    LogTypes.IMPORT_PRELUDE,
+                    LogTypes.IMPORT_STAGES,
+                    LogTypes.IMPLICIT_CONVERSION,
+                    LogTypes.AMBIGUOUS,
+                    LogTypes.BRANCH,
+                    LogTypes.SUPER_WARN,
+                    LogTypes.ASSERTIONS,
+                    LogTypes.STRING_INTERPOLATION,
+                    LogTypes.LOADED_CLASSES,
+                    LogTypes.CLOSURE,
+                    LogTypes.MEMBER,
+                    LogTypes.LOWERING,
+                    LogTypes.GENERATION
+            );
+            case "verbose_jvm" -> Set.of(
+                    LogTypes.CHECK_TYPE,
+                    LogTypes.METHOD_NAME,
+                    LogTypes.CLASS_NAME,
+                    LogTypes.CALLS,
+                    LogTypes.EXPR,
+                    LogTypes.VARIABLE,
+                    LogTypes.IMPORTS,
+                    LogTypes.IMPORT_PRELUDE,
+                    LogTypes.IMPORT_STAGES,
+                    LogTypes.IMPLICIT_CONVERSION,
+                    LogTypes.AMBIGUOUS,
+                    LogTypes.BRANCH,
+                    LogTypes.SUPER_WARN,
+                    LogTypes.ASSERTIONS,
+                    LogTypes.STRING_INTERPOLATION,
+                    LogTypes.JVM_CLASS_LOADING,
+                    LogTypes.LOADED_CLASSES,
+                    LogTypes.CLOSURE,
+                    LogTypes.MEMBER,
+                    LogTypes.LOWERING,
+                    LogTypes.GENERATION
+            );
+            default -> {
+                throw new IllegalStateException(
+                        "Invalid logging level: "
+                        + property
+                        + ". Valid options are: none, verbose, verbose_jvm"
+                );
+            }
+        };
+
+    }
+
     /**
      * Used to disable certain logs
      */
@@ -54,15 +118,21 @@ public class Log {
         ASSERTIONS,
         STRING_INTERPOLATION,
         JVM_CLASS_LOADING,
+        LOADED_CLASSES,
         CLOSURE,
         MEMBER,
         LOWERING,
         GENERATION
 
+
         ;
 
         public static final Set<LogTypes> VISIBLE = Set.of(
-                VARIABLE
+
+//                VARIABLE
+//               , LOADED_CLASSES,
+//              , GENERATION
+//                ,IMPLICIT_CONVERSION
                // , IMPLICIT_CONVERSION
                // , AMBIGUOUS
              //   , METHOD_NAME
@@ -71,8 +141,8 @@ public class Log {
               //  , ASSERTIONS
 //                , CLOSURE
 //                ,CHECK_TYPE
-                ,LOWERING,
-                GENERATION
+//                ,LOWERING
+//                ,GENERATION
 //    ,MEMBER
 //    ,CALLS
 // ,EXPR
@@ -82,7 +152,7 @@ public class Log {
         );
 
         public boolean isVisible() {
-            return VISIBLE.contains(this);
+            return VISIBLE.contains(this) || LOG_OVERRIDE.contains(this);
         }
     }
 

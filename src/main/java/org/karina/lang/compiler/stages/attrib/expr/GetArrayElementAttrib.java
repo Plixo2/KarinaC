@@ -30,7 +30,11 @@ public class GetArrayElementAttrib  {
 
         var index = attribExpr(intType, ctx, expr.index()).expr();
 
+//        Log.record("Array index of", index.type());
+
         index = ctx.makeAssignment(index.region(), intType, index);
+
+//        Log.record("Array index of 2", index.type());
 
         return of(ctx, new KExpr.GetArrayElement(
                 expr.region(),

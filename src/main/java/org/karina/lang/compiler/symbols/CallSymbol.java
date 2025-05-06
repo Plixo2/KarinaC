@@ -15,13 +15,12 @@ public sealed interface CallSymbol {
     //CallStatic cannot use the object 'left' that is defined in the Call expression.
     // The MethodPointer is the only thing to get information about the method.
     // Also only used for compilation.
-    record CallStatic(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
-
-    record CallVirtual(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
-    record CallInterface(MethodPointer pointer, List<KType> generics, KType returnType) implements CallSymbol { }
+    record CallStatic(MethodPointer pointer, List<KType> generics, KType returnType, boolean onInterface) implements CallSymbol { }
+    record CallVirtual(MethodPointer pointer, List<KType> generics, KType returnType, boolean onInterface) implements CallSymbol { }
 
 
     record CallSuper(MethodPointer pointer, List<KType> generics, KType returnType, InvocationType invocationType) implements CallSymbol { }
+    // Used for invoking a function type.
     record CallDynamic(Region region, KType returnType) implements CallSymbol { }
 
 }

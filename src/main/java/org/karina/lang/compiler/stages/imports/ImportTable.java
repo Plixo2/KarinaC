@@ -92,6 +92,8 @@ public record ImportTable(
                     interfaces.add(classType);
                 }
 
+                Log.recordType(Log.LogTypes.CLOSURE, "Function type with interfaces", interfaces);
+
                 yield new KType.FunctionType(arguments, returnType, interfaces);
             }
             case KType.GenericLink genericLink -> genericLink;
@@ -201,7 +203,7 @@ public record ImportTable(
         if (classPointer == null) {
             //error reporting. Collect all names and give them as suggestions
             var available = availableTypeNames();
-            Log.importError(new ImportError.UnknownImportType(region, path.mkString("."), available));
+            Log.importError(new ImportError.UnknownImportType(region, path.mkString("::"), available));
             throw new Log.KarinaException();
         }
 

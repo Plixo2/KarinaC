@@ -95,7 +95,7 @@ public class SignatureVisitor {
             path = getPath(ctx.packageSpecifier());
         }
         var baseClass = parseSubClassSignature(ctx.simpleClassTypeSignature());
-        var split = baseClass.name().split("[/$]");
+        var split = baseClass.name().split("/");
         for (var s : split) {
             path = path.append(s);
         }

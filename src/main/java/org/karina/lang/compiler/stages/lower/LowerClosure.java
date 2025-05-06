@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.lower;
 
 import com.google.common.collect.ImmutableList;
+import karina.lang.StringInterpolation;
 import org.jetbrains.annotations.NotNull;
 import org.karina.lang.compiler.jvm.model.MutableModel;
 import org.karina.lang.compiler.jvm.model.karina.KClassModel;
@@ -22,6 +23,8 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 ///
 /// Lower a closure into a new class that implements all given interfaces.
@@ -132,7 +135,8 @@ public class LowerClosure {
 
     private ClassModel createClassModel(LoweringContext ctx) {
         var primary = this.interfaces.getFirst();
-        var name = ctx.definitionClass().name() + "$" + ctx.definitionMethod().name() + "$" + ctx.syntheticCounter().incrementAndGet();
+        var defName = ctx.definitionMethod().name().replace("<", "$").replace(">", "$");
+        var name = ctx.definitionClass().name() + "$" + defName + "$" + ctx.syntheticCounter().incrementAndGet();
         var path = ctx.definitionClass().path().append(name);
         var classPointer = ClassPointer.of(this.region, path);
         if (!(ctx.owningClass() instanceof KClassModel outerClass)) {
@@ -204,6 +208,8 @@ public class LowerClosure {
       //  DebugWriter.write(attribConstructor, "resources/closureConstructorB.txt");
         methods.add(attribConstructor);
 
+        methods.addAll(LoweringItem.createBridgeMethods(newModel, classModel));
+
         return classModel;
     }
 
@@ -240,8 +246,9 @@ public class LowerClosure {
         var outerClassType = new KType.ClassType(outerClass.pointer(), List.of());
         var self = new Variable(classModel.region(), "<self>", outerClassType, false, true);
 
-        var variables = new ArrayList<>(this.argumentVariable);
+        var variables = new ArrayList<Variable>();
         variables.add(self);
+        variables.addAll(this.argumentVariable);
 
         //TODO map correct generics
         var methodModel = new KMethodModel(

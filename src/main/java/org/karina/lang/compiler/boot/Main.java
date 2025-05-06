@@ -1,29 +1,15 @@
 package org.karina.lang.compiler.boot;
 
-
 import org.karina.lang.compiler.api.*;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.LogBuilder;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
 
 public class Main {
 
-    private static final Path sourceDirectory = Path.of("resources/src/");
-    private static final Path buildDir = Path.of("resources/out/build.jar");
-    private static final Path log = Path.of("resources/flight.txt");
-    private static final String mainClass = "src.Main";
-
 
     public static void main(String[] args) throws IOException {
-
-
         var welcome_small =
                 """
                 \u001B[34m
@@ -37,11 +23,21 @@ public class Main {
 
 
         Log.begin("all");
-        var compiler = new KarinaDefaultCompiler(true);
+
+
+        var sourceDirectory = System.getProperty("karina.source", "resources/src/");
+        if (sourceDirectory == null) {
+            throw new IllegalStateException("No source directory provided, use -Dkarina.source=<path>");
+        }
+        var console = System.getProperty("karina.console", "false").equals("true");
+        var flight = System.getProperty("karina.flight", "resources/flight.txt");
+        var out = System.getProperty("karina.out", "resources/out/build.jar");
+
+        var compiler = new KarinaDefaultCompiler(out);
 
         Log.begin("file-load");
         var fileTree = FileLoader.loadTree(
-                sourceDirectory.toAbsolutePath().normalize().toString()
+                Path.of(sourceDirectory).toAbsolutePath().normalize().toString()
         );
         Log.end("file-load");
 
@@ -53,12 +49,18 @@ public class Main {
 
         Log.end("all");
 
-        FlightRecordCollection.printColored(recordings, true, System.out);
-        writeFlight(recordings);
+        writeFlight(recordings, flight);
+        if (console) {
+            FlightRecordCollection.printColored(recordings, true, System.out);
+        }
         System.out.println();
 
         if (success) {
             System.out.println("\u001B[32mCompilation Successful\u001B[0m");
+
+            if (out == null) {
+                System.out.println("\u001B[33mNo output path specified, use -Dkarina.out=<path>\u001B[0m");
+            }
 
             System.out.flush();
             System.out.println("\u001B[33m");
@@ -88,18 +90,12 @@ public class Main {
 
     }
 
-    private static void writeFlight(FlightRecordCollection recordings) {
-        try (var filePrintStream = new PrintStream(new FileOutputStream(log.toFile()))){
+    private static void writeFlight(FlightRecordCollection recordings, String path) {
+        try (var filePrintStream = new PrintStream(new FileOutputStream(Path.of(path).toFile()))){
             FlightRecordCollection.print(recordings, false, filePrintStream);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
-//        try (var filePrintStream = new PrintStream(new BufferedOutputStream(new FileOutputStream(log.toFile())))){
-//            FlightRecordCollection.print(recordings, false, filePrintStream);
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
     }
 
 }

@@ -3,6 +3,7 @@ package org.karina.lang.compiler.stages.lower;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.Region;
 
 import java.util.List;
 
@@ -13,17 +14,17 @@ public class LowerType {
         this.context = context;
     }
 
-    public KType lowerType(KType type) {
+    public KType lowerType(Region region, KType type) {
         return switch (type) {
-            case KType.ArrayType arrayType -> new KType.ArrayType(lowerType(arrayType.elementType()));
-            case KType.ClassType classType -> lowerClassType(classType);
-            case KType.FunctionType functionType -> lowerFunctionType(functionType);
+            case KType.ArrayType arrayType -> new KType.ArrayType(lowerType(region, arrayType.elementType()));
+            case KType.ClassType classType -> lowerClassType(region, classType);
+            case KType.FunctionType functionType -> lowerFunctionType(region, functionType);
             case KType.GenericLink genericLink -> genericLink;
             case KType.PrimitiveType primitiveType -> primitiveType;
             case KType.Resolvable resolvable -> {
                 if (resolvable.isResolved()) {
                     assert resolvable.get() != null;
-                    yield lowerType(resolvable.get());
+                    yield lowerType(region, resolvable.get());
                 }
                 yield KType.ROOT;
             }
@@ -36,14 +37,14 @@ public class LowerType {
 
     }
 
-    public KType lowerClassType(KType.ClassType type) {
+    public KType lowerClassType(Region region, KType.ClassType type) {
         var pointer = type.pointer();
-        var generics = type.generics().stream().map(this::lowerType).toList();
+        var generics = type.generics().stream().map(ref -> lowerType(region, ref)).toList();
         return new KType.ClassType(pointer, generics);
     }
 
-    private KType lowerFunctionType(KType.FunctionType functionType) {
-        return this.context.getOrCreateInterface(functionType);
+    private KType lowerFunctionType(Region region, KType.FunctionType functionType) {
+        return this.context.getOrCreateInterface(region, functionType);
     }
 
 }

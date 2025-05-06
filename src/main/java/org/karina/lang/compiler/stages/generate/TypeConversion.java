@@ -40,12 +40,13 @@ public class TypeConversion {
             }
             case KType.FunctionType functionType -> {
                 if (functionType.interfaces().isEmpty()) {
-                    throw new NullPointerException("invalid");
+                    throw new NullPointerException("no valid interface found for function type " + functionType);
                 }
                 return getType(functionType.interfaces().getFirst());
                 //                return getType(PostExpr.toClassType(functionType));
             }
             case KType.GenericLink genericLink -> {
+                // TODO replace with correct erased type
                 return Type.getType(Object.class);
             }
             case KType.PrimitiveType primitiveType -> {

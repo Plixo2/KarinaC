@@ -19,7 +19,6 @@ public class Types {
         if (a.size() != b.size()) {
             return false;
         }
-
         for (int i = 0; i < a.size(); i++) {
             if (!Types.erasedEquals(a.get(i), b.get(i))) {
                 return false;
@@ -41,12 +40,18 @@ public class Types {
                 yield new KType.ClassType(classType.pointer(), generics);
             }
             case KType.FunctionType functionType -> {
-                List<KType> arguments = new ArrayList<>();
-                for (var ignored : functionType.arguments()) {
-                    arguments.add(KType.ROOT);
+
+                if (!functionType.interfaces().isEmpty()) {
+                    yield functionType.interfaces().getFirst();
+                } else {
+//                    List<KType> arguments = new ArrayList<>();
+//                    for (var ignored : functionType.arguments()) {
+//                        arguments.add(KType.ROOT);
+//                    }
+//                    KType returnType = KType.ROOT;
+//                    yield new KType.FunctionType(arguments, returnType, java.util.List.of());
+                    yield KType.ROOT;
                 }
-                KType returnType = KType.ROOT;
-                yield new KType.FunctionType(arguments, returnType, java.util.List.of());
             }
             case KType.GenericLink genericLink -> {
                 yield eraseGeneric(genericLink.link());
@@ -87,7 +92,9 @@ public class Types {
             return false;
         }
         return switch (a) {
-            case KType.GenericLink genericLink -> false;
+            case KType.GenericLink genericLink -> {
+                yield genericLink.link().equals(((KType.GenericLink) b).link());
+            }
             case KType.Resolvable resolvable -> false;
             case KType.ArrayType arrayType -> {
                 yield erasedEquals(arrayType.elementType(), ((KType.ArrayType) b).elementType());

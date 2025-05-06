@@ -1,7 +1,9 @@
 package org.karina.lang.compiler.stages.imports;
 
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.utils.MethodHelper;
 import org.karina.lang.compiler.utils.Unique;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.ImportError;
@@ -181,10 +183,7 @@ public class ImportProcessor {
         if (Modifier.isFinal(superClassModel.modifiers())) {
             Log.syntaxError(classModel.region(), "Cannot extend final class " + superClassModel.name());
             throw new Log.KarinaException();
-        } else if (!Modifier.isStatic(superClassModel.modifiers()) && !superClassModel.isTopLevel()) {
-            Log.syntaxError(classModel.region(), "Cannot extend non static class " + superClassModel.name());
-            throw new Log.KarinaException();
-        } else if (Modifier.isInterface(superClassModel.modifiers())) {
+        }  else if (Modifier.isInterface(superClassModel.modifiers())) {
             Log.syntaxError(classModel.region(), "Cannot extend interface");
             throw new Log.KarinaException();
         } else if ((superClassModel.modifiers() & Opcodes.ACC_ENUM) != 0) {
@@ -279,6 +278,7 @@ public class ImportProcessor {
                 throw new Log.KarinaException();
             }
         }
+        validateImplementedMethods(model, classModel);
 
         for (var innerClass : classModel.innerClasses()) {
             //we want the correct outer class, by identity
@@ -288,6 +288,7 @@ public class ImportProcessor {
             }
             validateClassModel(model, innerClass);
         }
+
 
     }
 
@@ -403,6 +404,26 @@ public class ImportProcessor {
         }
         Log.temp(classModel.region(), "Class must have constructor");
         throw new Log.KarinaException();
+    }
+
+    private void validateImplementedMethods(Model model, KClassModel classModel) {
+        if (Modifier.isAbstract(classModel.modifiers())) {
+            return;
+        }
+
+        var classType = classModel.getDefaultClassType();
+        var toImplement = MethodHelper.getMethodsToImplementForClass(model, classType);
+
+        for (var methodToImplement : toImplement) {
+            Log.temp(classModel.region(),
+                    "Method '" + methodToImplement.toReadableString() + "' is not implemented from class " +
+                            methodToImplement.originalMethodPointer().classPointer()
+            );
+        }
+        if (!toImplement.isEmpty()) {
+            throw new Log.KarinaException();
+        }
+
     }
 
     //TODO validation

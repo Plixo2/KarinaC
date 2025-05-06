@@ -87,15 +87,15 @@ public class ForAttrib  {
                     IteratorTypeSymbol.ForArray.class
             );
         } else {
-            if (type instanceof KType.ClassType classType) {
-                if (KType.KARINA_RANGE.pointer().equals(classType.pointer())) {
-                    return new IteratorExpr(
-                            iter,
-                            KType.INT,
-                            IteratorTypeSymbol.ForRange.class
-                    );
-                }
-            }
+//            if (type instanceof KType.ClassType classType) {
+//                if (KType.KARINA_RANGE.pointer().equals(classType.pointer())) {
+//                    return new IteratorExpr(
+//                            iter,
+//                            KType.INT,
+//                            IteratorTypeSymbol.ForRange.class
+//                    );
+//                }
+//            }
 
             var iter_type = new KType.Resolvable();
             var iterable_interface = KType.ITERABLE(iter_type);

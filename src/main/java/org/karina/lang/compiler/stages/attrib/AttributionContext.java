@@ -34,10 +34,8 @@ public record AttributionContext(
     /**
      * Unboxing and boxing of primitive types, see {@link #boxing} and {@link #unboxing}
      */
-
     private final static Map<KType.KPrimitive, PrimitiveUnboxing> BOX_MAPPING = Map.of(
-            org.karina.lang.compiler.objects.KType.KPrimitive.INT, new PrimitiveUnboxing(
-                    org.karina.lang.compiler.objects.KType.INTEGER_CLASS.pointer(), "intValue", true),
+            KType.KPrimitive.INT, new PrimitiveUnboxing(KType.INTEGER_CLASS.pointer(), "intValue", true),
             KType.KPrimitive.LONG, new PrimitiveUnboxing(KType.LONG_CLASS.pointer(), "longValue", true),
             KType.KPrimitive.DOUBLE, new PrimitiveUnboxing(KType.DOUBLE_CLASS.pointer(), "doubleValue", true),
             KType.KPrimitive.FLOAT, new PrimitiveUnboxing(KType.FLOAT_CLASS.pointer(), "floatValue", true),
@@ -164,7 +162,7 @@ public record AttributionContext(
 
             var pointer = MethodPointer.of(
                     right.region(),
-                    classPointer,
+                    unboxing.isNumber ? KType.NUMBER.pointer() : classPointer,
                     unboxing.unboxingMethod,
                     new Signature(
                             ImmutableList.of(),
@@ -183,7 +181,8 @@ public record AttributionContext(
                     new CallSymbol.CallVirtual(
                             pointer,
                             List.of(), //generics
-                            new KType.PrimitiveType(primitive)
+                            new KType.PrimitiveType(primitive),
+                            false
                     )
             );
 
@@ -287,7 +286,6 @@ public record AttributionContext(
         //dummy, we dont need this object for checks or compilation
         var dummy = new KExpr.StringExpr(right.region(), "this should not be visible", false);
 
-
         return new KExpr.Call(
                 right.region(),
                 dummy, //should be ignored, when using CallStatic after attributing
@@ -296,7 +294,8 @@ public record AttributionContext(
                 new CallSymbol.CallStatic(
                         pointer,
                         List.of(), //generics
-                        classType
+                        classType,
+                        false
                 )
         );
     }

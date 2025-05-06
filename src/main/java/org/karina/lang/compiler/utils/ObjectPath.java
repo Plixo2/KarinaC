@@ -105,7 +105,7 @@ public final class ObjectPath {
     }
 
     public static ObjectPath fromJavaPath(String str) {
-        return new ObjectPath(str.split("[/$]"));
+        return new ObjectPath(str.split("/"));
     }
 
 

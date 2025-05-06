@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.generate;
 
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.objects.BinaryOperator;
 import org.karina.lang.compiler.objects.KExpr;
 import org.karina.lang.compiler.objects.KType;
@@ -10,6 +11,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
+import java.nio.file.Path;
 import java.util.Objects;
 
 public class GenerateExpr {
@@ -154,19 +156,57 @@ public class GenerateExpr {
                         binary(binary.operator().value(), BinaryOperatorSet.LONG, ctx);
                     }
                     case BinOperatorSymbol.ObjectEquals objectEquals -> {
-                        Log.temp(expr.region(), "Cannot be expressed");
-                        throw new Log.KarinaException();
+                        switch (objectEquals) {
+                            case BinOperatorSymbol.ObjectEquals.Equal _, BinOperatorSymbol.ObjectEquals.NotEqual _ -> {
+                                var owner = "java/util/Objects";
+                                var argType = Type.getType(Object.class);
+                                var desc = Type.getMethodDescriptor(Type.BOOLEAN_TYPE, argType, argType);
+                                var name = "equals";
+
+                                var opcode = Opcodes.INVOKESTATIC;
+                                ctx.add(new MethodInsnNode(
+                                        opcode,
+                                        owner,
+                                        name,
+                                        desc,
+                                        false
+                                ));
+                                if (objectEquals instanceof BinOperatorSymbol.ObjectEquals.NotEqual) {
+                                    ctx.add(new InsnNode(Opcodes.ICONST_1));
+                                    ctx.add(new InsnNode(Opcodes.IXOR));
+                                }
+                            }
+                            case BinOperatorSymbol.ObjectEquals.StrictEqual _, BinOperatorSymbol.ObjectEquals.StrictNotEqual _ -> {
+                                int opcode = Opcodes.IF_ACMPEQ;
+                                if (objectEquals instanceof BinOperatorSymbol.ObjectEquals.StrictNotEqual) {
+                                    opcode = Opcodes.IF_ACMPNE;
+                                }
+
+                                var trueLabel = new LabelNode();
+                                var endLabel = new LabelNode();
+                                ctx.add(new JumpInsnNode(opcode, trueLabel));
+                                ctx.add(new InsnNode(Opcodes.ICONST_0));
+                                ctx.add(new JumpInsnNode(Opcodes.GOTO, endLabel));
+                                ctx.add(trueLabel);
+                                ctx.add(new InsnNode(Opcodes.ICONST_1));
+                                ctx.add(endLabel);
+
+
+                            }
+                        }
+
                     }
                 }
 
             }
             case KExpr.Block block -> {
                 var iterator = block.expressions().iterator();
+                assert block.symbol() != null;
                 while (iterator.hasNext()) {
                     var next = iterator.next();
                     addExpression(next, ctx);
                     var type = next.type();
-                    if (!type.isVoid() && iterator.hasNext()) {
+                    if (!type.isVoid() && (iterator.hasNext() || block.symbol().isVoid())) {
                         var size = TypeConversion.jvmSize(TypeConversion.getType(type));
                         if (size == 2) {;
                             ctx.add(new InsnNode(Opcodes.POP2));
@@ -224,32 +264,6 @@ public class GenerateExpr {
                         Log.temp(expr.region(), "Cannot be expressed");
                         throw new Log.KarinaException();
                     }
-                    case CallSymbol.CallInterface callInterface -> {
-                        addExpression(call.left(), ctx);
-
-                        var path = callInterface.pointer().classPointer().path().append(callInterface.pointer().name());
-                        var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
-                        var desc = TypeConversion.getDesc(callInterface.pointer(), callInterface.pointer().returnType());
-                        var name = callInterface.pointer().name();
-
-                        var opcode = Opcodes.INVOKEINTERFACE;
-
-                        for (var argument : call.arguments()) {
-                            addExpression(argument, ctx);
-                        }
-
-                        ctx.add(new MethodInsnNode(
-                                opcode,
-                                owner.getInternalName(),
-                                name,
-                                desc,
-                                true
-                        ));
-                        if (!callInterface.pointer().returnType().isPrimitive() && !callInterface.pointer().returnType().isVoid()) {
-                            var type = TypeConversion.getType(callInterface.returnType());
-                            ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
-                        }
-                    }
                     case CallSymbol.CallStatic callStatic -> {
                         var path = callStatic.pointer().classPointer().path().append(callStatic.pointer().name());
                         var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
@@ -267,12 +281,9 @@ public class GenerateExpr {
                                 owner.getInternalName(),
                                 name,
                                 desc,
-                                false
+                                callStatic.onInterface()
                         ));
-                        if (!callStatic.pointer().returnType().isPrimitive() && !callStatic.pointer().returnType().isVoid()) {
-                            var type = TypeConversion.getType(callStatic.returnType());
-                            ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
-                        }
+                        applyCorrectReturnType(ctx, callStatic.pointer(), callStatic.returnType());
                     }
                     case CallSymbol.CallVirtual callVirtual -> {
                         addExpression(call.left(), ctx);
@@ -282,21 +293,29 @@ public class GenerateExpr {
                         var desc = TypeConversion.getDesc(callVirtual.pointer(), callVirtual.pointer().returnType());
                         var name = callVirtual.pointer().name();
 
+//                        var isInterface = ctx.
+
                         for (var argument : call.arguments()) {
                             addExpression(argument, ctx);
                         }
-
-                        ctx.add(new MethodInsnNode(
-                                Opcodes.INVOKEVIRTUAL,
-                                owner.getInternalName(),
-                                name,
-                                desc,
-                                false
-                        ));
-                        if (!callVirtual.pointer().returnType().isPrimitive() && !callVirtual.pointer().returnType().isVoid()) {
-                            var type = TypeConversion.getType(callVirtual.returnType());
-                            ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                        if ( callVirtual.onInterface()) {
+                            ctx.add(new MethodInsnNode(
+                                    Opcodes.INVOKEINTERFACE,
+                                    owner.getInternalName(),
+                                    name,
+                                    desc,
+                                    true
+                            ));
+                        } else {
+                            ctx.add(new MethodInsnNode(
+                                    Opcodes.INVOKEVIRTUAL,
+                                    owner.getInternalName(),
+                                    name,
+                                    desc,
+                                    false
+                            ));
                         }
+                        applyCorrectReturnType(ctx, callVirtual.pointer(), callVirtual.returnType());
                     }
                     case CallSymbol.CallSuper callSuper -> {
                         switch (callSuper.invocationType()) {
@@ -321,7 +340,6 @@ public class GenerateExpr {
                                 ));
                             }
                             case InvocationType.SpecialInvoke specialInvoke -> {
-                                Log.recordType(Log.LogTypes.GENERATION, "Special", specialInvoke.name());
                                 //Load 'this'
                                 ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
 //                                addExpression(call.left(), ctx);
@@ -340,10 +358,7 @@ public class GenerateExpr {
                                         desc,
                                         false
                                 ));
-                                if (!callSuper.pointer().returnType().isPrimitive() && !callSuper.pointer().returnType().isVoid()) {
-                                    var type = TypeConversion.getType(callSuper.returnType());
-                                    ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
-                                }
+                                applyCorrectReturnType(ctx, callSuper.pointer(), callSuper.returnType());
                             }
                         }
                     }
@@ -390,9 +405,16 @@ public class GenerateExpr {
                 } else {
                     ctx.add(new TypeInsnNode(Opcodes.ANEWARRAY, type.getInternalName()));
                 }
+//                Log.record("Opcode of store is " + storeOp);
+//                Log.record("for " + type);
+
+                var index = 0;
                 for (var element : createArray.elements()) {
+                    ctx.add(new InsnNode(Opcodes.DUP));
+                    ctx.add(new LdcInsnNode(index));
                     addExpression(element, ctx);
-                    ctx.add(new InsnNode(type.getOpcode(storeOp)));
+                    ctx.add(new InsnNode(storeOp));
+                    index += 1;
                 }
 
             }
@@ -472,12 +494,14 @@ public class GenerateExpr {
                         throw new NullPointerException("Cannot be expressed");
                     }
                     case LiteralSymbol.StaticClassReference staticClassReference -> {
-                        //TODO convert to .class
-                        throw new NullPointerException("Cannot be expressed");
+                        // convert to .class
+                        var type = TypeConversion.getType(staticClassReference.classPointer());
+                        ctx.add(new LdcInsnNode(type));
                     }
                     case LiteralSymbol.VariableReference variableReference -> {
                         var variable = variableReference.variable();
                         var index = ctx.getVariableIndex(literal.region(), variable);
+                        Log.recordType(Log.LogTypes.GENERATION, "variable " + variable.name() + " at index " + index);
                         var type = TypeConversion.getType(variable.type());
                         ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ILOAD), index));
                     }
@@ -498,22 +522,20 @@ public class GenerateExpr {
                 throw new Log.KarinaException();
             }
             case KExpr.Number number -> {
-                Object value;
                 switch (Objects.requireNonNull(number.symbol())) {
                     case NumberSymbol.DoubleValue doubleValue -> {
-                        value = doubleValue.value();
+                        ctx.add(new LdcInsnNode(doubleValue.value()));
                     }
                     case NumberSymbol.FloatValue floatValue -> {
-                        value = floatValue.value();
+                        ctx.add(new LdcInsnNode(floatValue.value()));
                     }
                     case NumberSymbol.IntegerValue integerValue -> {
-                        value = integerValue.value();
+                        ctx.add(new LdcInsnNode(integerValue.value()));
                     }
                     case NumberSymbol.LongValue longValue -> {
-                        value = longValue.value();
+                        ctx.add(new LdcInsnNode(longValue.value()));
                     }
                 }
-                ctx.add(new LdcInsnNode(value));
             }
             case KExpr.Return aReturn -> {
                 if (aReturn.value() != null) {
@@ -529,7 +551,13 @@ public class GenerateExpr {
                 ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
             }
             case KExpr.StringExpr stringExpr -> {
-                ctx.add(new LdcInsnNode(stringExpr.value()));
+                if (stringExpr.isChar()) {
+                    var literalAsInt = (int) stringExpr.value().charAt(0);
+                    ctx.add(new LdcInsnNode(literalAsInt));
+                    ctx.add(new InsnNode(Opcodes.I2C));
+                } else {
+                    ctx.add(new LdcInsnNode(stringExpr.value()));
+                }
             }
             case KExpr.Throw aThrow -> {
                 addExpression(aThrow.value(), ctx);
@@ -597,8 +625,25 @@ public class GenerateExpr {
                 ctx.add(new JumpInsnNode(Opcodes.IFEQ, endOfLoop));
                 ctx.setBreakTarget(endOfLoop);
                 ctx.setContinueTarget(startOfLoop);
-                //TODO pop value when there is one
+
                 addExpression(aWhile.body(), ctx);
+
+                //pop value when there is one
+                var yieldType = aWhile.body().type();
+                if (!yieldType.isVoid() && !aWhile.body().doesReturn()) {
+                    var type = TypeConversion.getType(yieldType);
+                    var size = TypeConversion.jvmSize(type);
+                    if (size == 2) {;
+                        ctx.add(new InsnNode(Opcodes.POP2));
+                    } else if (size == 1) {
+                        ctx.add(new InsnNode(Opcodes.POP));
+                    } else {
+                        for (int i = 0; i < size; i++) {
+                            ctx.add(new InsnNode(Opcodes.POP));
+                        }
+                    }
+                }
+
                 ctx.add(new JumpInsnNode(Opcodes.GOTO, startOfLoop));
                 ctx.add(endOfLoop);
 
@@ -621,6 +666,16 @@ public class GenerateExpr {
             }
         }
 
+    }
+
+    private static void applyCorrectReturnType(GenerationContext ctx, MethodPointer originalPointer, KType returnType) {
+        if (!originalPointer.returnType().isPrimitive() && !originalPointer.returnType().isVoid()) {
+            var original = TypeConversion.getType(originalPointer.returnType());
+            var type = TypeConversion.getType(returnType);
+            if (!original.equals(type)) {
+                ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+            }
+        }
     }
 
     private static int numericCast(KType.KPrimitive from, KType.KPrimitive to) {

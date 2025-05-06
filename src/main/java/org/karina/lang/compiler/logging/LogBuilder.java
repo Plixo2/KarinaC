@@ -31,6 +31,11 @@ public interface LogBuilder {
         }
         var startLine = region.start().line();
         var endLine = region.end().line();
+
+        if (endLine - startLine > 40) {
+            endLine = startLine + 35;
+        }
+
         startLine = Math.min(Math.max(startLine, 0), lines.size() - 1);
         endLine = Math.min(Math.max(endLine, 0), lines.size() - 1);
         var startPad = " ".repeat(region.start().column());

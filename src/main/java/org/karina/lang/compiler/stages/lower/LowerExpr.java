@@ -115,21 +115,106 @@ public class LowerExpr {
     }
 
     ///
+    /// Converts a String interpolation like 'Hello $name' into calls to the StringInterpolation class.
+    /// 'Hello $name !' is converted to:
+    /// ```
+    /// StringInterpolation.create().appendLiteral("Hello ").appendExpression(name).appendLiteral(" !").toString()
+    /// ```
+    ///
     /// Signature:
     ///     `StringInterpolation(Region region, ImmutableList<StringComponent> components)`
     private static KExpr lowerStringInterpolation(LoweringContext context, KExpr.StringInterpolation expr) {
         var region = expr.region();
-        var components = expr.components().stream()
-                .map(component -> switch (component) {
-                        case StringComponent.StringLiteralComponent stringLiteralComponent -> {
-                            yield stringLiteralComponent;
-                        }
-                        case StringComponent.ExpressionComponent(Region inner, String name, KExpr expression) -> {
-                            yield new StringComponent.ExpressionComponent(inner, name, lower(context, expression));
-                        }
-                })
-                .toList();
-        return new KExpr.StringInterpolation(region, ImmutableList.copyOf(components));
+
+
+        KExpr left = new KExpr.Call(
+                region,
+                new KExpr.Boolean(region, false), //dummy, not used
+                List.of(),
+                List.of(),
+                new CallSymbol.CallStatic(
+                        MethodPointer.of(
+                                region,
+                                KType.STRING_INTERPOLATION.pointer(),
+                                "create",
+                                Signature.emptyArgs(KType.STRING_INTERPOLATION)
+                        ),
+                        List.of(),
+                        KType.STRING_INTERPOLATION,
+                        false
+                )
+        );
+
+        for (var component : expr.components()) {
+            switch (component) {
+                case StringComponent.ExpressionComponent expressionComponent -> {
+                    assert expressionComponent.expression() != null;
+                    left = new KExpr.Call(
+                            region,
+                            left,
+                            List.of(),
+                            List.of(expressionComponent.expression()),
+                            new CallSymbol.CallVirtual(
+                                    MethodPointer.of(
+                                            region,
+                                            KType.STRING_INTERPOLATION.pointer(),
+                                            "appendExpression",
+                                            List.of(KType.ROOT),
+                                            KType.STRING_INTERPOLATION
+                                    ),
+                                    List.of(),
+                                    KType.STRING_INTERPOLATION,
+                                    false
+                            )
+                    );
+                }
+                case StringComponent.StringLiteralComponent stringLiteralComponent -> {
+                    var stringLiteral = new KExpr.StringExpr(
+                            region,
+                            stringLiteralComponent.value(),
+                            false
+                    );
+                    left = new KExpr.Call(
+                            region,
+                            left,
+                            List.of(),
+                            List.of(stringLiteral),
+                            new CallSymbol.CallVirtual(
+                                    MethodPointer.of(
+                                            region,
+                                            KType.STRING_INTERPOLATION.pointer(),
+                                            "appendLiteral",
+                                            List.of(KType.STRING),
+                                            KType.STRING_INTERPOLATION
+                                    ),
+                                    List.of(),
+                                    KType.STRING_INTERPOLATION,
+                                    false
+                            )
+                    );
+                }
+            }
+        }
+
+        var toStringCall = new KExpr.Call(
+                region,
+                left,
+                List.of(),
+                List.of(),
+                new CallSymbol.CallVirtual(
+                        MethodPointer.of(
+                                region,
+                                KType.STRING_INTERPOLATION.pointer(),
+                                "toString",
+                                Signature.emptyArgs(KType.STRING)
+                        ),
+                        List.of(),
+                        KType.STRING,
+                        false
+                )
+        );
+
+        return lower(context, toStringCall);
     }
 
     ///
@@ -290,8 +375,8 @@ public class LowerExpr {
                             expr.region(),
                             context.model().getClass(classType.pointer())
                     );
-                    var newSymbol = new CallSymbol.CallInterface(
-                            toCall.pointer(), List.of(), callDynamic.returnType()
+                    var newSymbol = new CallSymbol.CallVirtual(
+                            toCall.pointer(), List.of(), callDynamic.returnType(), true
                     );
                     return new KExpr.Call(region, left, generics, arguments, newSymbol);
                 } else {
@@ -299,9 +384,6 @@ public class LowerExpr {
                     throw new Log.KarinaException();
                 }
 
-            }
-            case CallSymbol.CallInterface callInterface -> {
-                left = lower(context, expr.left());
             }
             case CallSymbol.CallStatic callStatic -> {
                 left = expr.left(); //ignore
@@ -324,7 +406,10 @@ public class LowerExpr {
         var condition = lower(context, expr.condition());
         var thenArm = lower(context, expr.thenArm());
         var branchPattern = expr.branchPattern();
-        assert branchPattern == null: "Not implemented yet";
+        if (branchPattern != null) {
+            Log.temp(expr.region(), "Not implemented yet");
+            throw new Log.KarinaException();
+        }
 
         ElsePart elseArm = null;
         if (expr.elseArm() != null) {
@@ -440,9 +525,11 @@ public class LowerExpr {
     /// Signature:
     ///     `For(Region region, NameAndOptType varPart, KExpr iter, KExpr body, @Nullable @Symbol IteratorTypeSymbol symbol)`
     private static KExpr lowerFor(LoweringContext ctx, KExpr.For aFor) {
-       // throw new NullPointerException("Not implemented yet");
-        return aFor;
+        var lowerFor = new LowerFor(aFor);
+        return lowerFor.lower(ctx);
+
     }
+
 
     ///  @See {@link LowerClosure}
     private static KExpr lowerClosure(LoweringContext ctx, KExpr.Closure closure) {

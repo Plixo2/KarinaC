@@ -9,6 +9,7 @@ import org.karina.lang.compiler.objects.Types;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Accessors(fluent = true)
@@ -29,8 +30,9 @@ public class MethodPointer {
 
     @Override
     public String toString() {
-        return "MethodPointer{" + " name='" + this.name + '\'' +
-                ", class=" + this.classPointer + '}';
+        return "MethodPointer{" + "region=" + this.region + ", classPointer=" + this.classPointer +
+                ", name='" + this.name + '\'' + ", erasedParameters=" + this.erasedParameters +
+                ", returnType=" + this.returnType + '}';
     }
 
     public static MethodPointer of(Region region, ClassPointer classPointer, String name, Signature signature) {
@@ -40,5 +42,23 @@ public class MethodPointer {
 
     public static MethodPointer of(Region region, ClassPointer classPointer, String name, List<KType> erasedParameters, KType returnType) {
         return new MethodPointer(region, classPointer, name, erasedParameters, returnType);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof MethodPointer pointer)) {
+            return false;
+        }
+        return Objects.equals(this.classPointer, pointer.classPointer) &&
+                Objects.equals(this.name, pointer.name) &&
+                Types.signatureEquals(this.erasedParameters, pointer.erasedParameters) &&
+                Objects.equals(this.returnType, pointer.returnType);
+    }
+
+
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.classPointer, this.name, this.erasedParameters, this.returnType);
     }
 }

@@ -35,6 +35,8 @@ public sealed interface KType {
             List.of()
     );
 
+
+
     ClassType NUMBER = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.NUMBER_PATH),
             List.of()
@@ -75,12 +77,25 @@ public sealed interface KType {
             List.of()
     );
 
+    ClassType STRING_INTERPOLATION = new ClassType(
+            ClassPointer.of(KARINA_LIB, ClassPointer.STRING_INTERPOLATION_PATH),
+            List.of()
+    );
+
     static ClassType ITERABLE(KType iter_type) {
         return new ClassType(
                 ClassPointer.of(JAVA_LIB, ClassPointer.ITERABLE_PATH),
                 List.of(iter_type)
         );
     }
+
+    static ClassType ITERATOR(KType iter_type) {
+        return new ClassType(
+                ClassPointer.of(JAVA_LIB, ClassPointer.ITERATOR_PATH),
+                List.of(iter_type)
+        );
+    }
+
     static ClassType CLASS_TYPE(KType clsType) {
         return new ClassType(
                 ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE_PATH),
@@ -138,6 +153,7 @@ public sealed interface KType {
         validatePointer(model, NUMBER);
         validatePointer(model, STRING);
         validatePointer(model, ITERABLE(ROOT));
+        validatePointer(model, ITERATOR(ROOT));
         validatePointer(model, CLASS_TYPE(ROOT));
         validatePointer(model, THROWABLE);
 
@@ -148,6 +164,7 @@ public sealed interface KType {
         validatePointer(model, DOUBLE_CLASS);
 
         validatePointer(model, KARINA_RANGE);
+        validatePointer(model, STRING_INTERPOLATION);
         validatePointer(model, KARINA_OPTION(ROOT));
         validatePointer(model, KARINA_OPTION_SOME(ROOT));
         validatePointer(model, KARINA_OPTION_NONE(ROOT));
@@ -184,7 +201,7 @@ public sealed interface KType {
     }
 
     default boolean isPrimitive() {
-        return this instanceof PrimitiveType primitive;
+        return this.unpack() instanceof PrimitiveType primitive;
     }
 
     default boolean isRoot() {
@@ -243,6 +260,7 @@ public sealed interface KType {
             List<? extends KType> interfaces
     ) implements KType {
 
+
         @Override
         public String toString() {
             var returnType = this.returnType.toString();
@@ -261,7 +279,7 @@ public sealed interface KType {
                 suffix = "<" + names + ">";
             }
 
-            return this.pointer.path().mkString(".") + suffix;
+            return this.pointer.path().mkString("::") + suffix;
         }
     }
 

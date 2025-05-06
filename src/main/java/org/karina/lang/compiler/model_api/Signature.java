@@ -15,4 +15,8 @@ public record Signature(ImmutableList<KType> parameters, KType returnType) {
     public ImmutableList<KType> parametersErased() {
         return ImmutableList.copyOf(parameters().stream().map(Types::erase).toList());
     }
+
+    public static Signature emptyArgs(KType returnType) {
+        return new Signature(ImmutableList.of(), returnType);
+    }
 }

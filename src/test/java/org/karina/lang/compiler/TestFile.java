@@ -22,7 +22,7 @@ public class TestFile {
     }
 
     public void expect() {
-        var compiler = new KarinaDefaultCompiler(false);
+        var compiler = new KarinaDefaultCompiler(null);
         var collection = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
 
@@ -42,7 +42,7 @@ public class TestFile {
     }
 
     public <T> void expectError(Class<T> errorType, String msg) {
-        var compiler = new KarinaDefaultCompiler(false);
+        var compiler = new KarinaDefaultCompiler(null);
         var collection = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
 

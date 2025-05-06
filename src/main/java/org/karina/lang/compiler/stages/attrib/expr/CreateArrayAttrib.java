@@ -80,7 +80,7 @@ public class CreateArrayAttrib  {
         return of(ctx, new KExpr.CreateArray(
                 expr.region(),
                 elementType,
-                unMappedElements,
+                mappedElements,
                 new KType.ArrayType(
                         currentType
                 )
