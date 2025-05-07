@@ -1,9 +1,0 @@
-{
-  "build": {
-    "src": "./src"
-   , "output": "out/build.jar",
-    "main": "src.Main"
-  },
-  "verbose": true,
-  "run": true
-}

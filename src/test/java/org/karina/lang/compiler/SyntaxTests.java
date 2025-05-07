@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class SyntaxTests {
-    private static final String TEST_DIR = "resources/tests/files/";
+    private static final String TEST_DIR = "tests/files/";
 
     @TestFactory
     List<DynamicTest> testValid() {

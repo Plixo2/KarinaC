@@ -1,6 +1,10 @@
 package karina.lang;
 
 
+/**
+ * String interpolation utility class.
+ * Should be replaced with a more sophisticated implementation in the future.
+ */
 public class StringInterpolation {
 
     private String str = "";
