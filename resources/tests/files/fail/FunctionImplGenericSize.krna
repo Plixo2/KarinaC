@@ -1,0 +1,7 @@
+
+TODO validate argument and return type
+/*
+fn f(a: fn(string) -> string impl java::util::function::Consumer<string>) {
+
+}
+*/

@@ -1,0 +1,9 @@
+
+
+fn f(i: GenericStruct) {
+
+}
+
+struct GenericStruct<T> {
+    value: T
+}

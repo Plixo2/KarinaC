@@ -1,0 +1,33 @@
+
+
+fn get() {
+    let i: int = 0;
+    let f: float = 0.0;
+    let b: bool = true;
+    let s: string = "string";
+    let c: char = 'c';
+    let d: double = 0.0;
+    let l: long = 0;
+
+    let i2: Integer = 0;
+    let f2: Float = 0.0;
+    let b2: Boolean = true;
+    let c2: Character = 'c';
+    let d2: Double = 0.0;
+    let l2: Long = 0;
+
+    let i3: Integer = Integer.valueOf(0);
+    let f3: Float = Float.valueOf(0.0);
+    let b3: Boolean = Boolean.valueOf(true);
+    let c3: Character = Character.valueOf('c');
+    let d3: Double = Double.valueOf(0.0);
+    let l3: Long = Long.valueOf(0);
+
+    let i4: int = Integer.valueOf(0);
+    let f4: float = Float.valueOf(0.0);
+    let b4: bool = Boolean.valueOf(true);
+    let c4: char = Character.valueOf('c');
+    let d4: double = Double.valueOf(0.0);
+    let l4: long = Long.valueOf(0);
+
+}

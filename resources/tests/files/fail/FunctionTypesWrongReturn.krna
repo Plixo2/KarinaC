@@ -1,0 +1,9 @@
+
+
+fn f() {
+
+    let t = fn(ref: string) -> string Boolean.valueOf(ref)
+
+}
+
+

@@ -1,0 +1,10 @@
+
+
+fn f() {
+    let opt = Option.some(1);
+
+    if opt is Option$Some<string> {
+
+    }
+
+}

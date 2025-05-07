@@ -78,9 +78,22 @@ fn main(args: [string]) {
 
     println('Array: $array')
 
+    f("Hello World")
+
     println(get())
 }
 
+
+fn f<T>(first: T) {
+    let create: [T] = [first];
+    let objects: [string] = ["string"]
+    cc(create)
+    c(objects)
+}
+
+fn c(a: [string]) {}
+
+fn cc(a: [?]) {}
 
 fn get() -> ? {
     let indicesA = Arrays.asList([1, 2]).stream().map(fn(a) valueOf(a.intValue())).toList()

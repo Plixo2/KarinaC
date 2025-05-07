@@ -1,0 +1,30 @@
+
+
+fn f() {
+    let a: fn(string) -> string = fn(ref) ref
+    applyJava(a);
+
+    let withVoid : fn(string) -> void = fn(ref) {}
+    let withVoid2: fn(string) = fn(ref) {}
+    let withVoid3: fn(string) = fn(ref) -> void {}
+    let withVoid4: fn(string) = fn(ref: string) -> void {}
+
+    let inferred = fn(ref: Boolean) !ref
+    let assign: fn(Boolean) -> Boolean = inferred
+    let inferred2 = fn(ref) asBool(ref)
+
+    let withImplicitInterfaceType: fn(string) -> string impl java::util::function::Function<string, string> = fn(ref) ref
+    let withImplicitInterfaceDef: fn(string) -> string  = fn(ref) impl java::util::function::Function<string, string> ref
+
+
+
+}
+
+fn asBool(b: Boolean) -> Boolean {
+    return !b
+}
+
+fn applyJava(buildIn: java::util::function::Function<string, string>) {
+
+}
+

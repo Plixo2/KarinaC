@@ -1,0 +1,11 @@
+
+
+fn f() {
+
+    let withImplicitInterfaceType: fn(string) -> string impl java::util::function::Function<string, string> = fn(ref) ref
+    let withImplicitInterfaceDef: fn(string) -> bool = withImplicitInterfaceType
+
+
+
+}
+

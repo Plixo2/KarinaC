@@ -1,0 +1,12 @@
+check all throws:
+
+check all makeAssignment is attribution stage
+
+check for invalid imports and invalid types
+
+check each lowering special case
+
+
+1. imports
+    testes Import function in ImportTable Class
+    todo test imports in ImportTable Class

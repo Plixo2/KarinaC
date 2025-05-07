@@ -1,0 +1,13 @@
+
+
+fn f() {
+    let a: fn(string) -> string = fn(ref) ref
+    applyJava(a);
+
+
+}
+
+fn applyJava(buildIn: java::util::function::Consumer<string>) {
+
+}
+

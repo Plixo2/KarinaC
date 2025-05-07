@@ -1,5 +1,8 @@
 
 
+fn main(args: [string]) {
+   test()
+}
 
 fn test() -> bool {
 

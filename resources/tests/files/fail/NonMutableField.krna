@@ -1,0 +1,11 @@
+
+
+struct NonMutable {
+    x: int
+}
+
+fn assign() {
+    let m = NonMutable { x: 1 }
+
+    m.x = 2
+}

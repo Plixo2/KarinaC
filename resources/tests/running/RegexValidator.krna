@@ -1,0 +1,38 @@
+
+fn main(args: [string]) {
+    test_regex()
+}
+
+fn test_regex() {
+    let pattern = java::util::regex::Pattern.compile("a*(b*|aaa*)*a*")
+
+    let tries = 100000
+
+    for _ in range(0, tries) {
+        let randomString = generate_random_a_b_string((Math.random() * 100) as int)
+        test_str(randomString, pattern)
+    }
+
+}
+
+fn generate_random_a_b_string(length: int) -> string {
+    let sb = StringBuilder {}
+    for _ in range(0, length) {
+        let randomChar = if Math.random() < 0.5 { 'a' } else { 'b' }
+        sb.append(randomChar)
+    }
+    sb.toString()
+}
+
+fn test_str(str: string, pattern: java::util::regex::Pattern) {
+    let matcher = pattern.matcher(str)
+    if matcher.matches() {
+        if str.contains("bab") {
+            raise java::lang::IllegalStateException{ _: 'Pattern $str matches, but contains "bab"' }
+        }
+    } else {
+        if !str.contains("bab") {
+            raise java::lang::IllegalStateException { _: 'Pattern $str does not match, but does not contain "bab"' }
+        }
+    }
+}

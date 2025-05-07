@@ -1,0 +1,10 @@
+
+
+fn f() {
+    let elem1 = GenericStruct<string, string> { value: "string" };
+
+}
+
+struct GenericStruct<T> {
+    value: T
+}
