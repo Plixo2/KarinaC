@@ -14,7 +14,12 @@ import org.karina.lang.compiler.logging.errors.AttribError;
 
 import java.util.*;
 
+
+/**
+ * Represents a type in the Karina language.
+ */
 public sealed interface KType {
+
     Region KARINA_LIB = new TextSource(
             new JavaResource("karina standard library"),
             List.of("su-su-su-supernova")
@@ -25,6 +30,16 @@ public sealed interface KType {
             List.of("cafebabe")
     ).emptyRegion();
 
+    VoidType NONE = new VoidType();
+    PrimitiveType INT = new PrimitiveType(KPrimitive.INT);
+    PrimitiveType DOUBLE = new PrimitiveType(KPrimitive.DOUBLE);
+    PrimitiveType LONG = new PrimitiveType(KPrimitive.LONG);
+    PrimitiveType FLOAT = new PrimitiveType(KPrimitive.FLOAT);
+    PrimitiveType CHAR = new PrimitiveType(KPrimitive.CHAR);
+    PrimitiveType BYTE = new PrimitiveType(KPrimitive.BYTE);
+    PrimitiveType SHORT = new PrimitiveType(KPrimitive.SHORT);
+    PrimitiveType BOOL = new PrimitiveType(KPrimitive.BOOL);
+
     ClassType ROOT = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.ROOT_PATH),
             List.of()
@@ -34,8 +49,6 @@ public sealed interface KType {
             ClassPointer.of(JAVA_LIB, ClassPointer.STRING_PATH),
             List.of()
     );
-
-
 
     ClassType NUMBER = new ClassType(
             ClassPointer.of(JAVA_LIB, ClassPointer.NUMBER_PATH),
@@ -138,15 +151,6 @@ public sealed interface KType {
         return model.getClassPointer(KARINA_LIB, objectPath);
     }
 
-    VoidType NONE = new VoidType();
-    PrimitiveType INT = new PrimitiveType(KPrimitive.INT);
-    PrimitiveType DOUBLE = new PrimitiveType(KPrimitive.DOUBLE);
-    PrimitiveType LONG = new PrimitiveType(KPrimitive.LONG);
-    PrimitiveType FLOAT = new PrimitiveType(KPrimitive.FLOAT);
-    PrimitiveType CHAR = new PrimitiveType(KPrimitive.CHAR);
-    PrimitiveType BYTE = new PrimitiveType(KPrimitive.BYTE);
-    PrimitiveType SHORT = new PrimitiveType(KPrimitive.SHORT);
-    PrimitiveType BOOL = new PrimitiveType(KPrimitive.BOOL);
 
     static void validateBuildIns(Model model) {
         validatePointer(model, ROOT);
@@ -170,6 +174,7 @@ public sealed interface KType {
         validatePointer(model, KARINA_OPTION_NONE(ROOT));
         validatePointer(model, KARINA_RESULT(ROOT, ROOT));
     }
+
     private static void validatePointer(Model model, ClassType classType) {
         var classPointer = model.getClassPointer(classType.pointer().region(), classType.pointer().path());
 
@@ -183,7 +188,6 @@ public sealed interface KType {
             throw new Log.KarinaException();
         }
     }
-
 
 
 
@@ -201,7 +205,7 @@ public sealed interface KType {
     }
 
     default boolean isPrimitive() {
-        return this.unpack() instanceof PrimitiveType primitive;
+        return this.unpack() instanceof PrimitiveType;
     }
 
     default boolean isRoot() {
@@ -238,6 +242,10 @@ public sealed interface KType {
         }
     }
 
+    /**
+     * Represents a type that is not yet processed. (before the import stage)
+     * This type is no longer valid, after the import stage.
+     */
     record UnprocessedType(Region region, RegionOf<ObjectPath> name, List<KType> generics) implements KType {
 
         @Override
@@ -283,7 +291,10 @@ public sealed interface KType {
         }
     }
 
-
+    /**
+     * Represents a generic type. The Generic is either defined on a class or a method.
+     * @param link The generic type.
+     */
     record GenericLink(Generic link) implements KType {
 
         @Override
@@ -293,10 +304,21 @@ public sealed interface KType {
 
     }
 
-    //TODO test if the Resolvable is backed by a Generic, or just unknown
-    // (i think only used for arrays?)
+    /**
+     * Represents a type that can resolve to another type.
+     * This is mainly used for generics but also for other expressions.
+     *
+     * TODO test if the Resolvable is backed by a Generic, or just unknown
+     */
     final class Resolvable implements KType {
+
+        /**
+         * Generics have to be objects, so this is everywhere else.
+         */
         private final boolean canUsePrimitives;
+        /**
+         * Used for return types of closures.
+         */
         private final boolean canUseVoid;
 
         public Resolvable() {
@@ -323,7 +345,7 @@ public sealed interface KType {
         }
 
         /**
-         * Make sure to call this before calling {@link #tryResolve}
+         * Make sure to call this before calling {@link #tryResolve}. Otherwise there might be cycles.
          */
         public boolean canResolve(Region checkingRegion, KType resolved) {
             //TODO this?
@@ -346,10 +368,14 @@ public sealed interface KType {
             var dependencies = new ArrayList<Types.TypeDependency>();
             Types.putDependencies(0, resolved, dependencies);
             var index = Types.getTypeDependencyIndex(this, dependencies);
+
+            // no cycle detected
             if (index == -1) {
                 return true;
             }
 
+            // cycle detected
+            // build the cycle graph for logging
             var linearDependencies = new ArrayList<KType>();
             var dependency = dependencies.get(index);
             linearDependencies.add(dependency.type());

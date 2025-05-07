@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * Java-Karina Model
- * Represents ALL class models of the program.
+ * Represents all class models of the program.
  * @param data
  */
 public record JKModel(ClassLookup data) implements Model {

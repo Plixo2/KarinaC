@@ -11,6 +11,10 @@ import org.karina.lang.compiler.utils.Region;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Identifies a Method across different stages of the compiler. It should be always valid
+ * @see org.karina.lang.compiler.model_api.Model
+ */
 @Getter
 @Accessors(fluent = true)
 public class MethodPointer {

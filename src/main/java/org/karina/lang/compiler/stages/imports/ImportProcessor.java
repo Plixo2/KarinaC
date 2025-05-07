@@ -1,6 +1,5 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.MethodHelper;
@@ -23,6 +22,9 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
 
+/**
+ * This class is responsible for resolving types with some basic class validation.
+ */
 public class ImportProcessor {
 
     public Model importTree(Model model) throws Log.KarinaException {

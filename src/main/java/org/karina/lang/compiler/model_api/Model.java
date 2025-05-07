@@ -11,10 +11,23 @@ import org.karina.lang.compiler.utils.Region;
 
 import java.util.List;
 
+/**
+ * A Model is a collection of classes.
+ * This interface is used to get the current underlying representation of classes, fields, and methods.
+ *
+ * <p>
+ * A {@link ClassPointer}/{@link MethodPointer}/{@link FieldPointer} is used to identify a class, method, or field across different stages of the compiler.
+ * <p>
+ * In every stage of the compiler, a new {@link Model} is created along with new classes, methods, and fields.
+ *
+ * <p>
+ * A Pointer persists across different stages of the compiler and should be always valid.
+ */
 public interface Model {
 
-    //tests if a class exists
+
     @Nullable ClassPointer getClassPointer(Region region, ObjectPath objectPath);
+
     ClassModel getClass(ClassPointer pointer);
     @Nullable ClassModel getClassNullable(ClassPointer pointer);
     MethodModel getMethod(MethodPointer model);

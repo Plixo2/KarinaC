@@ -83,24 +83,6 @@ public class TypeConversion {
         return Type.getType("[" + getType(arrayType.elementType()));
     }
 
-//    public static String toJVMName(String name) {
-//        if (KEYWORDS.contains(name)) {
-//            name =  "K" + name;
-//        }
-//        var buff = new StringBuilder(name.length());
-//        for (int i = 0; i < name.length(); i++) {
-//            var c = name.charAt(i);
-//            boolean isAccepted = c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (i != 0 && c >= '0' && c <= '9');
-//            if (isAccepted) {
-//                buff.append(c);
-//            } else {
-//                buff.append("K");
-//                buff.append(padLeft(Integer.toHexString(c), 4, "0"));
-//            }
-//        }
-//        return buff.toString();
-//    }
-
     private static String padLeft(String str, int length, String pad) {
 
         if (str.length() >= length) {

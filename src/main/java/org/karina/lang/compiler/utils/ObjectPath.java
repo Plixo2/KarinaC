@@ -7,6 +7,10 @@ import org.karina.lang.compiler.logging.Log;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * Represents basically everything with a path.
+ * The ObjectPath is just a immutable array of strings with a few utility methods.
+ */
 public final class ObjectPath {
     @Getter
     @Accessors(fluent = true)

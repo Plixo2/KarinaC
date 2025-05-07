@@ -17,7 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.*;
 
-
+/**
+ * Generates Bytecode that can be written to disk
+ */
 public class GenerationProcessor {
     //Java 17
     public static final int CLASS_VERSION = 61;

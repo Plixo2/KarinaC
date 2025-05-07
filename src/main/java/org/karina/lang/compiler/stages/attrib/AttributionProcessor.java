@@ -5,6 +5,9 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.jvm.model.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
 
+/**
+ * Responsible for type checking and gathering information about the program for lowering and code generation.
+ */
 public class AttributionProcessor {
 
     public Model attribTree(Model model) throws Log.KarinaException {

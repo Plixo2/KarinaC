@@ -15,19 +15,26 @@ import org.karina.lang.compiler.stages.parser.ParseProcessor;
 import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 
-public class KarinaDefaultCompiler {
-    private final ModelLoader modelLoader;
 
+/**
+ * Main Compiler class
+ * Responsible for passing the source files through the different stages of the compiler
+ * Parser -> Import -> Attribution -> Lowering -> Generation
+ */
+public class KarinaDefaultCompiler {
+
+    // The 5 stages of the compiler:
     private final ParseProcessor parser;
     private final ImportProcessor importProcessor;
     private final AttributionProcessor attributionProcessor;
     private final LoweringProcessor lowering;
     private final GenerationProcessor backend;
 
+    // The directory to emit the compiled files to
     private final @Nullable String emitDirectory;
+
     public KarinaDefaultCompiler(@Nullable String emitDirectory) {
         this.emitDirectory = emitDirectory;
-        this.modelLoader = new ModelLoader();
         this.parser = new ParseProcessor();
         this.importProcessor = new ImportProcessor();
         this.attributionProcessor = new AttributionProcessor();
@@ -35,17 +42,28 @@ public class KarinaDefaultCompiler {
         this.backend = new GenerationProcessor();
     }
 
+    /**
+     * Compiles the given files.
+     * This method cannot throw exceptions.
+     * All Logs will be put into the given collection.
+     * @param files the file tree to compile
+     * @param collection the collection to add errors to
+     * @param warnings the collection to add warnings to
+     * @return true if the compilation was successful, false otherwise
+     */
     public boolean compile(FileTreeNode<TextSource> files, DiagnosticCollection collection, DiagnosticCollection warnings, @Nullable FlightRecordCollection recorder) {
         Log.begin("compile");
         try {
             Log.begin("jar-load");
 
+            var modelLoader = new ModelLoader();
+
             Log.begin("java-base");
-            var javaBase = this.modelLoader.loadJavaBase();
+            var javaBase = modelLoader.loadJavaBase();
             Log.end("java-base", "with " + javaBase.getClassCount() + " classes");
 
             Log.begin("karina-base");
-            var karinaBase = this.modelLoader.loadKarinaBase();
+            var karinaBase = modelLoader.loadKarinaBase();
             Log.end("karina-base", "with " + karinaBase.getClassCount() + " classes");
 
             Log.end("jar-load");
@@ -94,8 +112,6 @@ public class KarinaDefaultCompiler {
                 Log.record(amountMessage);
             }
 
-
-
             if (Log.hasErrors()) {
                 Log.internal(new IllegalStateException("Errors in log, this should not happen"));
                 throw new Log.KarinaException();
@@ -112,7 +128,6 @@ public class KarinaDefaultCompiler {
 
             return false;
         } finally {
-
             warnings.addAll(Log.getWarnings());
             if (recorder != null) {
                 recorder.add(Log.getRecordedLogs());

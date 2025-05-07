@@ -5,6 +5,9 @@ import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 
+/**
+ * Rewrites the IR into different expressions that need extra processing before code generation
+ */
 public class LoweringProcessor {
 
     public Model lowerTree(Model model) throws Log.KarinaException {

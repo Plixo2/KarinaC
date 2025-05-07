@@ -12,11 +12,17 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Represents an expression in the Karina language.
+ * @see Symbol
+ * @see Expressions#getType(KExpr)
+ * @see Expressions#doesReturn(KExpr)
+ */
 public sealed interface KExpr {
     Region region();
 
     /**
-     * Only allowed on expressions from {@link AttributionExpr#attribExpr}.
+     * Only allowed on expressions from {@link AttributionExpr#attribExpr} (after the Attribution phase).
      * @return The type of this expression with all generics already resolved.
      */
     default KType type() {
@@ -24,7 +30,7 @@ public sealed interface KExpr {
     }
 
     /**
-     * Only allowed on expressions from {@link AttributionExpr#attribExpr}.
+     * Only allowed on expressions from {@link AttributionExpr#attribExpr} (after the Attribution phase).
      */
     default boolean doesReturn() {
         return Expressions.doesReturn(this);

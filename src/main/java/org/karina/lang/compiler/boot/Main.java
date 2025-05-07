@@ -6,8 +6,10 @@ import org.karina.lang.compiler.logging.Log;
 import java.io.*;
 import java.nio.file.Path;
 
+/**
+ * Main entry
+ */
 public class Main {
-
 
     public static void main(String[] args) throws IOException {
         var welcome_small =

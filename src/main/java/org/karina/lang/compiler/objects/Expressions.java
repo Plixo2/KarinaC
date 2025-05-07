@@ -3,6 +3,9 @@ package org.karina.lang.compiler.objects;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.symbols.BranchYieldSymbol;
 
+/**
+ * Simple wrapper for the 'type' and 'doesReturn' method of KExpr
+ */
 public class Expressions {
 
     /**
@@ -74,11 +77,6 @@ public class Expressions {
             case KExpr.CreateObject createObject -> {
                 Log.temp(expr.region(), "CreateObject should be replaced with a call to the constructor");
                 throw new Log.KarinaException();
-//                if (createObject.symbol() == null) {
-//                    Log.temp(expr.region(), "Symbol is null");
-//                    throw new Log.KarinaException();
-//                }
-//                return createObject.symbol();
             }
             case KExpr.For aFor -> {
                 return KType.NONE;
@@ -170,7 +168,9 @@ public class Expressions {
         }
     }
 
-
+    /**
+     * Should be called using expr.doesReturn()
+     */
     static boolean doesReturn(KExpr expr) {
         return switch (expr) {
             case KExpr.Block block -> {

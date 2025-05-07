@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.karina.lang.compiler.utils.Region;
 
+/**
+ * Identifies a Field across different stages of the compiler. It should be always valid
+ * @see org.karina.lang.compiler.model_api.Model
+ */
 @Getter
 @Accessors(fluent = true)
 public class FieldPointer {

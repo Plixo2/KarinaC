@@ -8,10 +8,9 @@ import org.karina.lang.compiler.utils.Region;
 import java.util.Objects;
 
 /**
- * IMPORTANT:
- * The equals and hashCode methods are overridden to compare the path field,
- * not the region, that is only used for errors
- * ClassPointer should be always valid
+ * Identifies a class across different stages of the compiler. It should be always valid
+ *
+ * @see org.karina.lang.compiler.model_api.Model
  */
 
 @Getter
