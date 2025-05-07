@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.logging.errors;
 
-import org.karina.lang.compiler.api.Resource;
+import org.karina.lang.compiler.utils.Resource;
 import org.karina.lang.compiler.utils.Region;
 
 public sealed interface Error

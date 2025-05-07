@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.model_api;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.jvm.JClassModel;
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
+import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
+import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;

@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.objects.KType;
 
 import java.util.List;
 

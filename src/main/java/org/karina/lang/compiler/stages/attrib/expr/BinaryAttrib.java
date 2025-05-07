@@ -5,13 +5,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.objects.BinaryOperator;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.BinaryOperator;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
-import org.karina.lang.compiler.symbols.BinOperatorSymbol;
+import org.karina.lang.compiler.utils.symbols.BinOperatorSymbol;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.RegionOf;
 

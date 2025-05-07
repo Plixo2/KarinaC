@@ -1,0 +1,11 @@
+
+
+struct Mutable {
+    x: mut int
+}
+
+fn assign() {
+    let m = Mutable { x: 1 }
+
+    m.x = 2
+}

@@ -1,9 +1,9 @@
 package org.karina.lang.compiler.stages.generate;
 
-import org.karina.lang.compiler.api.CustomClassWriter;
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
-import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
-import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
+import org.karina.lang.compiler.utils.CustomClassWriter;
+import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
+import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
+import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Region;

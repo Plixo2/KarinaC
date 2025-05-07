@@ -2,10 +2,9 @@ package org.karina.lang.compiler.model_api.pointer;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.Signature;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.Types;
+import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.List;

@@ -1,9 +1,9 @@
 package org.karina.lang.compiler.logging.errors;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.objects.BinaryOperator;
+import org.karina.lang.compiler.utils.BinaryOperator;
 import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.RegionOf;
 
 import java.util.List;

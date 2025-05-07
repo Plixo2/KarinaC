@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.logging;
 
 import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.utils.TextSource;
 
 import java.util.ArrayList;
 import java.util.List;

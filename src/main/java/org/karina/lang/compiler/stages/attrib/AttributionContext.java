@@ -9,9 +9,9 @@ import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.symbols.CallSymbol;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.symbols.CallSymbol;
 import org.karina.lang.compiler.utils.*;
 
 import java.util.List;
@@ -39,7 +39,8 @@ public record AttributionContext(
             KType.KPrimitive.LONG, new PrimitiveUnboxing(KType.LONG_CLASS.pointer(), "longValue", true),
             KType.KPrimitive.DOUBLE, new PrimitiveUnboxing(KType.DOUBLE_CLASS.pointer(), "doubleValue", true),
             KType.KPrimitive.FLOAT, new PrimitiveUnboxing(KType.FLOAT_CLASS.pointer(), "floatValue", true),
-            KType.KPrimitive.BOOL, new PrimitiveUnboxing(KType.BOOLEAN_CLASS.pointer(), "booleanValue", false)
+            KType.KPrimitive.BOOL, new PrimitiveUnboxing(KType.BOOLEAN_CLASS.pointer(), "booleanValue", false),
+            KType.KPrimitive.CHAR, new PrimitiveUnboxing(KType.CHARACTER_CLASS.pointer(), "charValue", false)
     );
 
     public AttributionContext setInLoop(boolean isLoop) {

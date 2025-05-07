@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.logging;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.logging.errors.*;
 import org.karina.lang.compiler.logging.errors.Error;
 import org.karina.lang.compiler.utils.Region;

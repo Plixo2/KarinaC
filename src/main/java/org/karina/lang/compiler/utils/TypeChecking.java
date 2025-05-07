@@ -1,12 +1,8 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.FlightRecorder;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.model_api.Signature;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.Types;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;

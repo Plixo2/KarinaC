@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.ATNState;
 import org.antlr.v4.runtime.misc.IntervalSet;
 import org.antlr.v4.runtime.misc.Pair;
-import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.Region;

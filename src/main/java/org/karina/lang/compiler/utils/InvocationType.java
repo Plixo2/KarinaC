@@ -1,8 +1,5 @@
 package org.karina.lang.compiler.utils;
 
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.objects.KType;
-
 
 // Represents the type of invocation that is being on an init method
 public sealed interface InvocationType {

@@ -6,10 +6,10 @@ import org.karina.lang.compiler.logging.errors.LowerError;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.symbols.*;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.*;
+import org.karina.lang.compiler.utils.symbols.*;
 
 import java.util.List;
 import java.util.Objects;

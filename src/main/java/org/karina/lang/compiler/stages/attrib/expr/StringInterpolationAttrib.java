@@ -4,11 +4,11 @@ import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
-import org.karina.lang.compiler.symbols.LiteralSymbol;
+import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 import org.karina.lang.compiler.utils.StringComponent;
 
 import java.util.HashSet;

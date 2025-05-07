@@ -1,11 +1,11 @@
 package org.karina.lang.compiler.stages.parser;
 
-import org.karina.lang.compiler.api.FileNode;
-import org.karina.lang.compiler.api.FileTreeNode;
-import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.utils.FileNode;
+import org.karina.lang.compiler.utils.FileTreeNode;
+import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.jvm.model.ModelBuilder;
+import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
 
 import java.util.ArrayList;

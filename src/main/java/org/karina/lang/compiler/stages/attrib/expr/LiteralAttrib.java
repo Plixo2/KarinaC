@@ -3,13 +3,12 @@ package org.karina.lang.compiler.stages.attrib.expr;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.model_api.ClassModel;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.Types;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
-import org.karina.lang.compiler.symbols.LiteralSymbol;
+import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 
 import java.util.HashSet;
 

@@ -8,7 +8,7 @@ import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.KImport;
 import org.karina.lang.compiler.utils.NameAndOptType;
 import org.karina.lang.compiler.utils.Prelude;

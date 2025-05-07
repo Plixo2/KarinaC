@@ -3,8 +3,8 @@ package org.karina.lang.compiler.stages.parser.visitor;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.utils.Unique;
 import org.karina.lang.compiler.logging.errors.ImportError;
-import org.karina.lang.compiler.objects.KAnnotation;
-import org.karina.lang.compiler.objects.annotations.*;
+import org.karina.lang.compiler.utils.KAnnotation;
+import org.karina.lang.compiler.utils.annotations.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 

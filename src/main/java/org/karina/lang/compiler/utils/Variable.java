@@ -1,10 +1,8 @@
 package org.karina.lang.compiler.utils;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
-import org.karina.lang.compiler.objects.KType;
 
 
 @Getter

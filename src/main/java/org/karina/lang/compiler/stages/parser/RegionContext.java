@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.RegionOf;

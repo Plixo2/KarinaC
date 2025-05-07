@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.stages.generate;
 
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
-import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
+import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Generic;
 
 public class GenerateSignature {

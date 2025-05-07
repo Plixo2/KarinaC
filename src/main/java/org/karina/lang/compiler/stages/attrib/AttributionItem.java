@@ -1,21 +1,22 @@
 package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
-import org.karina.lang.compiler.jvm.model.ModelBuilder;
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
-import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
-import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
+import org.karina.lang.compiler.model_api.impl.ModelBuilder;
+import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
+import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
+import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.*;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 public class AttributionItem {
+
 
     public static KClassModel attribClass(Model model, KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
 

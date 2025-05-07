@@ -1,18 +1,9 @@
 package org.karina.lang.compiler.stages.generate;
 
-import org.karina.lang.compiler.api.CustomClassWriter;
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
-import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
-import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.utils.Region;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.tree.*;
-import org.objectweb.asm.util.TraceClassVisitor;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.*;

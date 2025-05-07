@@ -1,11 +1,9 @@
 package org.karina.lang.compiler.utils;
 
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.annotations.AnnotationAST;
-import org.karina.lang.compiler.objects.annotations.AnnotationObject;
-import org.karina.lang.compiler.objects.annotations.AnnotationValue;
+import org.karina.lang.compiler.utils.annotations.AnnotationAST;
+import org.karina.lang.compiler.utils.annotations.AnnotationObject;
+import org.karina.lang.compiler.utils.annotations.AnnotationValue;
 
 import java.util.HashMap;
 

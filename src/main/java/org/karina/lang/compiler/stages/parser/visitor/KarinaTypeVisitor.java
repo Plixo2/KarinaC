@@ -2,7 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor;
 
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;

@@ -8,11 +8,8 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
 import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.compiler.api.TextSource;
+import org.karina.lang.compiler.utils.TextSource;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.BitSet;
 
 /**

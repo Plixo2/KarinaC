@@ -2,8 +2,8 @@ package org.karina.lang.compiler.stages.parser;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.karina.lang.compiler.api.TextSource;
-import org.karina.lang.compiler.jvm.model.ModelBuilder;
+import org.karina.lang.compiler.utils.TextSource;
+import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.stages.parser.error.KarinaErrorListener;
 import org.karina.lang.compiler.stages.parser.error.KarinaRecoveringStrategy;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;

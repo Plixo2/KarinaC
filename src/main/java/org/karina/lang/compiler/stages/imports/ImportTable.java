@@ -10,7 +10,7 @@ import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.*;
 
 import java.util.*;
@@ -69,10 +69,12 @@ public record ImportTable(
                     Log.temp(region, "Cannot find default interface for " + arguments.size() + " arguments and return type " + returnType);
                     throw new Log.KarinaException();
                 }
+                //TODO test return types of the interfaces with the actual return type that is annotated by the type
+
                 //TODO extract, duplicate in ClosureAttrib
-                var alreadyAdded =
+                var alreadyAddedDefault =
                         interfaces.stream().anyMatch(ref -> ref.pointer().equals(defaultInterface));
-                if (!alreadyAdded) {
+                if (!alreadyAddedDefault) {
                     var totalGenerics = arguments.size() + (doesReturn ? 1 : 0);
 
                     var classModel = this.model.getClass(defaultInterface);

@@ -1,18 +1,14 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
-import com.google.errorprone.annotations.Var;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.symbols.IteratorTypeSymbol;
-import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.symbols.IteratorTypeSymbol;
 import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
-
-import java.util.function.Function;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 

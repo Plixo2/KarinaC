@@ -5,11 +5,11 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.symbols.CallSymbol;
-import org.karina.lang.compiler.symbols.IteratorTypeSymbol;
-import org.karina.lang.compiler.symbols.LiteralSymbol;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.symbols.CallSymbol;
+import org.karina.lang.compiler.utils.symbols.IteratorTypeSymbol;
+import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.utils.Variable;
 

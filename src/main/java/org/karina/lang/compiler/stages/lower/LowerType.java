@@ -1,11 +1,8 @@
 package org.karina.lang.compiler.stages.lower;
 
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.objects.KType;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Region;
-
-import java.util.List;
 
 public class LowerType {
     private final LoweringContext context;

@@ -35,7 +35,7 @@ Other important classes/packages:
 - [Compiler Class](src/main/java/org/karina/lang/compiler/api/KarinaDefaultCompiler.java)
 - [KExpr Class](src/main/java/org/karina/lang/compiler/objects/KExpr.java)
 - [KType Class](src/main/java/org/karina/lang/compiler/objects/KType.java)
-- [jvm](src/main/java/org/karina/lang/compiler/jvm)
+- [jvm](src/main/java/org/karina/lang/compiler/jvm_loading)
   - Responsible for loading of precompiled classes
 - [model_api](src/main/java/org/karina/lang/compiler/model_api)
   - The API for the ClassModel. Represents all loaded classes and their fields, methods, etc

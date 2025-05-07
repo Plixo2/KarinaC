@@ -1,13 +1,9 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.Types;
 
 import java.lang.reflect.Modifier;
 import java.util.*;

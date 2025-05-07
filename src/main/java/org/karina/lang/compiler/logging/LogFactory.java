@@ -12,7 +12,6 @@ public class LogFactory<T extends LogBuilder> {
     private final List<T> logs = new ArrayList<>();
 
     public T populate(Error log, T builder) {
-
         this.logs.add(builder);
         switch (log) {
             case FileLoadError error -> {
@@ -74,6 +73,7 @@ public class LogFactory<T extends LogBuilder> {
         return builder;
 
     }
+
     private void createLowerError(LowerError errorType, LogBuilder builder) {
         switch (errorType) {
             case LowerError.NotValidAnymore notValidAnymore -> {

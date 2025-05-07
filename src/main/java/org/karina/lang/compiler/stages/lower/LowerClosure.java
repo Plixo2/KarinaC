@@ -1,30 +1,27 @@
 package org.karina.lang.compiler.stages.lower;
 
 import com.google.common.collect.ImmutableList;
-import karina.lang.StringInterpolation;
 import org.jetbrains.annotations.NotNull;
-import org.karina.lang.compiler.jvm.model.MutableModel;
-import org.karina.lang.compiler.jvm.model.karina.KClassModel;
-import org.karina.lang.compiler.jvm.model.karina.KFieldModel;
-import org.karina.lang.compiler.jvm.model.karina.KMethodModel;
+import org.karina.lang.compiler.model_api.impl.MutableModel;
+import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
+import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
+import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.Types;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionItem;
-import org.karina.lang.compiler.symbols.CallSymbol;
-import org.karina.lang.compiler.symbols.LiteralSymbol;
+import org.karina.lang.compiler.utils.symbols.CallSymbol;
+import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 import org.karina.lang.compiler.utils.*;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 ///
 /// Lower a closure into a new class that implements all given interfaces.

@@ -5,12 +5,11 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.objects.Types;
+import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.signature.SignatureWriter;
 
 import java.util.List;
 import java.util.Set;

@@ -2,16 +2,15 @@ package org.karina.lang.compiler.stages.generate;
 
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.objects.BinaryOperator;
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-import org.karina.lang.compiler.symbols.*;
+import org.karina.lang.compiler.utils.BinaryOperator;
+import org.karina.lang.compiler.utils.KExpr;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.InvocationType;
+import org.karina.lang.compiler.utils.symbols.*;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 
-import java.nio.file.Path;
 import java.util.Objects;
 
 public class GenerateExpr {
@@ -405,8 +404,6 @@ public class GenerateExpr {
                 } else {
                     ctx.add(new TypeInsnNode(Opcodes.ANEWARRAY, type.getInternalName()));
                 }
-//                Log.record("Opcode of store is " + storeOp);
-//                Log.record("for " + type);
 
                 var index = 0;
                 for (var element : createArray.elements()) {

@@ -24,6 +24,7 @@ public class ClassPointer {
     public static final ObjectPath DOUBLE_PATH = new ObjectPath("java", "lang", "Double");
     public static final ObjectPath FLOAT_PATH = new ObjectPath("java", "lang", "Float");
     public static final ObjectPath BOOLEAN_PATH = new ObjectPath("java", "lang", "Boolean");
+    public static final ObjectPath CHARACTER_PATH = new ObjectPath("java", "lang", "Character");
 
     public static final ObjectPath NUMBER_PATH = new ObjectPath("java", "lang", "Number");
     public static final ObjectPath ITERABLE_PATH = new ObjectPath("java", "lang", "Iterable");

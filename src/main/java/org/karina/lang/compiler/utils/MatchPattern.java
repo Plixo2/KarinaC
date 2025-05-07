@@ -1,8 +1,5 @@
 package org.karina.lang.compiler.utils;
 
-import org.karina.lang.compiler.objects.KExpr;
-import org.karina.lang.compiler.objects.KType;
-
 import java.util.List;
 
 public sealed interface MatchPattern {
