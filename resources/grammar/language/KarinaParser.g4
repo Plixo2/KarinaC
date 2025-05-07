@@ -7,12 +7,14 @@ unit: import_* item* EOF;
 import_: 'import' dotWordChain ('*' | id | '{' commaWordChain '}' | 'as' id)?;
 commaWordChain: id (',' id)*;
 
-item: annotation* (function | struct | enum | interface);
+item: annotation* (function | struct | enum | interface | const);
 
 function: OVERRIDE? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
+const: 'const' id ':' type '=' expression ';'?;
+
 //boundWhere is not yet implemented
-struct: 'struct' id genericHintDefinition? ('{' field* function* implementation* boundWhere* '}')?;
+struct: 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;
 implementation: 'impl' structType ('{' function* '}')?;
 boundWhere : 'where' (('{' genericWithBounds '}') | genericWithBounds) ('{' function* '}');
 genericWithBounds: (genericWithBound (',' genericWithBound)*)?;
@@ -21,7 +23,7 @@ genericWithBound: ID bounds?;
 bounds: ':' (bound ('&' bound)*)?;
 bound: ('impl' structType | 'extend' structType);
 
-field: id ':' type;
+field: id ':' 'mut'? type;
 
 //implementation and boundWhere are not yet implemented
 enum: 'enum' id genericHintDefinition? '{' enumMember* function* implementation* boundWhere* '}';
@@ -145,4 +147,5 @@ id: ID | 'expr' | 'type' | '\\' escaped | '_';
 escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
 | STRUCT | RAISE | TRAIT | IMPL | LET
-| SELF | STRING | JSON | BOOL | WHERE;
+| SELF | STRING | JSON | BOOL | WHERE
+| CONST | MUT;

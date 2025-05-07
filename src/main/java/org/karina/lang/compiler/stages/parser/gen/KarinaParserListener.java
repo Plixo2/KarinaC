@@ -58,6 +58,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 */
 	void exitFunction(KarinaParser.FunctionContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KarinaParser#const}.
+	 * @param ctx the parse tree
+	 */
+	void enterConst(KarinaParser.ConstContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#const}.
+	 * @param ctx the parse tree
+	 */
+	void exitConst(KarinaParser.ConstContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KarinaParser#struct}.
 	 * @param ctx the parse tree
 	 */

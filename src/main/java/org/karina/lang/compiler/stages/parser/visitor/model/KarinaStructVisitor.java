@@ -146,7 +146,14 @@ public class KarinaStructVisitor {
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
         var type = this.base.typeVisitor.visitType(ctx.type());
-        var mods = Modifier.PUBLIC;
+        int mods;
+        if (ctx.MUT() != null) {
+            mods = 0;
+        } else {
+            mods = Modifier.FINAL;
+        }
+        mods |= Modifier.PUBLIC;
+
         return new KFieldModel(name, type, mods, region, owningClass);
 
     }

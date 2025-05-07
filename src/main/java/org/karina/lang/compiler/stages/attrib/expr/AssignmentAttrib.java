@@ -61,8 +61,11 @@ public class AssignmentAttrib {
                 var fieldModel = ctx.model().getField(pointer);
                 if (Modifier.isFinal(fieldModel.modifiers())) {
                     if (ctx.owningMethod() == null || !ctx.owningMethod().isConstructor()) {
-                        Log.attribError(
-                                new AttribError.FinalAssignment(expr.region(), lhsRegion, pointer.name()));
+                        Log.attribError(new AttribError.FinalAssignment(
+                                        expr.region(),
+                                        fieldModel.region(),
+                                        pointer.name()
+                        ));
                         throw new Log.KarinaException();
                     }
                 }

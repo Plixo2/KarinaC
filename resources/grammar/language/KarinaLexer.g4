@@ -29,6 +29,7 @@ ENUM: 'enum';
 CLASS: 'class';
 LET: 'let';
 IF: 'if';
+CONST: 'const';
 ELSE: 'else';
 WHILE: 'while';
 FOR: 'for';
@@ -37,6 +38,7 @@ WHERE: 'where';
 INTERFACE: 'interface';
 SELF: 'self';
 INT: 'int';
+MUT: 'mut';
 LONG: 'long';
 BYTE: 'byte';
 CHAR: 'char';
@@ -98,7 +100,7 @@ fragment CHAR_VARIABLE: '$' (ID | 'expr' | 'type' | '\\' ESCAPED);
 fragment ESCAPED: FN | IS | IN | AS | EXTEND
                    | MATCH | OVERRIDE | VIRTUAL | YIELD
                    | STRUCT | RAISE | TRAIT | IMPL | LET
-                   | SELF | STRING | JSON | BOOL | WHERE;
+                   | SELF | STRING | JSON | BOOL | WHERE | CONST | MUT;
 fragment ESCAPED_DOLLAR: '\\$';
 fragment CHAR_CHARACTERS: CHAR_CHARACTER+;
 fragment CHAR_CHARACTER: ~[$'\\\r\n] | ESCAPE_SEQUENCE;

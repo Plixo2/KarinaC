@@ -15,6 +15,7 @@ import errors
 import files
 
 
+
 fn test_regex() {
     let pattern = Pattern.compile("a*(b*|aaa*)*a*")
 
@@ -134,6 +135,7 @@ fn get() -> ? {
     let s  = ObjectSome {
         \fn: "Hello"
     }
+    s.\fn = "World"
     let str: string = s.\fn
     str
 }
@@ -288,7 +290,7 @@ fn identity<T>() -> (fn(T) -> T impl java::util::function::Function<T,T>) {
 //}
 
 struct ObjectSome {
-    \fn: string
+    \fn: mut string
 }
 
 fn curry_test() {
@@ -437,3 +439,18 @@ macro code(stream: TOKEN_STREAM) {
 }
 
 */
+
+//const ONE: int = 1
+
+struct Vector2D {
+    const ZERO: Vector2D = Vector2D.new(0)
+
+    x: float
+    y: float
+
+
+    // Static constructor method
+    fn new(d: float) -> Vector2D = Vector2D { x: d, y: d }
+
+    fn n() -> ? = Vector2D.new(0)
+}

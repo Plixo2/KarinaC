@@ -41,6 +41,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFunction(KarinaParser.FunctionContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KarinaParser#const}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitConst(KarinaParser.ConstContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KarinaParser#struct}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
