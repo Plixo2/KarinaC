@@ -1,8 +1,6 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
 /**
@@ -17,10 +15,5 @@ public record ImportContext(ImportTable table) {
     public KType resolveType(Region region, KType type, ImportTable.ImportGenericBehavior flags) {
         return this.table.importType(region, type, flags);
     }
-
-    public ClassPointer getClassPointer(Region region, ObjectPath path) {
-        return this.table.getClassPointer(region, path);
-    }
-
 
 }

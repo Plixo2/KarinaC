@@ -190,6 +190,18 @@ public record ImportTable(
 
     public ClassPointer getClassPointer(Region region, ObjectPath path) {
 
+        var classPointer = getClassPointerNullable(region, path);
+        if (classPointer == null) {
+            //error reporting. Collect all names and give them as suggestions
+            logUnknownPointerError(region, path);
+            throw new Log.KarinaException();
+        }
+
+        return classPointer;
+    }
+
+    public @Nullable ClassPointer getClassPointerNullable(Region region, ObjectPath path) {
+
         var head = path.first();
         boolean hasPathDefined = !path.tail().isEmpty();
         ClassPointer classPointer;
@@ -202,14 +214,12 @@ public record ImportTable(
             }
         }
 
-        if (classPointer == null) {
-            //error reporting. Collect all names and give them as suggestions
-            var available = availableTypeNames();
-            Log.importError(new ImportError.UnknownImportType(region, path.mkString("::"), available));
-            throw new Log.KarinaException();
-        }
-
         return classPointer;
+    }
+
+    public void logUnknownPointerError(Region region, ObjectPath path) {
+        var available = availableTypeNames();
+        Log.importError(new ImportError.UnknownImportType(region, path.mkString("::"), available));
     }
 
     public Set<String> availableTypeNames() {

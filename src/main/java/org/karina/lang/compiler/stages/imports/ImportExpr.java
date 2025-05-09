@@ -53,9 +53,30 @@ public class ImportExpr {
 
     private static KExpr importPath(ImportContext ctx, KExpr.StaticPath staticPath) {
 
-        var pointer = ctx.getClassPointer(staticPath.region(), staticPath.path());
+        var region = staticPath.region();
+        var path = staticPath.path();
+        var pointer = ctx.table().getClassPointerNullable(region, path);
+        if (pointer == null) {
+            if (path.size() <= 1) {
+                ctx.table().logUnknownPointerError(region, path);
+                throw new Log.KarinaException();
+            }
+            var potentialFunctionName = path.last();
+            var potentialClassName = path.everythingButLast();
+            var potentialClass = ctx.table().getClassPointer(region, potentialClassName);
 
-        return new KExpr.StaticPath(staticPath.region(), staticPath.path(), pointer);
+            return new KExpr.GetMember(
+                    region,
+                    new KExpr.StaticPath(region, potentialClassName, potentialClass),
+                    RegionOf.region(region, potentialFunctionName),
+                    true,
+                    null
+            );
+
+        } else {
+            return new KExpr.StaticPath(region, path, pointer);
+        }
+
     }
 
     private static KExpr importUnwrap(ImportContext ctx, KExpr.Unwrap unwrap) {
