@@ -5,7 +5,7 @@ fn main(args: [string]) {
     }
     print(with_separator(','))
 
-    let my_object = Test.create()
+    let my_object = Test::create()
     my_object.set("World!")
 
     let the_world = my_object.get()
