@@ -23,9 +23,9 @@ Make sure your `JAVA_HOME` is set to the correct version.
 ```shell
  git clone https://github.com/Plixo2/KarinaC.git
  cd KarinaC
- sudo chmod +x ./gradlew
+ chmod +x ./gradlew
  ./gradlew run # run the compiler via gradle
- sudo chmod +x ./resources/out/run
+ chmod +x ./resources/out/run
  ./resources/out/run # run the generated file
  ```
  
