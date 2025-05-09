@@ -143,7 +143,6 @@ public class LowerExpr {
                         false
                 )
         );
-        Log.record("Creating StringInterpolation");
         for (var component : expr.components()) {
             switch (component) {
                 case StringComponent.ExpressionComponent expressionComponent -> {
@@ -168,7 +167,6 @@ public class LowerExpr {
                     );
                 }
                 case StringComponent.StringLiteralComponent stringLiteralComponent -> {
-                    Log.record("'"+stringLiteralComponent.value() + "'");
                     var stringLiteral = new KExpr.StringExpr(
                             region,
                             stringLiteralComponent.value(),
