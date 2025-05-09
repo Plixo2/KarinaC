@@ -30,6 +30,9 @@ Make sure your `JAVA_HOME` is set to the correct version.
 
 This will build the demo project in [`resources/src/`](resources/src/) and run the generated build.jar file in [`resources/out/`](resources/out/).
 
+You can set the `karina.source` system property to point to your own source folder:
+`-Dkarina.source="resources/local_src/"`
+
 ## Rebuild the standard library
 
 Use the Gradle task 'KARINA-BASE' to build a new karina_base.jar file, located in [`src/main/resources`](src/main/resources).
