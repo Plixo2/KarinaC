@@ -555,7 +555,7 @@ public class KarinaExprVisitor {
             }
 
             if (c == '$') {
-                if (previousAddedIndexEnd < (i-1)) {
+                if (previousAddedIndexEnd < (i)) {
                     components.add(new StringComponent.StringLiteralComponent(
                             text.substring(previousAddedIndexEnd, i)
                     ));
@@ -585,7 +585,8 @@ public class KarinaExprVisitor {
             ));
         }
 
-        return new KExpr.StringInterpolation(region, components.build());
+        var stringComponents = components.build();
+        return new KExpr.StringInterpolation(region, stringComponents);
     }
 
     /**

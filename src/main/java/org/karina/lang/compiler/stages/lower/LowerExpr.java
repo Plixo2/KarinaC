@@ -35,8 +35,7 @@ public class LowerExpr {
                 throw new Log.KarinaException();
             }
             case KExpr.For aFor -> lowerFor(context, aFor);
-            case KExpr.GetArrayElement getArrayElement ->
-                    lowerGetArrayElement(context, getArrayElement);
+            case KExpr.GetArrayElement getArrayElement -> lowerGetArrayElement(context, getArrayElement);
             case KExpr.GetMember getMember -> lowerGetMember(context, getMember);
             case KExpr.IsInstanceOf isInstanceOf -> lowerInstanceOf(context, isInstanceOf);
             case KExpr.Literal literal -> lowerLiteral(context, literal);
@@ -144,7 +143,7 @@ public class LowerExpr {
                         false
                 )
         );
-
+        Log.record("Creating StringInterpolation");
         for (var component : expr.components()) {
             switch (component) {
                 case StringComponent.ExpressionComponent expressionComponent -> {
@@ -169,6 +168,7 @@ public class LowerExpr {
                     );
                 }
                 case StringComponent.StringLiteralComponent stringLiteralComponent -> {
+                    Log.record("'"+stringLiteralComponent.value() + "'");
                     var stringLiteral = new KExpr.StringExpr(
                             region,
                             stringLiteralComponent.value(),
