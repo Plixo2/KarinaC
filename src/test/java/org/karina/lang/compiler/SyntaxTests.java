@@ -1,6 +1,8 @@
 package org.karina.lang.compiler;
 
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.karina.lang.compiler.utils.FileLoader;
 
@@ -10,6 +12,11 @@ import java.util.*;
 
 public class SyntaxTests {
     private static final String TEST_DIR = "tests/files/";
+
+    @Test
+    public void testMain() throws IOException {
+        Main.main(new String[]{"--test"});
+    }
 
     @TestFactory
     List<DynamicTest> testValid() {
@@ -61,4 +68,8 @@ public class SyntaxTests {
 
         return files;
     }
+
+
+
+
 }

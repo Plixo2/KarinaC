@@ -63,6 +63,11 @@ public class Main {
 
             if (out == null) {
                 System.out.println("\u001B[33mNo output path specified, use -Dkarina.out=<path>\u001B[0m");
+            } else {
+                var absolutePath = Path.of(out).toAbsolutePath();
+                var file = absolutePath.getFileName();
+                var path = absolutePath.getParent().toString().replace("\\", "/");
+                System.out.println("\u001B[36mOutput path: file:///" + path  + " (" + file + ")\u001B[0m");
             }
 
             System.out.flush();
@@ -86,6 +91,9 @@ public class Main {
             DiagnosticCollection.print(errors, true, System.err);
             System.err.flush();
 
+            if (args.length != 0 && args[0].equals("--test")) {
+                throw new IllegalStateException("Compilation failed");
+            }
             System.exit(1);
         }
 
