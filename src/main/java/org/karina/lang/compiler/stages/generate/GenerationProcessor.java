@@ -13,7 +13,7 @@ import java.util.jar.*;
  */
 public class GenerationProcessor {
     //Java 17
-    public static final int CLASS_VERSION = 61;
+    public static final int CLASS_VERSION = 65;
 
     public JarCompilation compileTree(Model model, String mainClass) {
 

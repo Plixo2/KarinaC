@@ -4,7 +4,35 @@ Language Features/Documentation: [karina-lang.org](https://karina-lang.org/Intro
 
 # Karina Compiler 
 
-Use at least Java 23 with `--enable-preview` flag.
+## Getting Started
+
+You need Java 23 or higher.
+You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
+
+Make sure your `JAVA_HOME` is set to the correct version.
+
+### Windows
+```shell
+ git clone https://github.com/Plixo2/KarinaC.git
+ cd KarinaC
+ gradlew.bat run # run the compiler via gradle
+ resources\out\run.bat # run the generated file
+```
+
+### Linux
+```shell
+ git clone https://github.com/Plixo2/KarinaC.git
+ cd KarinaC
+ ./gradlew run # run the compiler via gradle
+ ./resources/out/run # run the generated file
+ ```
+ 
+
+This will build the demo project in [`resources/src/`](resources/src/) and run the generated build.jar file in [`resources/out/`](resources/out/).
+
+## Rebuild the standard library
+
+Use the Gradle task 'KARINA-BASE' to build a new karina_base.jar file, located in [`src/main/resources`](src/main/resources).
 
 
 

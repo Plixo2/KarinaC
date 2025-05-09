@@ -129,26 +129,7 @@ public class Log {
 
         public static final Set<LogTypes> VISIBLE = Set.of(
 
-//                VARIABLE
-//               , LOADED_CLASSES,
-//              , GENERATION
-//                ,IMPLICIT_CONVERSION
-               // , IMPLICIT_CONVERSION
-               // , AMBIGUOUS
-             //   , METHOD_NAME
-              //  , BRANCH
-               // , SUPER_WARN
-              //  , ASSERTIONS
-//                , CLOSURE
-//                ,CHECK_TYPE
-//                ,LOWERING
-//                ,GENERATION
-//    ,MEMBER
-//    ,CALLS
-// ,EXPR
 
-//                ,CHECK_TYPE
-//    ,JVM_CLASS_LOADING
         );
 
         public boolean isVisible() {

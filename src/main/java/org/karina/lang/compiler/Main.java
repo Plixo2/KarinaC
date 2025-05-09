@@ -28,12 +28,11 @@ public class Main {
 
         Log.begin("all");
 
-
         var sourceDirectory = System.getProperty("karina.source", "resources/src/");
         if (sourceDirectory == null) {
             throw new IllegalStateException("No source directory provided, use -Dkarina.source=<path>");
         }
-        var console = System.getProperty("karina.console", "false").equals("true");
+        var console = System.getProperty("karina.console", "true").equals("true");
         var flight = System.getProperty("karina.flight", "resources/flight.txt");
         var out = System.getProperty("karina.out", "resources/out/build.jar");
 
@@ -89,8 +88,6 @@ public class Main {
 
             System.exit(1);
         }
-
-
 
     }
 

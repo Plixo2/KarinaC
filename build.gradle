@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'org.karina.lang'
@@ -59,7 +60,7 @@ tasks.register('FAT-JAR', Jar) {
     with jar
 }
 
-tasks.register('LSP', Jar) {
+/*tasks.register('LSP', Jar) {
 
     manifest {
         attributes 'Main-Class': 'org.karina.lang.lsp.Main'
@@ -71,6 +72,10 @@ tasks.register('LSP', Jar) {
     with jar
 
     archiveFileName = 'karina-lsp.jar'
+}*/
+
+application {
+    mainClass.set('org.karina.lang.compiler.Main')
 }
 
 tasks.register('KARINA-BASE', Jar) {
