@@ -80,3 +80,7 @@ src/main/java/org/karina/lang/bench/Benchmark.java
 /resources/strings.txt
 /src/main/java/test/TestA.java
 /resources/orgOld/karina/lang/type.krna
+/resources/src_local/errors.krna
+/resources/src_local/files.krna
+/resources/src_local/main.krna
+/resources/src_local/main.krna__
