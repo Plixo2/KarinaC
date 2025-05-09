@@ -59,7 +59,6 @@ resources/corelib/compile.cmd
 resources/flight.txt
 resources/howToCode.md
 resources/jdk.bin
-resources/jdk.bin
 resources/Object.class
 resources/TestA.class
 resources/TestA.java

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Run the Java program with the classpath and main class specified
+java -cp "build.jar:../../src/main/resources/karina_base.jar" main
+
+# Pause to keep the terminal open after execution
+read -p "Press any key to continue..."
