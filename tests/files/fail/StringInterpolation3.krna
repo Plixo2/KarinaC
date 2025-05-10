@@ -1,0 +1,6 @@
+
+
+fn f() {
+    let c = "A"
+    let a = '$b $c'
+}

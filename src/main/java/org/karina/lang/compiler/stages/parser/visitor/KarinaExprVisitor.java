@@ -555,7 +555,7 @@ public class KarinaExprVisitor {
             }
 
             if (c == '$') {
-                if (previousAddedIndexEnd < (i)) {
+                if (previousAddedIndexEnd < i) {
                     components.add(new StringComponent.StringLiteralComponent(
                             text.substring(previousAddedIndexEnd, i)
                     ));
@@ -571,8 +571,7 @@ public class KarinaExprVisitor {
                     throw new Log.KarinaException();
                 }
                 var name = this.conv.escapeID(text.substring(i+1, next));
-                i = next;
-
+                i = next-1;
                 components.add(
                         new StringComponent.ExpressionComponent(region, name, null)
                 );

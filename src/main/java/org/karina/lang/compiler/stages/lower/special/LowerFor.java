@@ -1,10 +1,12 @@
-package org.karina.lang.compiler.stages.lower;
+package org.karina.lang.compiler.stages.lower.special;
 
 import com.google.common.collect.ImmutableList;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.stages.lower.LowerExpr;
+import org.karina.lang.compiler.stages.lower.LoweringContext;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.symbols.CallSymbol;
@@ -15,6 +17,51 @@ import org.karina.lang.compiler.utils.Variable;
 
 import java.util.List;
 
+///
+///Lower For loop into While Loop
+///
+///For can iterate over arrays, ranges, and iterables.
+///
+///
+///For v in A { ... }
+///Expand to:
+///
+///- Iterable:
+///     ```
+///     var $iter = A.iterator();
+///     while ($iter.hasNext()) {
+///         let v = $iter.next();
+///         ...
+///     }
+///     ```
+/// - Array:
+///     ```
+///     var $iter = -1; // Start at -1 to account for the increment at the start of the loop
+///     var $len = A.length;
+///     while ({$iter = $iter + 1
+///             $iter < $len}) {
+///         var v = A[$iter];
+///         ...
+///     }
+///     ```
+/// - Range:
+///     Similar to Array
+///     ```
+///     var $step = A.step;
+///     var $iter = A.start - $step;
+///     var $end = A.end;
+///     while ({$iter = $iter + step
+///             $iter < $end}) {
+///         var v = $iter;
+///         ...
+///     }
+///     ```
+///
+///
+///The field `symbol` is storing the type of iteration and the variable reference used.
+///
+/// Signature:
+///     `For(Region region, NameAndOptType varPart, KExpr iter, KExpr body, @Nullable @Symbol IteratorTypeSymbol symbol)`
 public class LowerFor {
     private final KExpr.For aFor;
 

@@ -92,6 +92,14 @@ public final class Console {
         return toString(Integer.valueOf(number));
     }
 
+    public static String toString(byte b) {
+        return toString(Integer.valueOf(b));
+    }
+
+    public static String toString(short s) {
+        return toString(Integer.valueOf(s));
+    }
+
     public static String toString(long number) {
         return toString(Long.valueOf(number));
     }

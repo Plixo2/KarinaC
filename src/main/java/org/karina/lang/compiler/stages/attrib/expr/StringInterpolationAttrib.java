@@ -36,7 +36,6 @@ public class StringInterpolationAttrib {
         }
 
         var newComponents = ImmutableList.<StringComponent>builder();
-//
         for (var component : expr.components()) {
             switch (component) {
                 case StringComponent.StringLiteralComponent stringLiteralComponent -> {
@@ -55,6 +54,7 @@ public class StringInterpolationAttrib {
                             variable.name(),
                             new LiteralSymbol.VariableReference(region, variable)
                     );
+                    //cannot be void, since a variable can never be void
                     newComponents.add(
                             new StringComponent.ExpressionComponent(
                                     region,

@@ -1,4 +1,4 @@
-package org.karina.lang.compiler.stages.lower;
+package org.karina.lang.compiler.stages.lower.special;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +11,9 @@ import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.stages.lower.LowerExpr;
+import org.karina.lang.compiler.stages.lower.LoweringContext;
+import org.karina.lang.compiler.stages.lower.LoweringItem;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Types;
@@ -416,7 +419,7 @@ public class LowerClosure {
         return exprs;
     }
 
-    public KExpr getExpression(LoweringContext ctx) {
+    public KExpr lower(LoweringContext ctx) {
         return createInstance(ctx);
     }
 
