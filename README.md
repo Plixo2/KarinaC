@@ -101,7 +101,7 @@ Specifies the debug flight recorder file path. Defaults to `resources/flight.txt
 
 > `karina.console="<true/false>"`  
 
-Enables/Disables the flight recorder output to the console. Defaults to `resources/flight.txt`
+Enables/Disables the flight recorder output to the console. Defaults to `true`
 
 </details>
 
