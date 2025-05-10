@@ -25,6 +25,7 @@ Karina is a statically typed, general-purpose high-level programming language em
 Karina is fully compatible with Java, allowing you to use existing libraries and frameworks seamlessly
 while providing a modern programming experience.
 
+<br>
 
 > 📢 **Heads up!** If you run into any issues, bugs, unexpected behavior, or have any questions while using this project, you’re encouraged to [open an issue](https://github.com/Plixo2/KarinaC/issues/new).
 >
