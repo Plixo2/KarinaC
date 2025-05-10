@@ -1,31 +1,9 @@
 
+
+
+
 fn main(args: [string]) {
-    let with_separator = fn(add) {
-        'Hello$add'
-    }
-    print(with_separator(','))
-
-    let my_object = Test::create()
-    my_object.set("World!")
-
-    let the_world = my_object.get()
-    System.out.println(' $the_world')
+    println("Hello, World!")
+    //example::printHelloWorld()
 }
-
-
-struct Test {
-    val: mut string
-
-    fn create() -> Test {
-        return Test { val: "" }
-    }
-
-    fn set(self, s: string) {
-        self.val = s
-    }
-
-    fn get(self) -> string = self.val
-}
-
-
 

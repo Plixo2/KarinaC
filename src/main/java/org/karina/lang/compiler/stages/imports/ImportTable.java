@@ -209,9 +209,9 @@ public record ImportTable(
             classPointer = this.getClass(head);
         } else {
             classPointer = this.getClassNested(head, path.tail());
-            if (classPointer == null) {
-                classPointer = this.model.getClassPointer(region, path);
-            }
+        }
+        if (classPointer == null) {
+            classPointer = this.model.getClassPointer(region, path);
         }
 
         return classPointer;

@@ -1,0 +1,54 @@
+//
+// This is more complex example to show how to use Karina with Java
+//
+
+import java::lang::System { out, \in }
+
+fn printHelloWorld() {
+    let hello_function = createHelloFunction()
+
+    print(hello_function(','))
+
+    let my_object = CustomObject::create()
+    my_object.set("World!")
+
+    let the_world = my_object.get()
+    out.println(' $the_world')
+}
+
+
+
+struct CustomObject {
+    val: mut string
+
+    fn create() -> CustomObject {
+        return CustomObject { val: "" }
+    }
+
+    fn set(self, s: string) {
+        self.val = s
+    }
+
+    fn get(self) -> string = self.val
+}
+
+fn createHelloFunction<T>() -> fn(T) -> string {
+    let hello = {
+        "HELLO"
+            .chars()
+            .mapToObj(fn(c) Character::toLowerCase(c as char))
+            .map(fn(c) String::valueOf(c))
+            .collect(
+                fn() StringBuilder {},
+                fn(sb, s) sb.append(s),
+                fn(l, r) l.append(r)
+            ).toString()
+    }
+    let first = hello.substring(0, 1).toUpperCase()
+    let rest = hello.substring(1)
+    hello = '$first$rest';
+
+    fn(add) {
+        '$hello$add'
+    }
+}

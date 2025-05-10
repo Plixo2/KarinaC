@@ -31,8 +31,6 @@ public class Prelude {
         }
 
         var fields = ImmutableList.<FieldPointer>builder();
-//        var valuesPath = new ObjectPath("karina", "lang", "Values");
-//        putStaticFieldFromKarinaClass(model, valuesPath, "NULL_VALUE", fields);
 
         var methods = ImmutableList.<MethodPointer>builder();
 
