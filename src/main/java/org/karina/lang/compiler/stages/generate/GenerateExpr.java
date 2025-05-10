@@ -481,8 +481,9 @@ public class GenerateExpr {
                 }
             }
             case KExpr.IsInstanceOf isInstanceOf -> {
-                Log.temp(expr.region(), "Cannot be expressed");
-                throw new Log.KarinaException();
+                addExpression(isInstanceOf.left(), ctx);
+                var type = TypeConversion.getType(isInstanceOf.isType());
+                ctx.add(new TypeInsnNode(Opcodes.INSTANCEOF, type.getInternalName()));
             }
             case KExpr.Literal literal -> {
                 assert literal.symbol() != null;

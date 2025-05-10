@@ -1,12 +1,16 @@
 package karina.lang;
 
 import karina.lang.internal.functions.Function0_1;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 //Build-in Result type, needed for ? unwrapping
 public sealed interface Result<T, E> permits Result.Ok, Result.Err {
 
     final class Ok<T,E> implements Result<T, E> {
-        public final T value;
+        @Getter
+        @Accessors(fluent = true)
+        private final T value;
 
         public Ok(T value) {
             this.value = value;
@@ -14,7 +18,9 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
     }
 
     final class Err<T, E> implements Result<T, E> {
-        public final E error;
+        @Getter
+        @Accessors(fluent = true)
+        private final E error;
 
         public Err(E error) {
             this.error = error;

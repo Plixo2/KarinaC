@@ -2,6 +2,8 @@ package karina.lang;
 
 import karina.lang.internal.functions.Function0_1;
 import karina.lang.internal.functions.Function1_1;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 import java.lang.reflect.Array;
 import java.util.Optional;
@@ -11,7 +13,9 @@ import java.util.function.Supplier;
 public sealed interface Option<T> permits Option.Some, Option.None {
 
     final class Some<T> implements Option<T> {
-        public final T value;
+        @Getter
+        @Accessors(fluent = true)
+        private final T value;
 
         public Some(T value) {
             this.value = value;

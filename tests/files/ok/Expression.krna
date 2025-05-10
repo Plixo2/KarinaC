@@ -38,6 +38,9 @@ fn create<T>(value: T) -> int {
             "Hello"
     }
 
+    let secretValue: Integer = (Option$Some { _: 2 }).value()
+
+
     if true {
 
     } else if false {
