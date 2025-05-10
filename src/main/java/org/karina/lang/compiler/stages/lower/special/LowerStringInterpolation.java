@@ -51,12 +51,13 @@ public class LowerStringInterpolation {
             switch (component) {
                 case StringComponent.ExpressionComponent expressionComponent -> {
                     assert expressionComponent.expression() != null;
-                    var callSignature = getSignature(expressionComponent.expression());
+                    var expr = LowerExpr.lower(ctx, expressionComponent.expression());
+                    var callSignature = getSignature(expr);
                     left = new KExpr.Call(
                             region,
                             left,
                             List.of(),
-                            List.of(expressionComponent.expression()),
+                            List.of(expr),
                             new CallSymbol.CallVirtual(
                                     MethodPointer.of(
                                             region,
@@ -117,7 +118,7 @@ public class LowerStringInterpolation {
                 )
         );
 
-        return LowerExpr.lower(ctx, toStringCall);
+        return toStringCall;
     }
 
     private List<KType> getSignature(KExpr expr) {

@@ -41,6 +41,14 @@ fn create<T>(value: T) -> int {
     let secretValue: Integer = (Option$Some { _: 2 }).value()
 
 
+    let helloWord = {
+        "HELLO"
+    }
+
+    let f = fn(add) {
+        '$helloWord$add'
+    }
+
     if true {
 
     } else if false {

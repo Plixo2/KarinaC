@@ -177,7 +177,6 @@ public class ClosureAttrib  {
                     interfaces.add(classType);
                 } else {
                     Log.recordType(Log.LogTypes.CLOSURE, "(error) Could not use default as interface");
-                    Log.warn("Could not use default as interface");
                 }
             } else {
                 Log.recordType(Log.LogTypes.CLOSURE, "default already added");

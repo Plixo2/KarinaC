@@ -107,7 +107,7 @@ Enables/Disables the flight recorder output to the console. Defaults to `true`
 
 #### karina.logging
 
-> `karina.logging="<none/verbose/verbose_jvm>"`
+> `karina.logging="<none/basic/verbose/verbose_jvm>"`
 
 Enables/Disables the flight recorder output to the console. Defaults to `none`.
 Useful for debugging the compiler.

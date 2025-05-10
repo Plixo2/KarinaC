@@ -14,7 +14,6 @@ import org.objectweb.asm.tree.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @AllArgsConstructor
 @Getter
@@ -46,7 +45,8 @@ public class GenerationContext {
 
     public int getVariableIndex(Region region, Variable variable) {
         if (!this.variables.containsKey(variable)) {
-            Log.temp(region, "Variable not found " + variable);
+            var available = this.variables.keySet().stream().map(Variable::name).toList();
+            Log.temp(region, "Variable '" + variable.name() + "' not found. This is a bug in the compiler, available " + available);
             throw new Log.KarinaException();
         }
         return this.variables.get(variable);

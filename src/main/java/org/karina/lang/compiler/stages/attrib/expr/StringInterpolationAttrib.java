@@ -49,6 +49,7 @@ public class StringInterpolationAttrib {
                         Log.attribError(new AttribError.UnknownIdentifier(region, name, available));
                         throw new Log.KarinaException();
                     }
+                    variable.incrementUsageCount();
                     var literal = new KExpr.Literal(
                             region,
                             variable.name(),

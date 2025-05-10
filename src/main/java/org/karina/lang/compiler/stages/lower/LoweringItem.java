@@ -84,7 +84,9 @@ public class LoweringItem {
             var lowerMethod = lowerMethod(model, classModelNew, kMethodModel, syntheticCounter, newClasses);
             methodsToFill.add(lowerMethod);
         }
+        Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
         methodsToFill.addAll(createBridgeMethods(model, classModelNew));
+        Log.endType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
 
         for (var kClassModel : newClasses.userClasses()) {
             builder.addClass(kClassModel);
@@ -131,6 +133,7 @@ public class LoweringItem {
 
 
     public static List<KMethodModel> createBridgeMethods(Model model, KClassModel classModel) {
+
 
         if (Modifier.isAbstract(classModel.modifiers())) {
             return List.of();

@@ -53,6 +53,18 @@ public class Log {
 
         LOG_PROPERTY = switch (property) {
             case "none" -> Set.of();
+            case "basic" -> Set.of(
+                    LogTypes.METHOD_NAME,
+                    LogTypes.CLASS_NAME,
+                    LogTypes.EXPR,
+                    LogTypes.VARIABLE,
+                    LogTypes.BRANCH,
+                    LogTypes.STRING_INTERPOLATION,
+                    LogTypes.CLOSURE,
+                    LogTypes.LOWERING,
+                    LogTypes.LOWERING_BRIDGE_METHODS,
+                    LogTypes.GENERATION
+            );
             case "verbose" -> {
                 var set = new HashSet<>(Set.of(LogTypes.values()));
                 set.remove(LogTypes.JVM_CLASS_LOADING);

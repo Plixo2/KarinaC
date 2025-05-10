@@ -208,7 +208,9 @@ public class LowerClosure {
       //  DebugWriter.write(attribConstructor, "resources/closureConstructorB.txt");
         methods.add(attribConstructor);
 
+        Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
         methods.addAll(LoweringItem.createBridgeMethods(newModel, classModel));
+        Log.endType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
 
         return classModel;
     }
