@@ -19,8 +19,7 @@
 ![Karina Version](https://img.shields.io/badge/Karina-0.3v-8A2BE2)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 
-> 📢 **Heads up!** If you run into any issues, bugs, or unexpected behavior while using this project,  
-> you’re encouraged to [open an issue](https://github.com/Plixo2/KarinaC/issues/new).
+> 📢 **Heads up!** If you run into any issues, bugs, or unexpected behavior while using this project, you’re encouraged to [open an issue](https://github.com/Plixo2/KarinaC/issues/new).
 >
 > Your feedback is greatly appreciated!
 
