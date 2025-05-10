@@ -42,7 +42,7 @@ public class Log {
      * @see LogTypes
      */
     private static final Set<LogTypes> LOGS = Set.of(
-            LogTypes.STRING_INTERPOLATION
+
     );
 
     private static final Set<LogTypes> LOG_PROPERTY;
