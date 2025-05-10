@@ -7,23 +7,30 @@
   karina-lang.org
 </a>
 
+
 </div>
 
 <br>
 <br>
 <br>
 
-
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
 ![Java Version](https://img.shields.io/badge/Java-23-orange)
 ![Karina Version](https://img.shields.io/badge/Karina-0.3v-8A2BE2)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 
+<br>
+
+Karina is a statically typed, general-purpose high-level programming language emphasizing simplicity, interoperability, and concise notation.
+Karina is fully compatible with Java, allowing you to use existing libraries and frameworks seamlessly
+while providing a modern programming experience.
+
+
 > 📢 **Heads up!** If you run into any issues, bugs, unexpected behavior, or have any questions while using this project, you’re encouraged to [open an issue](https://github.com/Plixo2/KarinaC/issues/new).
 >
 > Your feedback and inquiries are greatly appreciated!
 
-
+<br>
 
 ## Getting Started
 
