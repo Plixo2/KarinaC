@@ -37,6 +37,8 @@ public class ClassPointer {
     public static final ObjectPath OPTION_SOME_PATH = new ObjectPath("karina", "lang", "Option$Some");
     public static final ObjectPath OPTION_NONE_PATH = new ObjectPath("karina", "lang", "Option$None");
     public static final ObjectPath RESULT_PATH = new ObjectPath("karina", "lang", "Result");
+    public static final ObjectPath RESULT_OK_PATH = new ObjectPath("karina", "lang", "Result$Ok");
+    public static final ObjectPath RESULT_ERR_PATH = new ObjectPath("karina", "lang", "Result$Err");
 
     public static final ObjectPath RANGE_PATH = new ObjectPath("karina", "lang", "Range");
     public static final ObjectPath STRING_INTERPOLATION_PATH = new ObjectPath("karina", "lang", "StringInterpolation");

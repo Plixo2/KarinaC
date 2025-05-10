@@ -1,0 +1,38 @@
+fn f() {
+    option().expect("Success")
+    result(false).inverse().expect("No Error")
+    result(true).expect("No Error")
+}
+
+fn option() -> Integer? {
+
+    let getValue = fn() Option.some(100)
+    let toStr = fn(a: Integer) String.valueOf(a)
+    let opt = getValue().map(toStr)?
+
+    let optStr = Option$Some { _: "Hello" } as string?
+    let unwrapped = optStr?
+  //  let unwrapped3 = if optStr is Option::Some some { some.value } else { return Option::None {}}
+    let unwrapped2 = Option$Some { _: Option$Some { _: "Hello" } }.value()?
+    let sizeOf = optStr?.length()
+
+    Option$Some { _: sizeOf * 2 }
+}
+
+
+fn result(state: bool) -> Result<Integer, string> {
+
+    let counter: int = option().okOr("Error")?
+    let counter2: Integer = option().okOrGet(fn() "Error")?
+    let failing: int = otherCall(state).inverse().mapErr(fn(e) String::valueOf(e))?
+
+    Result.ok(failing)
+}
+
+fn otherCall(fail: bool) -> Result<string, Integer> {
+    if fail {
+        Result.err(-1)
+    } else {
+        Result.ok("Hello")
+    }
+}

@@ -139,6 +139,18 @@ public sealed interface KType {
                 List.of(ok, err)
         );
     }
+    static ClassType KARINA_RESULT_OK(KType ok, KType err) {
+        return new ClassType(
+                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_OK_PATH),
+                List.of(ok, err)
+        );
+    }
+    static ClassType KARINA_RESULT_ERR(KType ok, KType err) {
+        return new ClassType(
+                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_ERR_PATH),
+                List.of(ok, err)
+        );
+    }
 
 
     static @Nullable ClassPointer FUNCTION_BASE(Model model, int args, boolean doesReturn) {
@@ -174,6 +186,8 @@ public sealed interface KType {
         validatePointer(model, KARINA_OPTION_SOME(ROOT));
         validatePointer(model, KARINA_OPTION_NONE(ROOT));
         validatePointer(model, KARINA_RESULT(ROOT, ROOT));
+        validatePointer(model, KARINA_RESULT_ERR(ROOT, ROOT));
+        validatePointer(model, KARINA_RESULT_OK(ROOT, ROOT));
     }
 
     private static void validatePointer(Model model, ClassType classType) {

@@ -20,9 +20,19 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         public Some(T value) {
             this.value = value;
         }
+
+        @Override
+        public String toString() {
+            return "Option::Some{" + "value=" + this.value + '}';
+        }
     }
 
     final class None<T> implements Option<T> {
+
+        @Override
+        public String toString() {
+            return "Option::None{}";
+        }
     }
 
 
@@ -105,6 +115,28 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         };
     }
 
+    default T expect(Option<String> message) {
+        return expect(message.orElse(""));
+    }
+
+    default T expect(String message) {
+        return switch (this) {
+            case Option.Some<T> v -> v.value;
+            case Option.None<T> v -> {
+                var includeMessage = message != null && !message.isEmpty();
+                String suffix;
+                if (includeMessage) {
+                    suffix = ": " + message;
+                } else {
+                    suffix = "";
+                }
+                throw new RuntimeException(
+                        "Could not unwrap Option" + suffix
+                );
+            }
+        };
+    }
+
     static <T> Option<T> instanceOf(Class<T> clazz, Object value) {
         return clazz.isInstance(value) ? some(clazz.cast(value)) : none();
     }
@@ -116,7 +148,6 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     static <T> Option<T> fromNullable(T value) {
         return value == null ? none() : some(value);
     }
-
 
     static <T> Option<T> some(T value) {
         return new Some<>(value);

@@ -1,8 +1,10 @@
 package org.karina.lang.compiler.stages.lower.special;
 
 import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.stages.lower.LowerExpr;
@@ -17,7 +19,18 @@ import java.util.List;
 ///
 /// For Option, `value?` is equals to:
 /// ```
-/// value is Option::Some some { some.value } else { return Option::None {} }
+/// {
+///     let $some = value
+///     if $some is Option::Some { ($some as Option::Some ).value() } else { return $some as Option::None }
+/// }
+/// ```
+///
+/// For Result, `value?` is equals to:
+/// ```
+/// {
+///     let $opt = value
+///     if $opt is Result::OK { ($some as Result::OK ).value() } else { return ($some as Result::Err) }
+/// }
 /// ```
 ///
 ///
@@ -29,6 +42,109 @@ public class LowerUnwrap {
     public LowerUnwrap(KExpr.Unwrap unwrap) {
         this.unwrap = unwrap;
     }
+
+
+    private KExpr createExpression(
+            Region region,
+            LoweringContext ctx,
+            KType yieldType,
+            KType baseType,
+            KType.ClassType leftType,
+            KType.ClassType rightType,
+            KExpr left,
+            String variableBase
+    ) {
+
+        var newVariableName = variableBase + ctx.syntheticCounter().incrementAndGet();
+
+
+        var variable = new Variable(
+                region,
+                newVariableName,
+                baseType,
+                false,
+                false,
+                true
+        );
+        var assignment = new KExpr.VariableDefinition(
+                region,
+                new RegionOf<>(region, newVariableName),
+                baseType,
+                left,
+                variable
+        );
+
+        var variableReference = new KExpr.Literal(
+                region,
+                newVariableName,
+                new LiteralSymbol.VariableReference(region, variable)
+        );
+
+        var condition = new KExpr.IsInstanceOf(region, variableReference, leftType);
+
+        var valueMethodPointer = MethodPointer.of(
+                region,
+                leftType.pointer(),
+                "value",
+                Signature.emptyArgs(KType.ROOT)
+        );
+
+
+        var thenArm = new KExpr.Call(
+                region,
+                new KExpr.Cast(
+                        region,
+                        variableReference,
+                        new CastTo.AutoCast(), //doesnt matter
+                        new CastSymbol.UpCast(
+                                baseType,
+                                leftType
+                        )
+                ),
+                List.of(),
+                List.of(),
+                new CallSymbol.CallVirtual(
+                        valueMethodPointer,
+                        List.of(),
+                        yieldType,
+                        false
+                )
+        );
+
+        KExpr elseReturning = new KExpr.Cast(
+                region,
+                variableReference,
+                new CastTo.AutoCast(), //doesnt matter
+                new CastSymbol.UpCast(
+                        baseType,
+                        rightType
+                )
+        );
+
+        var elseArm = new KExpr.Return(
+                region,
+                elseReturning,
+                rightType
+        );
+
+        KExpr branch = new KExpr.Branch(
+                region,
+                condition,
+                thenArm,
+                new ElsePart(elseArm, null),
+                null,
+                new BranchYieldSymbol.YieldValue(yieldType)
+        );
+
+        return new KExpr.Block(
+                region,
+                List.of(assignment, branch),
+                yieldType,
+                false
+        );
+    }
+
+
     public KExpr lower(LoweringContext ctx) {
 
         var region = this.unwrap.region();
@@ -36,67 +152,31 @@ public class LowerUnwrap {
         var symbol = this.unwrap.symbol();
         assert symbol != null;
 
-        switch (symbol) {
-            case UnwrapSymbol.UnwrapOptional unwrapOptional -> {
-//                var condition = new KExpr.IsInstanceOf(region, left, KType.KARINA_OPTION_SOME(KType.ROOT));
-
-                var someType = KType.KARINA_OPTION_SOME(unwrapOptional.inner());
-                var variable = new Variable(
+        return switch (symbol) {
+            case UnwrapSymbol.UnwrapOptional(var inner) -> {
+                yield createExpression(
                         region,
-                        "$some",
-                        someType,
-                        false,
-                        false,
-                        true
+                        ctx,
+                        inner,
+                        KType.KARINA_OPTION(inner),
+                        KType.KARINA_OPTION_SOME(KType.ROOT),
+                        KType.KARINA_OPTION_NONE(KType.ROOT),
+                        left,
+                        "$option"
                 );
-                var pattern = new BranchPattern.Cast(
-                        region,
-                        someType,
-                        RegionOf.region(region, "$some"),
-                        variable
-                );
-                var variableExpr = new KExpr.Literal(region, "$some", new LiteralSymbol.VariableReference(region, variable));
-                var fieldPointer = FieldPointer.of(region, KType.KARINA_OPTION_SOME(KType.ROOT).pointer(), "value");
-                var getValueSymbol = new MemberSymbol.FieldSymbol(
-                        fieldPointer,
-                        unwrapOptional.inner(),
-                        someType
-                );
-                var getValue = new KExpr.GetMember(
-                        region,
-                        variableExpr,
-                        RegionOf.region(region, "value"),
-                        false,
-                        getValueSymbol
-                );
-
-                KExpr unused = new KExpr.Boolean(region, false);
-                var initSignature = new Signature(ImmutableList.of(), KType.NONE);
-                var pointer = KType.KARINA_OPTION_NONE(KType.ROOT).pointer();
-                var initPointer = MethodPointer.of(
-                        region, pointer, "<init>",
-                        initSignature
-                );
-                var elseCallSymbol = new CallSymbol.CallSuper(
-                        initPointer,
-                        List.of(KType.ROOT),
-                        KType.ROOT,
-                        new InvocationType.NewInit(KType.KARINA_OPTION_NONE(KType.ROOT))
-                );
-                var elseExprNewType = new KExpr.Call(region, unused, ImmutableList.of(), ImmutableList.of(), elseCallSymbol);
-                var elseExprReturn = new KExpr.Return(region, elseExprNewType,  KType.ROOT);
-                var elseArm = new ElsePart(elseExprReturn, null);
-
-                var yielding = new BranchYieldSymbol.YieldValue(
-                        unwrapOptional.inner()
-                );
-                var branch = new KExpr.Branch(region, left, getValue, elseArm, pattern, yielding);
-                return LowerExpr.lower(ctx, branch);
             }
-            case UnwrapSymbol.UnwrapResult unwrapResult -> {
-                Log.temp(region, "Not implemented yet");
-                throw new Log.KarinaException();
+            case UnwrapSymbol.UnwrapResult(var ok, var error) -> {
+                yield createExpression(
+                        region,
+                        ctx,
+                        ok,
+                        KType.KARINA_RESULT(ok, error),
+                        KType.KARINA_RESULT_OK(KType.ROOT, KType.ROOT),
+                        KType.KARINA_RESULT_ERR(KType.ROOT, KType.ROOT),
+                        left,
+                        "$result"
+                );
             }
-        }
+        };
     }
 }
