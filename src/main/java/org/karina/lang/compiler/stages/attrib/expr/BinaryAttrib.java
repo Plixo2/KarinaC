@@ -89,7 +89,7 @@ public class BinaryAttrib {
             case DOUBLE -> BinOperatorSymbol.DoubleOP.fromOperator(operator);
             case LONG -> BinOperatorSymbol.LongOP.fromOperator(operator);
             case CHAR, SHORT, BYTE -> {
-                Log.temp(operator.region(), "Binary for " + primitive + " not implemented");
+                Log.temp(operator.region(), "Binary for " + primitive + " not yet implemented");
                 throw new Log.KarinaException();
             }
         };
