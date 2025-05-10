@@ -154,23 +154,24 @@ This will create a new  `karina_base.jar` file, located in [`src/main/resources`
   - Parse the loaded files into tokens, then into an AST via Antlr
   - Convert the Antlr AST into a ClassModel and IR
 - [Import Stage](src/main/java/org/karina/lang/compiler/stages/imports/ImportProcessor.java)
-  - Resolve all types
-  - Validate implememented Methods and Inheritance/Composition
+  - Resolve all types via imports
 - [Attribution Stage](src/main/java/org/karina/lang/compiler/stages/attrib/AttributionProcessor.java)
-  - Validation and type inference
+  - Expression validation and type inference
 - [Lower Stage](src/main/java/org/karina/lang/compiler/stages/lower/LoweringProcessor.java)
   - Construct new classes, bridge methods, rewrite loops, etc
 - [Generate Stage](src/main/java/org/karina/lang/compiler/stages/generate/GenerationProcessor.java)
-  - Generate the bytecode
+  - Generate bytecode
 - And then finally write the bytecode to disk
 
-Other important classes/packages:
+Other important classes:
 - [Main Class](src/main/java/org/karina/lang/compiler/Main.java)
 - [Compiler Class](src/main/java/org/karina/lang/compiler/KarinaCompiler.java)
 - [KExpr Class](src/main/java/org/karina/lang/compiler/utils/KExpr.java)
 - [KType Class](src/main/java/org/karina/lang/compiler/utils/KType.java)
-- [jvm](src/main/java/org/karina/lang/compiler/jvm_loading)
-  - Responsible for loading of precompiled classes
+
+... and  packages:
+- [jvm_loading](src/main/java/org/karina/lang/compiler/jvm_loading)
+  - Responsible for loading precompiled classes
 - [model_api](src/main/java/org/karina/lang/compiler/model_api)
   - The API for the ClassModel. Represents all loaded classes and their fields, methods, etc
 

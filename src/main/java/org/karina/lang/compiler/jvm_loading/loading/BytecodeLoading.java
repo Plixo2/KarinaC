@@ -24,8 +24,8 @@ public class BytecodeLoading {
                             classNode,
                             ClassReader.SKIP_FRAMES
                             //we cant skip code, as this skips local variables,
-                            // which we need for recovering parameter names
-                            // this costs us 30% of the time
+                            // which we need for recovering parameter names.
+                            // Not skipping code is ~40% slower
                     );
                     sample.endSample();
                     if (!classNode.name.equals("module-info")) {
