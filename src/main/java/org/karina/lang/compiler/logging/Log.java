@@ -95,6 +95,7 @@ public class Log {
         CLOSURE,
         MEMBER,
         LOWERING,
+        LOWERING_BRIDGE_METHODS,
         GENERATION
 
 

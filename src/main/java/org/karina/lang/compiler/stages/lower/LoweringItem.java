@@ -155,8 +155,8 @@ public class LoweringItem {
 
         var toImplement = MethodHelper.getImplementForClass(model, classType);
         if (!toImplement.isEmpty()) {
-            Log.recordType(Log.LogTypes.LOWERING, "Implemented for "  + classModel.name() + ": " + toImplement);
-            Log.recordType(Log.LogTypes.LOWERING, "Size", toImplement.size());
+            Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Implemented for "  + classModel.name() + ": " + toImplement);
+            Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Size", toImplement.size());
 
             var methods = new ArrayList<KMethodModel>();
             for (var methodToImplement : toImplement) {
@@ -176,8 +176,8 @@ public class LoweringItem {
                         );
                         throw new Log.KarinaException();
                     } else {
-                        Log.recordType(Log.LogTypes.LOWERING, "Method " + foundMethod.name() + " already exists with the same signature");
-                        Log.recordType(Log.LogTypes.LOWERING, "to call",
+                        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Method " + foundMethod.name() + " already exists with the same signature");
+                        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "to call",
                                 methodToImplement.implementing().originalMethodPointer(),
                                 "found",
                                 foundMethod.pointer(),
@@ -186,16 +186,16 @@ public class LoweringItem {
                         continue;
                     }
                 } else {
-                    Log.recordType(Log.LogTypes.LOWERING, "Method " + methodModel.name() +
+                    Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Method " + methodModel.name() +
                             " does not exist with the same signature");
-                    Log.recordType(Log.LogTypes.LOWERING, "to call",
+                    Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "to call",
                             methodToImplement.implementing().originalMethodPointer()
                     );
                 }
 
                 var readable = methodModel.name() + "(" + paramsErased + ")" +
                         " -> " + returnTypeErased;
-                Log.recordType(Log.LogTypes.LOWERING, "Constructing bridge method " + readable);
+                Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Constructing bridge method " + readable);
 
                 methods.add(createBridgeMethod(
                         model,
@@ -208,7 +208,7 @@ public class LoweringItem {
             return methods;
 
         } else {
-            Log.recordType(Log.LogTypes.LOWERING, "No bridge methods to implement for " + classModel.name());
+            Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "No bridge methods to implement for " + classModel.name());
         }
 
         return List.of();
@@ -281,8 +281,8 @@ public class LoweringItem {
             callArgs.add(expr);
         }
 
-        Log.recordType(Log.LogTypes.LOWERING, "Calling original " + reference.pointer());
-        Log.recordType(Log.LogTypes.LOWERING, "With return type  " + reference.signature().returnType());
+        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Calling original " + reference.pointer());
+        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "With return type  " + reference.signature().returnType());
 
         var callSymbol = new CallSymbol.CallVirtual(
                 reference.pointer(),
