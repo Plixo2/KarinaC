@@ -12,8 +12,8 @@ import java.util.function.Supplier;
 
 /**
  * Error logging system for the compiler.
- * Used to log every fieldType of error that can occur during the compilation process.
- * The errors are stored in a list and can be accessed later to generate a report.
+ * Used to log every type of error that can occur during the compilation process.
+ * The errors can be accessed later to generate a report.
  * <p>
  *
  * Remember to throw a {@link KarinaException} when an error is logged.
@@ -30,63 +30,36 @@ import java.util.function.Supplier;
  * </pre>
  *
  * Use {@link ErrorCollector} to collect multiple errors with a single try-with-resources block.
+ * <p>
+ * This class with global state should be replaced with local state!
  *
  */
 public class Log {
 
-    private static final Set<LogTypes> LOG_OVERRIDE;
+    /**
+     * The default logs that are enabled.
+     * You can add custom logs here to enable them by default.
+     * @see LogTypes
+     */
+    private static final Set<LogTypes> LOGS = Set.of(
+
+    );
+
+    private static final Set<LogTypes> LOG_PROPERTY;
+
 
     static {
         var property = System.getProperty("karina.logging", "none");
 
-        LOG_OVERRIDE = switch (property) {
+        LOG_PROPERTY = switch (property) {
             case "none" -> Set.of();
-            //only missing JVM_CLASS_LOADING
-            case "verbose" -> Set.of(
-                    LogTypes.CHECK_TYPE,
-                    LogTypes.METHOD_NAME,
-                    LogTypes.CLASS_NAME,
-                    LogTypes.CALLS,
-                    LogTypes.EXPR,
-                    LogTypes.VARIABLE,
-                    LogTypes.IMPORTS,
-                    LogTypes.IMPORT_PRELUDE,
-                    LogTypes.IMPORT_STAGES,
-                    LogTypes.IMPLICIT_CONVERSION,
-                    LogTypes.AMBIGUOUS,
-                    LogTypes.BRANCH,
-                    LogTypes.SUPER_WARN,
-                    LogTypes.ASSERTIONS,
-                    LogTypes.STRING_INTERPOLATION,
-                    LogTypes.LOADED_CLASSES,
-                    LogTypes.CLOSURE,
-                    LogTypes.MEMBER,
-                    LogTypes.LOWERING,
-                    LogTypes.GENERATION
-            );
-            case "verbose_jvm" -> Set.of(
-                    LogTypes.CHECK_TYPE,
-                    LogTypes.METHOD_NAME,
-                    LogTypes.CLASS_NAME,
-                    LogTypes.CALLS,
-                    LogTypes.EXPR,
-                    LogTypes.VARIABLE,
-                    LogTypes.IMPORTS,
-                    LogTypes.IMPORT_PRELUDE,
-                    LogTypes.IMPORT_STAGES,
-                    LogTypes.IMPLICIT_CONVERSION,
-                    LogTypes.AMBIGUOUS,
-                    LogTypes.BRANCH,
-                    LogTypes.SUPER_WARN,
-                    LogTypes.ASSERTIONS,
-                    LogTypes.STRING_INTERPOLATION,
-                    LogTypes.JVM_CLASS_LOADING,
-                    LogTypes.LOADED_CLASSES,
-                    LogTypes.CLOSURE,
-                    LogTypes.MEMBER,
-                    LogTypes.LOWERING,
-                    LogTypes.GENERATION
-            );
+            case "verbose" -> {
+                var set = new HashSet<>(Set.of(LogTypes.values()));
+                set.remove(LogTypes.JVM_CLASS_LOADING);
+                
+                yield set;
+            }
+            case "verbose_jvm" -> Set.of(LogTypes.values());
             default -> {
                 throw new IllegalStateException(
                         "Invalid logging level: "
@@ -127,13 +100,8 @@ public class Log {
 
         ;
 
-        public static final Set<LogTypes> VISIBLE = Set.of(
-
-
-        );
-
         public boolean isVisible() {
-            return VISIBLE.contains(this) || LOG_OVERRIDE.contains(this);
+            return LOGS.contains(this) || LOG_PROPERTY.contains(this);
         }
     }
 

@@ -1,20 +1,49 @@
+
+
+<div align="center">
+
+<h1 align="center">Karina Compiler</h1>
+<a href="https://karina-lang.org/">
+  Karina-lang.org
+</a>
+
+</div>
+
+<br>
+
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
 
-Language Features/Documentation: [karina-lang.org](https://karina-lang.org/Intro.html)
-
-# Karina Compiler 
 
 ## Getting Started
 
 You need Java 23 or higher.
 You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
 
+
+
+```shell
+ git clone https://github.com/Plixo2/KarinaC.git
+ cd KarinaC
+```
+
+<details> <summary>IDE setup</summary>
+
+The Compiler is a standard Gradle project, so you can use it with any IDE that supports Gradle.
+
+You can run the compiler via the Gradle task `run` or run the [Main Class](src/main/java/org/karina/lang/compiler/Main.java) directly.
+
+The `run` script in [`resources/out/`](resources/out/) can be used to run the generated jar file.
+
+</details>
+
+<details>
+
+<summary>Manual setup</summary>
+
 Make sure your `JAVA_HOME` is set to the correct version.
 
 ### Windows
 ```shell
- git clone https://github.com/Plixo2/KarinaC.git
- cd KarinaC
  gradlew.bat run # run the compiler via gradle
  resources\out\run.bat # run the generated file
 ```
@@ -28,24 +57,96 @@ Make sure your `JAVA_HOME` is set to the correct version.
  chmod +x ./resources/out/run
  ./resources/out/run # run the generated file
  ```
- 
 
-This will build the demo project in [`resources/src/`](resources/src/) and run the generated build.jar file in [`resources/out/`](resources/out/).
 
-You can set the `karina.source` system property to point to your own source folder:
-`-Dkarina.source="resources/local_src/"`
+</details>
+
+
+The project is configured to build the demo project in [`resources/src/`](resources/src/).
+
+The `run` script in [`resources/out/`](resources/out/) will run the generated jar file.
+
+
+## Development
+
+
+You can use the following System Properties for local development:
+
+<details> <summary>karina.source</summary>
+
+> `karina.source="<src folder>"` 
+
+Points to your local development folder. Defaults to `resources/src/`
+
+</details>
+
+<details> <summary>karina.out</summary>
+
+> `karina.out="<build file>"` 
+
+specifies the output jar file. Defaults to `resources/out/build.jar`
+
+</details>
+
+
+<details> <summary>karina.flight</summary>
+
+> `karina.flight="<debug file>"` 
+
+Specifies the debug flight recorder file path. Defaults to `resources/flight.txt`
+
+</details>
+
+<details> <summary>karina.console</summary>
+
+> `karina.console="<true/false>"`  
+
+Enables/Disables the flight recorder output to the console. Defaults to `resources/flight.txt`
+
+</details>
+
+<details> <summary>karina.logging</summary>
+
+> `karina.logging="<none/verbose/verbose_jvm>"`
+
+Enables/Disables the flight recorder output to the console. Defaults to `none`.
+Useful for debugging the compiler.
+
+
+</details>
+
+You can set system environment flags via [build.gradle](build.gradle) or the vm arguments in your IDE.
+
+```groovy
+application {
+    mainClass.set('org.karina.lang.compiler.Main')
+    applicationDefaultJvmArgs = ['-Dkarina.source="resources/local/"'] // set the source folder to your local dev folder
+}
+```
+
+You also can set custom Log types in
+[`Log.java`](src/main/java/org/karina/lang/compiler/logging/Log.java#L45).
+This will enable logging for specific parts of the compiler.
+
+> [!IMPORTANT]
+> Please set this flag to `verbose` and upload the flight.txt file along with the source files, when you encounter a bug.
+
+
 
 ## Rebuild the standard library
 
-Use the Gradle task 'KARINA-BASE' to build a new karina_base.jar file, located in [`src/main/resources`](src/main/resources).
+You can rebuild the [standard library](src/main/java/karina/lang/) with the
+Gradle task `KARINA-BASE`. 
+
+This will create a new  `karina_base.jar` file, located in [`src/main/resources`](src/main/resources)
+
+# Compiler architecture
+
+<details>
+
+<summary>Internals</summary>
 
 
-
-- [Standard Library](src/main/java/karina/lang/)
-- [Compiler](src/main/java/org/karina/lang/compiler)
-- [Language Server](src/main/java/org/karina/lang/lsp)
-
-## Compiler architecture
 
 - Read the source code into memory
 - Load the precompiled jar files (java.core and the karina.base) into a ClassModel
@@ -64,34 +165,18 @@ Use the Gradle task 'KARINA-BASE' to build a new karina_base.jar file, located i
 - And then finally write the bytecode to disk
 
 Other important classes/packages:
-- [Main Class](src/main/java/org/karina/lang/compiler/boot/Main.java)
-- [Compiler Class](src/main/java/org/karina/lang/compiler/api/KarinaDefaultCompiler.java)
-- [KExpr Class](src/main/java/org/karina/lang/compiler/objects/KExpr.java)
-- [KType Class](src/main/java/org/karina/lang/compiler/objects/KType.java)
+- [Main Class](src/main/java/org/karina/lang/compiler/Main.java)
+- [Compiler Class](src/main/java/org/karina/lang/compiler/KarinaCompiler.java)
+- [KExpr Class](src/main/java/org/karina/lang/compiler/utils/KExpr.java)
+- [KType Class](src/main/java/org/karina/lang/compiler/utils/KType.java)
 - [jvm](src/main/java/org/karina/lang/compiler/jvm_loading)
   - Responsible for loading of precompiled classes
 - [model_api](src/main/java/org/karina/lang/compiler/model_api)
   - The API for the ClassModel. Represents all loaded classes and their fields, methods, etc
 
-I would recommend to use the following java flags for development:
+</details>
 
-```shell
--ea 
--Dkarina.out="resources/out/build.jar"  
--Dkarina.source="resources/src/" 
--Dkarina.console=true 
--Dkarina.logging=none
-```
 
-> `karina.source` can point to your local development folder
 
-> `karina.out` points to the output jar file
-
-> `karina.console` will print the flight recorder output to the console.
-
-> `karina.logging` will set the logging level (`none`, `verbose` or `verbose_jvm`)
-
-> [!IMPORTANT]
-> Please set the `karina.logging` flag to `verbose` and upload the flight.txt file when you encounter a bug along with the source files
 
 
