@@ -1,0 +1,74 @@
+
+// TODO more cases:
+// (a,b) -> void
+// () -> void
+// (a) -> void
+// (a, b) -> c
+// (a, b) -> a
+// (b) -> a
+
+//also test all of these with and without the same function with signature implemented
+//also make a failing test
+
+//also test abstract classes
+// check inheritance of higher order
+
+fn f() {
+    create()
+
+    let t1 = Test { inner: 1 }
+    println(t1.test("Hello"))
+    let t2 = Test2 {}
+    println(t2.make())
+
+}
+
+
+
+fn create() -> Integer? {
+
+    let getValue = fn() Option.some(100)
+    let toStr = fn(a: Integer) String.valueOf(a)
+    let opt = getValue().map(toStr)?
+
+    let optStr = Option$Some { _: "Hello" } as string?
+    let unwrapped = optStr?
+  //  let unwrapped3 = if optStr is Option::Some some { some.value } else { return Option::None {}}
+    let unwrapped2 = Option$Some { _: Option$Some { _: "Hello" } }.value()?
+    let sizeOf = optStr?.length()
+
+    Option$Some { _: sizeOf * 2 }
+}
+
+
+
+struct Test<W> {
+    inner: W
+
+    impl TestInterface<W, String> {
+        fn test(self, b: String) -> W {
+            self.inner
+        }
+    }
+}
+
+interface TestInterface<T, B> {
+    fn test(self, b: B) -> T
+}
+
+
+struct Test2 {
+
+    impl TestInterface2<String> {
+        fn make(self) -> string {
+            "Hello"
+        }
+    }
+}
+
+
+interface TestInterface2<B> {
+    fn make(self) -> B
+}
+
+

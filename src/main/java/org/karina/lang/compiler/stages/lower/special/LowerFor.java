@@ -87,7 +87,7 @@ public class LowerFor {
     }
 
     private KExpr lowerIterator(LoweringContext ctx) {
-        var interVariableName = "$iter" + ctx.syntheticCounter().getAndIncrement();
+        var interVariableName = "$iter" + ctx.syntheticCounter().incrementAndGet();
         var region = this.aFor.region();
         assert this.aFor.symbol() != null;
 

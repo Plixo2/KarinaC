@@ -337,7 +337,12 @@ public class LoweringItem {
                 continue;
             }
 
-//            Types.erasedEquals(methodModel.signature().returnType(), returnType)
+            var erasedReturnType = Types.erase(methodModel.signature().returnType());
+
+            if (!Types.erasedEquals(erasedReturnType, returnType)) {
+                continue;
+            }
+
             if (Types.signatureEquals(methodModel.signature().parametersErased(), params)) {
                 return methodModel;
             }

@@ -1,0 +1,34 @@
+
+1. TODO validate argument and return type
+/*
+fn f(a: fn(string) -> string impl java::util::function::Consumer<string>) {
+
+}
+*/
+
+
+
+2. TODO string is from type object...
+
+interface TestInterface3<B> {
+    fn make(self) -> B
+}
+
+interface TestInterface4<B> {
+    fn make(self) -> B
+}
+
+struct Test3 {
+
+    impl TestInterface4<Object> {
+    }
+
+
+    impl TestInterface3<String> {
+        fn make(self) -> string {
+            "Hello"
+        }
+    }
+
+}
+
