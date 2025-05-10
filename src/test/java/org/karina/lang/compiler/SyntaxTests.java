@@ -1,13 +1,15 @@
 package org.karina.lang.compiler;
 
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.*;
 import org.karina.lang.compiler.utils.FileLoader;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 
 public class SyntaxTests {
@@ -16,6 +18,25 @@ public class SyntaxTests {
     @Test
     public void testMain() throws IOException {
         Main.main(new String[]{"--test"});
+    }
+
+    @AfterAll
+    public static void runMain()
+            throws MalformedURLException, ClassNotFoundException, NoSuchMethodException,
+            InvocationTargetException, IllegalAccessException {
+
+        URLClassLoader clsLoader = new URLClassLoader(
+                new URL[] {
+                        new File(System.getProperty("karina.out", "resources/out/build.jar")).toURI().toURL()
+                },
+                Main.class.getClassLoader()
+        );
+        var classToLoad = Class.forName("main", true, clsLoader);
+        Method method = classToLoad.getDeclaredMethod("main", String[].class);
+        var args = new Object[] {
+                new String[] {}
+        };
+        var ignored = method.invoke(null, args);
     }
 
     @TestFactory

@@ -76,7 +76,9 @@ public class Main {
             System.out.println("\u001B[0m");
             System.out.flush();
 
-            System.exit(0);
+            if (args.length == 0 || !args[0].equals("--test")) {
+                System.exit(0);
+            }
         } else {
             System.out.println("\u001B[31mCompilation failed\u001B[0m");
 
