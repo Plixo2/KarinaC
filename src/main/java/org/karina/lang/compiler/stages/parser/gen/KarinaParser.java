@@ -19,7 +19,7 @@ public class KarinaParser extends Parser {
 	public static final int
 		EXPR=1, TYPE=2, FN=3, IS=4, IN=5, AS=6, NULL=7, IMPORT=8, EXTENDS=9, EXTEND=10, 
 		MATCH=11, OVERRIDE=12, NATIVE=13, TRUE=14, FALSE=15, VIRTUAL=16, BREAK=17, 
-		RETURN=18, YIELD=19, STRUCT=20, STATIC=21, RAISE=22, TRAIT=23, IMPL=24, 
+		RETURN=18, YIELD=19, STRUCT=20, STATIC=21, THROW=22, TRAIT=23, IMPL=24, 
 		ENUM=25, CLASS=26, LET=27, IF=28, CONST=29, ELSE=30, WHILE=31, FOR=32, 
 		SUPER=33, WHERE=34, INTERFACE=35, SELF=36, INT=37, MUT=38, LONG=39, BYTE=40, 
 		CHAR=41, DOUBLE=42, SHORT=43, STRING=44, FLOAT=45, BOOL=46, VOID=47, JSON=48, 
@@ -80,7 +80,7 @@ public class KarinaParser extends Parser {
 			null, "'expr'", "'type'", "'fn'", "'is'", "'in'", "'as'", "'null'", "'import'", 
 			"'extends'", "'extend'", "'match'", "'override'", "'native'", "'true'", 
 			"'false'", "'virtual'", "'break'", "'return'", "'yield'", "'struct'", 
-			"'static'", "'raise'", "'trait'", "'impl'", "'enum'", "'class'", "'let'", 
+			"'static'", "'throw'", "'trait'", "'impl'", "'enum'", "'class'", "'let'", 
 			"'if'", "'const'", "'else'", "'while'", "'for'", "'super'", "'where'", 
 			"'interface'", "'self'", "'int'", "'mut'", "'long'", "'byte'", "'char'", 
 			"'double'", "'short'", "'string'", "'float'", "'bool'", "'void'", "'json'", 
@@ -96,7 +96,7 @@ public class KarinaParser extends Parser {
 		return new String[] {
 			null, "EXPR", "TYPE", "FN", "IS", "IN", "AS", "NULL", "IMPORT", "EXTENDS", 
 			"EXTEND", "MATCH", "OVERRIDE", "NATIVE", "TRUE", "FALSE", "VIRTUAL", 
-			"BREAK", "RETURN", "YIELD", "STRUCT", "STATIC", "RAISE", "TRAIT", "IMPL", 
+			"BREAK", "RETURN", "YIELD", "STRUCT", "STATIC", "THROW", "TRAIT", "IMPL", 
 			"ENUM", "CLASS", "LET", "IF", "CONST", "ELSE", "WHILE", "FOR", "SUPER", 
 			"WHERE", "INTERFACE", "SELF", "INT", "MUT", "LONG", "BYTE", "CHAR", "DOUBLE", 
 			"SHORT", "STRING", "FLOAT", "BOOL", "VOID", "JSON", "CONTINUE", "ARROW_RIGHT", 
@@ -3599,7 +3599,7 @@ public class KarinaParser extends Parser {
 			case FALSE:
 			case BREAK:
 			case RETURN:
-			case RAISE:
+			case THROW:
 			case LET:
 			case IF:
 			case WHILE:
@@ -3793,7 +3793,7 @@ public class KarinaParser extends Parser {
 				match(CONTINUE);
 				}
 				break;
-			case RAISE:
+			case THROW:
 				enterOuterAlt(_localctx, 11);
 				{
 				setState(612);
@@ -4786,7 +4786,7 @@ public class KarinaParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class ThrowContext extends ParserRuleContext {
-		public TerminalNode RAISE() { return getToken(KarinaParser.RAISE, 0); }
+		public TerminalNode THROW() { return getToken(KarinaParser.THROW, 0); }
 		public ExprWithBlockContext exprWithBlock() {
 			return getRuleContext(ExprWithBlockContext.class,0);
 		}
@@ -4816,7 +4816,7 @@ public class KarinaParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(722);
-			match(RAISE);
+			match(THROW);
 			setState(723);
 			exprWithBlock();
 			}
@@ -5402,7 +5402,7 @@ public class KarinaParser extends Parser {
 			case BREAK:
 			case RETURN:
 			case STRUCT:
-			case RAISE:
+			case THROW:
 			case IMPL:
 			case ENUM:
 			case LET:
@@ -6442,7 +6442,6 @@ public class KarinaParser extends Parser {
 		public TerminalNode VIRTUAL() { return getToken(KarinaParser.VIRTUAL, 0); }
 		public TerminalNode YIELD() { return getToken(KarinaParser.YIELD, 0); }
 		public TerminalNode STRUCT() { return getToken(KarinaParser.STRUCT, 0); }
-		public TerminalNode RAISE() { return getToken(KarinaParser.RAISE, 0); }
 		public TerminalNode TRAIT() { return getToken(KarinaParser.TRAIT, 0); }
 		public TerminalNode IMPL() { return getToken(KarinaParser.IMPL, 0); }
 		public TerminalNode LET() { return getToken(KarinaParser.LET, 0); }
@@ -6481,7 +6480,7 @@ public class KarinaParser extends Parser {
 			{
 			setState(892);
 			_la = _input.LA(1);
-			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 369797386280056L) != 0)) ) {
+			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 369797382085752L) != 0)) ) {
 			_errHandler.recoverInline(this);
 			}
 			else {
@@ -6622,7 +6621,7 @@ public class KarinaParser extends Parser {
 		"$&(*,.02468:<>@BDFHJLNPRTVXZ\\^`bdfhjlnprtvxz|~\u0080\u0082\u0084\u0086"+
 		"\u0088\u008a\u008c\u008e\u0090\u0092\u0094\u0096\u0000\u0006\u0001\u0000"+
 		"69\u0002\u000045DE\u0002\u0000<=SS\u0001\u0000>@\u0002\u0000==FF\r\u0000"+
-		"\u0003\u0006\n\f\u0010\u0010\u0013\u0014\u0016\u0018\u001b\u001b\u001d"+
+		"\u0003\u0006\n\f\u0010\u0010\u0013\u0014\u0017\u0018\u001b\u001b\u001d"+
 		"\u001d\"\"$$&&,,..00\u03d7\u0000\u009b\u0001\u0000\u0000\u0000\u0002\u00a6"+
 		"\u0001\u0000\u0000\u0000\u0004\u00b2\u0001\u0000\u0000\u0000\u0006\u00bd"+
 		"\u0001\u0000\u0000\u0000\b\u00c8\u0001\u0000\u0000\u0000\n\u00dd\u0001"+

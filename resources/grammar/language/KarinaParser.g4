@@ -113,7 +113,7 @@ while: 'while' exprWithBlock block;
 for: 'for' optTypeName 'in' exprWithBlock block;
 //TODO tuple destructuring
 
-throw: 'raise' exprWithBlock;
+throw: 'throw' exprWithBlock;
 
 conditionalOrExpression: conditionalAndExpression ('||' conditionalOrExpression)?;
 conditionalAndExpression: equalityExpression ('&&' conditionalAndExpression)?;
@@ -146,6 +146,6 @@ optTypeName: id (':' type)?;
 id: ID | 'expr' | 'type' | '\\' escaped | '_';
 escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
-| STRUCT | RAISE | TRAIT | IMPL | LET
+| STRUCT | TRAIT | IMPL | LET
 | SELF | STRING | JSON | BOOL | WHERE
 | CONST | MUT;

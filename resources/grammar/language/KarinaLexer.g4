@@ -22,7 +22,7 @@ RETURN: 'return';
 YIELD: 'yield';
 STRUCT: 'struct';
 STATIC: 'static';
-RAISE: 'raise';
+THROW: 'throw';
 TRAIT: 'trait';
 IMPL: 'impl';
 ENUM: 'enum';
@@ -99,7 +99,7 @@ CHAR_LITERAL: '\'' (CHAR_CHARACTERS | ESCAPED_DOLLAR | CHAR_VARIABLE)* '\'';
 fragment CHAR_VARIABLE: '$' (ID | 'expr' | 'type' | '\\' ESCAPED);
 fragment ESCAPED: FN | IS | IN | AS | EXTEND
                    | MATCH | OVERRIDE | VIRTUAL | YIELD
-                   | STRUCT | RAISE | TRAIT | IMPL | LET
+                   | STRUCT | TRAIT | IMPL | LET
                    | SELF | STRING | JSON | BOOL | WHERE | CONST | MUT;
 fragment ESCAPED_DOLLAR: '\\$';
 fragment CHAR_CHARACTERS: CHAR_CHARACTER+;

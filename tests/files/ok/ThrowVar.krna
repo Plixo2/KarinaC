@@ -1,0 +1,6 @@
+
+
+fn f() {
+    let v = java::lang::RuntimeException { _: "test" }
+    throw v;
+}
