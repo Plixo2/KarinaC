@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.stages.generate;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.BinaryOperator;
@@ -552,12 +553,13 @@ public class GenerateExpr {
                 ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
             }
             case KExpr.StringExpr stringExpr -> {
+                var content = StringEscapeUtils.unescapeJava(stringExpr.value());
                 if (stringExpr.isChar()) {
-                    var literalAsInt = (int) stringExpr.value().charAt(0);
+                    var literalAsInt = (int) content.charAt(0);
                     ctx.add(new LdcInsnNode(literalAsInt));
                     ctx.add(new InsnNode(Opcodes.I2C));
                 } else {
-                    ctx.add(new LdcInsnNode(stringExpr.value()));
+                    ctx.add(new LdcInsnNode(content));
                 }
             }
             case KExpr.Throw aThrow -> {
