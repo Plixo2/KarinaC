@@ -33,6 +33,29 @@ while providing a modern programming experience.
 
 <br>
 
+## Installer and CLI
+
+To install the Karina compiler, download and run the installer.
+After the installation, you can run the compiler from the command line:
+
+```shell
+karina -v
+```
+> Karina: 0.4 \
+> Java: OpenJDK 64-Bit Server VM 23.0.2
+
+
+#### Hello World
+
+```shell
+karina new hello-world
+cd hello-world
+karina run
+```
+
+> Hello, World!
+
+
 ## Getting Started
 
 You need Java 21 or higher.
@@ -206,6 +229,8 @@ Other important classes:
   - The API for the ClassModel. Represents all loaded classes and their fields, methods, etc
 
 </details>
+
+
 
 
 

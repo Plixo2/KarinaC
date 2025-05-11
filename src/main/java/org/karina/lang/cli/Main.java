@@ -79,14 +79,9 @@ public class Main {
     private static void printVersion() {
         var javaVersion = System.getProperty("java.version", "<unknown java version>");
         var vmName = System.getProperty("java.vm.name", "<unknown vm name>");
-        var runtimeVersion = System.getProperty("java.runtime.version", "<unknown runtime version>");
-        var vendor = System.getProperty("java.vendor.url", "unknown");
 
         System.out.println("Karina: " + KarinaCompiler.VERSION);
         System.out.println("Java: " + vmName + " " + javaVersion);
-        System.out.println("      " + runtimeVersion);
-        System.out.println("      " + vendor);
-
     }
 
 }
