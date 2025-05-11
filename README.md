@@ -16,7 +16,7 @@
 
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
 ![Java Version](https://img.shields.io/badge/Java-23-orange)
-![Karina Version](https://img.shields.io/badge/Karina-0.3v-8A2BE2)
+![Karina Version](https://img.shields.io/badge/Karina-0.4v-8A2BE2)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 
 <br>
