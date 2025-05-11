@@ -7,7 +7,7 @@ fn f() {
 fn option() -> Integer? {
 
     let getValue = fn() Option.some(100)
-    let toStr = fn(a: Integer) String.valueOf(a)
+    let toStr = fn(a: Integer) String::valueOf(a)
     let opt = getValue().map(toStr)?
 
     let optStr = Option$Some { _: "Hello" } as string?

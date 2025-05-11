@@ -55,8 +55,10 @@ karina run
 
 > Hello, World!
 
+<br>
+<br>
 
-## Getting Started
+## Getting Started with the Compiler
 
 You need Java 21 or higher.
 You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
