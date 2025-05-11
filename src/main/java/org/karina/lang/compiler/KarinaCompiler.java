@@ -26,6 +26,7 @@ import java.nio.file.Path;
  * Parser -> Import -> Attribution -> Lowering -> Generation
  */
 public class KarinaCompiler {
+    public static final String VERSION = "0.4";
 
     /**
      * Cache for faster testing
@@ -41,9 +42,11 @@ public class KarinaCompiler {
 
     // The directory to emit the compiled files to
     private final @Nullable String emitDirectory;
+    private final boolean emitClasses;
 
-    public KarinaCompiler(@Nullable String emitDirectory) {
+    public KarinaCompiler(@Nullable String emitDirectory, boolean emitClasses) {
         this.emitDirectory = emitDirectory;
+        this.emitClasses = emitClasses;
         this.parser = new ParseProcessor();
         this.importProcessor = new ImportProcessor();
         this.attributionProcessor = new AttributionProcessor();
@@ -113,8 +116,13 @@ public class KarinaCompiler {
                 Log.begin("generation");
                 var compiled = this.backend.compileTree(loweredTree, "main");
                 var path = Path.of(this.emitDirectory);
-                compiled.dump(path);
-                compiled.write(path);
+
+                compiled.writeJar(path);
+
+                if (this.emitClasses) {
+                    compiled.writeClasses(path.getParent().resolve("classes"));
+                }
+
                 Log.record("compiled to " + path.toAbsolutePath());
                 Log.end("generation");
 

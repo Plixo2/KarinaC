@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -21,10 +22,26 @@ public class JarCompilation {
     List<JarOutput> files;
     Manifest manifest;
 
-    public void dump(Path output) {
-        var file = output.toFile().getParentFile();
+    private static void removePreviousFiles(File file) {
+        if (file.isDirectory()) {
+            var list = file.listFiles();
+            if (list != null) {
+                for (var subFile : list) {
+                    removePreviousFiles(subFile);
+                }
+            }
+            var ignored = file.delete();
+        }
+        if (file.getName().endsWith(".class")) {
+            var ignored = file.delete();
+        }
+    }
+
+    public void writeClasses(Path output) {
+        var file = output.toFile();
+        removePreviousFiles(file);
         var ignored = file.mkdirs();
-        if (!file.isDirectory()) {
+        if (!Files.isDirectory(output)) {
             Log.fileError(new FileLoadError.NotAFolder(file));
             throw new Log.KarinaException();
         }
@@ -53,7 +70,7 @@ public class JarCompilation {
         }
     }
 
-    public void write(Path output) {
+    public void writeJar(Path output) {
         var file = output.toFile();
         var writeTime = System.currentTimeMillis();
         try {

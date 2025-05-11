@@ -7,9 +7,8 @@ import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
 
 import java.io.*;
-import java.net.URL;
 import java.util.HashSet;
-import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class ModelLoader {
@@ -21,15 +20,6 @@ public class ModelLoader {
 
     public static final String RESOURCES_JDK_BIN_GZ = "resources/jdk.bin";
 
-    private URL getJarURL(String resourcePath) {
-        var classLoader = ModelLoader.class.getClassLoader();
-        var resource = classLoader.getResource(resourcePath);
-        if (resource == null) {
-            Log.fileError(new FileLoadError.NotFound(new File(resourcePath)));
-            throw new Log.KarinaException();
-        }
-        return resource;
-    }
 
     private Model writeJar() {
 //        var startTime = System.currentTimeMillis();
@@ -99,11 +89,21 @@ public class ModelLoader {
     public Model loadFromResource(String resource) {
         Log.begin("read-jar");
         var jdkSet = new OpenSet();
-        var file = new File(getJarURL(resource).getFile());
-        try (var jarFile = new JarFile(file)) {
-            BytecodeLoading.loadJarFile(jarFile, jdkSet);
+        var missingFile = new File("resources/" + resource);
+
+        try (var resourceStream = ModelLoader.class.getResourceAsStream("/" + resource)) {
+
+            if (resourceStream == null) {
+                Log.fileError(new FileLoadError.NotFound(missingFile));
+                throw new Log.KarinaException();
+            }
+
+            try (var jarInputStream = new JarInputStream(resourceStream)){
+                BytecodeLoading.loadJarFile(jarInputStream, jdkSet);
+            }
+
         } catch (IOException e) {
-            Log.fileError(new FileLoadError.IO(file, e));
+            Log.fileError(new FileLoadError.IO(missingFile, e));
             throw new Log.KarinaException();
         }
         Log.end("read-jar");

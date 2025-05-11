@@ -1,5 +1,6 @@
 package org.karina.lang.compiler;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
 import org.karina.lang.compiler.logging.FlightRecordCollection;
 import org.karina.lang.compiler.logging.Log;
@@ -35,8 +36,9 @@ public class Main {
         var console = System.getProperty("karina.console", "true").equals("true");
         var flight = System.getProperty("karina.flight", "resources/flight.txt");
         var out = System.getProperty("karina.out", "resources/out/build.jar");
+        var writeClasses = System.getProperty("karina.classes", "true").equals("true");
 
-        var compiler = new KarinaCompiler(out);
+        var compiler = new KarinaCompiler(out, writeClasses);
 
         Log.begin("file-load");
         var fileTree = FileLoader.loadTree(
@@ -76,9 +78,6 @@ public class Main {
             System.out.println("\u001B[0m");
             System.out.flush();
 
-            if (args.length == 0 || !args[0].equals("--test")) {
-                System.exit(0);
-            }
         } else {
             System.out.println("\u001B[31mCompilation failed\u001B[0m");
 
@@ -101,7 +100,10 @@ public class Main {
 
     }
 
-    private static void writeFlight(FlightRecordCollection recordings, String path) {
+    private static void writeFlight(FlightRecordCollection recordings, @Nullable String path) {
+        if (path == null) {
+            return;
+        }
         try (var filePrintStream = new PrintStream(new FileOutputStream(Path.of(path).toFile()))){
             FlightRecordCollection.print(recordings, false, filePrintStream);
         } catch (FileNotFoundException e) {

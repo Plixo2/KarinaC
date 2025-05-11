@@ -20,7 +20,7 @@ public class TestFile {
     }
 
     public void expect() {
-        var compiler = new KarinaCompiler(null);
+        var compiler = new KarinaCompiler(null, false);
         var collection = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
 

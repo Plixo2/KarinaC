@@ -15,7 +15,7 @@
 <br>
 
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
-![Java Version](https://img.shields.io/badge/Java-23-orange)
+![Java Version](https://img.shields.io/badge/Java-21-orange)
 ![Karina Version](https://img.shields.io/badge/Karina-0.4v-8A2BE2)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 
@@ -35,7 +35,7 @@ while providing a modern programming experience.
 
 ## Getting Started
 
-You need Java 23 or higher.
+You need Java 21 or higher.
 You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
 
 
@@ -111,6 +111,11 @@ Points to your local development folder. Defaults to `resources/src/`
 > `karina.out="<build file>"`
 
 Specifies the output jar file. Defaults to `resources/out/build.jar`
+
+#### karina.classes
+> `karina.classes="<true/false>"`
+
+Enables/Disables the generation of .class files. Defaults to `true`
 
 #### karina.flight
 > `karina.flight="<debug file>"`
