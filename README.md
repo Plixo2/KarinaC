@@ -55,6 +55,12 @@ karina run
 
 > Hello, World!
 
+### Documentation
+
+The official documentation is available at 
+[karina-lang.org](https://karina-lang.org/guide/hello.html).
+
+
 <br>
 <br>
 
