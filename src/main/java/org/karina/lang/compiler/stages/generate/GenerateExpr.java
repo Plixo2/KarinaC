@@ -513,6 +513,9 @@ public class GenerateExpr {
                                 fieldType.getDescriptor()
                         ));
                     }
+                    case LiteralSymbol.Null aNull -> {
+                        ctx.add(new InsnNode(Opcodes.ACONST_NULL));
+                    }
                 }
             }
             case KExpr.Match match -> {

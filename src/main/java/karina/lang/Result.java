@@ -106,6 +106,26 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
         }
     }
 
+    /**
+     * Matches against any class given
+     *
+     */
+    @Deprecated
+    private static <T, E> Result<T, E> safeCallExpect(Function0_1<T> supplier, Class<E>[] errors) {
+        try {
+            return ok(supplier.get());
+        } catch (Throwable e) {
+            for (var errorClass : errors) {
+                if (errorClass.isInstance(e)) {
+                    return err(errorClass.cast(e));
+                }
+            }
 
+            throw new RuntimeException(
+                    "Unexpected Error",
+                    e
+            );
+        }
+    }
 
 }

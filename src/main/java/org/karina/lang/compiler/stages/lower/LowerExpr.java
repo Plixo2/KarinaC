@@ -3,10 +3,7 @@ package org.karina.lang.compiler.stages.lower;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.LowerError;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
-import org.karina.lang.compiler.stages.lower.special.LowerClosure;
-import org.karina.lang.compiler.stages.lower.special.LowerFor;
-import org.karina.lang.compiler.stages.lower.special.LowerStringInterpolation;
-import org.karina.lang.compiler.stages.lower.special.LowerUnwrap;
+import org.karina.lang.compiler.stages.lower.special.*;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.*;
@@ -231,6 +228,9 @@ public class LowerExpr {
             case LiteralSymbol.StaticFieldReference staticFieldReference -> {
                 //ok
             }
+            case LiteralSymbol.Null aNull -> {
+                // ok
+            }
             case LiteralSymbol.StaticMethodReference staticMethodReference -> {
                 Log.lowerError(new LowerError.NotValidAnymore(staticMethodReference.region(), "Static Method cannot be expressed"));
                 throw new Log.KarinaException();
@@ -304,29 +304,11 @@ public class LowerExpr {
         return new KExpr.Call(region, left, generics, arguments, symbol);
     }
 
-    ///
-    /// Signature:
-    ///     `Branch(Region region, KExpr condition, KExpr thenArm, @Nullable ElsePart elseArm, @Nullable BranchPattern branchPattern, @Nullable @Symbol BranchYieldSymbol symbol)`
+
+    /// @See {@link LowerBranch}
     private static KExpr lowerBranch(LoweringContext context, KExpr.Branch expr) {
-        var region = expr.region();
-        var condition = lower(context, expr.condition());
-        var thenArm = lower(context, expr.thenArm());
-        var branchPattern = expr.branchPattern();
-        if (branchPattern != null) {
-            Log.temp(expr.region(), "Not implemented yet");
-            throw new Log.KarinaException();
-        }
-
-        ElsePart elseArm = null;
-        if (expr.elseArm() != null) {
-            var elseArmLower = lower(context, expr.elseArm().expr());
-            elseArm = new ElsePart(elseArmLower, expr.elseArm().elsePattern());
-            assert expr.elseArm().elsePattern() == null: "Not implemented yet";
-        }
-
-        var symbol = expr.symbol();
-        assert symbol != null;
-        return new KExpr.Branch(region, condition, thenArm, elseArm, branchPattern, symbol);
+        var lowerBranch = new LowerBranch(expr);
+        return lowerBranch.lower(context);
     }
 
     ///

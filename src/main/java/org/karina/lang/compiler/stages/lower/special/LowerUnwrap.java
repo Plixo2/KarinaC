@@ -29,7 +29,7 @@ import java.util.List;
 /// ```
 /// {
 ///     let $opt = value
-///     if $opt is Result::OK { ($some as Result::OK ).value() } else { return ($some as Result::Err) }
+///     if $opt is Result::OK { ($opt as Result::OK ).value() } else { return ($opt as Result::Err) }
 /// }
 /// ```
 ///

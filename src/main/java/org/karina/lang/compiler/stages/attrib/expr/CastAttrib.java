@@ -16,6 +16,7 @@ import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 public class CastAttrib  {
 
     public static AttributionExpr attribCast(@Nullable KType hint, AttributionContext ctx, KExpr.Cast expr) {
+        //TODO add ability for boxing
 
         KExpr left;
         KType toType;

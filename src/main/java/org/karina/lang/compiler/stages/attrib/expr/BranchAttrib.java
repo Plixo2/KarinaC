@@ -216,7 +216,8 @@ public class BranchAttrib  {
 
     private static @NotNull BranchPatternResult evalBranchPattern(
             AttributionContext ctx,
-            BranchPattern pattern, KType inferHint
+            BranchPattern pattern,
+            KType inferHint
     ) {
 
         AttributionContext thenContext;
@@ -271,6 +272,7 @@ public class BranchAttrib  {
                 branchPattern = new BranchPattern.Cast(cast.region(), isType, cast.castedName(), newSymbol);
             }
             case BranchPattern.Destruct destruct -> {
+                // TODO implement
                 Log.temp(destruct.region(), "Destruct not implemented");
                 throw new Log.KarinaException();
             }
@@ -284,7 +286,7 @@ public class BranchAttrib  {
     }
 
     private record BranchPatternResult(
-            AttributionContext thenContext, BranchPattern attribPattern
-    ) {
-    }
+            AttributionContext thenContext,
+            BranchPattern attribPattern
+    ) {}
 }

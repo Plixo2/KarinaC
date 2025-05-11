@@ -85,6 +85,11 @@ public sealed interface KType {
             List.of()
     );
 
+    ClassType MATCH_EXCEPTION = new ClassType(
+            ClassPointer.of(JAVA_LIB, ClassPointer.MATCH_EXCEPTION_PATH),
+            List.of()
+    );
+
     ClassType KARINA_RANGE = new ClassType(
             ClassPointer.of(KARINA_LIB, ClassPointer.RANGE_PATH),
             List.of()
@@ -172,6 +177,7 @@ public sealed interface KType {
         validatePointer(model, ITERATOR(ROOT));
         validatePointer(model, CLASS_TYPE(ROOT));
         validatePointer(model, THROWABLE);
+        validatePointer(model, MATCH_EXCEPTION);
 
         validatePointer(model, BOOLEAN_CLASS);
         validatePointer(model, CHARACTER_CLASS);

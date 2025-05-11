@@ -31,6 +31,7 @@ public class ClassPointer {
     public static final ObjectPath ITERATOR_PATH = new ObjectPath("java", "util", "Iterator");
     public static final ObjectPath THROWABLE_PATH = new ObjectPath("java", "lang", "Throwable");
     public static final ObjectPath CLASS_TYPE_PATH = new ObjectPath("java", "lang", "Class");
+    public static final ObjectPath MATCH_EXCEPTION_PATH = new ObjectPath("java", "lang", "MatchException");
 
     public static final ObjectPath FUNCTIONS_BASE = new ObjectPath("karina", "lang", "internal", "functions");
     public static final ObjectPath OPTION_PATH = new ObjectPath("karina", "lang", "Option");

@@ -27,6 +27,10 @@ public sealed interface LiteralSymbol {
             case StaticFieldReference staticFieldReference -> {
                 return staticFieldReference.fieldType();
             }
+            case Null nullValue -> {
+                //return new ContraVariantType(nullValue.region(), KType.ROOT);
+                return KType.ROOT;
+            }
         }
     }
 
@@ -36,5 +40,6 @@ public sealed interface LiteralSymbol {
     record VariableReference(Region region, Variable variable) implements LiteralSymbol { }
 
     record StaticClassReference(Region region, ClassPointer classPointer, KType classType, boolean implicitGetClass) implements LiteralSymbol { }
+    record Null(Region region) implements LiteralSymbol { }
 
 }
