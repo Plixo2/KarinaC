@@ -3,15 +3,19 @@ package org.karina.lang.cli.commands;
 import org.karina.lang.cli.CLIParser;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
 
-import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 
+/**
+ * Compiles a Karina project from the command line.
+ * Creates a build directory with the compiled classes,
+ * the compiled jar file, the standard library
+ * and a run script for linux and windows.
+ */
 public class CompileProject {
 
     private static final String WINDOWS_COMMAND =

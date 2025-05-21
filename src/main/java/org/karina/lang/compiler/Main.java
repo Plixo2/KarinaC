@@ -75,12 +75,15 @@ public class Main {
 
 
         var fileCount = fileTree.leafCount();
+        var fileCountString = fileCount == 1 ? "file" : "files";
         ColorOut.begin(LogColor.YELLOW)
                 .append("Compiling '")
                 .append(sourceDirectoryPath)
                 .append("' (")
                 .append(fileCount)
-                .append(" files)")
+                .append(" ")
+                .append(fileCountString)
+                .append(")")
                 .out(System.out);
 
 

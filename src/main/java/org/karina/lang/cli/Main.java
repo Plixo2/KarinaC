@@ -8,6 +8,12 @@ import org.karina.lang.compiler.KarinaCompiler;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Main class for the Karina CLI.
+ * <p>
+ * This class is responsible for parsing command line arguments and executing the appropriate commands.
+ * It also handles errors and prints help messages.
+ */
 public class Main {
 
 

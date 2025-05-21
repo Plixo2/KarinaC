@@ -1,9 +1,11 @@
 package org.karina.lang.cli.commands;
 
+import org.karina.lang.compiler.KarinaCompiler;
+
 public class PrintHelp {
     private static final String HELP_MESSAGE =
 """
-Karina 0.4 CLI
+Karina #ver CLI
 
 Usage:
     karina new <project-name>
@@ -36,8 +38,7 @@ Options:
 """;
 
 
-
     public static void printHelp() {
-        System.out.println(HELP_MESSAGE);
+        System.out.println(HELP_MESSAGE.replace("#ver", KarinaCompiler.VERSION));
     }
 }

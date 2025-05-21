@@ -5,6 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+/**
+ * Creates a new project in the given directory.
+ * Creates a src folder and a main.krna file with a simple Hello World program.
+ */
 public class CreateNewProject {
     private static final String PROJECT_TEMPLATE =
 """

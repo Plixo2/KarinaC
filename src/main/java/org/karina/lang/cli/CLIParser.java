@@ -4,6 +4,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 
+/**
+ * Simple command line parser.
+ */
 public class CLIParser {
 
     public PrimaryCommand accept(String[] args) {
