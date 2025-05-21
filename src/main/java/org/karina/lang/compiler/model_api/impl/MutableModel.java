@@ -42,7 +42,6 @@ public record MutableModel(Model oldLookup, ClassLookup newLookup) implements Mo
 
     @Override
     public ClassModel getClass(ClassPointer pointer) {
-        var sample = Log.addSuperSample("GET_CLASS");
         var classModel = this.oldLookup.getClassNullable(pointer);
         if (classModel == null) {
             classModel = this.newLookup.get(pointer.path());
@@ -52,7 +51,6 @@ public record MutableModel(Model oldLookup, ClassLookup newLookup) implements Mo
             Log.temp(pointer.region(), "Class not found, this should not happen: " + pointer.path());
             throw new Log.KarinaException();
         }
-        sample.endSample();
         return classModel;
     }
 

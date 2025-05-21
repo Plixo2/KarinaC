@@ -2,16 +2,12 @@ package org.karina.lang.compiler.utils;
 
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.NotDirectoryException;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -34,13 +30,9 @@ public class FileLoader {
 
     private static List<String> loadUTF8File(File file) throws IOException {
         testValidity(file);
-        var nameWithoutExtension = getFileNameWithoutExtension(file.getName());
-        Log.begin("file-load-" + nameWithoutExtension);
         var path = file.getAbsoluteFile().toPath().normalize();
         var charset = StandardCharsets.UTF_8;
-        var lines = Files.readAllLines(path, charset);
-        Log.end("file-load-" + nameWithoutExtension);
-        return lines;
+        return Files.readAllLines(path, charset);
     }
 
     private static void testValidity(File file) throws IOException {
@@ -58,9 +50,10 @@ public class FileLoader {
 
     //#region Load File Tree
     public static DefaultFileTree loadTree(
-            String path
+            Path path
     ) throws IOException {
-        return loadTree(null, path, new FilePredicate("krna"));
+        path = path.toAbsolutePath().normalize();
+        return loadTree(null, path.toString(), new FilePredicate("krna"));
     }
 
 
@@ -72,7 +65,6 @@ public class FileLoader {
 
         var file = new File(path);
         var folderName = getFileNameWithoutExtension(file.getName());
-        Log.begin("file-load-" + folderName);
         if (!file.exists()) {
             throw new FileNotFoundException(
                     file.toString()
@@ -93,7 +85,6 @@ public class FileLoader {
             throw new IOException("Can't list files");
         }
         var tree = loadTreeFiles(files, objectPath, folderName, filePredicate);
-        Log.end("file-load-" + folderName);
         return tree;
 
     }

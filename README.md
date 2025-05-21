@@ -94,18 +94,13 @@ Make sure your `JAVA_HOME` is set to the correct version.
 
 ### Windows
 ```shell
- gradlew.bat run # run the compiler via gradle
- resources\out\run.bat # run the generated file
+ gradlew.bat run
 ```
 
 ### Linux
 ```shell
- git clone https://github.com/Plixo2/KarinaC.git
- cd KarinaC
  chmod +x ./gradlew
- ./gradlew run # run the compiler via gradle
- chmod +x ./resources/out/run
- ./resources/out/run # run the generated file
+ ./gradlew run
  ```
 
 
@@ -126,7 +121,7 @@ You can set System environment flags via [build.gradle](build.gradle) or the vm 
 
 ```groovy
 application {
-    mainClass.set('org.karina.lang.compiler.Main')
+    // ...
     applicationDefaultJvmArgs = ['-Dkarina.source="resources/local/"'] // set the source folder to your local dev folder
 }
 ```

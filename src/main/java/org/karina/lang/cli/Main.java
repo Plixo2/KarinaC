@@ -1,5 +1,8 @@
 package org.karina.lang.cli;
 
+import org.karina.lang.cli.commands.CompileProject;
+import org.karina.lang.cli.commands.CreateNewProject;
+import org.karina.lang.cli.commands.PrintHelp;
 import org.karina.lang.compiler.KarinaCompiler;
 
 import java.io.IOException;
@@ -28,11 +31,10 @@ public class Main {
                 }
             }
             case CLIParser.PrimaryCommand.Compile compile -> {
-                CompileProject.compile(Path.of(compile.src()), false);
-
+                CompileProject.compile(Path.of(compile.src()), false, compile.options());
             }
             case CLIParser.PrimaryCommand.Run run -> {
-                CompileProject.compile(Path.of("."), true);
+                CompileProject.compile(Path.of("."), true, run.options());
             }
             case CLIParser.PrimaryCommand.Unknown unknown -> {
                 printUnknownCommand(unknown.src());
@@ -46,6 +48,15 @@ public class Main {
                 printMissingArgument(missingArgument.command(), missingArgument.src());
                 System.exit(-1);
             }
+            case CLIParser.PrimaryCommand.UnknownOption unknownOption -> {
+                printUnknownOption(unknownOption.message());
+                System.exit(-1);
+            }
+            case CLIParser.PrimaryCommand.Error error -> {
+                System.out.println(error.message());
+                System.out.println("Use -h or --help for help.");
+                System.exit(-1);
+            }
         }
 
     }
@@ -55,6 +66,11 @@ public class Main {
      */
     private static boolean newProject(String directory) throws IOException {
         return CreateNewProject.createNewProject(directory);
+    }
+
+    private static void printUnknownOption(String command) {
+        System.out.println("Unknown option: " + command);
+        System.out.println("Use -h or --help for help.");
     }
 
     private static void printUnknownCommand(String command) {

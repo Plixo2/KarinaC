@@ -18,7 +18,6 @@ public class BytecodeLoading {
             if (entry.getName().endsWith(".class")) {
                 var reader = new ClassReader(jar);
                 var classNode = new ClassNode();
-                var sample = Log.addSuperSample("ASM_PARSE");
                 reader.accept(
                         classNode,
                         ClassReader.SKIP_FRAMES
@@ -26,7 +25,6 @@ public class BytecodeLoading {
                         // which we need for recovering parameter names.
                         // Not skipping code is ~40% slower
                 );
-                sample.endSample();
                 if (!classNode.name.equals("module-info")) {
                     openSet.add(classNode, entry.getRealName());
                 }

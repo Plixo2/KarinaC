@@ -29,11 +29,6 @@ public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRe
             }
             stream.println(log.mkString(verbose));
         }
-        for (var log : collection) {
-            if (!log.skipSample()) {
-                stream.println(log.mkSampleStr());
-            }
-        }
     }
 
     public static void printColored(FlightRecordCollection collection, boolean verbose, PrintStream stream) {
@@ -66,12 +61,6 @@ public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRe
                 continue;
             }
             stream.println(log.mkString(verbose, name, time, end, colorFormatter));
-        }
-
-        for (var log : collection) {
-            if (!log.skipSample()) {
-                stream.println(log.mkSampleStr(name, time));
-            }
         }
     }
 

@@ -1,0 +1,43 @@
+package org.karina.lang.cli.commands;
+
+public class PrintHelp {
+    private static final String HELP_MESSAGE =
+"""
+Karina 0.4 CLI
+
+Usage:
+    karina new <project-name>
+        Create a new project with the specified name.
+            
+    karina compile <project-path> [options]
+        Compile the project located in the specified directory.
+        The directory must contain a directory named 'src' with the source files.
+        
+    karina run [options]
+        Compile and run the project located in the current directory.
+
+    karina -version, -v
+        Display the current version of Karina.
+
+    karina --help, -h, -?
+        Display this help message.
+        
+Options:
+    --logging, -l <level>
+        Set the logging level. Available levels: none, basic, verbose, verbose_jvm.
+        Default is 'basic'.
+        
+    --flight, -f <file>
+        Specify the flight log file. Default is 'build/flight.log' in the build directory.
+        
+    --console, -c
+        Displays log messages in the console.
+        
+""";
+
+
+
+    public static void printHelp() {
+        System.out.println(HELP_MESSAGE);
+    }
+}

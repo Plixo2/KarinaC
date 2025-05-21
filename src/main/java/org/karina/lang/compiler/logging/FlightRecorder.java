@@ -51,12 +51,6 @@ public class FlightRecorder {
 
     }
 
-    public Sample beginSample(String name) {
-        return new Sample(name, System.nanoTime(), this.currentSection);
-    }
-    public Sample beginSuperSample(String name) {
-        return new Sample(name, System.nanoTime(), this.topLevel);
-    }
 
     public void endAll() {
         while (this.currentSection != null) {
@@ -83,8 +77,6 @@ public class FlightRecorder {
         private final int depth;
         public boolean includeTime = true;
         public boolean hide = false;
-        //Samples with name, deltaTime in NS
-        private final Map<String, Long> samples;
 
         public SectionRecord(String name, StackTraceElement[] stackTrace, @Nullable SectionRecord parent, long startTimeNano, int depth) {
             this.parent = parent;
@@ -96,35 +88,6 @@ public class FlightRecorder {
             this.startTimeNano = startTimeNano;
             this.subSections = new ArrayList<>();
             this.depth = depth;
-            this.samples = new HashMap<>();
-        }
-
-        public boolean skipSample() {
-            return this.samples.isEmpty();
-        }
-
-        public String mkSampleStr() {
-            return mkSampleStr("", "");
-        }
-
-        public String mkSampleStr(String nameFormat, String timeFormat) {
-            var indent = "|  ".repeat(this.depth + 1);
-
-            var sampleStr = new StringBuilder();
-
-            var sampleIter = this.samples.entrySet().iterator();
-
-            while (sampleIter.hasNext()) {
-                var entry = sampleIter.next();
-                var deltaMS = entry.getValue() / 1_000_000.0f;
-                sampleStr.append(nameFormat).append(entry.getKey()).append(": ").append(timeFormat).append(deltaMS).append("ms");
-                if (sampleIter.hasNext()) {
-                    sampleStr.append(", ");
-                }
-            }
-
-            return nameFormat + indent + "[" + sampleStr + "]";
-
         }
 
         public String mkString(boolean verbose) {
@@ -153,12 +116,6 @@ public class FlightRecorder {
                 return String.format("%s%s%s: %s%.2fms%s", nameFormat, indent, nameStr, timeFormat, duration , suffix);
             }
         }
-
-
-        private void addSample(String name, long deltaNS) {
-            this.samples.merge(name, deltaNS, Long::sum);
-        }
-
     }
 
     private static String getTrace(StackTraceElement stackTrace) {
@@ -194,29 +151,6 @@ public class FlightRecorder {
                 value = value.replace(stringStringEntry.getKey(), stringStringEntry.getValue());
             }
             return value;
-        }
-    }
-
-
-    public static class Sample {
-        public String name;
-        private final long startTimeNano;
-        private long endTimeNano;
-        private final @Nullable SectionRecord parent;
-
-        public Sample(String name, long startTimeNano, @Nullable SectionRecord parent) {
-            this.name = name;
-            this.startTimeNano = startTimeNano;
-            this.parent = parent;
-        }
-
-        public void endSample() {
-            this.endTimeNano = System.nanoTime();
-
-            var deltaNS = (this.endTimeNano - this.startTimeNano);
-            if (this.parent != null) {
-                this.parent.addSample(this.name, deltaNS);
-            }
         }
     }
 

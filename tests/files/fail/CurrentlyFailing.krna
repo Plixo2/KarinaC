@@ -1,5 +1,7 @@
 
-1. TODO validate argument and return type
+-> TODO: allow interfaces with non generic type parameters to be used as functional interfaces
+
+-> TODO validate argument and return type
 /*
 fn f(a: fn(string) -> string impl java::util::function::Consumer<string>) {
 
@@ -8,7 +10,8 @@ fn f(a: fn(string) -> string impl java::util::function::Consumer<string>) {
 
 
 
-2. TODO string is from type object...
+
+-> TODO string is from type object...
 
 interface TestInterface3<B> {
     fn make(self) -> B

@@ -30,7 +30,6 @@ public class DiagnosticCollection implements Iterable<Log.LogWithTrace> {
 
 
     public static void print(DiagnosticCollection collection, boolean verbose, PrintStream stream) {
-
         for (var log : collection) {
             stream.println(log.mkString(verbose));
         }

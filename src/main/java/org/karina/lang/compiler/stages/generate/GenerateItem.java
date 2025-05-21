@@ -42,35 +42,35 @@ public class GenerateItem {
 
 
         classNode.permittedSubclasses = classModel.permittedSubclasses().stream().map(ref -> {
-            return TypeConversion.toJVMPath(ref.path());
+            return TypeEncoding.toJVMPath(ref.path());
         }).toList();
 
         classNode.nestMembers = classModel.nestMembers().stream().map(ref -> {
-            return TypeConversion.toJVMPath(ref.path());
+            return TypeEncoding.toJVMPath(ref.path());
         }).toList();
 
 
         var outerClass = classModel.outerClass();
         if (outerClass != null) {
-            classNode.outerClass = TypeConversion.toJVMPath(outerClass.pointer().path());
+            classNode.outerClass = TypeEncoding.toJVMPath(outerClass.pointer().path());
         } else {
             classNode.outerClass = null;
         }
         classNode.interfaces = classModel.interfaces().stream().map(ref ->
-                TypeConversion.toJVMPath(ref.pointer().path())
+                TypeEncoding.toJVMPath(ref.pointer().path())
         ).toList();
         classNode.sourceFile = classModel.resource().resource().identifier();
         classNode.access = classModel.modifiers();
-        classNode.name = TypeConversion.toJVMPath(classModel.path());
+        classNode.name = TypeEncoding.toJVMPath(classModel.path());
         classNode.version = classVersion;
         var superClass = classModel.superClass();
         assert superClass != null;
-        classNode.superName = TypeConversion.toJVMPath(superClass.pointer().path());
+        classNode.superName = TypeEncoding.toJVMPath(superClass.pointer().path());
         return getJarOutput(model, classModel.region(), classNode);
     }
 
     private static FieldNode compileField(KFieldModel fieldModel) {
-        var descriptor = TypeConversion.getType(fieldModel.type()).getDescriptor();
+        var descriptor = TypeEncoding.getType(fieldModel.type()).getDescriptor();
         Log.recordType(Log.LogTypes.GENERATION,"Field: ", fieldModel.name(), descriptor, fieldModel.type());
         var signature = GenerateSignature.fieldSignature(fieldModel.type());
 
@@ -93,7 +93,7 @@ public class GenerateItem {
         for (var parameter : methodModel.parameters()) {
             methodNode.parameters.add(new ParameterNode(parameter, 0));
         }
-        methodNode.desc = TypeConversion.getDesc(methodModel.signature());
+        methodNode.desc = TypeEncoding.getDesc(methodModel.signature());
 
         methodNode.signature = GenerateSignature.methodSignature(methodModel);
 

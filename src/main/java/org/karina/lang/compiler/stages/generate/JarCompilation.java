@@ -2,6 +2,8 @@ package org.karina.lang.compiler.stages.generate;
 
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
@@ -17,7 +19,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+/**
+ * Result of the Generation Stage.
+ * Represents a jar file.
+ */
 @AllArgsConstructor
+@Getter
+@Accessors(fluent = true)
 public class JarCompilation {
     List<JarOutput> files;
     Manifest manifest;

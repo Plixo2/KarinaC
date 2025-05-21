@@ -67,6 +67,12 @@ public class ImportHelper {
      *              since we want to point to the start of the current file, if a error occurs
      */
     public static ImportTable importPrelude(ClassModel owner, ImportTable ctx, Prelude prelude) {
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, "importing prelude with ");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, prelude.classes().size() + " classes");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, prelude.staticFields().size() + " static fields");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, prelude.staticMethods().size() + " static methods");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, (prelude.classes().size() + prelude.staticFields().size() + prelude.staticMethods().size()) + " items");
+
         var newCtx = ctx;
         for (var classPointer : prelude.classes()) {
             var classModel = ctx.model().getClass(classPointer);

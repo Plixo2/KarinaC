@@ -2,7 +2,7 @@ package org.karina.lang.compiler.jvm_loading;
 
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.stages.generate.TypeConversion;
+import org.karina.lang.compiler.stages.generate.TypeEncoding;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 import org.objectweb.asm.Type;
@@ -13,10 +13,10 @@ import java.util.List;
 import static org.objectweb.asm.Type.*;
 
 /**
- * Helper for loading ASM Types (JVM -> Karina)
- * {@link TypeConversion} is used for the opposite direction (Karina -> JVM)
+ * Helper for loading ASM Types into Karina types (JVM -> Karina)
+ * {@link TypeEncoding} is used for the opposite direction (Karina -> JVM)
  */
-public class TypeGeneration {
+public class TypeDecoding {
 
     public KType fromType(Region region, String desc) {
         var type = Type.getType(desc);

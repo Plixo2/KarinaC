@@ -1,5 +1,6 @@
-package org.karina.lang.cli;
+package org.karina.lang.cli.commands;
 
+import org.karina.lang.cli.CLIParser;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
 
 import java.io.BufferedReader;
@@ -9,6 +10,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
 
 public class CompileProject {
 
@@ -30,7 +32,7 @@ popd > /dev/null
 """;
     
 
-    public static void compile(Path project, boolean run) throws IOException {
+    public static void compile(Path project, boolean run, CLIParser.CompileOption compileOption) throws IOException {
         project = project.toAbsolutePath().normalize();
 
         var buildDir = project.resolve("build/");
@@ -38,23 +40,28 @@ popd > /dev/null
         var logFile = buildDir.resolve("flight.log").normalize().toString();
         var buildFile = buildDir.resolve("out/build.jar").normalize().toString();
 
+
+        System.setProperty("karina.flight", Objects.requireNonNullElse(compileOption.flight, logFile));
+        System.setProperty("karina.logging", Objects.requireNonNullElse(compileOption.logging, "basic"));
+        System.setProperty("karina.console", Boolean.toString(compileOption.console));
+
         System.setProperty("karina.source", projectStr);
-        System.setProperty("karina.console", "false");
-        System.setProperty("karina.flight", logFile);
         System.setProperty("karina.out", buildFile);
         System.setProperty("karina.classes", "true");
-        System.setProperty("karina.logging", "basic");
 
+        String[] args;
+        if (run) {
+            args = new String[]{"--run"};
+        } else {
+            args = new String[]{};
+        }
 
-        org.karina.lang.compiler.Main.main(new String[]{});
+        org.karina.lang.compiler.Main.main(args);
 
         putKarinaLib(buildDir);
         putScript(buildDir, WINDOWS_COMMAND, "run.bat");
         putScript(buildDir, LINUX_COMMAND, "run");
 
-        if (run) {
-            run();
-        }
 
     }
 
@@ -82,43 +89,6 @@ popd > /dev/null
             try (var outputStream = new FileOutputStream(jarDest.toFile())){
                 outputStream.write(resourceStream.readAllBytes());
             }
-        }
-    }
-
-
-    private static void run() {
-        exec("cd build && run");
-    }
-
-    private static void exec(String command) {
-
-        try {
-            String os = System.getProperty("os.name").toLowerCase();
-            ProcessBuilder processBuilder;
-
-            if (os.contains("win")) {
-                processBuilder = new ProcessBuilder("cmd.exe", "/c", command);
-            } else {
-                processBuilder = new ProcessBuilder("bash", "-c", command);
-            }
-
-            processBuilder.redirectErrorStream(true);
-            Process process = processBuilder.start();
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
-            }
-
-            int exitCode = process.waitFor();
-
-            System.exit(exitCode);
-
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            System.exit(1);
         }
     }
 }

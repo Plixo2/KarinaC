@@ -36,14 +36,14 @@ public class GenerateExpr {
                         addExpression(arrayElement.array(), ctx);
                         addExpression(arrayElement.index(), ctx);
                         addExpression(assignment.right(), ctx);
-                        var type = TypeConversion.getType(arrayElement.elementType());
+                        var type = TypeEncoding.getType(arrayElement.elementType());
                         ctx.add(new InsnNode(type.getOpcode(Opcodes.IASTORE)));
                     }
                     case AssignmentSymbol.Field field -> {
                         addExpression(field.object(), ctx);
                         addExpression(assignment.right(), ctx);
-                        var owner = TypeConversion.getType(field.fieldOwner());
-                        var fieldType = TypeConversion.getType(field.fieldType());
+                        var owner = TypeEncoding.getType(field.fieldOwner());
+                        var fieldType = TypeEncoding.getType(field.fieldType());
                         ctx.add(new FieldInsnNode(
                                 Opcodes.PUTFIELD,
                                 owner.getInternalName(),
@@ -54,13 +54,13 @@ public class GenerateExpr {
                     case AssignmentSymbol.LocalVariable localVariable -> {
                         addExpression(assignment.right(), ctx);
                         var index = ctx.getVariableIndex(assignment.region(), localVariable.variable());
-                        var type = TypeConversion.getType(localVariable.variable().type());
+                        var type = TypeEncoding.getType(localVariable.variable().type());
                         ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ISTORE), index));
                     }
                     case AssignmentSymbol.StaticField staticField -> {
                         addExpression(assignment.right(), ctx);
-                        var owner = TypeConversion.getType(staticField.pointer().classPointer());
-                        var fieldType = TypeConversion.getType(staticField.fieldType());
+                        var owner = TypeEncoding.getType(staticField.pointer().classPointer());
+                        var fieldType = TypeEncoding.getType(staticField.fieldType());
                         ctx.add(new FieldInsnNode(
                                 Opcodes.PUTSTATIC,
                                 owner.getInternalName(),
@@ -207,7 +207,7 @@ public class GenerateExpr {
                     addExpression(next, ctx);
                     var type = next.type();
                     if (!type.isVoid() && (iterator.hasNext() || block.symbol().isVoid())) {
-                        var size = TypeConversion.jvmSize(TypeConversion.getType(type));
+                        var size = TypeEncoding.jvmSize(TypeEncoding.getType(type));
                         if (size == 2) {;
                             ctx.add(new InsnNode(Opcodes.POP2));
                         } else if (size == 1) {
@@ -266,8 +266,8 @@ public class GenerateExpr {
                     }
                     case CallSymbol.CallStatic callStatic -> {
                         var path = callStatic.pointer().classPointer().path().append(callStatic.pointer().name());
-                        var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
-                        var desc = TypeConversion.getDesc(callStatic.pointer(), callStatic.pointer().returnType());
+                        var owner = Type.getObjectType(TypeEncoding.toJVMPath(path.everythingButLast()));
+                        var desc = TypeEncoding.getDesc(callStatic.pointer(), callStatic.pointer().returnType());
                         var name = callStatic.pointer().name();
 
                         var opcode = Opcodes.INVOKESTATIC;
@@ -289,8 +289,8 @@ public class GenerateExpr {
                         addExpression(call.left(), ctx);
 
                         var path = callVirtual.pointer().classPointer().path().append(callVirtual.pointer().name());
-                        var owner = Type.getObjectType(TypeConversion.toJVMPath(path.everythingButLast()));
-                        var desc = TypeConversion.getDesc(callVirtual.pointer(), callVirtual.pointer().returnType());
+                        var owner = Type.getObjectType(TypeEncoding.toJVMPath(path.everythingButLast()));
+                        var desc = TypeEncoding.getDesc(callVirtual.pointer(), callVirtual.pointer().returnType());
                         var name = callVirtual.pointer().name();
 
 //                        var isInterface = ctx.
@@ -321,8 +321,8 @@ public class GenerateExpr {
                         switch (callSuper.invocationType()) {
                             case InvocationType.NewInit newInit -> {
 
-                                var internalName = TypeConversion.getType(newInit.classType()).getInternalName();
-                                var desc = TypeConversion.getDesc(callSuper.pointer(), KType.NONE);
+                                var internalName = TypeEncoding.getType(newInit.classType()).getInternalName();
+                                var desc = TypeEncoding.getDesc(callSuper.pointer(), KType.NONE);
                                 ctx.add(new TypeInsnNode(Opcodes.NEW, internalName));
 
                                 ctx.add(new InsnNode(Opcodes.DUP));
@@ -344,8 +344,8 @@ public class GenerateExpr {
                                 ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
 //                                addExpression(call.left(), ctx);
 
-                                var internalName = TypeConversion.getType(specialInvoke.superType()).getInternalName();
-                                var desc = TypeConversion.getDesc(callSuper.pointer(), callSuper.pointer().returnType());
+                                var internalName = TypeEncoding.getType(specialInvoke.superType()).getInternalName();
+                                var desc = TypeEncoding.getDesc(callSuper.pointer(), callSuper.pointer().returnType());
 
                                 for (var argument : call.arguments()) {
                                     addExpression(argument, ctx);
@@ -377,7 +377,7 @@ public class GenerateExpr {
                         }
                     }
                     case CastSymbol.UpCast upCast -> {
-                        var type = TypeConversion.getType(upCast.toType());
+                        var type = TypeEncoding.getType(upCast.toType());
                         ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
                     }
                 }
@@ -393,14 +393,14 @@ public class GenerateExpr {
             case KExpr.CreateArray createArray -> {
                 assert createArray.symbol() != null;
                 var elementType = createArray.symbol().elementType();
-                var type = TypeConversion.getType(elementType);
+                var type = TypeEncoding.getType(elementType);
                 var size = createArray.elements().size();
                 ctx.add(new LdcInsnNode(size));
 
                 var storeOp = type.getOpcode(Opcodes.IASTORE);
 
                 if (elementType.isPrimitive()) {
-                    var arrayNewType = TypeConversion.getNewArrayConstant(type);
+                    var arrayNewType = TypeEncoding.getNewArrayConstant(type);
                     ctx.add(new IntInsnNode(Opcodes.NEWARRAY, arrayNewType));
                 } else {
                     ctx.add(new TypeInsnNode(Opcodes.ANEWARRAY, type.getInternalName()));
@@ -454,7 +454,7 @@ public class GenerateExpr {
                 addExpression(getArrayElement.left(), ctx);
                 addExpression(getArrayElement.index(), ctx);
                 assert getArrayElement.elementType() != null;
-                var type = TypeConversion.getType(getArrayElement.elementType());
+                var type = TypeEncoding.getType(getArrayElement.elementType());
                 ctx.add(new InsnNode(type.getOpcode(Opcodes.IALOAD)));
             }
             case KExpr.GetMember getMember -> {
@@ -466,8 +466,8 @@ public class GenerateExpr {
                     }
                     case MemberSymbol.FieldSymbol fieldSymbol -> {
                         addExpression(getMember.left(), ctx);
-                        var owner = TypeConversion.getType(fieldSymbol.pointer().classPointer());
-                        var fieldType = TypeConversion.getType(fieldSymbol.type());
+                        var owner = TypeEncoding.getType(fieldSymbol.pointer().classPointer());
+                        var fieldType = TypeEncoding.getType(fieldSymbol.type());
                         var name = fieldSymbol.pointer().name();
                         ctx.add(new FieldInsnNode(
                                 Opcodes.GETFIELD,
@@ -483,7 +483,7 @@ public class GenerateExpr {
             }
             case KExpr.IsInstanceOf isInstanceOf -> {
                 addExpression(isInstanceOf.left(), ctx);
-                var type = TypeConversion.getType(isInstanceOf.isType());
+                var type = TypeEncoding.getType(isInstanceOf.isType());
                 ctx.add(new TypeInsnNode(Opcodes.INSTANCEOF, type.getInternalName()));
             }
             case KExpr.Literal literal -> {
@@ -494,19 +494,19 @@ public class GenerateExpr {
                     }
                     case LiteralSymbol.StaticClassReference staticClassReference -> {
                         // convert to .class
-                        var type = TypeConversion.getType(staticClassReference.classPointer());
+                        var type = TypeEncoding.getType(staticClassReference.classPointer());
                         ctx.add(new LdcInsnNode(type));
                     }
                     case LiteralSymbol.VariableReference variableReference -> {
                         var variable = variableReference.variable();
                         var index = ctx.getVariableIndex(literal.region(), variable);
                         Log.recordType(Log.LogTypes.GENERATION, "variable " + variable.name() + " at index " + index);
-                        var type = TypeConversion.getType(variable.type());
+                        var type = TypeEncoding.getType(variable.type());
                         ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ILOAD), index));
                     }
                     case LiteralSymbol.StaticFieldReference staticFieldReference -> {
-                        var owner = TypeConversion.getType(staticFieldReference.fieldPointer().classPointer());
-                        var fieldType = TypeConversion.getType(staticFieldReference.fieldType());
+                        var owner = TypeEncoding.getType(staticFieldReference.fieldPointer().classPointer());
+                        var fieldType = TypeEncoding.getType(staticFieldReference.fieldType());
                         ctx.add(new FieldInsnNode(
                                 Opcodes.GETSTATIC,
                                 owner.getInternalName(),
@@ -543,7 +543,7 @@ public class GenerateExpr {
                 if (aReturn.value() != null) {
                     addExpression(aReturn.value(), ctx);
                     assert aReturn.returnType() != null;
-                    var returnCode = TypeConversion.getType(aReturn.returnType()).getOpcode(Opcodes.IRETURN);
+                    var returnCode = TypeEncoding.getType(aReturn.returnType()).getOpcode(Opcodes.IRETURN);
                     ctx.add(new InsnNode(returnCode));
                 } else {
                     ctx.add(new InsnNode(Opcodes.RETURN));
@@ -598,7 +598,7 @@ public class GenerateExpr {
                 ctx.putVariable(symbol);
                 addExpression(variableDefinition.value(), ctx);
                 var target = ctx.getVariableIndex(variableDefinition.region(), symbol);
-                var type = TypeConversion.getType(symbol.type());
+                var type = TypeEncoding.getType(symbol.type());
 
                 LabelNode start = new LabelNode();
                 ctx.add(start);
@@ -634,8 +634,8 @@ public class GenerateExpr {
                 //pop value when there is one
                 var yieldType = aWhile.body().type();
                 if (!yieldType.isVoid() && !aWhile.body().doesReturn()) {
-                    var type = TypeConversion.getType(yieldType);
-                    var size = TypeConversion.jvmSize(type);
+                    var type = TypeEncoding.getType(yieldType);
+                    var size = TypeEncoding.jvmSize(type);
                     if (size == 2) {;
                         ctx.add(new InsnNode(Opcodes.POP2));
                     } else if (size == 1) {
@@ -673,8 +673,8 @@ public class GenerateExpr {
 
     private static void applyCorrectReturnType(GenerationContext ctx, MethodPointer originalPointer, KType returnType) {
         if (!originalPointer.returnType().isPrimitive() && !originalPointer.returnType().isVoid()) {
-            var original = TypeConversion.getType(originalPointer.returnType());
-            var type = TypeConversion.getType(returnType);
+            var original = TypeEncoding.getType(originalPointer.returnType());
+            var type = TypeEncoding.getType(returnType);
             if (!original.equals(type)) {
                 ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
             }

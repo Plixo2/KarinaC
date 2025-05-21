@@ -20,6 +20,11 @@ import java.util.*;
  * This structure is immutable (without inner mutability).
  * Top level classes will append to this table and will get a new table in return.
  * This filled-in table will be passes to all items and subclasses, that will append to it.
+ * TODO this is very slow, should be replaced by faster lookup and insertion
+ *  every insert will copy the whole table. So the ImportTable is created for each:
+ *  import, class, subClass, method and generic.
+ *  prelude alone has > 300 entries.
+ *  A Builder should be useful..
  */
 public record ImportTable(
         Model model,
@@ -35,17 +40,18 @@ public record ImportTable(
         this(model, ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of());
     }
 
-    public ImportTable {
-//        classes = Map.copyOf(classes);
-//        generics = Map.copyOf(generics);
-//        staticMethods = Map.copyOf(staticMethods);
-//        staticFields = Map.copyOf(staticFields);
-    }
-
+    //<editor-fold defaultstate="collapsed" desc="Table Lookup">
+    /**
+     *  Import a Type with default ImportGenericBehavior.
+     */
     public KType importType(Region region, KType kType) {
         return importType(region, kType, ImportGenericBehavior.DEFAULT);
     }
 
+    /**
+     * Main type import function.
+     * Replaced all unknown imports recursively.
+     */
     public KType importType(Region region, KType kType, ImportGenericBehavior flags) {
         return switch (kType) {
             case KType.ArrayType arrayType -> {
@@ -112,6 +118,10 @@ public record ImportTable(
         };
     }
 
+    /**
+     * Type lookup bases on a path.
+     * @return the ClassType or a Generic (path is one element and generics is empty)
+     */
     private KType importUnprocessedType(Region region, ObjectPath path, List<KType> generics, ImportGenericBehavior flags) {
 
         if (path.isEmpty()) {
@@ -120,6 +130,7 @@ public record ImportTable(
         }
 
         //first check if the first element is imported, or a generic
+        //<editor-fold defaultstate="collapsed" desc="Check if the path is a generic">
         var head = path.first();
         if (path.tail().isEmpty()) {
             //first check if it is a generic
@@ -137,9 +148,13 @@ public record ImportTable(
                 return new KType.GenericLink(generic);
             }
         }
+        //</editor-fold>
+
+        //Otherwise it must be a class
         var classPointer = getClassPointer(region, path);
 
-
+        //Check the generics, based on the behavior of the 'flags'
+        //<editor-fold defaultstate="collapsed" desc="Generic checks">
         var classModel = this.model.getClass(classPointer);
 
         var expectedSize = classModel.generics().size();
@@ -183,6 +198,7 @@ public record ImportTable(
             ));
             throw new Log.KarinaException();
         }
+        //</editor-fold>
 
         return new KType.ClassType(classPointer, newGenerics);
 
@@ -206,41 +222,19 @@ public record ImportTable(
         boolean hasPathDefined = !path.tail().isEmpty();
         ClassPointer classPointer;
         if (!hasPathDefined) {
+            // find a class by its name in the import table, when when no subPath is defined
             classPointer = this.getClass(head);
         } else {
+            // find the class by the name of the first element and find child classes by the rest of the path
             classPointer = this.getClassNested(head, path.tail());
         }
+
+        // when all fails, check for a qualified path.
         if (classPointer == null) {
             classPointer = this.model.getClassPointer(region, path);
         }
 
         return classPointer;
-    }
-
-    public void logUnknownPointerError(Region region, ObjectPath path) {
-        var available = availableTypeNames();
-        Log.importError(new ImportError.UnknownImportType(region, path.mkString("::"), available));
-    }
-
-    public Set<String> availableTypeNames() {
-        var keys = new HashSet<>(this.classes.keySet());
-        for (var objectPath : this.model.getBinaryClasses()) {
-            keys.add(objectPath.path().mkString("::"));
-        }
-        for (var objectPath : this.model.getUserClasses()) {
-            keys.add(objectPath.path().mkString("::"));
-        }
-
-        keys.addAll(this.generics.keySet());
-        return keys;
-    }
-
-    public Set<String> availableItemNames() {
-        var keys = new HashSet<>(this.classes.keySet());
-        keys.addAll(this.staticFields.keySet());
-        keys.addAll(this.typedStaticMethods.keySet());
-        keys.addAll(this.untypedStaticMethods.keySet());
-        return keys;
     }
 
     private @Nullable Generic getGeneric(String name) {
@@ -251,8 +245,11 @@ public record ImportTable(
         return entry.reference();
     }
 
+    /**
+     * find the class by the name of the first element and find child classes by the rest of the path
+     */
     private @Nullable ClassPointer getClassNested(String first, ObjectPath tail) {
-
+        //TODO convert into recursive calls, should be cleaner
         if (this.classes.containsKey(first)) {
             var topLevel = Objects.requireNonNull(this.classes.get(first)).reference();
             var referedClassModel = this.model.getClass(topLevel);
@@ -274,14 +271,18 @@ public record ImportTable(
         return null;
     }
 
-    public @Nullable ClassPointer getClass(String name) {
+    /**
+     * find the class by its name in the import table
+     */
+    private @Nullable ClassPointer getClass(String name) {
         if (this.classes.containsKey(name)) {
             return Objects.requireNonNull(this.classes.get(name)).reference();
         }
         return null;
     }
+    //</editor-fold>
 
-
+    //<editor-fold defaultstate="collapsed" desc="Table Insertion">
     public ImportTable addClass(Region declarationRegion, String name, ClassPointer pointer, boolean declaredExplicit, boolean prelude) {
         var newClasses = new HashMap<>(this.classes);
         var declare = testDuplicate(newClasses, declarationRegion, name, declaredExplicit);
@@ -297,7 +298,6 @@ public record ImportTable(
      */
     public ImportTable addGeneric(Region declarationRegion, Generic generic) {
         var newGenerics = new HashMap<>(this.generics);
-//        testDuplicate(newGenerics, declarationRegion, generic.name(), true);
         newGenerics.put(generic.name(), new ImportEntry<>(declarationRegion, generic, true, false));
         return new ImportTable(this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
@@ -360,32 +360,43 @@ public record ImportTable(
         return declaredExplicit || !entry.wasDeclaredExplicit();
     }
 
+    /**
+     * Remove all generics from the import table.
+     * Used in static methods, where generics are from the outer environment allowed.
+     */
     public ImportTable removeGenerics() {
         return new ImportTable(this.model, this.classes, ImmutableMap.of(), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
-
-    public record ImportEntry<T>(Region definedRegion, T reference, boolean wasDeclaredExplicit, boolean prelude) { }
+    //</editor-fold>
 
 
     /**
-     * Used to determine how deal with generics when resolving types.
-     * DEFAULT: import as is, check count of generics.
-     * INSTANCE_CHECK: The type is not allowed to define generics other than KType.ROOT (java.lang.Object).
-     *                 Replace potential generics with KType.ROOT, when not defined.
-     *                 Also check the count of generics when defined.
-     *                 Only used in instance checks (if .. is Object cast) and match expressions.
-     * OBJECT_CREATION: Generics can be omitted, they can be inferred from the field types.
-     *                  Check the count of generics, if defined.
-     *                  Only used for object creation.
+     * When error occurs, log the error with the relevant information.
+     * Dont forget to throw the exception after this call
      */
-    public enum ImportGenericBehavior {
-        DEFAULT,
-        INSTANCE_CHECK,
-        OBJECT_CREATION;
+    public void logUnknownPointerError(Region region, ObjectPath path) {
+        var available = availableTypeNames();
+        Log.importError(new ImportError.UnknownImportType(region, path.mkString("::"), available));
     }
 
+    private Set<String> availableTypeNames() {
+        var keys = new HashSet<>(this.classes.keySet());
+        for (var objectPath : this.model.getBinaryClasses()) {
+            keys.add(objectPath.path().mkString("::"));
+        }
+        for (var objectPath : this.model.getUserClasses()) {
+            keys.add(objectPath.path().mkString("::"));
+        }
 
-    public void logImport() {
+        keys.addAll(this.generics.keySet());
+        return keys;
+    }
+
+    /**
+     * Debug logging function for the import table.
+     * very verbose!
+     */
+    public void debugImport() {
         if (Log.LogTypes.IMPORTS.isVisible()) {
             Log.beginType(Log.LogTypes.IMPORTS, "generics");
             for (var entry : this.generics.entrySet()) {
@@ -437,4 +448,39 @@ public record ImportTable(
 
         }
     }
+
+    /**
+     * A given entry in the import table.
+     * @param definedRegion where the entry was defined. Used when a collision happens.
+     * @param reference the object to import, see the argument of the {@link ImportTable} constructor.
+     * @param wasDeclaredExplicit when true, this entry was declared explicitly, so it cannot be overridden.
+     *                            when another entry is declared with the same name, it will be an error.
+     *                            Otherwise the import was implicit (like 'import java::util::Arrays *'
+     *                            and can be overridden.
+     * @param prelude when true, this entry can always be overridden by other entries
+     * @param <T> type of import
+     */
+    public record ImportEntry<T>(Region definedRegion, T reference, boolean wasDeclaredExplicit, boolean prelude) { }
+
+
+    /**
+     * Used to determine how deal with generics when resolving types.
+     * DEFAULT: import as is, generics have to be defined, so we check count of generics.
+     * INSTANCE_CHECK: The type is not allowed to define generics other than KType.ROOT (java.lang.Object).
+     *                 Replace potential generics with KType.ROOT, when not defined.
+     *                 Also check the count of generics when defined.
+     *                 Only used in instance checks (if .. is Object cast) and match expressions.
+     * OBJECT_CREATION: Generics can be omitted, they can be inferred from the field types.
+     *                  Check the count of generics, if defined.
+     *                  Only used for object creation.
+     *
+     * @see ImportTable#importUnprocessedType
+     */
+    public enum ImportGenericBehavior {
+        DEFAULT,
+        INSTANCE_CHECK,
+        OBJECT_CREATION;
+    }
+
+
 }

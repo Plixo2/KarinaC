@@ -1,6 +1,5 @@
 package org.karina.lang.compiler.stages.generate;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -39,7 +38,7 @@ public class GenerationContext {
         if (!this.variables.containsKey(variable)) {
             this.variables.put(variable, this.variablesCount);
             var type = variable.type();
-            this.variablesCount += TypeConversion.jvmSize(TypeConversion.getType(type));
+            this.variablesCount += TypeEncoding.jvmSize(TypeEncoding.getType(type));
         }
     }
 

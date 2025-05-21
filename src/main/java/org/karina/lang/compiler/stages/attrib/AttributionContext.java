@@ -19,6 +19,10 @@ import java.util.Map;
 import java.util.Objects;
 
 // Method scope is the enclosing method or function expression
+
+/**
+ * TODO replace with faster implementation, dont rebuild with minor changes
+ */
 public record AttributionContext(
         Model model,
         @Nullable Variable selfVariable,
@@ -112,14 +116,12 @@ public record AttributionContext(
      * can convert from one type to another (implicit conversion)
      */
     public KExpr makeAssignment(Region checkingRegion, KType left, KExpr right) {
-        var sample = Log.addSuperSample("ASSIGNMENT");
         var rightType = right.type();
         var conversion = getConversion(checkingRegion, left, right, true, true);
         if (conversion == null) {
             Log.attribError(new AttribError.TypeMismatch(checkingRegion, left, rightType));
             throw new Log.KarinaException();
         }
-        sample.endSample();
         return conversion;
     }
 

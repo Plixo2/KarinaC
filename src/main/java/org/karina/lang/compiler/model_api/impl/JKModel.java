@@ -42,14 +42,11 @@ public record JKModel(ClassLookup data) implements Model {
 
     @Override
     public ClassModel getClass(ClassPointer pointer) {
-        var sample = Log.addSuperSample("GET_CLASS");
         var classModel = this.data.get(pointer.path());
-
         if (classModel == null) {
             Log.temp(pointer.region(), "Class not found, this should not happen: " + pointer.path());
             throw new Log.KarinaException();
         }
-        sample.endSample();
         return classModel;
     }
 

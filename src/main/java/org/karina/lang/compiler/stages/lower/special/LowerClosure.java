@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.lower.special;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.MutableModel;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
@@ -202,10 +203,10 @@ public class LowerClosure {
             methods.add(createMethodModel(ctx, interfaceAsClass, classPointer, classModel));
         }
         var constructor = createDefaultConstructor(classPointer, fields, Modifier.PUBLIC);
-       // DebugWriter.write(constructor, "resources/closureConstructorA.txt");
+
         var newModel = new MutableModel(ctx.model(), ctx.newClasses());
         var attribConstructor = AttributionItem.attribMethod(newModel, classModel, StaticImportTable.EMPTY, constructor);
-      //  DebugWriter.write(attribConstructor, "resources/closureConstructorB.txt");
+
         methods.add(attribConstructor);
 
         Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
@@ -215,50 +216,45 @@ public class LowerClosure {
         return classModel;
     }
 
-    public static MethodModel getMethodToImplement(Region region, ClassModel classModel) {
-        for (var method : classModel.methods()) {
-            if (Modifier.isAbstract(method.modifiers())) {
-                //there should only be one abstract method
-                return method;
-            }
+    public static MethodHelper.MethodToImplement getMethodToImplement(Region region, Model model, KType.ClassType classType) {
+        var method = MethodHelper.getMethodsToImplementForClass(model, classType);
+        if (method.isEmpty()) {
+            Log.temp(region, "Closure class has no method to implement, this should not happen");
+            throw new Log.KarinaException();
+        } else if (method.size() > 1) {
+            Log.temp(region, "Closure class has more than one method to implement, this should not happen");
+            throw new Log.KarinaException();
         }
-        Log.temp(region, "Closure class has no method to implement, this should not happen");
-        throw new Log.KarinaException();
+        return method.getFirst();
     }
 
     private KMethodModel createMethodModel(LoweringContext ctx, KType.ClassType currentInterfaceToImplement, ClassPointer outer, ClassModel outerClass) {
-        var classModel = ctx.model().getClass(currentInterfaceToImplement.pointer());
-        var toImplement = getMethodToImplement(this.region, classModel);
+        var toImplement = getMethodToImplement(this.region, ctx.model(), currentInterfaceToImplement);
+        var methodModel = ctx.model().getMethod(toImplement.originalMethodPointer());
+
         var name = toImplement.name();
 
 
-        var mapped = getGenericMapping(ctx, currentInterfaceToImplement);
-        var methodReturnType = Types.projectGenerics(toImplement.signature().returnType(), mapped);
 
-        var mappedParameters = toImplement.signature().parameters().stream().map(ref ->
-                Types.projectGenerics(ref, mapped)
-        ).toList();
 
-        var parameters = ImmutableList.copyOf(mappedParameters);
-        var signature = new Signature(parameters, methodReturnType);
+        var parameters = ImmutableList.copyOf(toImplement.argumentTypes());
+        var signature = new Signature(parameters, toImplement.returnType());
 
-//        Log.record("Returning method: " + methodReturnType);
-
-        // we generics, we implement for one type only
+        // with generics, we implement for one type only TODO what???
         var outerClassType = new KType.ClassType(outerClass.pointer(), List.of());
-        var self = new Variable(classModel.region(), "<self>", outerClassType, false, true);
+        var self = new Variable(this.region, "<self>", outerClassType, false, true);
 
         var variables = new ArrayList<Variable>();
         variables.add(self);
         variables.addAll(this.argumentVariable);
 
         //TODO map correct generics
-        var methodModel = new KMethodModel(
+        var createdMethodModel = new KMethodModel(
                 name,
                 Modifier.PUBLIC,
                 signature,
                 ImmutableList.copyOf(this.names),
-                toImplement.generics(),
+                methodModel.generics(),
                 null,
                 ImmutableList.of(),
                 this.region,
@@ -267,15 +263,11 @@ public class LowerClosure {
         );
 
 
-
-
-
         var replacement = new LoweringContext.ClosureReplacement(
                 outerClassType,
                 self,
                 List.copyOf(this.captures)
         );
-
 
         var currentReplacement = new ArrayList<>(ctx.toReplace());
         currentReplacement.add(replacement);
@@ -285,7 +277,7 @@ public class LowerClosure {
                 ctx.syntheticCounter(),
                 ctx.model(),
                 ctx.definitionMethod(),
-                methodModel,
+                createdMethodModel,
                 ctx.definitionClass(),
                 outerClass,
                 currentReplacement
@@ -293,9 +285,9 @@ public class LowerClosure {
 
 
         var bodyExpr = LowerExpr.lower(newCtx, this.body);
-        methodModel.setExpression(bodyExpr);
+        createdMethodModel.setExpression(bodyExpr);
 
-        return methodModel;
+        return createdMethodModel;
     }
 
     private static @NotNull HashMap<Generic, KType> getGenericMapping(LoweringContext ctx, KType.ClassType type) {

@@ -7,7 +7,11 @@ import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 
 import java.lang.reflect.Modifier;
 
-
+/**
+ * Checks for accessibility of a reference.
+ * Checks for all given modifiers, like protected, private, etc.
+ * Also checks for so called "nest members".
+ */
 @RequiredArgsConstructor
 public class ProtectionChecking {
     private final Model model;
@@ -57,6 +61,7 @@ public class ProtectionChecking {
         return false;
     }
 
+    //TODO can be made safer and better
     private boolean isInSamePackage(ClassModel referenceSite, ClassModel definitionSite) {
         var outerMostClassOfDefinition = definitionSite;
 

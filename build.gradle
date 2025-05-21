@@ -54,6 +54,10 @@ application {
     mainClass.set('org.karina.lang.compiler.Main')
 }
 
+run {
+    args = ['--run']
+}
+
 /**
  * 'gradle FAT-JAR'
  * <p>

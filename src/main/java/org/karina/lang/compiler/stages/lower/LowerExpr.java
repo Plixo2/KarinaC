@@ -272,6 +272,10 @@ public class LowerExpr {
                 left = lower(context, expr.left());
                 if (left.type() instanceof KType.FunctionType functionType) {
                     Log.recordType(Log.LogTypes.LOWERING, "Type is ", left.type());
+                    if (functionType.interfaces().isEmpty()) {
+                        Log.temp(expr.region(), "No interface to call, this should not happen");
+                        throw new Log.KarinaException();
+                    }
                     var firstToCall = functionType.interfaces().getFirst();
                     if (!(firstToCall instanceof KType.ClassType classType)) {
                         Log.temp(expr.region(), "Invalid interface");
@@ -279,10 +283,11 @@ public class LowerExpr {
                     }
                     var toCall = LowerClosure.getMethodToImplement(
                             expr.region(),
-                            context.model().getClass(classType.pointer())
+                            context.model(),
+                            classType
                     );
                     var newSymbol = new CallSymbol.CallVirtual(
-                            toCall.pointer(), List.of(), callDynamic.returnType(), true
+                            toCall.originalMethodPointer(), List.of(), callDynamic.returnType(), true
                     );
                     return new KExpr.Call(region, left, generics, arguments, newSymbol);
                 } else {

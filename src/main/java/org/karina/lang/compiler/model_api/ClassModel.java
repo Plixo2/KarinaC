@@ -43,6 +43,13 @@ public interface ClassModel {
         return this.outerClass() == null;
     }
 
+    default KType.ClassType getDefaultClassType() {
+        var generics = this.generics().stream()
+                                    .map(ref -> (KType) new KType.GenericLink(ref)).toList();
+
+        return new KType.ClassType(this.pointer(), generics);
+    }
+
 
     default MethodCollection getMethodCollectionShallow(String name) {
         var methods = new ArrayList<MethodPointer>();

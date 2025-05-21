@@ -8,8 +8,6 @@ import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.*;
 
 import java.lang.reflect.Modifier;
@@ -139,23 +137,10 @@ public class AttributionItem {
         var expression = methodModel.expression();
         if (expression != null) {
             expression = AttributionExpr.attribExpr(returnType, contextNew, expression).expr();
-
-            var isVoid = returnType.isVoid();
-
-
-            if (!expression.doesReturn()) {
-                if (isVoid) {
-                    //we dont care about the yield type, if the method is void
-                    var aReturn = new KExpr.Return(methodModel.region(), null, KType.NONE);
-                    expression = add(expression, aReturn, KType.NONE);
-                } else {
-                    expression = contextNew.makeAssignment(methodModel.region(), returnType, expression);
-
-                    expression = new KExpr.Return(expression.region(), expression, expression.type());
-                }
-            }
+            expression = MethodHelper.createRetuningExpression(expression, returnType, contextNew);
         }
 
+        //TODO this should not be here. Validate before this stage
         if (methodModel.isConstructor()) {
             if (Modifier.isStatic(methodModel.modifiers())) {
                 Log.attribError(new AttribError.NotSupportedExpression(
@@ -169,7 +154,7 @@ public class AttributionItem {
                          "Constructor must return void"
                  ));
                  throw new Log.KarinaException();
-             }
+            }
         }
         Log.endType(Log.LogTypes.METHOD_NAME, logName);
 
@@ -186,14 +171,6 @@ public class AttributionItem {
                 variables
         );
     }
-
-    private static KExpr add(KExpr prev, KExpr last, KType type) {
-        var expr = new ArrayList<KExpr>();
-        expr.add(prev);
-        expr.add(last);
-        return new KExpr.Block(prev.region(), expr, type, true);
-    }
-
 
 
 }

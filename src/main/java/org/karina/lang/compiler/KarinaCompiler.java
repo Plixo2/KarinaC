@@ -1,7 +1,10 @@
 package org.karina.lang.compiler;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
+import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.utils.FileTreeNode;
 import org.karina.lang.compiler.logging.FlightRecordCollection;
 import org.karina.lang.compiler.utils.TextSource;
@@ -25,8 +28,9 @@ import java.nio.file.Path;
  * Responsible for passing the source files through the different stages of the compiler
  * Parser -> Import -> Attribution -> Lowering -> Generation
  */
+
 public class KarinaCompiler {
-    public static final String VERSION = "0.4";
+    public static final String VERSION = "v0.4";
 
     /**
      * Cache for faster testing
@@ -34,45 +38,39 @@ public class KarinaCompiler {
     private static Model cache = null;
 
     // The 5 stages of the compiler:
-    private final ParseProcessor parser;
-    private final ImportProcessor importProcessor;
-    private final AttributionProcessor attributionProcessor;
-    private final LoweringProcessor lowering;
-    private final GenerationProcessor backend;
+    private final ParseProcessor parser = new ParseProcessor();
+    private final ImportProcessor importProcessor = new ImportProcessor();
+    private final AttributionProcessor attributionProcessor = new AttributionProcessor();
+    private final LoweringProcessor lowering = new LoweringProcessor();
+    private final GenerationProcessor backend = new GenerationProcessor();
 
-    // The directory to emit the compiled files to
-    private final @Nullable String emitDirectory;
-    private final boolean emitClasses;
+    // Configuration
+    @Setter private @Nullable String outputFile;
+    @Setter private boolean emitClasses;
 
-    public KarinaCompiler(@Nullable String emitDirectory, boolean emitClasses) {
-        this.emitDirectory = emitDirectory;
-        this.emitClasses = emitClasses;
-        this.parser = new ParseProcessor();
-        this.importProcessor = new ImportProcessor();
-        this.attributionProcessor = new AttributionProcessor();
-        this.lowering = new LoweringProcessor();
-        this.backend = new GenerationProcessor();
-    }
+    // Logging
+    @Setter private @Nullable DiagnosticCollection errorCollection;
+    @Setter private @Nullable DiagnosticCollection warningCollection;
+    @Setter private @Nullable FlightRecordCollection flightRecordCollection;
+
+    @Getter private @Nullable JarCompilation jarCompilation;
 
     /**
      * Compiles the given files.
      * This method cannot throw exceptions.
-     * All Logs will be put into the given collection.
      * @param files the file tree to compile
-     * @param collection the collection to add errors to
-     * @param warnings the collection to add warnings to
      * @return true if the compilation was successful, false otherwise
      */
-    public boolean compile(FileTreeNode<TextSource> files, DiagnosticCollection collection, DiagnosticCollection warnings, @Nullable FlightRecordCollection recorder) {
-        Log.begin("compile");
-        try {
-            Log.begin("jar-load");
+    public boolean compile(FileTreeNode<TextSource> files) {
 
+        Log.begin("compilation");
+        try {
 
             Model bytecodeClasses;
             if (cache != null) {
                 bytecodeClasses = cache;
             } else {
+                Log.begin("jar-load");
                 var modelLoader = new ModelLoader();
 
                 Log.begin("java-base");
@@ -107,7 +105,7 @@ public class KarinaCompiler {
             var attributedTree = this.attributionProcessor.attribTree(importedTree);
             Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
 
-            if (this.emitDirectory != null) {
+            if (this.outputFile != null) {
                 Log.begin("lowering");
                 var loweredTree = this.lowering.lowerTree(attributedTree);
                 Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
@@ -115,7 +113,8 @@ public class KarinaCompiler {
 
                 Log.begin("generation");
                 var compiled = this.backend.compileTree(loweredTree, "main");
-                var path = Path.of(this.emitDirectory);
+                this.jarCompilation = compiled;
+                var path = Path.of(this.outputFile);
 
                 compiled.writeJar(path);
 
@@ -150,14 +149,19 @@ public class KarinaCompiler {
 
             return false;
         } finally {
-            warnings.addAll(Log.getWarnings());
-            if (recorder != null) {
-                recorder.add(Log.getRecordedLogs());
-            }
-            collection.addAll(Log.getEntries());
+            Log.end("compilation");
 
-            Log.end("compile");
-            Log.clearLogs();
+            if (this.warningCollection != null) {
+                this.warningCollection.addAll(Log.getWarnings());
+            }
+            if (this.errorCollection != null) {
+                this.errorCollection.addAll(Log.getEntries());
+            }
+            if (this.flightRecordCollection != null) {
+                this.flightRecordCollection.add(Log.getRecordedLogs());
+            }
+
+            Log.clearAllLogs();
         }
 
 

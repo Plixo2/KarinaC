@@ -146,12 +146,7 @@ public class KClassModel implements ClassModel {
     }
 
 
-    public KType.ClassType getDefaultClassType() {
-        var generics = this.generics.stream()
-                .map(ref -> (KType) new KType.GenericLink(ref)).toList();
 
-        return new KType.ClassType(this.pointer(), generics);
-    }
 
 
     @Override

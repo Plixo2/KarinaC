@@ -20,14 +20,16 @@ public class TestFile {
     }
 
     public void expect() {
-        var compiler = new KarinaCompiler(null, false);
+        var compiler = new KarinaCompiler();
         var collection = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
+        compiler.setErrorCollection(collection);
+        compiler.setWarningCollection(warnings);
 
         var basePath = new ObjectPath("src");
         var node = new DefaultFileTree.DefaultFileNode(basePath.append(this.name), this.name, this.source);
         var fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
-        var result = compiler.compile(fileTree, collection, warnings, null);
+        var result = compiler.compile(fileTree);
 
         if (this.expectedResult) {
             if (!result) {

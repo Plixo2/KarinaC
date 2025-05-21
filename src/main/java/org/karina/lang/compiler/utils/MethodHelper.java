@@ -4,41 +4,49 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class MethodHelper {
 
-//    public static void implementForClass(KClassModel classModel, Model model) {
-//
-//        if (Modifier.isAbstract(classModel.modifiers())) {
-//            return;
-//        }
-//
-//        var classType = classModel.getDefaultClassType();
-//        var toImplement = getMethodsToImplementForClass(model, classType, true);
-//
-//
-//    }
-
-    //want a list of all objects:
-    //MethodPointer pointing to where the abstract method was defined
-    //MethodPointer of the implementation
-
-    //create method to return a List of all methods that need to be implemented when a class implements or extends the given class
-    //List of MethodPointer + return type + argument types
-    //so archive this:
-    //find all methods in the class that are marked abstract
-    //Call this methods recursive for the superclass and all interfaces
-    //Filter the list when a method is implemented in the current class
-//
+    /**
+     * @return a list of methods that have not been implemented for a given class
+     */
     public static List<MethodToImplement> getMethodsToImplementForClass(Model model, KType.ClassType classType) {
         return getMethodsToImplementForClass(model, classType, true, true);
     }
 
-    public static List<MethodToImplement> getImplementForClass(Model model, KType.ClassType classType) {
+    /**
+     * @return a list of methods that have been implemented for a given class, for bridge method generation
+     */
+    public static List<MethodToImplement> getMethodForBridgeConstruction(Model model, KType.ClassType classType) {
         return getMethodsToImplementForClass(model, classType , true, false);
+    }
+
+    /**
+     * Creates a returning expression for a method, always ending with a return statement.
+     */
+    public static KExpr createRetuningExpression(KExpr expression, KType returnType, AttributionContext contextNew) {
+        var isVoid = returnType.isVoid();
+
+        if (!expression.doesReturn()) {
+            if (isVoid) {
+                //we dont care about the yield type, if the method is void
+                var aReturn = new KExpr.Return(expression.region(), null, KType.NONE);
+                return new KExpr.Block(
+                        expression.region(),
+                        List.of(expression, aReturn),
+                        KType.NONE,
+                        true
+                );
+            } else {
+                expression = contextNew.makeAssignment(expression.region(), returnType, expression);
+                expression = new KExpr.Return(expression.region(), expression, expression.type());
+            }
+        }
+        return expression;
     }
 
     //TODO what if a abstract methods defines generics types with bounds???
@@ -116,7 +124,12 @@ public class MethodHelper {
         return currentAbstractMethods;
     }
 
-    public static @Nullable MethodToImplement isImplemented(MethodToImplement method, List<MethodToImplement> currentMethods) {
+    /**
+     * @param method the method to check
+     * @param currentMethods the list of methods to check against
+     * @return a MethodToImplement when a the given method is implemented (so is in the currentMethods list)
+     */
+    private static @Nullable MethodToImplement isImplemented(MethodToImplement method, List<MethodToImplement> currentMethods) {
         outer: for (var currentMethod : currentMethods) {
             if (!method.name.equals(currentMethod.name)) {
                 continue;
@@ -141,17 +154,8 @@ public class MethodHelper {
         return null;
     }
 
-    public record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes, MethodToImplement implementing) {
 
-//        public static MethodToImplement fromDefaultMethod(MethodModel methodModel) {
-//            var returnType = methodModel.signature().returnType();
-//            var argumentTypes = new KType[methodModel.signature().parameters().size()];
-//            for (var i = 0; i < methodModel.signature().parameters().size(); i++) {
-//                var parameter = methodModel.signature().parameters().get(i);
-//                argumentTypes[i] = parameter;
-//            }
-//            return new MethodToImplement(methodModel.name(), methodModel.pointer(), returnType, argumentTypes);
-//        }
+    public record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes, MethodToImplement implementing) {
 
         private MethodToImplement project(Map<Generic, KType> mapping, MethodToImplement implementing) {
             var retProj = Types.projectGenerics(this.returnType, mapping);
@@ -182,5 +186,7 @@ public class MethodHelper {
             return this.name + "(" + string + ") -> " + this.returnType;
         }
     }
+
+
 
 }

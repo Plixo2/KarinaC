@@ -12,7 +12,7 @@ import java.util.jar.*;
  * Generates Bytecode that can be written to disk
  */
 public class GenerationProcessor {
-    //Java 17
+    //Java 21
     public static final int CLASS_VERSION = 65;
 
     public JarCompilation compileTree(Model model, String mainClass) {
@@ -30,10 +30,6 @@ public class GenerationProcessor {
                     });
                 }
                 Log.endType(Log.LogTypes.GENERATION, kClassModel.name());
-            }
-
-            for (var jClassModel: model.getBinaryClasses()) {
-              //  files.add(getJarOutput(model, jClassModel.region(), jClassModel.getClassNode()));
             }
         }
 

@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.generate;
 
 import org.jetbrains.annotations.NotNull;
+import org.karina.lang.compiler.jvm_loading.TypeDecoding;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
@@ -14,7 +15,12 @@ import org.objectweb.asm.Type;
 import java.util.List;
 import java.util.Set;
 
-public class TypeConversion {
+
+/**
+ * Helper for generating ASM Types from Karina types (Karina -> JVM)
+ * {@link TypeDecoding} is used for the opposite direction (JVM -> Karina)
+ */
+public class TypeEncoding {
 
     private static final Set<String> KEYWORDS = Set.of(
             "abstract", "continue", "for", "new", "switch", "assert", "default", "goto", "package",
@@ -128,10 +134,10 @@ public class TypeConversion {
     }
     public static String getDesc(MethodPointer pointer, KType returnType) {
         var erasedReturnType = Types.erase(returnType);
-        return TypeConversion.getDesc(pointer.erasedParameters(), erasedReturnType);
+        return TypeEncoding.getDesc(pointer.erasedParameters(), erasedReturnType);
     }
     public static String getDesc(@NotNull Signature signature) {
-        return TypeConversion.getDesc(signature.parametersErased(), signature.returnType());
+        return TypeEncoding.getDesc(signature.parametersErased(), signature.returnType());
     }
     public static String getDesc(List<KType> params, KType returnType) {
         var returnT = getType(Types.erase(returnType));

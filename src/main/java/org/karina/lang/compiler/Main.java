@@ -1,12 +1,16 @@
 package org.karina.lang.compiler;
 
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.DiagnosticCollection;
-import org.karina.lang.compiler.logging.FlightRecordCollection;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.*;
+import org.karina.lang.compiler.utils.AutoRun;
 import org.karina.lang.compiler.utils.FileLoader;
 
 import java.io.*;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 
 /**
@@ -15,91 +19,135 @@ import java.nio.file.Path;
 public class Main {
 
     public static void main(String[] args) throws IOException {
+        var failWithException = args.length != 0 && args[0].equals("--test");
+        var run = args.length != 0 && args[0].equals("--run");
+
         var welcome_small =
                 """
-                \u001B[34m
+                
                     _  __
                    | |/ /  __ _   _ _   _   _ _    __ _
                    | ' <  / _  | | '_| | | | ' \\  / _  |
                    |_|\\_\\ \\__,_| |_|   |_| |_||_| \\__,_|
-                \u001B[0m
                 """;
-        System.out.println(welcome_small);
+
+        ColorOut.begin(LogColor.BLUE)
+                .append(welcome_small)
+                .out(System.out);
+
+        var javaVersion = System.getProperty("java.version", "<unknown java version>");
+        var vmName = System.getProperty("java.vm.name", "<unknown vm name>");
+
+        ColorOut.begin(LogColor.GRAY)
+                .append("Karina: ")
+                .append(KarinaCompiler.VERSION)
+                .out(System.out);
+
+        ColorOut.begin(LogColor.GRAY)
+                .append("Java: ")
+                .append(vmName)
+                .append(" ")
+                .append(javaVersion)
+                .out(System.out);
 
 
-        Log.begin("all");
-
-        var sourceDirectory = System.getProperty("karina.source", "resources/src/");
-        if (sourceDirectory == null) {
-            throw new IllegalStateException("No source directory provided, use -Dkarina.source=<path>");
-        }
-        var console = System.getProperty("karina.console", "true").equals("true");
+        var console = System.getProperty("karina.console", "false").equals("true");
         var flight = System.getProperty("karina.flight", "resources/flight.txt");
-        var out = System.getProperty("karina.out", "resources/out/build.jar");
-        var writeClasses = System.getProperty("karina.classes", "true").equals("true");
+        var outputFile = System.getProperty("karina.out", "resources/out/build.jar");
+        var shouldEmitClasses = System.getProperty("karina.classes", "true").equals("true");
 
-        var compiler = new KarinaCompiler(out, writeClasses);
-
-        Log.begin("file-load");
-        var fileTree = FileLoader.loadTree(
-                Path.of(sourceDirectory).toAbsolutePath().normalize().toString()
-        );
-        Log.end("file-load");
 
         var errors = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
         var recordings = new FlightRecordCollection();
 
-        var success = compiler.compile(fileTree, errors, warnings, recordings);
+        var compiler = new KarinaCompiler();
+        compiler.setOutputFile(outputFile);
+        compiler.setEmitClasses(shouldEmitClasses);
 
-        Log.end("all");
+        compiler.setErrorCollection(errors);
+        compiler.setWarningCollection(warnings);
+        compiler.setFlightRecordCollection(recordings);
+
+        var sourceDirectory = System.getProperty("karina.source", "resources/src/");
+        var sourceDirectoryPath = Path.of(sourceDirectory);
+        var fileTree = FileLoader.loadTree(sourceDirectoryPath);
+
+
+        var fileCount = fileTree.leafCount();
+        ColorOut.begin(LogColor.YELLOW)
+                .append("Compiling '")
+                .append(sourceDirectoryPath)
+                .append("' (")
+                .append(fileCount)
+                .append(" files)")
+                .out(System.out);
+
+
+        var success = compiler.compile(fileTree);
+
 
         writeFlight(recordings, flight);
         if (console) {
+            System.out.println();
             FlightRecordCollection.printColored(recordings, true, System.out);
+            System.out.println();
         }
-        System.out.println();
 
         if (success) {
-            System.out.println("\u001B[32mCompilation Successful\u001B[0m");
+            onSuccess(outputFile, warnings);
 
-            if (out == null) {
-                System.out.println("\u001B[33mNo output path specified, use -Dkarina.out=<path>\u001B[0m");
-            } else {
-                var absolutePath = Path.of(out).toAbsolutePath();
-                var file = absolutePath.getFileName();
-                var path = absolutePath.getParent().toString().replace("\\", "/");
-                System.out.println("\u001B[36mOutput path: file:///" + path  + " (" + file + ")\u001B[0m");
+            if (run && compiler.getJarCompilation() != null) {
+                AutoRun.run(compiler.getJarCompilation());
             }
-
-            System.out.flush();
-            System.out.println("\u001B[33m");
-            DiagnosticCollection.print(warnings, true, System.out);
-            System.out.println("\u001B[0m");
-            System.out.flush();
 
         } else {
-            System.out.println("\u001B[31mCompilation failed\u001B[0m");
+            onError(warnings, errors);
 
-            System.out.flush();
-            System.out.println("\u001B[33m");
-            DiagnosticCollection.print(warnings, true, System.out);
-            System.out.println("\u001B[0m");
-            System.out.flush();
-
-            System.err.flush();
-            System.err.println();
-            DiagnosticCollection.print(errors, true, System.err);
-            System.err.flush();
-
-            if (args.length != 0 && args[0].equals("--test")) {
+            if (failWithException) {
                 throw new IllegalStateException("Compilation failed");
+            } else {
+                System.exit(1);
             }
-            System.exit(1);
         }
 
     }
 
+    private static void onError(DiagnosticCollection warnings, DiagnosticCollection errors) {
+        ColorOut.begin(LogColor.RED).append("Compilation failed").out(System.out);
+
+        LogColor.YELLOW.out(System.out);
+        DiagnosticCollection.print(warnings, true, System.out);
+        LogColor.NONE.out(System.out);
+        System.out.flush();
+
+        DiagnosticCollection.print(errors, true, System.err);
+    }
+
+    private static void onSuccess(String outputFile, DiagnosticCollection warnings) {
+        ColorOut.begin(LogColor.GREEN).append("Compilation Successful").out(System.out);
+
+        var absolutePath = Path.of(outputFile).toAbsolutePath();
+        var file = absolutePath.getFileName();
+        var path = absolutePath.getParent().toString().replace("\\", "/");
+        ColorOut.begin(LogColor.CYAN)
+                .append("Output path: file:///")
+                .append(path)
+                .append(" (")
+                .append(file)
+                .append(")")
+                .out(System.out);
+
+        LogColor.YELLOW.out(System.out);
+        DiagnosticCollection.print(warnings, true, System.out);
+        LogColor.NONE.out(System.out);
+    }
+
+    /**
+     * Write the flight record to a file
+     * @param recordings the flight record collection
+     * @param path the path to write to, can be null
+     */
     private static void writeFlight(FlightRecordCollection recordings, @Nullable String path) {
         if (path == null) {
             return;
@@ -107,6 +155,7 @@ public class Main {
         try (var filePrintStream = new PrintStream(new FileOutputStream(Path.of(path).toFile()))){
             FlightRecordCollection.print(recordings, false, filePrintStream);
         } catch (FileNotFoundException e) {
+            // Just print to console, no need to crash or more verbose logging
             e.printStackTrace();
         }
     }

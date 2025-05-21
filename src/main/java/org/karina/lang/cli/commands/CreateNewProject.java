@@ -1,8 +1,5 @@
-package org.karina.lang.cli;
+package org.karina.lang.cli.commands;
 
-import org.karina.lang.compiler.utils.FileLoader;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

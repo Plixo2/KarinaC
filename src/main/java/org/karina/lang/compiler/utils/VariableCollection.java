@@ -5,6 +5,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+/**
+ * Collection of variables
+ */
 public class VariableCollection implements Iterable<Variable> {
     private final List<Variable> variables;
     private final Set<Variable> markedImmutable;

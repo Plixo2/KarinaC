@@ -6,7 +6,7 @@ import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.FieldSignatureBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.MethodSignatureBuilder;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.jvm_loading.TypeGeneration;
+import org.karina.lang.compiler.jvm_loading.TypeDecoding;
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.impl.jvm.JFieldModel;
 import org.karina.lang.compiler.model_api.impl.jvm.JMethodModel;
@@ -30,10 +30,10 @@ import java.util.Set;
 //TODO rework java loading
 public class InterfaceLinker {
 
-    private final TypeGeneration typeGen;
+    private final TypeDecoding typeGen;
 
     public InterfaceLinker() {
-        this.typeGen = new TypeGeneration();
+        this.typeGen = new TypeDecoding();
     }
 
     public JClassModel createClass(@Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder) {
@@ -50,7 +50,7 @@ public class InterfaceLinker {
         }
         visited.add(node.name);
 
-        var pointer = TypeGeneration.internalNameToPointer(region, node.name);
+        var pointer = TypeDecoding.internalNameToPointer(region, node.name);
         var name = pointer.path().last();
         var path = pointer.path();
 
@@ -61,7 +61,7 @@ public class InterfaceLinker {
 
 
         for (var anInterface : node.interfaces) {
-            var interFacePointer = TypeGeneration.internalNameToPointer(region, anInterface);
+            var interFacePointer = TypeDecoding.internalNameToPointer(region, anInterface);
             Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, " with interface: " + interFacePointer);
 
             interfaceBuilder.add(new KType.ClassType(interFacePointer, List.of()));
@@ -83,7 +83,7 @@ public class InterfaceLinker {
             }
             interfaces = builder.interfaces();
         } else if (node.superName != null) {
-            var superPointer = TypeGeneration.internalNameToPointer(region, node.superName);
+            var superPointer = TypeDecoding.internalNameToPointer(region, node.superName);
             superType = new KType.ClassType(superPointer, List.of());
         } else if (!node.name.equals("java/lang/Object")) {
             Log.bytecode(region, node.name, "No super class found");
@@ -95,7 +95,7 @@ public class InterfaceLinker {
         var permittedSubclasses = ImmutableList.<ClassPointer>builder();
         if (node.permittedSubclasses != null) {
             for (var permittedSubclass : node.permittedSubclasses) {
-                var interfacePointer = TypeGeneration.internalNameToPointer(region, permittedSubclass);
+                var interfacePointer = TypeDecoding.internalNameToPointer(region, permittedSubclass);
                 permittedSubclasses.add(interfacePointer);
             }
         }

@@ -68,7 +68,8 @@ public class Log {
             case "verbose" -> {
                 var set = new HashSet<>(Set.of(LogTypes.values()));
                 set.remove(LogTypes.JVM_CLASS_LOADING);
-                
+                set.remove(LogTypes.LOADED_CLASSES);
+
                 yield set;
             }
             case "verbose_jvm" -> Set.of(LogTypes.values());
@@ -76,7 +77,7 @@ public class Log {
                 throw new IllegalStateException(
                         "Invalid logging level: "
                         + property
-                        + ". Valid options are: none, verbose, verbose_jvm"
+                        + ". Valid options are: none, basic, verbose, verbose_jvm"
                 );
             }
         };
@@ -145,16 +146,6 @@ public class Log {
     public static void end(String name) {
         synchronized (FLIGHT_RECORDER) {
             FLIGHT_RECORDER.end(name);
-        }
-    }
-    public static FlightRecorder.Sample addSample(String name) {
-        synchronized (FLIGHT_RECORDER) {
-            return FLIGHT_RECORDER.beginSample(name);
-        }
-    }
-    public static FlightRecorder.Sample addSuperSample(String name) {
-        synchronized (FLIGHT_RECORDER) {
-            return FLIGHT_RECORDER.beginSuperSample(name);
         }
     }
 
@@ -328,15 +319,7 @@ public class Log {
         return !ENTRIES.isEmpty();
     }
 
-    public static boolean hasWarnings() {
-        return !WARNINGS.isEmpty();
-    }
-
-//    public static List<Error> getLogs() {
-//        return entries.stream().map(LogWithTrace::entry).toList();
-//    }
-
-    public static void clearLogs() {
+    public static void clearAllLogs() {
         ENTRIES.clear();
         WARNINGS.clear();
         FLIGHT_RECORDER.clear();

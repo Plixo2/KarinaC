@@ -41,7 +41,7 @@ public class ImportItem {
         Log.beginType(Log.LogTypes.IMPORTS, "inner items");
         //import all items of the current class
         context = ImportHelper.importItemsOfClass(classModel, context);
-        if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.logImport();
+        if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.debugImport();
         Log.endType(Log.LogTypes.IMPORTS, "inner items");
 
 
@@ -51,7 +51,7 @@ public class ImportItem {
             context = context.addGeneric(classModel.region(), generic);
         }
 
-        if (Log.LogTypes.IMPORT_STAGES.isVisible())  context.logImport();
+        if (Log.LogTypes.IMPORT_STAGES.isVisible())  context.debugImport();
         Log.endType(Log.LogTypes.IMPORTS, "generics");
 
         Log.beginType(Log.LogTypes.IMPORTS, "imports statements");
@@ -68,11 +68,11 @@ public class ImportItem {
             context = ImportHelper.addImport(classModel.region(), kImport, context);
         }
 
-        if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.logImport();
+        if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.debugImport();
         Log.endType(Log.LogTypes.IMPORTS, "imports statements");
 
         if (!Log.LogTypes.IMPORT_STAGES.isVisible())
-            context.logImport();
+            context.debugImport();
 
         //now the import table is ready to import types
 

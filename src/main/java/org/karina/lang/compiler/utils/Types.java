@@ -191,7 +191,6 @@ public class Types {
      * (only used for interfaces and super classes)
      */
     public static KType projectGenerics(KType original, Map<Generic, KType> generics) {
-        var sample = Log.addSuperSample("GENERIC_TYPE_PROJECTION");
         var replaced = switch (original) {
             case KType.ArrayType(var element) -> {
                 var newElement = projectGenerics(element, generics);
@@ -254,7 +253,6 @@ public class Types {
             }
             case KType.VoidType _ -> KType.NONE;
         };
-        sample.endSample();
         return replaced;
     }
 
@@ -296,7 +294,6 @@ public class Types {
             KType.ClassType owningClass,
             KType.ClassType classToMap
     ) {
-        var sample = Log.addSuperSample("GENERIC_MODEL_PROJECTION");
         var genericMap = new HashMap<Generic, KType>();
 
         var testingModelToGetIndexFrom = model.getClass(owningClass.pointer());
@@ -323,9 +320,7 @@ public class Types {
 
         }
         //Cast is allowed since Types.projectGenerics returns the a ClassType when provided with a ClassType
-        var classType = (KType.ClassType) Types.projectGenerics(classToMap, genericMap);
-        sample.endSample();
-        return classType;
+        return (KType.ClassType) Types.projectGenerics(classToMap, genericMap);
     }
 
     public static boolean isSuperTypeOrInterface(Model model, ClassPointer element, ClassPointer toTest) {

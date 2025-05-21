@@ -82,7 +82,6 @@ public class ConsoleLogBuilder implements LogBuilder {
         for (var element : stack) {
 
             append("$TRACE at " + element);
-//            append("$TRACE at " + getTrace(element));
         }
 
     }

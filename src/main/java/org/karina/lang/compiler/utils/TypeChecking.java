@@ -15,10 +15,7 @@ public record TypeChecking(Model model) {
      */
 
     public @Nullable KType superType(Region checkingRegion, KType a, KType b) {
-        var sample = Log.addSuperSample("SUPER_TYPE");
-        var resultInner = superTypeInner(checkingRegion, a, b);
-        sample.endSample();
-        return resultInner;
+        return superTypeInner(checkingRegion, a, b);
     }
 
     private @Nullable KType superTypeInner(Region checkingRegion, KType a, KType b) {
@@ -151,12 +148,10 @@ public record TypeChecking(Model model) {
      * {@code let a: left = right}
      */
     public boolean canAssign(Region checkingRegion, KType left, KType right, boolean mutable) {
-        var sample = Log.addSuperSample("TYPE_CHECKING");
         var logName = "type-checking (" + left + " from " + right + ")" + (mutable ? " mutable" : "");
         Log.beginType(Log.LogTypes.CHECK_TYPE, logName);
         var resultInner = canAssignInner(checkingRegion, left, right, mutable);
         Log.endType(Log.LogTypes.CHECK_TYPE, logName, "result: " + resultInner, checkingRegion, "left: " + left, "right: " + right);
-        sample.endSample();
         return resultInner;
     }
 
@@ -370,7 +365,6 @@ public record TypeChecking(Model model) {
      * Strict equals for classes, checks if the classes are the same, and if the generics are the same
      */
     private boolean classStrictEquals(Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
-        var sample = Log.addSuperSample("CLASS_STRICT_EQUALS");
         Log.beginType(Log.LogTypes.CHECK_TYPE, "strict equals check");
         Log.recordType(Log.LogTypes.CHECK_TYPE, "Class strict equals " + left + " and " + right);
         if (left.pointer().equals(right.pointer())) {
@@ -385,18 +379,15 @@ public record TypeChecking(Model model) {
                 var leftGeneric = left.generics().get(i);
                 var rightGeneric = right.generics().get(i);
                 if (!canAssignInner(checkingRegion, leftGeneric, rightGeneric, mutable)) {
-                    sample.endSample();
                     Log.recordType(Log.LogTypes.CHECK_TYPE, "cannot assign generics", leftGeneric, "from", rightGeneric);
                     Log.endType(Log.LogTypes.CHECK_TYPE, "strict equals check", false);
                     return false;
                 }
             }
-            sample.endSample();
 
             Log.endType(Log.LogTypes.CHECK_TYPE, "strict equals check", true);
             return true;
         }
-        sample.endSample();
         Log.endType(Log.LogTypes.CHECK_TYPE, "strict equals check", false, "Classes are not the same");
         return false;
     }
