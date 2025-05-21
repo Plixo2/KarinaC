@@ -22,6 +22,8 @@ public class Main {
         var failWithException = args.length != 0 && args[0].equals("--test");
         var run = args.length != 0 && args[0].equals("--run");
 
+        var startTime = System.currentTimeMillis();
+
         var welcome_small =
                 """
                 
@@ -73,7 +75,6 @@ public class Main {
         var sourceDirectoryPath = Path.of(sourceDirectory);
         var fileTree = FileLoader.loadTree(sourceDirectoryPath);
 
-
         var fileCount = fileTree.leafCount();
         var fileCountString = fileCount == 1 ? "file" : "files";
         ColorOut.begin(LogColor.YELLOW)
@@ -98,7 +99,8 @@ public class Main {
         }
 
         if (success) {
-            onSuccess(outputFile, warnings);
+            var endTime = System.currentTimeMillis();
+            onSuccess(outputFile, warnings, endTime - startTime);
 
             if (run && compiler.getJarCompilation() != null) {
                 AutoRun.run(compiler.getJarCompilation());
@@ -117,7 +119,7 @@ public class Main {
     }
 
     private static void onError(DiagnosticCollection warnings, DiagnosticCollection errors) {
-        ColorOut.begin(LogColor.RED).append("Compilation failed").out(System.out);
+        ColorOut.begin(LogColor.RED).append("BUILD FAILED").out(System.out);
 
         LogColor.YELLOW.out(System.out);
         DiagnosticCollection.print(warnings, true, System.out);
@@ -127,8 +129,7 @@ public class Main {
         DiagnosticCollection.print(errors, true, System.err);
     }
 
-    private static void onSuccess(String outputFile, DiagnosticCollection warnings) {
-        ColorOut.begin(LogColor.GREEN).append("Compilation Successful").out(System.out);
+    private static void onSuccess(String outputFile, DiagnosticCollection warnings, long deltaTime) {
 
         var absolutePath = Path.of(outputFile).toAbsolutePath();
         var file = absolutePath.getFileName();
@@ -139,6 +140,12 @@ public class Main {
                 .append(" (")
                 .append(file)
                 .append(")")
+                .out(System.out);
+
+        ColorOut.begin(LogColor.GREEN)
+                .append("Build in ")
+                .append(deltaTime)
+                .append("ms")
                 .out(System.out);
 
         LogColor.YELLOW.out(System.out);

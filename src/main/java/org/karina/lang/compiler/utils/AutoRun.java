@@ -31,6 +31,7 @@ public class AutoRun {
             var cls = classLoader.loadClass(mainClass);
             var mainMethod = cls.getMethod("main", String[].class);
 
+            System.out.println();
             ColorOut.begin(LogColor.GRAY)
                     .append("> Executing '")
                     .append(mainClass)
@@ -48,7 +49,6 @@ public class AutoRun {
                     .append(inner.getClass().getName())
                     .append(Objects.requireNonNullElse(inner.getMessage(), ""))
                     .out(System.out);
-//            e.printStackTrace();
         }
     }
 
