@@ -35,24 +35,34 @@ java -cp "out/build.jar:libs/karina_base.jar" main
 popd > /dev/null
 """;
     
-
+    /**
+     * Compiles a Karina project.
+     * @param project the path to the project, compiles everything in the 'src' directory, that has to exist
+     * @param run if true, runs the program after compiling
+     * @param compileOption compile options
+     * @throws IOException an I/O error occurs when loading of the src directory fails
+     *                      or the karina_base.jar or build scripts cannot be copied.
+     */
     public static void compile(Path project, boolean run, CLIParser.CompileOption compileOption) throws IOException {
         project = project.toAbsolutePath().normalize();
 
         var buildDir = project.resolve("build/");
         var projectStr = project.resolve("src/").normalize().toString();
+
         var logFile = buildDir.resolve("flight.log").normalize().toString();
         var buildFile = buildDir.resolve("out/build.jar").normalize().toString();
 
+        // System properties for the compiler
+        System.setProperty("karina.source", projectStr);
+        System.setProperty("karina.out", buildFile);
+        System.setProperty("karina.classes", "true");
 
         System.setProperty("karina.flight", Objects.requireNonNullElse(compileOption.flight, logFile));
         System.setProperty("karina.logging", Objects.requireNonNullElse(compileOption.logging, "basic"));
         System.setProperty("karina.console", Boolean.toString(compileOption.console));
 
-        System.setProperty("karina.source", projectStr);
-        System.setProperty("karina.out", buildFile);
-        System.setProperty("karina.classes", "true");
 
+        // "--run" is a flag to run the program after compiling
         String[] args;
         if (run) {
             args = new String[]{"--run"};
@@ -60,9 +70,13 @@ popd > /dev/null
             args = new String[]{};
         }
 
+        // main compile step, does exit on error
         org.karina.lang.compiler.Main.main(args);
 
+        // copy the karina standard library
         putKarinaLib(buildDir);
+
+        // copy build scripts
         putScript(buildDir, WINDOWS_COMMAND, "run.bat");
         putScript(buildDir, LINUX_COMMAND, "run");
 

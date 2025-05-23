@@ -15,7 +15,7 @@
 <br>
 
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
-![Java Version](https://img.shields.io/badge/Java-21-orange)
+![Java Version](https://img.shields.io/badge/Java-21+-orange)
 ![Karina Version](https://img.shields.io/badge/Karina-0.4v-8A2BE2)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 
@@ -82,7 +82,8 @@ The Compiler is a standard Gradle project, so you can use it with any IDE that s
 
 You can run the compiler via the Gradle task `run` or run the [Main Class](src/main/java/org/karina/lang/compiler/Main.java) directly.
 
-The `run` script in [`resources/out/`](resources/out/) can be used to run the generated jar file.
+The `--run` command line argument can be used to run the program after compilation.
+
 
 </details>
 
@@ -92,25 +93,14 @@ The `run` script in [`resources/out/`](resources/out/) can be used to run the ge
 
 Make sure your `JAVA_HOME` is set to the correct version.
 
-### Windows
 ```shell
- gradlew.bat run
+ gradlew run
 ```
-
-### Linux
-```shell
- chmod +x ./gradlew
- ./gradlew run
- ```
-
 
 </details>
 
 
-The project is configured to build the demo project in [`resources/src/`](resources/src/).
-
-The `run` script in [`resources/out/`](resources/out/) will run the generated jar file.
-
+The project is configured to build the demo project in [`resources/src/`](resources/src/) by default.
 
 ## Development
 

@@ -52,6 +52,7 @@ dependencies {
  */
 application {
     mainClass.set('org.karina.lang.compiler.Main')
+    applicationDefaultJvmArgs = ['-Dkarina.console=false']
 }
 
 run {
@@ -121,6 +122,7 @@ tasks.register('KARINA-BASE', Jar) {
  * 'gradle CLI'
  * <p>
  * Creates a native image of the compiler.
+ * puts in the 'jar' directory inside the build directory.
  */
 tasks.register('CLI', Jar) {
     manifest {

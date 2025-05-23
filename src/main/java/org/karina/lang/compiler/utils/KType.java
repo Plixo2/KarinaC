@@ -17,12 +17,12 @@ public sealed interface KType {
 
     Region KARINA_LIB = new TextSource(
             new JavaResource("karina standard library"),
-            List.of("su-su-su-supernova")
+            List.of("<karina sdk>")
     ).emptyRegion();
 
     Region JAVA_LIB = new TextSource(
             new JavaResource("java standard library"),
-            List.of("cafebabe")
+            List.of("<java sdk>")
     ).emptyRegion();
 
     VoidType NONE = new VoidType();

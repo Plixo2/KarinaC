@@ -7,10 +7,6 @@ import org.karina.lang.compiler.utils.AutoRun;
 import org.karina.lang.compiler.utils.FileLoader;
 
 import java.io.*;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 
 /**
@@ -52,8 +48,10 @@ public class Main {
                 .append(javaVersion)
                 .out(System.out);
 
+        System.out.println();
 
-        var console = System.getProperty("karina.console", "false").equals("true");
+
+        var console = System.getProperty("karina.console", "true").equals("true");
         var flight = System.getProperty("karina.flight", "resources/flight.txt");
         var outputFile = System.getProperty("karina.out", "resources/out/build.jar");
         var shouldEmitClasses = System.getProperty("karina.classes", "true").equals("true");
@@ -77,21 +75,21 @@ public class Main {
 
         var fileCount = fileTree.leafCount();
         var fileCountString = fileCount == 1 ? "file" : "files";
-        ColorOut.begin(LogColor.YELLOW)
-                .append("Compiling '")
+        ColorOut.begin(LogColor.GRAY)
+                .append("> Compiling '")
                 .append(sourceDirectoryPath)
                 .append("' (")
                 .append(fileCount)
                 .append(" ")
                 .append(fileCountString)
-                .append(")")
+                .append("):")
                 .out(System.out);
 
 
         var success = compiler.compile(fileTree);
 
-
         writeFlight(recordings, flight);
+
         if (console) {
             System.out.println();
             FlightRecordCollection.printColored(recordings, true, System.out);
@@ -119,7 +117,9 @@ public class Main {
     }
 
     private static void onError(DiagnosticCollection warnings, DiagnosticCollection errors) {
-        ColorOut.begin(LogColor.RED).append("BUILD FAILED").out(System.out);
+        ColorOut.begin(LogColor.RED).append("Build failed").out(System.out);
+        System.out.println();
+        System.out.flush();
 
         LogColor.YELLOW.out(System.out);
         DiagnosticCollection.print(warnings, true, System.out);
@@ -134,19 +134,22 @@ public class Main {
         var absolutePath = Path.of(outputFile).toAbsolutePath();
         var file = absolutePath.getFileName();
         var path = absolutePath.getParent().toString().replace("\\", "/");
-        ColorOut.begin(LogColor.CYAN)
-                .append("Output path: file:///")
-                .append(path)
-                .append(" (")
+
+        ColorOut.begin(LogColor.GRAY)
+                .append("'")
                 .append(file)
-                .append(")")
+                .append("'")
+                .append(" created in ")
+                .append("file:///")
+                .append(path)
                 .out(System.out);
 
-        ColorOut.begin(LogColor.GREEN)
-                .append("Build in ")
+        ColorOut.begin(LogColor.GRAY)
+                .append("Build finished in ")
                 .append(deltaTime)
                 .append("ms")
                 .out(System.out);
+
 
         LogColor.YELLOW.out(System.out);
         DiagnosticCollection.print(warnings, true, System.out);
