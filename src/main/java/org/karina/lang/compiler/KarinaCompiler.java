@@ -32,6 +32,10 @@ import java.nio.file.Path;
 public class KarinaCompiler {
     public static final String VERSION = "v0.4";
 
+    /// 16 bits for the version, 16 bits for the binary format
+    public static final int BINARY_VERSION = 4 << 16 | 0b1;
+    public static final int BINARY_MAGIC_NUMBER = 20000411;
+
     /**
      * Cache for faster testing
      */
@@ -70,19 +74,8 @@ public class KarinaCompiler {
             if (cache != null) {
                 bytecodeClasses = cache;
             } else {
-                Log.begin("jar-load");
                 var modelLoader = new ModelLoader();
-
-                Log.begin("java-base");
-                var javaBase = modelLoader.loadJavaBase();
-                Log.end("java-base", "with " + javaBase.getClassCount() + " classes");
-
-                Log.begin("karina-base");
-                var karinaBase = modelLoader.loadKarinaBase();
-                Log.end("karina-base", "with " + karinaBase.getClassCount() + " classes");
-
-                Log.end("jar-load");
-                bytecodeClasses = cache = ModelBuilder.merge(javaBase, karinaBase);
+                bytecodeClasses = cache = modelLoader.getJarModel();
             }
 
             ImportHelper.logFullModel(bytecodeClasses);

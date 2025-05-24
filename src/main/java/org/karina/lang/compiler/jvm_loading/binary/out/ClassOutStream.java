@@ -63,6 +63,8 @@ public class ClassOutStream {
         }
     }
 
+
+
     public void writeType(KType type) throws IOException {
         switch (type) {
             case KType.ArrayType arrayType -> {
@@ -70,12 +72,7 @@ public class ClassOutStream {
                 writeType(arrayType.elementType());
             }
             case KType.ClassType classType -> {
-                writeByte(3);
-                writeClassPointer(classType.pointer());
-                writeInt(classType.generics().size());
-                for (KType generic : classType.generics()) {
-                    writeType(generic);
-                }
+                writeClassType(classType);
             }
             case KType.FunctionType functionType -> {
                 writeByte(4);
@@ -118,6 +115,15 @@ public class ClassOutStream {
         }
     }
 
+    public void writeClassType(KType.ClassType classType) throws IOException {
+        writeByte(3);
+        writeClassPointer(classType.pointer());
+        writeInt(classType.generics().size());
+        for (KType generic : classType.generics()) {
+            writeType(generic);
+        }
+    }
+
 
     public void writeClassPointer(@Nullable ClassPointer classPointer) throws IOException {
         if (classPointer == null) {
@@ -135,33 +141,6 @@ public class ClassOutStream {
         }
     }
 
-    public void writeField(FieldModel fieldModel) throws IOException {
-        writeString(fieldModel.name());
-        writeType(fieldModel.type());
-        writeInt(fieldModel.modifiers());
-    }
-
-    public void writeFieldList(List<? extends FieldModel> list) throws IOException {
-        writeInt(list.size());
-        for (FieldModel fieldModel : list) {
-            writeField(fieldModel);
-        }
-    }
-
-    public void writeMethod(MethodModel methodModel) throws IOException {
-        writeString(methodModel.name());
-        writeInt(methodModel.modifiers());
-        writeSignature(methodModel.signature());
-        writeStrings(methodModel.parameters());
-        writeStrings(methodModel.generics().stream().map(Generic::name).toList());
-    }
-
-    public void writeMethodList(List<? extends MethodModel> list) throws IOException {
-        writeInt(list.size());
-        for (MethodModel methodModel : list) {
-            writeMethod(methodModel);
-        }
-    }
 
     public void writeIntList(int[] list) throws IOException {
         writeInt(list.length);
@@ -169,6 +148,24 @@ public class ClassOutStream {
             writeInt(i);
         }
     }
+    public void writeGenericList(List<Generic> generics) throws IOException {
+        writeInt(generics.size());
 
+        for (var generic : generics) {
+            writeString(generic.name());
+        }
+        for (var generic : generics) {
+            writeInt(generic.bounds().size());
+            for (var bound : generic.bounds()) {
+                writeType(bound);
+            }
+            if (generic.superType() == null) {
+                writeByte(0);
+            } else {
+                writeByte(1);
+                writeType(generic.superType());
+            }
+        }
 
+    }
 }

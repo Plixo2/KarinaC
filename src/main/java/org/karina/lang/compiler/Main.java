@@ -77,7 +77,7 @@ public class Main {
         var fileCountString = fileCount == 1 ? "file" : "files";
         ColorOut.begin(LogColor.GRAY)
                 .append("> Compiling '")
-                .append(sourceDirectoryPath)
+                .append(sourceDirectoryPath.toString().replace("\\", "/"))
                 .append("' (")
                 .append(fileCount)
                 .append(" ")
@@ -87,7 +87,6 @@ public class Main {
 
 
         var success = compiler.compile(fileTree);
-
         writeFlight(recordings, flight);
 
         if (console) {
@@ -135,7 +134,7 @@ public class Main {
         var file = absolutePath.getFileName();
         var path = absolutePath.getParent().toString().replace("\\", "/");
 
-        ColorOut.begin(LogColor.GRAY)
+        ColorOut.begin(LogColor.WHITE)
                 .append("'")
                 .append(file)
                 .append("'")
@@ -144,8 +143,8 @@ public class Main {
                 .append(path)
                 .out(System.out);
 
-        ColorOut.begin(LogColor.GRAY)
-                .append("Build finished in ")
+        ColorOut.begin(LogColor.WHITE)
+                .append("finished in ")
                 .append(deltaTime)
                 .append("ms")
                 .out(System.out);

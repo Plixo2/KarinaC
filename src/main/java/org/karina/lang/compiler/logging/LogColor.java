@@ -15,6 +15,7 @@ public enum LogColor {
     PURPLE("\u001B[35m"),
     CYAN("\u001B[36m"),
     GRAY("\u001B[37m"),
+    WHITE(""),
     NONE("\u001B[0m"),
 
     ;

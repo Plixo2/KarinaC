@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.jvm_loading.binary.out;
 
+import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.Model;
 
@@ -14,14 +15,21 @@ public class ModelWriter {
 
     public ModelWriter(OutputStream stream) {
         this.stream = stream;
-
     }
 
     public void write(Model model) throws IOException {
-        var classes = new ArrayList< JClassModel>();
-        //model.getBytecodeClasses().forEach(classes::add);
+        var classes = new ArrayList<JClassModel>();
 
-        var outerWriter = new ClassWriter(this.stream);
+        // Collect all top-level classes (those without an outer class)
+        for (var binaryClass : model.getBinaryClasses()) {
+            if (binaryClass.outerClass() == null) {
+                classes.add(binaryClass);
+            }
+        }
+
+        var outerWriter = new ClassOutStream(this.stream);
+        outerWriter.writeInt(KarinaCompiler.BINARY_MAGIC_NUMBER);
+        outerWriter.writeInt(KarinaCompiler.BINARY_VERSION);
 
         var offsets = new int[classes.size()];
 
@@ -46,14 +54,5 @@ public class ModelWriter {
 
     }
 
-    public void writeHash(long hash) throws IOException {
-        this.stream.write((int) (hash >> 56));
-        this.stream.write((int) (hash >> 48));
-        this.stream.write((int) (hash >> 40));
-        this.stream.write((int) (hash >> 32));
-        this.stream.write((int) (hash >> 24));
-        this.stream.write((int) (hash >> 16));
-        this.stream.write((int) (hash >> 8));
-        this.stream.write((int) hash);
-    }
+
 }

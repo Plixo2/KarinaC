@@ -30,7 +30,7 @@ Options:
         Default is 'basic'.
         
     --flight, -f <file>
-        Specify the flight log file. Default is 'build/flight.log' in the build directory.
+        Specify the flight log file. Default is 'build/flight.log'.
         
     --console, -c
         Displays log messages in the console.

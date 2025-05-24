@@ -1,100 +1,97 @@
 package org.karina.lang.compiler.jvm_loading.loading;
 
-import org.karina.lang.compiler.jvm_loading.binary.out.ModelWriter;
+import org.karina.lang.compiler.jvm_loading.binary.BinaryFormatLinker;
+import org.karina.lang.compiler.logging.ColorOut;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.logging.LogColor;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.jar.JarInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public class ModelLoader {
-  //  private final InterfaceBuilder interfaceBuilder;
+    private static final List<ResourceLibrary> RESOURCE_LIBRARIES = List.of(
+            new ResourceLibrary("java-base", "java_base.jar"),
+            new ResourceLibrary("karina-base", "karina_base.jar")
+    );
+
+    private static final String BIN_FILE = "/base.bin.gz";
 
     public ModelLoader() {
-       // this.interfaceBuilder = new InterfaceBuilder();
-    }
-
-    public static final String RESOURCES_JDK_BIN_GZ = "resources/jdk.bin";
-
-
-    private Model writeJar() {
-//        var startTime = System.currentTimeMillis();
-//        var modelBuilder = new JKModelBuilder();
-//        var maxClassVersion = 0;
-//        var file = new File(getJarURL().getFile());
-//        try {
-//            var classes = this.interfaceBuilder.loadJarFile(file);
-//            for (var node : classes) {
-//                modelBuilder.addClass(node);
-//                maxClassVersion = Math.max(maxClassVersion, node.version());
-//            }
-//
-//
-//        } catch(IOException e) {
-//            Log.fileError(new FileLoadError.IO(file, e));
-//            throw new Log.KarinaException();
-//        }
-//        var testA = this.interfaceBuilder.loadClassFile("org","karina", "lang", "compiler" ,"jvm", "test", "ImplType");
-//        var testB = this.interfaceBuilder.loadClassFile("org","karina", "lang", "compiler" ,"jvm", "test", "SuperType");
-////        modelBuilder.addClass(testA);
-////        modelBuilder.addClass(testB);
-//
-//        var model = modelBuilder.build();
-//        var hash = file.lastModified();
-//        var time = System.currentTimeMillis() - startTime;
-//        var message = """
-//                Loaded JDK with %d classes in %dms
-//                Bytecode %d, Java %d
-//                Hash: %d
-//                """.formatted(model.classModels().size(), time, maxClassVersion, (maxClassVersion - 44),
-//                hash
-//        );
-//        System.out.println(message);
-//
-//        writeBinary(model, hash, RESOURCES_JDK_BIN_GZ);
-
-//        return model;
-        throw new NullPointerException("Not implemented");
-    }
-
-    public Model loadJavaBase() {
-        return loadFromResource("java_base.jar");
-    }
-
-    public Model loadKarinaBase() {
-        return loadFromResource("karina_base.jar");
     }
 
 
-//        var file = new File(getJarURL().getFile());
-//        var expectedHash = file.lastModified();
-//        var binHash = readHash(RESOURCES_JDK_BIN_GZ);
-//    //    if (binHash != expectedHash) {
-//            System.out.println("JDK Binary out of date, rebuilding");
-//            return writeJar();
-//       // }
+    public Model getJarModel() {
 
-//        var startTime = System.currentTimeMillis();
-//        var model = readBinary(RESOURCES_JDK_BIN_GZ);
-//        System.out.println("Reading JDK (" + (System.currentTimeMillis() - startTime) + "ms)");
-//        System.out.println("Loaded " + model.classModels().size() + " classes");
-//
-//        return model;
+        if (binFileExist()) {
+            ColorOut.begin(LogColor.WHITE)
+                    .append("using cache '")
+                    .append(BIN_FILE)
+                    .append("'")
+                    .out(System.out);
+
+            Log.begin("load-cache");
+            var binary = BinaryFormatLinker.readBinary(BIN_FILE);
+            Log.end("load-cache", "with " + binary.getClassCount() + " classes");
+
+            return binary;
+        }
+
+        return rebuildCache();
+    }
+
+    private Model rebuildCache() {
+        Log.begin("rebuild-cache");
+        var loadedModel = modelFromResource(RESOURCE_LIBRARIES);
+        //TODO add condition to only generate binary cache when needed
+        BinaryFormatLinker.writeBinary(loadedModel, Path.of("src/main/resources/", BIN_FILE));
+
+        Log.end("rebuild-cache");
+        return loadedModel;
+    }
 
 
-    public Model loadFromResource(String resource) {
+    private boolean binFileExist() {
+        try (var resourceStream = ModelLoader.class.getResourceAsStream(BIN_FILE)) {
+            return resourceStream != null;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private Model modelFromResource(List<ResourceLibrary> libraries) {
+        Log.begin("jar-load");
+
+        var models = new Model[libraries.size()];
+        for (var i = 0; i < libraries.size(); i++) {
+            var library = libraries.get(i);
+            Log.begin(library.name);
+            var lib = loadFromResource(library);
+            Log.end(library.name, "with " + lib.getClassCount() + " classes");
+            models[i] = lib;
+        }
+        var merged = ModelBuilder.merge(models);
+        Log.end("jar-load", "with " + merged.getClassCount() + " classes");
+        return merged;
+    }
+
+
+    private Model loadFromResource(ResourceLibrary library) {
         Log.begin("read-jar");
         var jdkSet = new OpenSet();
-        var missingFile = new File("resources/" + resource);
 
-        try (var resourceStream = ModelLoader.class.getResourceAsStream("/" + resource)) {
+        var resource = "/" + library.resource;
+        try (var resourceStream = ModelLoader.class.getResourceAsStream(resource)) {
 
             if (resourceStream == null) {
-                Log.fileError(new FileLoadError.NotFound(missingFile));
+                Log.fileError(new FileLoadError.Resource(new FileNotFoundException(
+                        "Could not find resource: '" + resource + "'"
+                )));
                 throw new Log.KarinaException();
             }
 
@@ -103,7 +100,7 @@ public class ModelLoader {
             }
 
         } catch (IOException e) {
-            Log.fileError(new FileLoadError.IO(missingFile, e));
+            Log.fileError(new FileLoadError.Resource(e));
             throw new Log.KarinaException();
         }
         Log.end("read-jar");
@@ -111,7 +108,6 @@ public class ModelLoader {
         Log.begin("link-jar");
         var builder = new ModelBuilder();
         var linker = new InterfaceLinker();
-
 
         for (var topClass : jdkSet.removeTopClasses()) {
             var _ = linker.createClass(null, topClass, jdkSet, new HashSet<>(), builder);
@@ -131,68 +127,7 @@ public class ModelLoader {
         return build;
     }
 
-    private void writeBinary(Model model, long hash, String path) {
-        var file = new java.io.File(path);
-        if (!file.exists()) {
-            try {
-                var _ = file.getParentFile().mkdirs();
-                var _ = file.createNewFile();
-            } catch (IOException e) {
-                Log.fileError(new FileLoadError.IO(file, e));
-                throw new Log.KarinaException();
-            }
-        }
 
-        try (var fos = new FileOutputStream(path);
-             var gzipOut = new GZIPOutputStream(fos)) {
-
-            var writer = new ModelWriter(gzipOut);
-            writer.writeHash(hash);
-            writer.write(model);
-
-        } catch (IOException e) {
-            Log.fileError(new FileLoadError.IO(file, e));
-            throw new Log.KarinaException();
-        }
-    }
-//
-//    private Model readBinary(String path) {
-//        var file = new File(path);
-//        if (!file.exists()) {
-//            Log.fileError(new FileLoadError.NotFound(file));
-//            throw new Log.KarinaException();
-//        }
-//
-//        try (var fos = new FileInputStream(path);
-//             var gzipOut = new GZIPInputStream(fos);
-//             var buffered = new BufferedInputStream(gzipOut)) {
-//
-//            var reader = new ModelReader(buffered);
-//            var ignored = reader.readHash();
-//
-//            return reader.read(file);
-//        } catch (IOException e) {
-//            Log.fileError(new FileLoadError.IO(file, e));
-//            throw new Log.KarinaException();
-//        }
-//    }
-//
-//    private long readHash(String path) {
-//        var file = new File(path);
-//        if (!file.exists()) {
-//            return -1;
-//        }
-//
-//        try (var fos = new FileInputStream(path);
-//             var gzipOut = new GZIPInputStream(fos);
-//             var buffered = new BufferedInputStream(gzipOut)) {
-//
-//            var reader = new ModelReader(buffered);
-//            return reader.readHash();
-//        } catch (IOException e) {
-//            Log.fileError(new FileLoadError.IO(file, e));
-//            throw new Log.KarinaException();
-//        }
-//    }
+    private record ResourceLibrary(String name, String resource) { }
 
 }

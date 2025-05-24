@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.jvm_loading.binary.in;
 
 import com.google.common.collect.ImmutableList;
+import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.model_api.impl.jvm.JFieldModel;
@@ -13,7 +14,7 @@ import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
+import java.util.*;
 
 public class ClassInStream {
     private final InputStream in;
@@ -54,12 +55,12 @@ public class ClassInStream {
         return new ObjectPath(readStrings());
     }
 
-    public Signature readSignature(TextSource source) throws IOException {
-        var returnType = readType(source);
+    public Signature readSignature(TextSource source, KnownGenerics generics) throws IOException {
+        var returnType = readType(source, generics);
         int length = readInt();
         var parameters = new KType[length];
         for (int i = 0; i < length; i++) {
-            parameters[i] = readType(source);
+            parameters[i] = readType(source, generics);
         }
         return new Signature(ImmutableList.copyOf(parameters), returnType);
     }
@@ -89,86 +90,121 @@ public class ClassInStream {
         return ImmutableList.copyOf(pointers);
     }
 
-    public JFieldModel readField(ClassPointer owningClass, TextSource source) throws IOException {
-        var name = readString();
-        var type = readType(source);
-        var modifiers = readInt();
-        return new JFieldModel(name, type, modifiers, source.emptyRegion(), owningClass);
-    }
+//    public JFieldModel readField(ClassPointer owningClass, TextSource source, KnownGenerics generics) throws IOException {
+//        var name = readString();
+//        var type = readType(source, generics);
+//        var modifiers = readInt();
+//        return new JFieldModel(name, type, modifiers, source.emptyRegion(), owningClass);
+//    }
+//
+//    public ImmutableList<JFieldModel> readFieldList(ClassPointer owningClass, TextSource source, KnownGenerics generics) throws IOException {
+//        int length = readInt();
+//        var fields = new JFieldModel[length];
+//        for (int i = 0; i < length; i++) {
+//            fields[i] = readField(owningClass, source, generics);
+//        }
+//        return ImmutableList.copyOf(fields);
+//    }
 
-    public ImmutableList<JFieldModel> readFieldList(ClassPointer owningClass, TextSource source) throws IOException {
+    public List<Generic> readGenericList(TextSource source, KnownGenerics generics) throws IOException {
         int length = readInt();
-        var fields = new JFieldModel[length];
+
+        var thisGenerics = new ArrayList<Generic>();
+
         for (int i = 0; i < length; i++) {
-            fields[i] = readField(owningClass, source);
+            var name = readString();
+            var generic = new Generic(source.emptyRegion(), name);
+            thisGenerics.add(generic);
+            generics.add(generic);
         }
-        return ImmutableList.copyOf(fields);
-    }
-
-    public JMethodModel loadMethod(ClassPointer owningClass, TextSource source) throws IOException {
-        var emptyRegion = source.emptyRegion();
-
-        var name = readString();
-        var modifiers = readInt();
-        var signature = readSignature(source);
-        var parameters = readStrings();
-        var generics = readStrings().stream().map(ref -> new Generic(emptyRegion, ref)).toList();
-        return new JMethodModel(
-                name,
-                modifiers,
-                signature,
-                ImmutableList.copyOf(parameters),
-                ImmutableList.copyOf(generics),
-                null,
-                emptyRegion,
-                owningClass
-        );
-    }
-
-    public ImmutableList<JMethodModel> readMethodList(ClassPointer owningClass, TextSource source) throws IOException {
-        int length = readInt();
-        var methods = new JMethodModel[length];
         for (int i = 0; i < length; i++) {
-            methods[i] = loadMethod(owningClass, source);
+            var generic = thisGenerics.get(i);
+
+            var boundsCount = readInt();
+            var bounds = new KType[boundsCount];
+            for (int boundI = 0; boundI < boundsCount; boundI++) {
+                bounds[boundI] = readType(source, generics);
+            }
+            var containsSuper = readByte() == 1;
+            var superType = containsSuper ? readType(source, generics) : null;
+            generic.updateBounds(superType, Arrays.stream(bounds).toList());
+
         }
-        return ImmutableList.copyOf(methods);
+
+        return thisGenerics;
     }
 
 
-    public KType readType(TextSource source) throws IOException {
+
+//    public JMethodModel loadMethod(ClassPointer owningClass, TextSource source, KnownGenerics generics) throws IOException {
+//        var emptyRegion = source.emptyRegion();
+//
+//        var name = readString();
+//        var modifiers = readInt();
+//        var signature = readSignature(source, generics);
+//        var parameters = readStrings();
+//        var generics = readStrings().stream().map(ref -> new Generic(emptyRegion, ref)).toList();
+//        return new JMethodModel(
+//                name,
+//                modifiers,
+//                signature,
+//                ImmutableList.copyOf(parameters),
+//                ImmutableList.copyOf(generics),
+//                null,
+//                emptyRegion,
+//                owningClass
+//        );
+//    }
+//
+//    public ImmutableList<JMethodModel> readMethodList(ClassPointer owningClass, TextSource source) throws IOException {
+//        int length = readInt();
+//        var methods = new JMethodModel[length];
+//        for (int i = 0; i < length; i++) {
+//            methods[i] = loadMethod(owningClass, source);
+//        }
+//        return ImmutableList.copyOf(methods);
+//    }
+
+
+    public KType readType(TextSource source, KnownGenerics generics) throws IOException {
         var type = readByte();
         return switch (type) {
             case 1 -> KType.ROOT;
             case 2 -> {
-                var inner = readType(source);
+                var inner = readType(source, generics);
                 yield new KType.ArrayType(inner);
             }
             case 3 -> {
                 var classPointer = readClassPointer(source);
                 var genericCount = readInt();
-                var generics = new KType[genericCount];
+                var genericsArray = new KType[genericCount];
                 for (int i = 0; i < genericCount; i++) {
-                    generics[i] = readType(source);
+                    genericsArray[i] = readType(source, generics);
                 }
-                yield new KType.ClassType(classPointer, List.of(generics));
+                yield new KType.ClassType(classPointer, List.of(genericsArray));
             }
             case 4 -> {
-                var returnType = readType(source);
+                var returnType = readType(source, generics);
                 var argumentCount = readInt();
                 var arguments = new KType[argumentCount];
                 for (int i = 0; i < argumentCount; i++) {
-                    arguments[i] = readType(source);
+                    arguments[i] = readType(source, generics);
                 }
                 var interfaceCount = readInt();
                 var interfaces = new KType[interfaceCount];
                 for (int i = 0; i < interfaceCount; i++) {
-                    interfaces[i] = readType(source);
+                    interfaces[i] = readType(source, generics);
                 }
                 yield new KType.FunctionType(List.of(arguments), returnType, List.of(interfaces));
             }
             case 5 -> {
                 var name = readString();
-                yield new KType.GenericLink(new Generic(source.emptyRegion(), name));
+                var generic = generics.get(name);
+                if (generic != null) {
+                    yield new KType.GenericLink(generic);
+                } else {
+                    throw  new IOException("Unknown generic type: " + name + ", known generics: " + generics.generics.keySet());
+                }
             }
             case 6 -> KType.BOOL;
             case 7 -> KType.BYTE;
@@ -185,6 +221,20 @@ public class ClassInStream {
         };
     }
 
+    public KType.ClassType readClassType(TextSource source, KnownGenerics generics) throws IOException {
+        var type = readByte();
+        if (type != 3) {
+            throw new IOException("Expected class type, but got " + type);
+        }
+        var classPointer = readClassPointer(source);
+        var genericCount = readInt();
+        var genericsArray = new KType[genericCount];
+        for (int i = 0; i < genericCount; i++) {
+            genericsArray[i] = readType(source, generics);
+        }
+        return new KType.ClassType(classPointer, List.of(genericsArray));
+    }
+
     public int[] readIntList() throws IOException {
         int length = readInt();
         var ints = new int[length];
@@ -197,6 +247,30 @@ public class ClassInStream {
     public void assertEmpty() throws IOException {
         if (this.in.read() != -1) {
             throw new IOException("Expected no more data, but got " + this.in.available() + " bytes");
+        }
+    }
+
+    public static class KnownGenerics {
+        private final Map<String, Generic> generics;
+
+        private KnownGenerics(Map<String, Generic> generics) {
+            this.generics = generics;
+        }
+
+        public KnownGenerics() {
+            this.generics = new HashMap<>();
+        }
+
+        public void add(Generic generic) {
+            this.generics.put(generic.name(), generic);
+        }
+
+        public KnownGenerics copy() {
+            return new KnownGenerics(new HashMap<>(this.generics));
+        }
+
+        public @Nullable Generic get(String name) {
+            return this.generics.get(name);
         }
     }
 }

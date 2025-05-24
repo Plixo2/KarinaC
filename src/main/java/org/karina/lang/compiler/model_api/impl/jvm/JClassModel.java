@@ -24,7 +24,7 @@ public class JClassModel implements ClassModel {
     private final int version;
     private final int modifiers;
     private final @Nullable KType.ClassType superClass;
-    private final @Nullable JClassModel outerClass;
+    private @Nullable JClassModel outerClass;
     private final ImmutableList<KType.ClassType> interfaces;
     private final List<JClassModel> innerClasses;
     private final List<JFieldModel> fields;
@@ -34,8 +34,6 @@ public class JClassModel implements ClassModel {
     private final ImmutableList<ClassPointer> nestMembers;
     private final TextSource resource;
     private final Region region;
-    @Getter
-    private final ClassNode classNode;
 
     public int version() {
         return this.version;
@@ -111,6 +109,10 @@ public class JClassModel implements ClassModel {
     public ClassPointer pointer() {
         //OK
         return ClassPointer.of(this.region, this.path);
+    }
+
+    public void setOuterClass(@Nullable JClassModel outerClass) {
+        this.outerClass = outerClass;
     }
 
     @Override

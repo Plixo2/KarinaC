@@ -55,6 +55,7 @@ public class OpenSet {
     public record LoadedClass(String fileName, ClassNode node){
         public TextSource getSource() {
             var srcId = "jar:///" + this.fileName;
+            //TODO jar:file:/...!/...
             return new TextSource(new JavaResource(srcId), "");
         }
     }

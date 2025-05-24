@@ -16,8 +16,10 @@ public class LogFactory<T extends LogBuilder> {
         switch (log) {
             case FileLoadError error -> {
                 var fileError = builder.setTitle("File Handling");
-                var path = error.file().getAbsolutePath().replace("\\", "/");
-                fileError.append("File: file:///").append(path);
+                if (error.file() != null) {
+                    var path = error.file().getAbsolutePath().replace("\\", "/");
+                    fileError.append("File: file:///").append(path);
+                }
                 fileError.append("Type: ").append(error.errorMessage());
             }
             case Error.InvalidState(var region, var aClass, var expectedState) -> {
@@ -50,7 +52,7 @@ public class LogFactory<T extends LogBuilder> {
             }
             case Error.InternalException(var exception) -> {
                 var internalError = builder.setTitle("Internal Exception");
-                internalError.append("oh no, please report this issue. Anyway, here is the trace:");
+                internalError.append("oh no, please report this issue\n");
                 if (exception.getMessage() == null) {
                     internalError.append("<no message given>");
                 } else {
