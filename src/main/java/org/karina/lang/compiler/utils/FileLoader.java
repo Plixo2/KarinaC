@@ -28,11 +28,11 @@ public class FileLoader {
         return Files.readString(path, charset);
     }
 
-    private static List<String> loadUTF8File(File file) throws IOException {
+    private static String loadUTF8File(File file) throws IOException {
         testValidity(file);
         var path = file.getAbsoluteFile().toPath().normalize();
         var charset = StandardCharsets.UTF_8;
-        return Files.readAllLines(path, charset);
+        return Files.readString(path, charset);
     }
 
     private static void testValidity(File file) throws IOException {

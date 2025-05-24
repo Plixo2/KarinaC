@@ -22,7 +22,7 @@ public class ClassReader {
         var name = this.stream.readString();
         var path = this.stream.readObjectPath();
         var currentClass = ClassPointer.of(null, path);
-        var source = new TextSource(new JavaResource(this.stream.readString()), List.of());
+        var source = new TextSource(new JavaResource(this.stream.readString()), "");
         var version = this.stream.readInt();
         var modifiers = this.stream.readInt();
         var superClass = this.stream.readClassPointer(source);

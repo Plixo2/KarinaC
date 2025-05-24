@@ -1,8 +1,7 @@
 package org.karina.lang.compiler.utils;
 
-import java.util.List;
 
-public record TextSource(Resource resource, List<String> lines) {
+public record TextSource(Resource resource, String content) {
 
     public Region emptyRegion() {
         var start = new Region.Position(0, 0);

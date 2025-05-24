@@ -17,8 +17,7 @@ public class TextUnitParser {
 
     public TextUnitParser(TextSource source, String name, ObjectPath path) {
         var errorListener = new KarinaErrorListener(source, true);
-        var content = combineToString(source);
-        var inputStream = CharStreams.fromString(content);
+        var inputStream = CharStreams.fromString(source.content());
         var karinaLexer = new KarinaLexer(inputStream);
         karinaLexer.removeErrorListeners();
         karinaLexer.addErrorListener(errorListener);
@@ -35,14 +34,6 @@ public class TextUnitParser {
 
     public void visit(ModelBuilder builder) {
         this.visitor.visit(this.karinaParser.unit(), builder);
-    }
-
-    private String combineToString(TextSource source) {
-        var bobTheBuilder = new StringBuilder();
-        for (var line : source.lines()) {
-            bobTheBuilder.append(line).append("\n");
-        }
-        return bobTheBuilder.toString();
     }
 
 }
