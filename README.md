@@ -16,7 +16,7 @@
 
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
 ![Java Version](https://img.shields.io/badge/Java-21+-orange)
-![Karina Version](https://img.shields.io/badge/Karina-0.4v-8A2BE2)
+![Karina Version](https://img.shields.io/badge/Karina-0.5v-8A2BE2)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 
 <br>
@@ -41,7 +41,7 @@ After the installation, you can run the compiler from the command line:
 ```shell
 karina -v
 ```
-> Karina: v0.4 \
+> Karina: v0.5 \
 > Java: OpenJDK 64-Bit Server VM 23.0.2
 
 
@@ -174,8 +174,7 @@ by setting the correct logging types.
 E.g. `LogTypes.CHECK_TYPE` will get you a **very** detailed view of the type checking process.
 
 > [!NOTE]
-> This is the primary way to debug the compiler. 
-> 
+> This is the primary way to debug the compiler.
 > Be aware that this will generate a lot of output, when to many log types are enabled.
 
 ### javap
@@ -200,7 +199,7 @@ Delete the base.bin.gz file in the `resources` folder to force the compiler to r
 
 # Compiler architecture
 
-<details>
+<details open>
 
 <summary>Internals</summary>
 
@@ -232,6 +231,8 @@ Other important classes:
   - Responsible for loading precompiled classes
 - [model_api](src/main/java/org/karina/lang/compiler/model_api)
   - The API for the ClassModel. Represents all loaded classes and their fields, methods, etc
+- [stages](src/main/java/org/karina/lang/compiler/stages)
+  - All stages of the compiler. 
 
 </details>
 
