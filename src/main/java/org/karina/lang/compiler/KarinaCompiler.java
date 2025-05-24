@@ -30,10 +30,10 @@ import java.nio.file.Path;
  */
 
 public class KarinaCompiler {
-    public static final String VERSION = "v0.4";
+    public static final String VERSION = "v0.5";
 
     /// 16 bits for the version, 16 bits for the binary format
-    public static final int BINARY_VERSION = 4 << 16 | 0b1;
+    public static final int BINARY_VERSION = 5 << 16 | 0b1;
     public static final int BINARY_MAGIC_NUMBER = 20000411;
 
     /**
