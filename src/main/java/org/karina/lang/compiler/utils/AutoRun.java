@@ -47,8 +47,12 @@ public class AutoRun {
 
             ColorOut.begin(LogColor.RED)
                     .append(inner.getClass().getName())
+                    .append(" ")
                     .append(Objects.requireNonNullElse(inner.getMessage(), ""))
                     .out(System.out);
+
+            System.out.flush();
+            e.printStackTrace();
         }
     }
 

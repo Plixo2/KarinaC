@@ -57,7 +57,6 @@ public class StringInterpolation {
         return this;
     }
 
-
     public StringInterpolation appendExpression(Object obj) {
         this.sb.append(Console.toString(obj));
         return this;
