@@ -17,6 +17,7 @@
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
 ![Java Version](https://img.shields.io/badge/Java-21+-orange)
 ![Karina Version](https://img.shields.io/badge/Karina-0.5v-8A2BE2)
+![Visitors](https://visitor-badge.laobi.icu/badge?page_id=plixo.karinac)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)
