@@ -200,7 +200,7 @@ Gradle task `KARINA-BASE`.
 
 This will create a new  `karina_base.jar` file, located in [`src/main/resources`](src/main/resources)
 
-Delete the base.bin.gz file in the `resources` folder to force the compiler to rebuild the standard library.
+Delete the base.bin.gz file in the `resources` folder to force the compiler to rebuild the binary format, when in use.
 
 
 # Compiler architecture
