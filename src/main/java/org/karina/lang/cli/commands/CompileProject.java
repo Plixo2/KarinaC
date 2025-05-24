@@ -61,6 +61,7 @@ popd > /dev/null
         System.setProperty("karina.flight", Objects.requireNonNullElse(compileOption.flight, logFile));
         System.setProperty("karina.logging", Objects.requireNonNullElse(compileOption.logging, "basic"));
         System.setProperty("karina.console", Boolean.toString(compileOption.console));
+        System.setProperty("karina.binary", Boolean.toString(compileOption.binary));
 
 
         // "--run" is a flag to run the program after compiling

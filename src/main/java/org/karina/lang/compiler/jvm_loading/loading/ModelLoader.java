@@ -28,6 +28,19 @@ public class ModelLoader {
 
     public Model getJarModel() {
 
+        if (!System.getProperty("karina.binary", "false").equals("true")) {
+            if (System.getProperty("karina.cli", "false").equals("true")) {
+                ColorOut.begin(LogColor.WHITE)
+                        .append("not using binary format, use '-b'/'--binary' to enable it")
+                        .out(System.out);
+            } else {
+                ColorOut.begin(LogColor.WHITE)
+                        .append("not using binary format, set '-Dkarina.binary=true' to enable it")
+                        .out(System.out);
+            }
+            return modelFromResource(RESOURCE_LIBRARIES);
+        }
+
         if (binFileExist()) {
             ColorOut.begin(LogColor.WHITE)
                     .append("using cache '")

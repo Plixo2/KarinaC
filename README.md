@@ -143,6 +143,15 @@ Specifies the debug flight recorder file path. Defaults to `resources/flight.txt
 
 Enables/Disables the flight recorder output to the console. Defaults to `true`
 
+#### karina.binary
+> `karina.binary="<true/false>"`
+
+Enables/Disables the usage of a binary format for faster reading of precompiled classes. 
+Can improve the startup performance over 20 times, but untested and may cause issues. 
+Defaults to `false`
+
+
+
 #### karina.logging
 
 > `karina.logging="<none/basic/verbose/verbose_jvm>"`

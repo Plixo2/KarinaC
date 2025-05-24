@@ -34,6 +34,9 @@ Options:
         
     --console, -c
         Displays log messages in the console.
+    
+    --binary, -binary
+        Enable binary format for faster compilation.
         
 """;
 

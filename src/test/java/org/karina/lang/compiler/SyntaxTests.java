@@ -17,8 +17,13 @@ public class SyntaxTests {
 
     @Test
     public void testMain() throws IOException {
+        System.setProperty("karina.binary", "false");
+        Main.main(new String[]{"--test"});
+        System.setProperty("karina.binary", "true");
         Main.main(new String[]{"--test"});
     }
+
+
 
     @AfterAll
     public static void runMain()
@@ -42,13 +47,11 @@ public class SyntaxTests {
     @TestFactory
     List<DynamicTest> testValid() {
         return getDynamicTests("ok/", true);
-
     }
 
     @TestFactory
     List<DynamicTest> testFailing() {
         return getDynamicTests("fail/", false);
-
     }
 
     private static List<DynamicTest> getDynamicTests(String x, boolean expectedResult) {
