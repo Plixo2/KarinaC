@@ -56,6 +56,7 @@ popd > /dev/null
         System.setProperty("karina.source", projectStr);
         System.setProperty("karina.out", buildFile);
         System.setProperty("karina.classes", "true");
+        System.setProperty("karina.cli", "true");
 
         System.setProperty("karina.flight", Objects.requireNonNullElse(compileOption.flight, logFile));
         System.setProperty("karina.logging", Objects.requireNonNullElse(compileOption.logging, "basic"));

@@ -40,6 +40,13 @@ public class ModelLoader {
             Log.end("load-cache", "with " + binary.getClassCount() + " classes");
 
             return binary;
+        } else {
+            if (System.getProperty("karina.cli", "false").equals("true")) {
+                ColorOut.begin(LogColor.WHITE)
+                        .append("no cache found")
+                        .out(System.out);
+                return modelFromResource(RESOURCE_LIBRARIES);
+            }
         }
 
         return rebuildCache();
