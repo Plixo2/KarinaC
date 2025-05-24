@@ -25,7 +25,7 @@ public interface LogBuilder {
 
     private static void addMultiLineImpl(Region region, boolean annotate, List<StringBuilder> builder) {
 
-        var lines = region.source().lines();
+        var lines = region.source().content().lines().toList();
         if (lines.isEmpty()) {
             return;
         }
@@ -62,7 +62,7 @@ public interface LogBuilder {
             List<StringBuilder> builder)
     {
 
-        var lines = source.lines();
+        var lines = source.content().lines().toList();
         if (lines.isEmpty()) {
             return;
         }
