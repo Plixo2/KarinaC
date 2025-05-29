@@ -4,8 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
-import org.karina.lang.compiler.parser_api.Grammar;
-import org.karina.lang.compiler.parser_api.GrammarParser;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.FlightRecordCollection;
@@ -20,7 +18,6 @@ import org.karina.lang.compiler.stages.imports.ImportProcessor;
 import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.ParseProcessor;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 
@@ -77,13 +74,13 @@ public class KarinaCompiler {
 
         Log.begin("compilation");
         try {
-            try {
-                var source = FileLoader.loadUTF8("resources/grammar/language/KarinaParser.g4");
-                var parsed = GrammarParser.parse(c, source);
-            } catch (IOException e) {
-                Log.internal(c, e);
-                throw new Log.KarinaException();
-            }
+//            try {
+//                var source = FileLoader.loadUTF8("resources/grammar/language/KarinaParser.g4");
+//                var parsed = GrammarParser.parse(c, source);
+//            } catch (IOException e) {
+//                Log.internal(c, e);
+//                throw new Log.KarinaException();
+//            }
 
 
             Model bytecodeClasses;
