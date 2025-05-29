@@ -36,7 +36,7 @@ public class BinaryAttrib {
         right = result.right();
 
         if (op == null) {
-            Log.attribError(new AttribError.NotSupportedOperator(expr.operator(), left.type(), right.type()));
+            Log.error(ctx, new AttribError.NotSupportedOperator(expr.operator(), left.type(), right.type()));
             throw new Log.KarinaException();
         }
 
@@ -71,15 +71,15 @@ public class BinaryAttrib {
         }
 
         if (!(leftType instanceof KType.PrimitiveType(KType.KPrimitive primitive))) {
-            Log.attribError(new AttribError.NotSupportedOperator(operator, leftType, rightType));
+            Log.error(ctx, new AttribError.NotSupportedOperator(operator, leftType, rightType));
             throw new Log.KarinaException();
         }
         if (!(rightType instanceof KType.PrimitiveType(KType.KPrimitive primitive1))) {
-            Log.attribError(new AttribError.NotSupportedOperator(operator, leftType, rightType));
+            Log.error(ctx, new AttribError.NotSupportedOperator(operator, leftType, rightType));
             throw new Log.KarinaException();
         }
         if (primitive != primitive1) {
-            Log.attribError(new AttribError.TypeMismatch(region, leftType, rightType));
+            Log.error(ctx, new AttribError.TypeMismatch(region, leftType, rightType));
             throw new Log.KarinaException();
         }
         val op = switch (primitive) {
@@ -89,7 +89,7 @@ public class BinaryAttrib {
             case DOUBLE -> BinOperatorSymbol.DoubleOP.fromOperator(operator);
             case LONG -> BinOperatorSymbol.LongOP.fromOperator(operator);
             case CHAR, SHORT, BYTE -> {
-                Log.temp(operator.region(), "Binary for " + primitive + " not yet implemented");
+                Log.temp(ctx, operator.region(), "Binary for " + primitive + " not yet implemented");
                 throw new Log.KarinaException();
             }
         };
@@ -134,11 +134,8 @@ public class BinaryAttrib {
                  KType.GenericLink _ -> true;
 
             case KType.PrimitiveType _,
+                 KType.UnprocessedType _,
                  KType.VoidType _ -> false;
-            case KType.UnprocessedType unprocessedType -> {
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
-                throw new Log.KarinaException();
-            }
         };
     }
 

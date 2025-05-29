@@ -2,14 +2,12 @@ package org.karina.lang.compiler.stages.lower.special;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
-import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.MutableModel;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
-import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.lower.LowerExpr;
@@ -17,7 +15,6 @@ import org.karina.lang.compiler.stages.lower.LoweringContext;
 import org.karina.lang.compiler.stages.lower.LoweringItem;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionItem;
 import org.karina.lang.compiler.utils.symbols.CallSymbol;
 import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
@@ -127,12 +124,17 @@ public class LowerClosure {
         if (self != null) {
             this.captures.add(self);
         }
-        if (this.interfaces.isEmpty()) {
-            Log.temp(this.region, "Closure has no primary interface");
-            throw new Log.KarinaException();
-        }
 
     }
+
+    public KExpr lower(LoweringContext ctx) {
+        if (this.interfaces.isEmpty()) {
+            Log.temp(ctx, this.region, "Closure has no primary interface");
+            throw new Log.KarinaException();
+        }
+        return createInstance(ctx);
+    }
+
 
     private ClassModel createClassModel(LoweringContext ctx) {
         var primary = this.interfaces.getFirst();
@@ -141,7 +143,7 @@ public class LowerClosure {
         var path = ctx.definitionClass().path().append(name);
         var classPointer = ClassPointer.of(this.region, path);
         if (!(ctx.owningClass() instanceof KClassModel outerClass)) {
-            Log.temp(this.region, "Closure outer class is not a class model");
+            Log.temp(ctx, this.region, "Closure outer class is not a class model");
             throw new Log.KarinaException();
         }
 
@@ -151,7 +153,7 @@ public class LowerClosure {
             if (anInterface instanceof KType.ClassType classType) {
                 interfacesAsClasses.add(classType);
             } else {
-                Log.temp(this.region, "Closure interface is not a class type");
+                Log.temp(ctx, this.region, "Closure interface is not a class type");
                 throw new Log.KarinaException();
             }
         }
@@ -195,7 +197,7 @@ public class LowerClosure {
         var prev = ctx.newClasses().insert(classModel.path(), classModel);
 
         if (prev != null) {
-            Log.temp(this.region, "Closure class already exists");
+            Log.temp(ctx, this.region, "Closure class already exists");
             throw new Log.KarinaException();
         }
 
@@ -204,32 +206,21 @@ public class LowerClosure {
         }
         var constructor = createDefaultConstructor(classPointer, fields, Modifier.PUBLIC);
 
-        var newModel = new MutableModel(ctx.model(), ctx.newClasses());
-        var attribConstructor = AttributionItem.attribMethod(newModel, classModel, StaticImportTable.EMPTY, constructor);
+        var newModel = new MutableModel(ctx.model(), ctx.intoContext(), ctx.newClasses());
+        var attribConstructor = AttributionItem.attribMethod(ctx.intoContext(), newModel, classModel, StaticImportTable.EMPTY, constructor);
 
         methods.add(attribConstructor);
 
         Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
-        methods.addAll(LoweringItem.createBridgeMethods(newModel, classModel));
+        methods.addAll(LoweringItem.createBridgeMethods(ctx.intoContext(), newModel, classModel));
         Log.endType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
 
         return classModel;
     }
 
-    public static MethodHelper.MethodToImplement getMethodToImplement(Region region, Model model, KType.ClassType classType) {
-        var method = MethodHelper.getMethodsToImplementForClass(model, classType);
-        if (method.isEmpty()) {
-            Log.temp(region, "Closure class has no method to implement, this should not happen");
-            throw new Log.KarinaException();
-        } else if (method.size() > 1) {
-            Log.temp(region, "Closure class has more than one method to implement, this should not happen");
-            throw new Log.KarinaException();
-        }
-        return method.getFirst();
-    }
 
     private KMethodModel createMethodModel(LoweringContext ctx, KType.ClassType currentInterfaceToImplement, ClassPointer outer, ClassModel outerClass) {
-        var toImplement = getMethodToImplement(this.region, ctx.model(), currentInterfaceToImplement);
+        var toImplement = ClosureHelper.getMethodToImplement(ctx.intoContext(), this.region, ctx.model(), currentInterfaceToImplement);
         var methodModel = ctx.model().getMethod(toImplement.originalMethodPointer());
 
         var name = toImplement.name();
@@ -276,6 +267,7 @@ public class LowerClosure {
                 ctx.newClasses(),
                 ctx.syntheticCounter(),
                 ctx.model(),
+                ctx.intoContext(),
                 ctx.definitionMethod(),
                 createdMethodModel,
                 ctx.definitionClass(),
@@ -376,7 +368,7 @@ public class LowerClosure {
 
 
         if (!classModel.generics().isEmpty()) {
-            Log.temp(this.region, "Closure class has generics");
+            Log.temp(ctx, this.region, "Closure class has generics");
             throw new Log.KarinaException();
         }
 
@@ -387,7 +379,7 @@ public class LowerClosure {
         );
         var inits = classModel.getMethodCollectionShallow("<init>");
         if (inits.isEmpty()) {
-            Log.temp(this.region, "Closure class has no inits");
+            Log.temp(ctx, this.region, "Closure class has no inits");
             throw new Log.KarinaException();
         }
         var symbol = new CallSymbol.CallSuper(
@@ -413,9 +405,6 @@ public class LowerClosure {
         return exprs;
     }
 
-    public KExpr lower(LoweringContext ctx) {
-        return createInstance(ctx);
-    }
 
     private void putAllClassesDeep(List<? extends ClassModel> children, Set<KClassModel> collection) {
         for (var child : children) {
@@ -425,4 +414,6 @@ public class LowerClosure {
             putAllClassesDeep(child.innerClasses(), collection);
         }
     }
+
+
 }

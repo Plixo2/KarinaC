@@ -36,6 +36,7 @@ public class ClosureAttrib  {
 
         var bodyContext = new AttributionContext(
                 ctx.model(),
+                ctx.c(),
                 ctx.selfVariable(),
                 false,
                 null, //we get rid of the owning method here
@@ -56,7 +57,7 @@ public class ClosureAttrib  {
         for (var newArg : newArgs) {
             assert newArg.symbol() != null;
             if (newArg.type() != null && newArg.type().isVoid()) {
-                Log.attribError(new AttribError.NotSupportedType(newArg.region(), newArg.type()));
+                Log.error(ctx, new AttribError.NotSupportedType(newArg.region(), newArg.type()));
                 throw new Log.KarinaException();
             }
             if (newArg.symbol().name().equals("_")) {
@@ -103,18 +104,18 @@ public class ClosureAttrib  {
             Log.beginType(Log.LogTypes.CLOSURE, "Checking annotated interface");
             if (!(anInterface instanceof KType.ClassType classType)) {
                 Log.record("Impl is not a class");
-                Log.attribError(new AttribError.NotAClass(region, anInterface));
+                Log.error(ctx, new AttribError.NotAClass(region, anInterface));
                 throw new Log.KarinaException();
             }
             var model = ctx.model().getClass(classType.pointer());
             if (!Modifier.isInterface(model.modifiers())) {
                 Log.record("Impl is not a interface");
-                Log.attribError(new AttribError.NotAInterface(region, classType));
+                Log.error(ctx, new AttribError.NotAInterface(region, classType));
                 throw new Log.KarinaException();
             }
             if (!ClosureHelper.canUseInterface(region, ctx, args, returnType, classType)) {
                 Log.record("Impl is not a matching interface");
-                Log.attribError(new AttribError.NotAValidInterface(region, args, returnType, classType));
+                Log.error(ctx, new AttribError.NotAValidInterface(region, args, returnType, classType));
                 throw new Log.KarinaException();
             }
             Log.endType(Log.LogTypes.CLOSURE, "Checking annotated interface");
@@ -123,7 +124,7 @@ public class ClosureAttrib  {
             var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
             if (alreadyAdded) {
                 Log.record("Interface already added");
-                Log.attribError(new AttribError.DuplicateInterface(region, classType));
+                Log.error(ctx, new AttribError.DuplicateInterface(region, classType));
                 throw new Log.KarinaException();
             }
 
@@ -147,7 +148,7 @@ public class ClosureAttrib  {
         var doesReturn = !returnType.isVoid();
         var primaryInterface = KType.FUNCTION_BASE(ctx.model(), args.size(), doesReturn);
         if (primaryInterface == null) {
-            Log.temp(region, "Cannot find default interface for " + args.size() + " arguments and return type " + returnType);
+            Log.temp(ctx, region, "Cannot find default interface for " + args.size() + " arguments and return type " + returnType);
             throw new Log.KarinaException();
         }
         {
@@ -155,7 +156,7 @@ public class ClosureAttrib  {
 
             var model = ctx.model().getClass(primaryInterface);
             if (model.generics().size() != totalGenerics) {
-                Log.temp(region, "Expected " + totalGenerics + " generics, but got " + model.generics().size());
+                Log.temp(ctx, region, "Expected " + totalGenerics + " generics, but got " + model.generics().size());
                 throw new Log.KarinaException();
             }
 
@@ -211,7 +212,7 @@ public class ClosureAttrib  {
     private static void checkForPreexistingVariable(AttributionContext ctx, RegionOf<String> argument) {
         var name = argument.value();
         if(ctx.variables().contains(name)) {
-            Log.attribError(new AttribError.DuplicateVariable(
+            Log.error(ctx, new AttribError.DuplicateVariable(
                     Objects.requireNonNull(ctx.variables().get(name)).region(),
                     argument.region(), name
             ));

@@ -3,6 +3,7 @@ package org.karina.lang.compiler.utils;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 
@@ -38,13 +39,13 @@ public class ClosureHelper {
             var mappedParam = mappedParameters.get(i);
             var type = types.get(i);
 
-            if (!ctx.checking().canAssign(region, mappedParam, type, true)) {
+            if (!ctx.checking().canAssign(ctx, region, mappedParam, type, true)) {
                 Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i,mappedParam, "from", type);
                 return false;
             }
         }
 
-        var returnMatch = ctx.checking().canAssign(region, returnType, methodReturnType, true);
+        var returnMatch = ctx.checking().canAssign(ctx, region, returnType, methodReturnType, true);
         Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);
         return returnMatch;
     }
@@ -67,7 +68,7 @@ public class ClosureHelper {
             return null;
         }
 
-        var method = MethodHelper.getMethodsToImplementForClass(ctx.model(), toCheck);
+        var method = MethodHelper.getMethodsToImplementForClass(ctx.intoContext(), ctx.model(), toCheck);
 
         if (method.size() > 1) {
             return null;
@@ -241,8 +242,19 @@ public class ClosureHelper {
 
         return new ArgsAndReturnType(newArgs, returnType);
     }
-    
 
+
+    public static MethodHelper.MethodToImplement getMethodToImplement(Context c, Region region, Model model, KType.ClassType classType) {
+        var method = MethodHelper.getMethodsToImplementForClass(c, model, classType);
+        if (method.isEmpty()) {
+            Log.temp(c, region, "Closure class has no method to implement, this should not happen");
+            throw new Log.KarinaException();
+        } else if (method.size() > 1) {
+            Log.temp(c, region, "Closure class has more than one method to implement, this should not happen");
+            throw new Log.KarinaException();
+        }
+        return method.getFirst();
+    }
 
     public record ParamsAndReturn(List<KType> params, @Nullable KType returnType) {}
     public record ArgsAndReturnType(List<NameAndOptType> args, KType returnType) {}

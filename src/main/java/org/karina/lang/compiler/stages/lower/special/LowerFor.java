@@ -73,14 +73,14 @@ public class LowerFor {
         assert this.aFor.symbol() != null;
         switch (this.aFor.symbol()) {
             case IteratorTypeSymbol.ForArray _ -> {
-                Log.temp(this.aFor.region(), "ForArray is not supported yet");
+                Log.temp(ctx, this.aFor.region(), "ForArray is not supported yet");
                 throw new Log.KarinaException();
             }
             case IteratorTypeSymbol.ForIterable _ -> {
                 return lowerIterator(ctx);
             }
             case IteratorTypeSymbol.ForRange _ -> {
-                Log.temp(this.aFor.region(), "ForRange is not supported yet");
+                Log.temp(ctx, this.aFor.region(), "ForRange is not supported yet");
                 throw new Log.KarinaException();
             }
         }

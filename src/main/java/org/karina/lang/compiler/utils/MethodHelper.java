@@ -14,15 +14,15 @@ public class MethodHelper {
     /**
      * @return a list of methods that have not been implemented for a given class
      */
-    public static List<MethodToImplement> getMethodsToImplementForClass(Model model, KType.ClassType classType) {
-        return getMethodsToImplementForClass(model, classType, true, true);
+    public static List<MethodToImplement> getMethodsToImplementForClass(Context c, Model model, KType.ClassType classType) {
+        return getMethodsToImplementForClass(c, model, classType, true, true);
     }
 
     /**
      * @return a list of methods that have been implemented for a given class, for bridge method generation
      */
-    public static List<MethodToImplement> getMethodForBridgeConstruction(Model model, KType.ClassType classType) {
-        return getMethodsToImplementForClass(model, classType , true, false);
+    public static List<MethodToImplement> getMethodForBridgeConstruction(Context c, Model model, KType.ClassType classType) {
+        return getMethodsToImplementForClass(c, model, classType , true, false);
     }
 
     /**
@@ -50,7 +50,7 @@ public class MethodHelper {
     }
 
     //TODO what if a abstract methods defines generics types with bounds???
-    private static List<MethodToImplement> getMethodsToImplementForClass(Model model, KType.ClassType classType, boolean first, boolean removeImplementedOnFirst) {
+    private static List<MethodToImplement> getMethodsToImplementForClass(Context c, Model model, KType.ClassType classType, boolean first, boolean removeImplementedOnFirst) {
 
         var currentClassModel = model.getClass(classType.pointer());
         if (!Modifier.isAbstract(currentClassModel.modifiers()) && !first) {
@@ -59,7 +59,7 @@ public class MethodHelper {
 
         var mapped = new HashMap<Generic, KType>();
         if (currentClassModel.generics().size() != classType.generics().size()) {
-            Log.temp(currentClassModel.region(), "Class generic count mismatch");
+            Log.temp(c, currentClassModel.region(), "Class generic count mismatch");
             throw new Log.KarinaException();
         }
         //this maps the class fieldType generics
@@ -97,14 +97,14 @@ public class MethodHelper {
         }
 
         var superMethods = new ArrayList<MethodToImplement>();
-        var superClass = Types.getSuperType(model, classType);
+        var superClass = Types.getSuperType(c, model, classType);
         if (superClass != null) {
-            superMethods.addAll(getMethodsToImplementForClass(model, superClass, false, removeImplementedOnFirst));
+            superMethods.addAll(getMethodsToImplementForClass(c, model, superClass, false, removeImplementedOnFirst));
         }
 
-        var interfaces = Types.getInterfaces(model, classType);
+        var interfaces = Types.getInterfaces(c, model, classType);
         for (var anInterface : interfaces) {
-            superMethods.addAll(getMethodsToImplementForClass(model, anInterface, false, removeImplementedOnFirst));
+            superMethods.addAll(getMethodsToImplementForClass(c, model, anInterface, false, removeImplementedOnFirst));
         }
 
         //only add methods, that are not implemented in the current class

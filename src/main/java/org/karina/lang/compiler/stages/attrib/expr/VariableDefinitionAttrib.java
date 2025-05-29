@@ -22,7 +22,7 @@ public class VariableDefinitionAttrib  {
         if (varType == null) {
             varType = valueExpr.type();
             if (varType.isVoid()) {
-                Log.attribError(new AttribError.NotSupportedType(expr.region(), varType));
+                Log.error(ctx, new AttribError.NotSupportedType(expr.region(), varType));
                 throw new Log.KarinaException();
             }
         } else {
@@ -30,7 +30,7 @@ public class VariableDefinitionAttrib  {
         }
 
         if (valueExpr.type().isVoid()) {
-            Log.attribError(new AttribError.NotSupportedType(expr.region(), valueExpr.type()));
+            Log.error(ctx, new AttribError.NotSupportedType(expr.region(), valueExpr.type()));
             throw new Log.KarinaException();
         }
 

@@ -9,17 +9,12 @@ import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.utils.KAnnotation;
-import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.KarinaAnnotationVisitor;
 import org.karina.lang.compiler.stages.parser.visitor.KarinaExprVisitor;
 import org.karina.lang.compiler.stages.parser.visitor.KarinaTypeVisitor;
-import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.ObjectPath;
-import org.karina.lang.compiler.utils.RegionOf;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -29,23 +24,26 @@ public class KarinaUnitVisitor {
     private final String name;
     private final ObjectPath path;
     private final RegionContext conv;
+    private final Context c;
 
-    KarinaStructVisitor structVisitor;
-    KarinaInterfaceVisitor interfaceVisitor;
-    KarinaEnumVisitor enumVisitor;
-    KarinaMethodVisitor methodVisitor;
-    KarinaTypeVisitor typeVisitor;
-    KarinaExprVisitor exprVisitor;
-    KarinaAnnotationVisitor annotationVisitor;
+    final KarinaStructVisitor structVisitor;
+    final KarinaInterfaceVisitor interfaceVisitor;
+    final KarinaEnumVisitor enumVisitor;
+    final KarinaMethodVisitor methodVisitor;
+    final KarinaTypeVisitor typeVisitor;
+    final KarinaExprVisitor exprVisitor;
+    final KarinaAnnotationVisitor annotationVisitor;
 
-    public KarinaUnitVisitor(RegionContext regionContext, String name, ObjectPath path) {
+    public KarinaUnitVisitor(Context c, RegionContext regionContext, String name, ObjectPath path) {
         this.name = name;
         this.path = path;
         this.conv = regionContext;
+        this.c = c;
 
+        // Initialize visitors to link them together
         this.typeVisitor = new KarinaTypeVisitor(this, regionContext);
         this.exprVisitor = new KarinaExprVisitor(this, this.typeVisitor, regionContext);
-        this.annotationVisitor = new KarinaAnnotationVisitor(regionContext, this.typeVisitor, this.exprVisitor);
+        this.annotationVisitor = new KarinaAnnotationVisitor(this, regionContext, this.typeVisitor, this.exprVisitor);
         this.structVisitor = new KarinaStructVisitor(this, regionContext);
         this.interfaceVisitor = new KarinaInterfaceVisitor(this, regionContext);
         this.enumVisitor = new KarinaEnumVisitor(this, regionContext);
@@ -134,7 +132,7 @@ public class KarinaUnitVisitor {
                 var interface_ = this.interfaceVisitor.visit(classModel, this.path, kAnnotations, itemContext.interface_(), builder);
                 innerClassesToFill.add(interface_);
             } else if (itemContext.function() == null) {
-                Log.syntaxError(this.conv.toRegion(itemContext), "Invalid item");
+                Log.syntaxError(this.c, this.conv.toRegion(itemContext), "Invalid item");
                 throw new Log.KarinaException();
             }
         }
@@ -150,7 +148,7 @@ public class KarinaUnitVisitor {
             deepInnerClass.updateNestMembers(nestMembersToFill);
         }
 
-        builder.addClass(classModel);
+        builder.addClass(c, classModel);
 
         return classModel.pointer();
     }
@@ -220,7 +218,7 @@ public class KarinaUnitVisitor {
             var mapped = this.typeVisitor.visitType(ref);
             if (mapped.isVoid() || mapped.isPrimitive()) {
                 var innerRegion = this.conv.toRegion(ref);
-                Log.attribError(new AttribError.NotSupportedType(innerRegion, mapped));
+                Log.error(context(), new AttribError.NotSupportedType(innerRegion, mapped));
                 throw new Log.KarinaException();
             }
             return mapped;
@@ -236,4 +234,7 @@ public class KarinaUnitVisitor {
         }).toList();
     }
 
+    public Context context() {
+        return this.c;
+    }
 }

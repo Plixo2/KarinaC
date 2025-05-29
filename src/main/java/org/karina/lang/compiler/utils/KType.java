@@ -169,43 +169,43 @@ public sealed interface KType {
     }
 
 
-    static void validateBuildIns(Model model) {
-        validatePointer(model, ROOT);
-        validatePointer(model, NUMBER);
-        validatePointer(model, STRING);
-        validatePointer(model, ITERABLE(ROOT));
-        validatePointer(model, ITERATOR(ROOT));
-        validatePointer(model, CLASS_TYPE(ROOT));
-        validatePointer(model, THROWABLE);
-        validatePointer(model, MATCH_EXCEPTION);
+    static void validateBuildIns(Context c, Model model) {
+        validatePointer(c, model, ROOT);
+        validatePointer(c, model, NUMBER);
+        validatePointer(c, model, STRING);
+        validatePointer(c, model, ITERABLE(ROOT));
+        validatePointer(c, model, ITERATOR(ROOT));
+        validatePointer(c, model, CLASS_TYPE(ROOT));
+        validatePointer(c, model, THROWABLE);
+        validatePointer(c, model, MATCH_EXCEPTION);
 
-        validatePointer(model, BOOLEAN_CLASS);
-        validatePointer(model, CHARACTER_CLASS);
-        validatePointer(model, INTEGER_CLASS);
-        validatePointer(model, LONG_CLASS);
-        validatePointer(model, FLOAT_CLASS);
-        validatePointer(model, DOUBLE_CLASS);
+        validatePointer(c, model, BOOLEAN_CLASS);
+        validatePointer(c, model, CHARACTER_CLASS);
+        validatePointer(c, model, INTEGER_CLASS);
+        validatePointer(c, model, LONG_CLASS);
+        validatePointer(c, model, FLOAT_CLASS);
+        validatePointer(c, model, DOUBLE_CLASS);
 
-        validatePointer(model, KARINA_RANGE);
-        validatePointer(model, STRING_INTERPOLATION);
-        validatePointer(model, KARINA_OPTION(ROOT));
-        validatePointer(model, KARINA_OPTION_SOME(ROOT));
-        validatePointer(model, KARINA_OPTION_NONE(ROOT));
-        validatePointer(model, KARINA_RESULT(ROOT, ROOT));
-        validatePointer(model, KARINA_RESULT_ERR(ROOT, ROOT));
-        validatePointer(model, KARINA_RESULT_OK(ROOT, ROOT));
+        validatePointer(c,model, KARINA_RANGE);
+        validatePointer(c,model, STRING_INTERPOLATION);
+        validatePointer(c,model, KARINA_OPTION(ROOT));
+        validatePointer(c,model, KARINA_OPTION_SOME(ROOT));
+        validatePointer(c,model, KARINA_OPTION_NONE(ROOT));
+        validatePointer(c,model, KARINA_RESULT(ROOT, ROOT));
+        validatePointer(c,model, KARINA_RESULT_ERR(ROOT, ROOT));
+        validatePointer(c,model, KARINA_RESULT_OK(ROOT, ROOT));
     }
 
-    private static void validatePointer(Model model, ClassType classType) {
+    private static void validatePointer(Context c, Model model, ClassType classType) {
         var classPointer = model.getClassPointer(classType.pointer().region(), classType.pointer().path());
 
         if (classPointer == null) {
-            Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class not found");
+            Log.bytecode(c, classType.pointer().region(), classType.toString(), "Build-in class not found");
             throw new Log.KarinaException();
         }
         var classModel = model.getClass(classPointer);
         if (classModel.generics().size() != classType.generics().size()) {
-            Log.bytecode(classType.pointer().region(), classType.toString(), "Build-in class has wrong number of generics");
+            Log.bytecode(c, classType.pointer().region(), classType.toString(), "Build-in class has wrong number of generics");
             throw new Log.KarinaException();
         }
     }
@@ -368,7 +368,7 @@ public sealed interface KType {
         /**
          * Make sure to call this before calling {@link #tryResolve}. Otherwise there might be cycles.
          */
-        public boolean canResolve(Region checkingRegion, KType resolved) {
+        public boolean canResolve(IntoContext c, Region checkingRegion, KType resolved) {
             //TODO this?
             resolved = resolved.unpack();
             /*
@@ -426,7 +426,7 @@ public sealed interface KType {
             }
             var from = "while trying to assign " + this + " to " + resolved;
             var msg = "Lazy Type cycle: " + readable + " (" + from + ")";
-            Log.attribError(new AttribError.TypeCycle(checkingRegion, msg, graph));
+            Log.error(c, new AttribError.TypeCycle(checkingRegion, msg, graph));
             throw new Log.KarinaException();
         }
 
@@ -437,11 +437,11 @@ public sealed interface KType {
          * Checking a resolvable against itself will return true.
          * Test with {@link #isResolved} to be sure if it was resolved after calling this method.
          */
-        public void tryResolve(Region region, KType resolved) {
+        public void tryResolve(IntoContext c, Region region, KType resolved) {
             resolved = resolved.unpack();
 
             if (this.resolved != null) {
-                Log.temp(region, "Type already resolved");
+                Log.temp(c, region, "Type already resolved");
                 throw new Log.KarinaException();
             }
 

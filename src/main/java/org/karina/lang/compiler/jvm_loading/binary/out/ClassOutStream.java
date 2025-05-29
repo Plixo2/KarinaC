@@ -106,8 +106,7 @@ public class ClassOutStream {
                 throw new IOException("Resolvable fieldType should not be written to binary");
             }
             case KType.UnprocessedType unprocessedType -> {
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
-                throw new Log.KarinaException();
+                throw new IOException("Unprocessed fieldType should not be written to binary");
             }
             case KType.VoidType voidType -> {
                 writeByte(14);

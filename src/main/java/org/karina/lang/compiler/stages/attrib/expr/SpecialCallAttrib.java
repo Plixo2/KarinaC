@@ -27,20 +27,20 @@ public class SpecialCallAttrib {
                 //check if specialInvoke.superType() is a supertype or interface
                 var methodModel = ctx.owningMethod();
                 if (methodModel == null || Modifier.isStatic(methodModel.modifiers())) {
-                    Log.attribError(new AttribError.UnqualifiedSelf(
+                    Log.error(ctx, new AttribError.UnqualifiedSelf(
                             expr.region(), expr.region()
                     ));
                     throw new Log.KarinaException();
                 }
                 if (!(specialInvoke.superType() instanceof KType.ClassType classType)) {
-                    Log.attribError(new AttribError.NotAClass(
+                    Log.error(ctx, new AttribError.NotAClass(
                             expr.region(), specialInvoke.superType()
                     ));
                     throw new Log.KarinaException();
                 }
 
                 if (!Types.isSuperTypeOrInterface(ctx.model(), ctx.owningClass(), classType.pointer())) {
-                    Log.attribError(new AttribError.NotSupportedType(expr.region(), classType));
+                    Log.error(ctx, new AttribError.NotSupportedType(expr.region(), classType));
                     throw new Log.KarinaException();
                 }
             }

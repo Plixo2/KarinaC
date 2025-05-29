@@ -7,13 +7,10 @@ import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.jvm.JFieldModel;
 import org.karina.lang.compiler.model_api.impl.jvm.JMethodModel;
-import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.compiler.utils.TextSource;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.jvm_loading.JavaResource;
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.utils.Generic;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.IOException;
@@ -36,7 +33,7 @@ public class ClassReader {
         this.currentGenerics = new ClassInStream.KnownGenerics();
     }
 
-    public JClassModel read(ModelReader.TTYL ttyl, ModelBuilder builder) throws IOException {
+    public JClassModel read(Context c, ModelReader.TTYL ttyl, ModelBuilder builder) throws IOException {
 
         var startCheck = this.stream.readInt();
         if (startCheck != 768928090) {
@@ -75,7 +72,7 @@ public class ClassReader {
         var innerClassCount = this.stream.readInt();
         for (int i = 0; i < innerClassCount; i++) {
             var inner = new ClassReader(this.stream, this.currentGenerics.copy());
-            innerClasses.add(inner.read(ttyl, builder));
+            innerClasses.add(inner.read(c, ttyl, builder));
         }
 
         var fieldCount = this.stream.readInt();
@@ -136,7 +133,7 @@ public class ClassReader {
                 region
         );
         synchronized (builder) {
-            builder.addClass(model);
+            builder.addClass(c, model);
         }
         if (outerClassPtr != null) {
             ttyl.add(m -> {

@@ -9,17 +9,17 @@ commaWordChain: id (',' id)*;
 
 item: annotation* (function | struct | enum | interface | const);
 
-function: OVERRIDE? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
+function: 'override'? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
 const: 'const' id ':' type '=' expression ';'?;
 
-//boundWhere is not yet implemented
+//TODO implement boundWhere
 struct: 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;
 implementation: 'impl' structType ('{' function* '}')?;
 boundWhere : 'where' (('{' genericWithBounds '}') | genericWithBounds) ('{' function* '}');
 genericWithBounds: (genericWithBound (',' genericWithBound)*)?;
 
-genericWithBound: ID bounds?;
+genericWithBound: id bounds?;
 bounds: ':' (bound ('&' bound)*)?;
 bound: ('impl' structType | 'extend' structType);
 

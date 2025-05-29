@@ -21,12 +21,12 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KarinaStructVisitor {
+public class KarinaStructVisitor implements IntoContext {
     private final RegionContext context;
-    private final KarinaUnitVisitor base;
+    private final KarinaUnitVisitor visitor;
 
-    public KarinaStructVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
-        this.base = base;
+    public KarinaStructVisitor(KarinaUnitVisitor visitor, RegionContext regionContext) {
+        this.visitor = visitor;
         this.context = regionContext;
     }
 
@@ -55,7 +55,7 @@ public class KarinaStructVisitor {
             } else if (superAnnotation.superType() instanceof KType.ClassType superType) {
                 superClass = superType;
             } else {
-                Log.temp(superAnnotation.region(), "Invalid super fieldType");
+                Log.temp(this, superAnnotation.region(), "Invalid super fieldType");
                 throw new Log.KarinaException();
             }
         }
@@ -67,13 +67,13 @@ public class KarinaStructVisitor {
 
         for (var implCtx : ctx.implementation()) {
             //pointer have to be validated in the import stage
-            var structType = this.base.typeVisitor.visitStructType(implCtx.structType());
+            var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
             var clsType = new KType.ClassType(classPointer, structType.generics());
             interfaces.add(clsType);
 
             for (var functionContext : implCtx.function()) {
-                methods.add(this.base.methodVisitor.visit(
+                methods.add(this.visitor.methodVisitor.visit(
                         currentClass, ImmutableList.of(),
                         functionContext
                 ));
@@ -82,7 +82,7 @@ public class KarinaStructVisitor {
 
         boolean containsConstructor = false;
         for (var functionContext : ctx.function()) {
-            var methodModel = this.base.methodVisitor.visit(
+            var methodModel = this.visitor.methodVisitor.visit(
                     currentClass,
                     ImmutableList.of(),
                     functionContext
@@ -108,7 +108,7 @@ public class KarinaStructVisitor {
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
-            generics = ImmutableList.copyOf(this.base.visitGenericHintDefinition(ctx.genericHintDefinition()));
+            generics = ImmutableList.copyOf(this.visitor.visitGenericHintDefinition(ctx.genericHintDefinition()));
         }
 
         var imports = ImmutableList.<KImport>of();
@@ -136,7 +136,7 @@ public class KarinaStructVisitor {
                 region,
                 null
         );
-        modelBuilder.addClass(newModel);
+        modelBuilder.addClass(this, newModel);
 
         return newModel;
     }
@@ -145,7 +145,7 @@ public class KarinaStructVisitor {
 
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
-        var type = this.base.typeVisitor.visitType(ctx.type());
+        var type = this.visitor.typeVisitor.visitType(ctx.type());
         int mods;
         if (ctx.MUT() != null) {
             mods = 0;
@@ -221,16 +221,16 @@ public class KarinaStructVisitor {
         for (var annotation : annotations) {
             if (annotation.name().equals("Super")) {
                 if (superAnnotation != null) {
-                    Log.temp(annotation.region(), "Duplicate 'Super' annotation");
+                    Log.temp(this, annotation.region(), "Duplicate 'Super' annotation");
                     throw new Log.KarinaException();
                 }
                 superAnnotation = annotation;
             } else {
-                Log.warn(annotation.region(), "Unexpected annotation: " + annotation.name());
+                Log.warn(this, annotation.region(), "Unexpected annotation: " + annotation.name());
             }
         }
         if (superAnnotation != null) {
-            return SuperAnnotation.fromAnnotation(superAnnotation.value());
+            return SuperAnnotation.fromAnnotation(this.intoContext(), superAnnotation.value());
         } else {
             return null;
         }
@@ -238,4 +238,8 @@ public class KarinaStructVisitor {
     }
 
 
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
+    }
 }

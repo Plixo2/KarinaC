@@ -9,11 +9,7 @@ import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Signature;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.utils.Prelude;
-import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.*;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -24,9 +20,9 @@ public class ImportItem {
 
 
 
-    public static KClassModel importClass(KClassModel classModel, @Nullable KClassModel outerClass, ImportTable ctx, Prelude prelude, ModelBuilder modelBuilder) {
+    public static KClassModel importClass(Context c, KClassModel classModel, @Nullable KClassModel outerClass, ImportTable ctx, ModelBuilder modelBuilder) {
 
-        ImportHelper.testName(classModel.region(), classModel.name());
+        ImportHelper.testName(c, classModel.region(), classModel.name());
 
         var context = ctx;
         //remove generics for static inner classes
@@ -62,10 +58,10 @@ public class ImportItem {
                 o -> o.importType() instanceof KImport.TypeImport.BaseAs
         ));
         for (var kImport : importTypeSplit.get(false)) {
-            context = ImportHelper.addImport(classModel.region(), kImport, context);
+            context = ImportHelper.addImport(c, classModel.region(), kImport, context);
         }
         for (var kImport : importTypeSplit.get(true)) {
-            context = ImportHelper.addImport(classModel.region(), kImport, context);
+            context = ImportHelper.addImport(c, classModel.region(), kImport, context);
         }
 
         if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.debugImport();
@@ -81,7 +77,7 @@ public class ImportItem {
         assert superClass != null;
         var superClassImportedAny = context.importType(classModel.region(), superClass);
         if (!(superClassImportedAny instanceof KType.ClassType superClassImported)) {
-            Log.temp(classModel.region(), "Invalid Super class");
+            Log.temp(c, classModel.region(), "Invalid Super class");
             throw new Log.KarinaException();
         }
 
@@ -90,7 +86,7 @@ public class ImportItem {
         for (var anInterface : classModel.interfaces()) {
             var imported = context.importType(classModel.region(), anInterface);
             if (!(imported instanceof KType.ClassType interfaceImported)) {
-                Log.temp(classModel.region(), "Invalid Interface");
+                Log.temp(c, classModel.region(), "Invalid Interface");
                 throw new Log.KarinaException();
             }
             interfaces.add(interfaceImported);
@@ -100,20 +96,20 @@ public class ImportItem {
         var fields = ImmutableList.<KFieldModel>builder();
         for (var field : classModel.fields()) {
             if (!(field instanceof KFieldModel kField)) {
-                Log.temp(classModel.region(), "Invalid Field");
+                Log.temp(c, classModel.region(), "Invalid Field");
                 throw new Log.KarinaException();
             }
-            fields.add(importField(kField, context));
+            fields.add(importField(c, kField, context));
         }
 
         //importing methods
         var methodsToBeFilled = new ArrayList<KMethodModel>();
         for (var method : classModel.methods()) {
             if (!(method instanceof KMethodModel kMethod)) {
-                Log.temp(classModel.region(), "Invalid Method");
+                Log.temp(c, classModel.region(), "Invalid Method");
                 throw new Log.KarinaException();
             }
-            methodsToBeFilled.add(importMethod(kMethod, context));
+            methodsToBeFilled.add(importMethod(c, kMethod, context));
         }
 
 
@@ -142,19 +138,19 @@ public class ImportItem {
 
         //recursively import inner classes, done after, so we can pass the new class model as the outer class
         for (var innerClass : classModel.innerClasses()) {
-            innerClassesToBeFilled.add(importClass(innerClass, newClassModel, context, prelude, modelBuilder));
+            innerClassesToBeFilled.add(importClass(c, innerClass, newClassModel, context, modelBuilder));
         }
-        modelBuilder.addClass(newClassModel);
+        modelBuilder.addClass(c, newClassModel);
 
         Log.endType(Log.LogTypes.IMPORTS, logName);
         return newClassModel;
     }
 
-    private static KFieldModel importField(KFieldModel field, ImportTable ctx) {
-        ImportHelper.testName(field.region(), field.name());
+    private static KFieldModel importField(Context c, KFieldModel field, ImportTable ctx) {
+        ImportHelper.testName(c, field.region(), field.name());
         var type = ctx.importType(field.region(), field.type());
         if (type.isVoid()) {
-            Log.attribError(new AttribError.NotSupportedType(field.region(), field.type()));
+            Log.error(c, new AttribError.NotSupportedType(field.region(), field.type()));
             throw new Log.KarinaException();
         }
         return new KFieldModel(
@@ -166,29 +162,28 @@ public class ImportItem {
         );
     }
 
-    private static KMethodModel importMethod(KMethodModel method, ImportTable ctx) {
+    private static KMethodModel importMethod(Context c, KMethodModel method, ImportTable table) {
 
-        ImportHelper.testName(method.region(), method.name());
+        ImportHelper.testName(c, method.region(), method.name());
 
-        var context = ctx;
         //remove generics for static methods from any outer class
         if (Modifier.isStatic(method.modifiers())) {
-            context = context.removeGenerics();
+            table = table.removeGenerics();
         }
 
         //add defined generics
         for (var generic : method.generics()) {
-            context = context.addGeneric(generic.region(), generic);
+            table = table.addGeneric(generic.region(), generic);
         }
 
         //import return type and parameters
-        var signature = importSignature(method.region(), method.signature(), context);
+        var signature = importSignature(c, method.region(), method.signature(), table);
 
         //Now ready to import the expression
 
         //ImportContext is used for this.
         // We only expose the resolveType method to the expression import
-        var importContext = new ImportContext(context);
+        var importContext = new ImportContext(c, table);
 
         //check if the method has an expression, so not an abstract method
         KExpr expression = method.expression();
@@ -214,12 +209,12 @@ public class ImportItem {
     }
 
 
-    private static Signature importSignature(Region region, Signature signature, ImportTable ctx) {
+    private static Signature importSignature(Context c, Region region, Signature signature, ImportTable ctx) {
         var parameters = ImmutableList.<KType>builder();
         for (var parameter : signature.parameters()) {
             var importedParam = ctx.importType(region, parameter);
             if (importedParam.isVoid()) {
-                Log.attribError(new AttribError.NotSupportedType(region, parameter));
+                Log.error(c, new AttribError.NotSupportedType(region, parameter));
                 throw new Log.KarinaException();
             }
             parameters.add(importedParam);

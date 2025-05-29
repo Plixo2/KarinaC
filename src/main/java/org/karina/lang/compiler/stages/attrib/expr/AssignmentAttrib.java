@@ -32,7 +32,7 @@ public class AssignmentAttrib {
                         //if (ctx.canEscapeMutable(variable)) {
                         //variable.markEscapeWrapped();
                         //} else {
-                        Log.attribError(
+                        Log.error(ctx,
                                 new AttribError.FinalAssignment(
                                         expr.region(), variable.region(), variable.name()));
                         throw new Log.KarinaException();
@@ -42,14 +42,14 @@ public class AssignmentAttrib {
                 } else if (literalSymbol instanceof LiteralSymbol.StaticFieldReference(var innerRegion, var fieldPointer, _)) {
                     var fieldModel = ctx.model().getField(fieldPointer);
                     if (Modifier.isFinal(fieldModel.modifiers())) {
-                            Log.attribError(
+                            Log.error(ctx,
                                     new AttribError.FinalAssignment(expr.region(), innerRegion, fieldPointer.name()));
                             throw new Log.KarinaException();
                     }
                     var fieldType = fieldModel.type(); //no need for replacement
                     yield new AssignmentSymbol.StaticField(fieldPointer, fieldType);
                 } else {
-                    Log.attribError(new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));
+                    Log.error(ctx, new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));
                     throw new Log.KarinaException();
                 }
             }
@@ -59,7 +59,7 @@ public class AssignmentAttrib {
                 var fieldModel = ctx.model().getField(pointer);
                 if (Modifier.isFinal(fieldModel.modifiers())) {
                     if (ctx.owningMethod() == null || !ctx.owningMethod().isConstructor()) {
-                        Log.attribError(new AttribError.FinalAssignment(
+                        Log.error(ctx, new AttribError.FinalAssignment(
                                         expr.region(),
                                         fieldModel.region(),
                                         pointer.name()
@@ -77,7 +77,7 @@ public class AssignmentAttrib {
                     );
             }
             default -> {
-                Log.attribError(new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));
+                Log.error(ctx, new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));
                 throw new Log.KarinaException();
             }
         };

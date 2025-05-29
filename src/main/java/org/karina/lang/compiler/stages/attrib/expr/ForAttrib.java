@@ -32,8 +32,8 @@ public class ForAttrib  {
         iter = typeOfLoop.expr();
 
         if (annotatedHint != null) {
-            if (!ctx.checking().canAssign(expr.region(), annotatedHint, typeOfLoop.varType(), true)) {
-                Log.attribError(new AttribError.TypeMismatch(expr.region(), annotatedHint, typeOfLoop.varType()));
+            if (!ctx.checking().canAssign(ctx, expr.region(), annotatedHint, typeOfLoop.varType(), true)) {
+                Log.error(ctx, new AttribError.TypeMismatch(expr.region(), annotatedHint, typeOfLoop.varType()));
                 throw new Log.KarinaException();
             }
         }
@@ -55,7 +55,7 @@ public class ForAttrib  {
         } else if (typeOfLoop.symType == IteratorTypeSymbol.ForRange.class) {
             symbol = new IteratorTypeSymbol.ForRange(variable);
         } else {
-            Log.temp(expr.region(), "Unknown iterator type symbol");
+            Log.temp(ctx, expr.region(), "Unknown iterator type symbol");
             throw new Log.KarinaException();
         }
 

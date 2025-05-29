@@ -28,6 +28,7 @@ import java.util.List;
 
 public class LoweringItem {
     public static KClassModel lowerClass(
+            Context c,
             Model model,
             KClassModel outerClass,
             KClassModel classModel,
@@ -40,7 +41,7 @@ public class LoweringItem {
         for (var field : classModel.fields()) {
             //TODO lower field
             if (!(field instanceof KFieldModel kFieldModel)) {
-                Log.temp(field.region(), "Invalid field");
+                Log.temp(c, field.region(), "Invalid field");
                 throw new Log.KarinaException();
             }
             fields.add(kFieldModel);
@@ -70,7 +71,7 @@ public class LoweringItem {
 
 
         for (var kClassModel : classModel.innerClasses()) {
-            var inner = lowerClass(model, classModelNew, kClassModel, builder);
+            var inner = lowerClass(c, model, classModelNew, kClassModel, builder);
             innerToFill.add(inner);
         }
 
@@ -78,31 +79,32 @@ public class LoweringItem {
         var newClasses = new LinearLookup();
         for (var method : classModel.methods()) {
             if (!(method instanceof KMethodModel kMethodModel)) {
-                Log.temp(method.region(), "Invalid method");
+                Log.temp(c, method.region(), "Invalid method");
                 throw new Log.KarinaException();
             }
-            var lowerMethod = lowerMethod(model, classModelNew, kMethodModel, syntheticCounter, newClasses);
+            var lowerMethod = lowerMethod(c, model, classModelNew, kMethodModel, syntheticCounter, newClasses);
             methodsToFill.add(lowerMethod);
         }
         Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
-        methodsToFill.addAll(createBridgeMethods(model, classModelNew));
+        methodsToFill.addAll(createBridgeMethods(c, model, classModelNew));
         Log.endType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
 
         for (var kClassModel : newClasses.userClasses()) {
-            builder.addClass(kClassModel);
+            builder.addClass(c, kClassModel);
         }
 
-        builder.addClass(classModelNew);
+        builder.addClass(c, classModelNew);
         Log.endType(Log.LogTypes.LOWERING, logName);
         return classModelNew;
     }
 
-    private static KMethodModel lowerMethod(Model model, KClassModel classModel, KMethodModel methodModel, MutableInt synCounter, ClassLookup newClasses) {
+    private static KMethodModel lowerMethod(Context c, Model model, KClassModel classModel, KMethodModel methodModel, MutableInt synCounter, ClassLookup newClasses) {
 
         var ctx = new LoweringContext(
                 newClasses,
                 synCounter,
                 model,
+                c,
                 methodModel,
                 methodModel,
                 classModel,
@@ -132,7 +134,7 @@ public class LoweringItem {
     }
 
 
-    public static List<KMethodModel> createBridgeMethods(Model model, KClassModel classModel) {
+    public static List<KMethodModel> createBridgeMethods(Context c, Model model, KClassModel classModel) {
 
 
         if (Modifier.isAbstract(classModel.modifiers())) {
@@ -143,9 +145,9 @@ public class LoweringItem {
 
         //TODO final test if everything is implemented, (mainly test for bugs in the lower stage, can be removed later)
         {
-            var notImplemented = MethodHelper.getMethodsToImplementForClass(model, classType);
+            var notImplemented = MethodHelper.getMethodsToImplementForClass(c, model, classType);
             for (var methodToImplement : notImplemented) {
-                Log.temp(
+                Log.temp(c,
                         classModel.region(), "Method '" + methodToImplement.toReadableString() +
                                 "' is not implemented from class " +
                                 methodToImplement.originalMethodPointer().classPointer()
@@ -156,7 +158,7 @@ public class LoweringItem {
             }
         }
 
-        var toImplement = MethodHelper.getMethodForBridgeConstruction(model, classType);
+        var toImplement = MethodHelper.getMethodForBridgeConstruction(c, model, classType);
         if (!toImplement.isEmpty()) {
             Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Implemented for "  + classModel.name() + ": " + toImplement);
             Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Size", toImplement.size());
@@ -173,7 +175,7 @@ public class LoweringItem {
                         isImplemented(methodToImplement.name(), paramsErased, returnTypeErased, classModel.methods());
                 if (foundMethod != null) {
                     if (!methodToImplement.implementing().originalMethodPointer().equals(foundMethod.pointer())) {
-                        Log.temp(foundMethod.region(),
+                        Log.temp(c, foundMethod.region(),
                                 "Cannot create bridge method, method " + foundMethod.name() +
                                         " already exists with the same signature"
                         );
@@ -201,6 +203,7 @@ public class LoweringItem {
                 Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Constructing bridge method " + readable);
 
                 methods.add(createBridgeMethod(
+                        c,
                         model,
                         classModel,
                         methodToImplement,
@@ -219,6 +222,7 @@ public class LoweringItem {
     }
 
     private static KMethodModel createBridgeMethod(
+            Context c,
             Model model,
             KClassModel currentClass,
             MethodHelper.MethodToImplement implement,
@@ -227,7 +231,7 @@ public class LoweringItem {
     ) {
 
         if (implement.implementing() == null) {
-            Log.temp(currentClass.region(), "Internal error, missing information for implementing method");
+            Log.temp(c, currentClass.region(), "Internal error, missing information for implementing method");
             throw new Log.KarinaException();
         }
         var reference = model.getMethod(implement.implementing().originalMethodPointer());

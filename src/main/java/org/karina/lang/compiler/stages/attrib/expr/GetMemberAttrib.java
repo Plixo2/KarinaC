@@ -40,26 +40,26 @@ public class GetMemberAttrib  {
 
         if (!(left.type() instanceof KType.ClassType classType)) {
             if (left.type().isVoid()) {
-                Log.attribError(new AttribError.NotSupportedType(
+                Log.error(ctx, new AttribError.NotSupportedType(
                         expr.left().region(),
                         KType.NONE
                 ));
             } else {
-                Log.attribError(new AttribError.NotAClass(expr.left().region(), left.type()));
+                Log.error(ctx, new AttribError.NotAClass(expr.left().region(), left.type()));
             }
             throw new Log.KarinaException();
         }
         var classModel = ctx.model().getClass(classType.pointer());
 
         var methods = new ArrayList<UpstreamMethodPointer>();
-        putMethodCollectionDeep(ctx.owningClass(), ctx.protection(), ctx.model(), classType, name, methods, new HashSet<>(), true);
+        putMethodCollectionDeep(ctx, ctx.owningClass(), ctx.protection(), ctx.model(), classType, name, methods, new HashSet<>(), true);
         for (var method : methods) {
             Log.recordType(Log.LogTypes.CALLS, "available pointer", method);
         }
         var fieldPointer = getFieldDeep(ctx, classType.pointer(), name);
 
         if (classType.generics().size() != classModel.generics().size()) {
-            Log.temp(expr.region(), "Generics count mismatch, this is a bug");
+            Log.temp(ctx, expr.region(), "Generics count mismatch, this is a bug");
             throw new Log.KarinaException();
         }
 
@@ -110,7 +110,7 @@ public class GetMemberAttrib  {
                 var newLiteral = new KExpr.Literal(region, name, symbol);
                 return of(ctx, newLiteral);
             }else {
-                Log.attribError(new AttribError.UnknownMember(
+                Log.error(ctx, new AttribError.UnknownMember(
                         region,
                         arrayType.toString(),
                         name,
@@ -230,6 +230,7 @@ public class GetMemberAttrib  {
     }
 
     private static void putMethodCollectionDeep(
+            AttributionContext ctx,
             @Nullable ClassPointer referenceSite,
             @Nullable ProtectionChecking protectionChecking,
             Model model,
@@ -280,14 +281,14 @@ public class GetMemberAttrib  {
         }
 
         //check for super classes and interfaces
-        var superType = Types.getSuperType(model, classType);
+        var superType = Types.getSuperType(ctx, model, classType);
         if (superType != null) {
-            putMethodCollectionDeep(referenceSite, protectionChecking, model, superType, name, collection, visited, false);
+            putMethodCollectionDeep(ctx, referenceSite, protectionChecking, model, superType, name, collection, visited, false);
         }
 
-        var interfaces = Types.getInterfaces(model, classType);
+        var interfaces = Types.getInterfaces(ctx, model, classType);
         for (var interfaceType : interfaces) {
-            putMethodCollectionDeep(referenceSite, protectionChecking, model, interfaceType, name, collection, visited, false);
+            putMethodCollectionDeep(ctx, referenceSite, protectionChecking, model, interfaceType, name, collection, visited, false);
         }
         for (var upstreamMethodPointer : collection) {
             Log.recordType(Log.LogTypes.MEMBER, "found overall", upstreamMethodPointer.mappedUpstreamType());
@@ -326,7 +327,7 @@ public class GetMemberAttrib  {
             nonAccessibleStr = Modifier.toString(field.modifiers()) + field.name() + ": " + field.type();
         }
 
-        Log.attribError(new AttribError.UnknownMember(
+        Log.error(ctx, new AttribError.UnknownMember(
                 region,
                 classModel.name(),
                 name,

@@ -6,22 +6,19 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.utils.KAnnotation;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
-import org.karina.lang.compiler.utils.Generic;
 
 import java.lang.reflect.Modifier;
 import java.util.List;
 
-public class KarinaMethodVisitor {
+public class KarinaMethodVisitor implements IntoContext {
     private final RegionContext context;
-    private final KarinaUnitVisitor base;
+    private final KarinaUnitVisitor visitor;
 
-    public KarinaMethodVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
-        this.base = base;
+    public KarinaMethodVisitor(KarinaUnitVisitor visitor, RegionContext regionContext) {
+        this.visitor = visitor;
         this.context = regionContext;
     }
 
@@ -35,7 +32,7 @@ public class KarinaMethodVisitor {
 
         if (function.OVERRIDE() != null) {
             var region = this.context.toRegion(function.OVERRIDE());
-            Log.importError(new ImportError.InvalidName(region, "override", "Override is not allowed here"));
+            Log.error(this, new ImportError.InvalidName(region, "override", "Override is not allowed here"));
             throw new Log.KarinaException();
         }
 
@@ -43,7 +40,7 @@ public class KarinaMethodVisitor {
 
         var generics = ImmutableList.<Generic>of();
         if (function.genericHintDefinition() != null) {
-            generics = ImmutableList.copyOf(this.base.visitGenericHintDefinition(function.genericHintDefinition()));
+            generics = ImmutableList.copyOf(this.visitor.visitGenericHintDefinition(function.genericHintDefinition()));
         }
         var isStatic = function.selfParameterList().SELF() == null;
 
@@ -53,9 +50,9 @@ public class KarinaMethodVisitor {
 
         KExpr expr;
         if (function.expression() != null) {
-            expr = this.base.exprVisitor.visitExpression(function.expression());
+            expr = this.visitor.exprVisitor.visitExpression(function.expression());
         } else if (function.block() != null) {
-            expr = this.base.exprVisitor.visitBlock(function.block());
+            expr = this.visitor.exprVisitor.visitBlock(function.block());
         } else {
             expr = null;
         }
@@ -81,14 +78,14 @@ public class KarinaMethodVisitor {
         KType returnType;
 
         if (function.type() != null) {
-            returnType = this.base.typeVisitor.visitType(function.type());
+            returnType = this.visitor.typeVisitor.visitType(function.type());
         } else {
             returnType = KType.NONE;
         }
 
         var parameters = ImmutableList.<KType>builder();
         for (var parameterContext : function.selfParameterList().parameter()) {
-            var type = this.base.typeVisitor.visitType(parameterContext.type());
+            var type = this.visitor.typeVisitor.visitType(parameterContext.type());
             parameters.add(type);
         }
 
@@ -96,5 +93,10 @@ public class KarinaMethodVisitor {
                 parameters.build(),
                 returnType
         );
+    }
+
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
     }
 }

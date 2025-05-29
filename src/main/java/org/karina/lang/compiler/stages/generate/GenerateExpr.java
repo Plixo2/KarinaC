@@ -225,7 +225,7 @@ public class GenerateExpr {
             }
             case KExpr.Branch branch -> {
                 if (branch.branchPattern() != null) {
-                    Log.temp(expr.region(), "Cannot be expressed");
+                    Log.temp(ctx, expr.region(), "Cannot be expressed");
                     throw new Log.KarinaException();
                 }
 
@@ -241,7 +241,7 @@ public class GenerateExpr {
 
                 if (branch.elseArm() != null) {
                     if (branch.elseArm().elsePattern() != null) {
-                        Log.temp(expr.region(), "Cannot be expressed");
+                        Log.temp(ctx, expr.region(), "Cannot be expressed");
                         throw new Log.KarinaException();
                     }
 
@@ -256,12 +256,12 @@ public class GenerateExpr {
             }
             case KExpr.Call call -> {
                 if (call.symbol() == null) {
-                    Log.temp(expr.region(), "No given symbol");
+                    Log.temp(ctx, expr.region(), "No given symbol");
                     throw new Log.KarinaException();
                 }
                 switch (call.symbol()) {
                     case CallSymbol.CallDynamic callDynamic -> {
-                        Log.temp(expr.region(), "Cannot be expressed");
+                        Log.temp(ctx, expr.region(), "Cannot be expressed");
                         throw new Log.KarinaException();
                     }
                     case CallSymbol.CallStatic callStatic -> {
@@ -383,7 +383,7 @@ public class GenerateExpr {
                 }
             }
             case KExpr.Closure closure -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.Continue aContinue -> {
@@ -417,7 +417,7 @@ public class GenerateExpr {
 
             }
             case KExpr.CreateObject createObject -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
 //                assert createObject.symbol() != null;
 //                var type = TypeConversion.getType(createObject.symbol());
@@ -447,7 +447,7 @@ public class GenerateExpr {
 
             }
             case KExpr.For aFor -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.GetArrayElement getArrayElement -> {
@@ -500,7 +500,7 @@ public class GenerateExpr {
                     case LiteralSymbol.VariableReference variableReference -> {
                         var variable = variableReference.variable();
                         var index = ctx.getVariableIndex(literal.region(), variable);
-                        Log.recordType(Log.LogTypes.GENERATION, "variable " + variable.name() + " at index " + index);
+                        Log.recordType(Log.LogTypes.GENERATION_VAR, "variable " + variable.name() + " at index " + index);
                         var type = TypeEncoding.getType(variable.type());
                         ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ILOAD), index));
                     }
@@ -520,7 +520,7 @@ public class GenerateExpr {
                 }
             }
             case KExpr.Match match -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.Number number -> {
@@ -652,19 +652,19 @@ public class GenerateExpr {
 
             }
             case KExpr.SpecialCall specialCall -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.StaticPath staticPath -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.StringInterpolation stringInterpolation -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.Unwrap unwrap -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
         }

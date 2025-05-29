@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
+import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.TextSource;
 
@@ -20,12 +21,14 @@ public class KarinaErrorListener implements ANTLRErrorListener {
     @Accessors(fluent = true)
     private boolean hadError = false;
     private final TextSource source;
+    private final Context c;
 
     private final boolean throwErrors;
 
-    public KarinaErrorListener(TextSource source, boolean throwErrors) {
+    public KarinaErrorListener(Context c, TextSource source, boolean throwErrors) {
         this.source = source;
         this.throwErrors = throwErrors;
+        this.c = c;
     }
 
 
@@ -59,7 +62,7 @@ public class KarinaErrorListener implements ANTLRErrorListener {
                 }
             }
 
-            Log.warn(region, "Missing Field, replaced with " + KarinaRecoveringStrategy.MISSING_FIELD);
+            Log.warn(this.c, region, "Missing Field, replaced with " + KarinaRecoveringStrategy.MISSING_FIELD);
             return;
         }
 
@@ -69,7 +72,7 @@ public class KarinaErrorListener implements ANTLRErrorListener {
             if (e != null) {
                 name = e.getClass().getSimpleName();
             }
-            Log.syntaxError(region, name + " -> " + msg);
+            Log.syntaxError(this.c, region, name + " -> " + msg);
             throw new Log.KarinaException();
         }
 

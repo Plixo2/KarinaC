@@ -28,7 +28,7 @@ public class CreateArrayAttrib  {
         }
 
         if (elementType.isVoid()) {
-            Log.attribError(new AttribError.NotSupportedType(expr.region(), elementType));
+            Log.error(ctx, new AttribError.NotSupportedType(expr.region(), elementType));
             throw new Log.KarinaException();
         }
 
@@ -59,7 +59,7 @@ public class CreateArrayAttrib  {
             mappedElements.clear();
 
             for (var unMappedElement : unMappedElements) {
-                var superType = ctx.checking().superType(unMappedElement.region(), currentType, unMappedElement.type());
+                var superType = ctx.checking().superType(ctx, unMappedElement.region(), currentType, unMappedElement.type());
                 if (superType == null) {
                     //dont report error right away, we still can use root for primitive conversion
                     currentType = KType.ROOT;

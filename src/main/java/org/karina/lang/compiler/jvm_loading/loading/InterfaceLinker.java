@@ -14,6 +14,7 @@ import org.karina.lang.compiler.jvm_loading.signature.ClassSignatureBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.SignatureVisitor;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.Region;
@@ -36,7 +37,7 @@ public class InterfaceLinker {
         this.typeGen = new TypeDecoding();
     }
 
-    public JClassModel createClass(@Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder) {
+    public JClassModel createClass(Context c, @Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder) {
         var node = cls.node();
 
         Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading class: " + node.name);
@@ -45,7 +46,7 @@ public class InterfaceLinker {
         var region = source.emptyRegion();
 
         if (visited.contains(node.name)) {
-            Log.bytecode(source, node.name, "Cycle detected");
+            Log.bytecode(c, source, node.name, "Cycle detected");
             throw new Log.KarinaException();
         }
         visited.add(node.name);
@@ -74,11 +75,11 @@ public class InterfaceLinker {
         if (node.signature != null) {
             var signatureParser = new SignatureVisitor(region, node.signature);
             var signature = signatureParser.parseClassSignature();
-            var builder = new ClassSignatureBuilder(node.name, region, signature, outerClassModel);
+            var builder = new ClassSignatureBuilder(c, node.name, region, signature, outerClassModel);
             generics = builder.generics();
             superType = builder.superClass();
             if (interfaces.size() != builder.interfaces().size()) {
-                Log.temp(region, "Mismatch in interfaces");
+                Log.temp(c, region, "Mismatch in interfaces");
                 throw new Log.KarinaException();
             }
             interfaces = builder.interfaces();
@@ -86,7 +87,7 @@ public class InterfaceLinker {
             var superPointer = TypeDecoding.internalNameToPointer(region, node.superName);
             superType = new KType.ClassType(superPointer, List.of());
         } else if (!node.name.equals("java/lang/Object")) {
-            Log.bytecode(region, node.name, "No super class found");
+            Log.bytecode(c, region, node.name, "No super class found");
             throw new Log.KarinaException();
         }
 
@@ -123,13 +124,13 @@ public class InterfaceLinker {
                 source,
                 region
         );
-        modelBuilder.addClass(classModel);
+        modelBuilder.addClass(c, classModel);
 
         for (var field : node.fields) {
-            fieldsToFill.add(buildField(classModel, region, field));
+            fieldsToFill.add(buildField(c, classModel, region, field));
         }
         for (var method : node.methods) {
-            methodsToFill.add(buildMethod(classModel, region, method));
+            methodsToFill.add(buildMethod(c, classModel, region, method));
         }
         if (node.innerClasses != null) {
             for (var innerClass : node.innerClasses) {
@@ -154,10 +155,10 @@ public class InterfaceLinker {
                 }
                 var loadedClass = openSet.removeByName(innerClass.name);
                 if (loadedClass == null) {
-                    Log.bytecode(region, node.name, "Cannot load inner class: " + innerClass.name);
+                    Log.bytecode(c, region, node.name, "Cannot load inner class: " + innerClass.name);
                     throw new Log.KarinaException();
                 }
-                var aClass = createClass(classModel, loadedClass, openSet, visited, modelBuilder);
+                var aClass = createClass(c, classModel, loadedClass, openSet, visited, modelBuilder);
                 innerClassesToFill.add(aClass);
             }
         }
@@ -168,21 +169,21 @@ public class InterfaceLinker {
 
     }
 
-    private JFieldModel buildField(JClassModel owner, Region region, FieldNode fieldNode) {
+    private JFieldModel buildField(Context c, JClassModel owner, Region region, FieldNode fieldNode) {
         var name = fieldNode.name;
         var type = this.typeGen.fromType(region, fieldNode.desc);
 
         if (fieldNode.signature != null) {
             var signatureParser = new SignatureVisitor(region, fieldNode.signature);
             var signature = signatureParser.parseFieldSignature();
-            var builder = new FieldSignatureBuilder(name, region, signature, owner);
+            var builder = new FieldSignatureBuilder(c, name, region, signature, owner);
             type = builder.type();
         }
         var modifiers = fieldNode.access;
         return new JFieldModel(name, type, modifiers, region, owner.pointer());
     }
 
-    private JMethodModel buildMethod(JClassModel owner, Region region, MethodNode methodNode) {
+    private JMethodModel buildMethod(Context c, JClassModel owner, Region region, MethodNode methodNode) {
         Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading method: " + methodNode.name + " of " + owner.path());
         Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "mods: " + Modifier.toString(methodNode.access));
 
@@ -200,75 +201,9 @@ public class InterfaceLinker {
         if (methodNode.signature != null && !isSynthetic) {
             var signatureParser = new SignatureVisitor(region, methodNode.signature);
             var signature = signatureParser.parseMethodSignature();
-            var builder = new MethodSignatureBuilder(owner.name(), region, signature, owner);
+            var builder = new MethodSignatureBuilder(c, owner.name(), region, signature, owner);
             generics = builder.generics();
-            var parametersFromSignature = builder.parameters();
-            /*
-            if (parameterNames.size() != parametersFromSignature.size()) {
-                var msg = "Method " + methodNode.name + " Mismatch in parameters size in signature";
-                msg = msg + " Expected: " + parameterNames.size() + " but found: " + parametersFromSignature.size();
-
-
-                Log.bytecode(region, "Method " + methodNode.name , msg);
-                Log.warn(methodNode.parameters);
-                if (methodNode.parameters != null) {
-                    for (var parameter : methodNode.parameters) {
-                        Log.warn("access: ", parameter.access);
-                        Log.warn("access: ", (parameter.access & Opcodes.ACC_SYNTHETIC) != 0);
-                        Log.warn("name: ", parameter.name);
-                    }
-                }
-                Log.warn(
-                        "parameterTypes:",
-                        parameterTypes
-                );
-                Log.warn(
-                        "names: ",
-                        parameterNames
-
-                );
-                Log.warn(
-                        "found: ",
-                        parametersFromSignature
-                );
-                Log.warn(
-                        "signature: ",
-                        signature
-                );
-                Log.warn(
-                        "from string: ",
-                        methodNode.signature
-                );
-                Log.warn(
-                        "flags: ",
-                        Modifier.toString(methodNode.access)
-                );
-                Log.warn(
-                        "flags raw: ",
-                        methodNode.access
-                );
-                Log.warn(
-                        "name: ",
-                        methodNode.name
-                );
-                Log.warn(
-                        "modifiers of owner: ",
-                        owner.modifiers()
-                );
-                Log.warn(
-                        "mods toString: ",
-                        Modifier.toString( owner.modifiers())
-                );
-                Log.warn(
-                        " is : ",
-                        (owner.modifiers() & Opcodes.ACC_SYNTHETIC) != 0,
-                        (owner.modifiers() & Opcodes.ACC_BRIDGE) != 0
-                );
-
-                throw new Log.KarinaException();
-            }
-            */
-            parameterTypes = parametersFromSignature;
+            parameterTypes = builder.parameters();
             returnType = builder.returnType();
         }
         Log.endType(Log.LogTypes.JVM_CLASS_LOADING, "Loading method: " + methodNode.name);

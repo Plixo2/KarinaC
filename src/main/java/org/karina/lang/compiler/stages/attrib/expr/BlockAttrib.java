@@ -22,7 +22,7 @@ public class BlockAttrib {
             var hintLine = isLast ? hint : null;
             var newExpr = attribExpr(hintLine, subCtx, subExpr);
             if (!isLast && newExpr.expr().doesReturn()) {
-                Log.temp(expressions.get(i + 1).region(), "Unreachable code");
+                Log.temp(ctx, expressions.get(i + 1).region(), "Unreachable code");
                 throw new Log.KarinaException();
             }
 

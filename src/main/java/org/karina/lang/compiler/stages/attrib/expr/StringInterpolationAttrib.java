@@ -46,7 +46,7 @@ public class StringInterpolationAttrib {
                     var variable = ctx.variables().get(name);
                     if (variable == null) {
                         var available = new HashSet<>(ctx.variables().names());
-                        Log.attribError(new AttribError.UnknownIdentifier(region, name, available));
+                        Log.error(ctx, new AttribError.UnknownIdentifier(region, name, available));
                         throw new Log.KarinaException();
                     }
                     variable.incrementUsageCount();

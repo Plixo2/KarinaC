@@ -2,6 +2,8 @@ package org.karina.lang.compiler.stages.parser.visitor;
 
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.RegionContext;
@@ -12,7 +14,7 @@ import java.util.List;
 /**
  * Used to convert an AST fieldType object to the corresponding {@link KType}.
  */
-public class KarinaTypeVisitor {
+public class KarinaTypeVisitor implements IntoContext {
     private final RegionContext conv;
     private final KarinaUnitVisitor visitor;
 
@@ -28,7 +30,7 @@ public class KarinaTypeVisitor {
         if (ctx.typePostFix() != null) {
             //we return KType.ROOT. so the identity check can be done
             if (inner.isPrimitive() || inner.isVoid() || inner == KType.ROOT) {
-                Log.syntaxError(this.conv.toRegion(ctx), "Invalid optional type");
+                Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid optional type");
                 throw new Log.KarinaException();
             }
             //link to karina standard library option type
@@ -68,7 +70,7 @@ public class KarinaTypeVisitor {
             var inner = visitType(innerType);
             if (inner.isVoid()) {
                 var innerRegion = this.conv.toRegion(innerType);
-                Log.attribError(new AttribError.NotSupportedType(innerRegion, inner));
+                Log.error(this, new AttribError.NotSupportedType(innerRegion, inner));
                 throw new Log.KarinaException();
             }
             return new KType.ArrayType(inner);
@@ -80,7 +82,7 @@ public class KarinaTypeVisitor {
             return KType.ROOT;
         }
         else {
-            Log.syntaxError(region, "Invalid fieldType");
+            Log.syntaxError(this, region, "Invalid fieldType");
             throw new Log.KarinaException();
         }
     }
@@ -104,7 +106,7 @@ public class KarinaTypeVisitor {
         var returnType = ctx.type() != null ? visitType(ctx.type()) : KType.NONE;
 
         if (returnType != null && returnType.isPrimitive()) {
-            Log.attribError(new AttribError.NotSupportedType(this.conv.toRegion(ctx.type()), returnType));
+            Log.error(this, new AttribError.NotSupportedType(this.conv.toRegion(ctx.type()), returnType));
             throw new Log.KarinaException();
         }
 
@@ -119,7 +121,7 @@ public class KarinaTypeVisitor {
             var mapped = visitType(ref);
             if (mapped.isVoid() || mapped.isPrimitive()) {
                 var innerRegion = this.conv.toRegion(ref);
-                Log.attribError(new AttribError.NotSupportedType(innerRegion, mapped));
+                Log.error(this, new AttribError.NotSupportedType(innerRegion, mapped));
                 throw new Log.KarinaException();
             }
             return mapped;
@@ -129,6 +131,11 @@ public class KarinaTypeVisitor {
     //#region public
     public List<? extends KType> visitInterfaceImpl(KarinaParser.InterfaceImplContext ctx) {
         return ctx.structTypeList().structType().stream().map(this::visitStructType).toList();
+    }
+
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
     }
     //#endregion
 

@@ -12,6 +12,7 @@ import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
@@ -23,11 +24,11 @@ import java.util.List;
  * Represents all class models of the program.
  * @param data
  */
-public record JKModel(ClassLookup data) implements Model {
+public record JKModel(Context c, ClassLookup data) implements Model {
 
     public JKModel {
         if (!data.locked()) {
-            Log.internal(new IllegalStateException("Model not locked"));
+            Log.internal(c, new IllegalStateException("Model not locked"));
             throw new Log.KarinaException();
         }
     }
@@ -44,7 +45,7 @@ public record JKModel(ClassLookup data) implements Model {
     public ClassModel getClass(ClassPointer pointer) {
         var classModel = this.data.get(pointer.path());
         if (classModel == null) {
-            Log.temp(pointer.region(), "Class not found, this should not happen: " + pointer.path());
+            Log.temp(this.c, pointer.region(), "Class not found, this should not happen: " + pointer.path());
             throw new Log.KarinaException();
         }
         return classModel;
@@ -71,7 +72,7 @@ public record JKModel(ClassLookup data) implements Model {
                 return method;
             }
         }
-        Log.temp(pointer.region(), "Method not found, this should not happen: " + pointer);
+        Log.temp(this.c, pointer.region(), "Method not found, this should not happen: " + pointer);
         throw new Log.KarinaException();
     }
 
@@ -83,7 +84,7 @@ public record JKModel(ClassLookup data) implements Model {
                 return field;
             }
         }
-        Log.temp(pointer.region(), "Field not found, this should not happen: " + pointer);
+        Log.temp(this.c, pointer.region(), "Field not found, this should not happen: " + pointer);
         throw new Log.KarinaException();
     }
 

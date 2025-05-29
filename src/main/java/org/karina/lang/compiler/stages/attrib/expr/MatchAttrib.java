@@ -11,7 +11,7 @@ public class MatchAttrib  {
     public static AttributionExpr attribMatch(
             @Nullable KType hint, AttributionContext ctx, KExpr.Match expr) {
 
-        Log.temp(expr.region(), "Match not implemented");
+        Log.temp(ctx, expr.region(), "Match not implemented");
         throw new Log.KarinaException();
     }
 

@@ -85,7 +85,6 @@ public class Main {
                 .append("):")
                 .out(System.out);
 
-
         var success = compiler.compile(fileTree);
         writeFlight(recordings, flight);
 

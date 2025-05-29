@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 /**
  * Represents basically everything with a path.
  * The ObjectPath is just a immutable array of strings with a few utility methods.
+ * TODO consider implementing ordering (via Comparator) for better HashMap optimization
  */
 public final class ObjectPath {
     @Getter

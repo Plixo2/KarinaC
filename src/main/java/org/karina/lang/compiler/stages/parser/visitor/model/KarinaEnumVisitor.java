@@ -7,25 +7,21 @@ import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.utils.KAnnotation;
-import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
-import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KarinaEnumVisitor {
+public class KarinaEnumVisitor implements IntoContext {
 
     private final RegionContext context;
-    private final KarinaUnitVisitor base;
+    private final KarinaUnitVisitor visitor;
 
     public KarinaEnumVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
-        this.base = base;
+        this.visitor = base;
         this.context = regionContext;
     }
 
@@ -48,7 +44,7 @@ public class KarinaEnumVisitor {
 
         var methods = ImmutableList.<KMethodModel>builder();
         for (var functionContext : ctx.function()) {
-            methods.add(this.base.methodVisitor.visit(currentClassPointer, ImmutableList.of(), functionContext));
+            methods.add(this.visitor.methodVisitor.visit(currentClassPointer, ImmutableList.of(), functionContext));
         }
         //TODO add constructor method for easy initialization
 
@@ -56,7 +52,7 @@ public class KarinaEnumVisitor {
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
-            generics = ImmutableList.copyOf(this.base.visitGenericHintDefinition(ctx.genericHintDefinition()));
+            generics = ImmutableList.copyOf(this.visitor.visitGenericHintDefinition(ctx.genericHintDefinition()));
         }
 
         var imports = ImmutableList.<KImport>of();
@@ -92,7 +88,7 @@ public class KarinaEnumVisitor {
             permittedSubClassesToFill.add(enumMember.pointer());
             nestMembersToFill.add(enumMember.pointer());
         }
-        modelBuilder.addClass(classModel);
+        modelBuilder.addClass(this, classModel);
 
 
         return classModel;
@@ -163,7 +159,7 @@ public class KarinaEnumVisitor {
                 region,
                 null
         );
-        modelBuilder.addClass(enumClassInner);
+        modelBuilder.addClass(this, enumClassInner);
 
         return enumClassInner;
 
@@ -173,10 +169,15 @@ public class KarinaEnumVisitor {
 
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
-        var type = this.base.typeVisitor.visitType(ctx.type());
+        var type = this.visitor.typeVisitor.visitType(ctx.type());
         var mods = Modifier.PUBLIC | Modifier.FINAL;
         return new KFieldModel(name, type, mods, region, owningClass);
 
 
+    }
+
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
     }
 }

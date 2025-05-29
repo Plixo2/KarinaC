@@ -1,11 +1,13 @@
 package org.karina.lang.compiler.jvm_loading.binary;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm_loading.binary.in.ModelReader;
 import org.karina.lang.compiler.jvm_loading.binary.out.ModelWriter;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.utils.Context;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -14,16 +16,12 @@ import java.util.zip.GZIPOutputStream;
 
 public class BinaryFormatLinker {
 
-    public static void load() {
-
-    }
-
-    public static Model readBinary(String resource) {
+    public static @Nullable Model readBinary(Context c, String resource) {
 
         try (var resourceStream = ModelLoader.class.getResourceAsStream(resource)) {
 
             if (resourceStream == null) {
-                Log.fileError(new FileLoadError.Resource(new FileNotFoundException(
+                Log.fileError(c, new FileLoadError.Resource(new FileNotFoundException(
                         "Could not find resource: '" + resource + "'"
                 )));
                 throw new Log.KarinaException();
@@ -31,16 +29,16 @@ public class BinaryFormatLinker {
 
             try (var stream = new GZIPInputStream(resourceStream)){
                 var reader = new ModelReader(stream);
-                return reader.read();
+                return reader.read(c);
             }
 
         } catch (IOException e) {
-            Log.fileError(new FileLoadError.Resource(e));
-            throw new Log.KarinaException();
+            Log.warn(c, e.getMessage());
+            return null;
         }
     }
 
-    public static void writeBinary(Model model, Path path) {
+    public static void writeBinary(Context c, Model model, Path path) {
         path = path.toAbsolutePath().normalize();
         var asFile = path.toFile();
         if (!asFile.exists()) {
@@ -48,7 +46,7 @@ public class BinaryFormatLinker {
                 var _ = asFile.getParentFile().mkdirs();
                 var _ = asFile.createNewFile();
             } catch (IOException e) {
-                Log.fileError(new FileLoadError.IO(asFile, e));
+                Log.fileError(c, new FileLoadError.IO(asFile, e));
                 throw new Log.KarinaException();
             }
         }
@@ -60,7 +58,7 @@ public class BinaryFormatLinker {
             writer.write(model);
 
         } catch (IOException e) {
-            Log.fileError(new FileLoadError.IO(asFile, e));
+            Log.fileError(c, new FileLoadError.IO(asFile, e));
             throw new Log.KarinaException();
         }
 

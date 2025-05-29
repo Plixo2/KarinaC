@@ -20,13 +20,15 @@ import java.util.*;
  * This structure is immutable (without inner mutability).
  * Top level classes will append to this table and will get a new table in return.
  * This filled-in table will be passes to all items and subclasses, that will append to it.
- * TODO this is very slow, should be replaced by faster lookup and insertion
+ * TODO create a mutable linked list for faster mutation and then create one mutable table at the end.
+ *  Also separate the generics, or find another place
+ *  this is very slow, should be replaced by faster lookup and insertion
  *  every insert will copy the whole table. So the ImportTable is created for each:
  *  import, class, subClass, method and generic.
  *  prelude alone has > 300 entries.
- *  A Builder should be useful..
  */
 public record ImportTable(
+        Context c,
         Model model,
         ImmutableMap<String, ImportEntry<ClassPointer>> classes,
         ImmutableMap<String, ImportEntry<Generic>> generics,
@@ -35,9 +37,9 @@ public record ImportTable(
         //for prelude methods, we know the signature
         ImmutableMap<String, ImportEntry<MethodCollection>> typedStaticMethods,
         ImmutableMap<String, ImportEntry<FieldPointer>> staticFields
-) {
-    public ImportTable(Model model) {
-        this(model, ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of());
+) implements IntoContext {
+    public ImportTable(Context c, Model model) {
+        this(c, model, ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of());
     }
 
     //<editor-fold defaultstate="collapsed" desc="Table Lookup">
@@ -63,7 +65,7 @@ public record ImportTable(
                 var interfaces = new ArrayList<>(functionType.interfaces().stream().map(ref -> {
                     var imported = importType(region, ref);
                     if (!(imported instanceof KType.ClassType classType)) {
-                        Log.attribError(new AttribError.NotAClass(region, imported));
+                        Log.error(this, new AttribError.NotAClass(region, imported));
                         throw new Log.KarinaException();
                     }
                     return classType;
@@ -72,7 +74,7 @@ public record ImportTable(
                 var doesReturn = !returnType.isVoid();
                 var defaultInterface = KType.FUNCTION_BASE(this.model, arguments.size(), doesReturn);
                 if (defaultInterface == null) {
-                    Log.temp(region, "Cannot find default interface for " + arguments.size() + " arguments and return type " + returnType);
+                    Log.temp(this, region, "Cannot find default interface for " + arguments.size() + " arguments and return type " + returnType);
                     throw new Log.KarinaException();
                 }
                 //TODO test return types of the interfaces with the actual return type that is annotated by the type
@@ -85,7 +87,7 @@ public record ImportTable(
 
                     var classModel = this.model.getClass(defaultInterface);
                     if (classModel.generics().size() != totalGenerics) {
-                        Log.temp(region, "Expected " + totalGenerics + " generics, but got " +
+                        Log.temp(this, region, "Expected " + totalGenerics + " generics, but got " +
                                 classModel.generics().size()
                         );
                         throw new Log.KarinaException();
@@ -125,7 +127,7 @@ public record ImportTable(
     private KType importUnprocessedType(Region region, ObjectPath path, List<KType> generics, ImportGenericBehavior flags) {
 
         if (path.isEmpty()) {
-            Log.temp(region, "Empty path, this should not happen");
+            Log.temp(this, region, "Empty path, this should not happen");
             throw new Log.KarinaException();
         }
 
@@ -137,7 +139,7 @@ public record ImportTable(
             var generic = getGeneric(head);
             if (generic != null) {
                 if (!generics.isEmpty()) {
-                    Log.importError(new ImportError.GenericCountMismatch(
+                    Log.error(this, new ImportError.GenericCountMismatch(
                             region,
                             head,
                             0,
@@ -175,7 +177,7 @@ public record ImportTable(
                 } else {
                     for (var newGeneric : newGenerics) {
                         if (!(newGeneric.isRoot())) {
-                            Log.temp(region, "Cannot use generics in instance check");
+                            Log.temp(this, region, "Cannot use generics in instance check");
                             throw new Log.KarinaException();
                         }
                     }
@@ -191,7 +193,7 @@ public record ImportTable(
 
 
         if (checkGenericLength && expectedSize != newGenerics.size()) {
-            Log.importError(new ImportError.GenericCountMismatch(
+            Log.error(this, new ImportError.GenericCountMismatch(
                     region,
                     classModel.name(), expectedSize,
                     newGenerics.size()
@@ -289,7 +291,7 @@ public record ImportTable(
         if (declare) {
             newClasses.put(name, new ImportEntry<>(declarationRegion, pointer, declaredExplicit, prelude));
         }
-        return new ImportTable(this.model, ImmutableMap.copyOf(newClasses), this.generics, this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+        return new ImportTable(this.c, this.model, ImmutableMap.copyOf(newClasses), this.generics, this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
 
     /*
@@ -299,7 +301,7 @@ public record ImportTable(
     public ImportTable addGeneric(Region declarationRegion, Generic generic) {
         var newGenerics = new HashMap<>(this.generics);
         newGenerics.put(generic.name(), new ImportEntry<>(declarationRegion, generic, true, false));
-        return new ImportTable(this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+        return new ImportTable(this.c, this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
 
     /**
@@ -316,7 +318,7 @@ public record ImportTable(
         //remove any duplicates
         newTypedStaticMethods.remove(name);
 
-        return new ImportTable(this.model, this.classes, this.generics, ImmutableMap.copyOf(newStaticMethods), ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
+        return new ImportTable(this.c, this.model, this.classes, this.generics, ImmutableMap.copyOf(newStaticMethods), ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
     }
 
     public @NotNull ImportTable addPreludeMethods(Region declarationRegion, String name, List<MethodPointer> methods) {
@@ -328,7 +330,7 @@ public record ImportTable(
         var typedCollection = new MethodCollection(name, methods);
         newTypedStaticMethods.put(name, new ImportEntry<>(declarationRegion, typedCollection, false, true));
 
-        return new ImportTable(this.model, this.classes, this.generics, this.untypedStaticMethods, ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
+        return new ImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
     }
 
     public @NotNull ImportTable addStaticField(Region declarationRegion, String name, FieldPointer reference, boolean declaredExplicit, boolean prelude) {
@@ -337,7 +339,7 @@ public record ImportTable(
         if (declare) {
             newStaticFields.put(name, new ImportEntry<>(declarationRegion, reference, declaredExplicit, prelude));
         }
-        return new ImportTable(this.model, this.classes, this.generics, this.untypedStaticMethods, this.typedStaticMethods, ImmutableMap.copyOf(newStaticFields));
+        return new ImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, this.typedStaticMethods, ImmutableMap.copyOf(newStaticFields));
     }
 
     /**
@@ -352,7 +354,7 @@ public record ImportTable(
         }
         var entry = objects.get(name);
         if (entry.wasDeclaredExplicit() && declaredExplicit) {
-            Log.importError(
+            Log.error(this,
                     new ImportError.DuplicateItem(entry.definedRegion(), declarationRegion, name)
             );
             throw new Log.KarinaException();
@@ -365,7 +367,7 @@ public record ImportTable(
      * Used in static methods, where generics are from the outer environment allowed.
      */
     public ImportTable removeGenerics() {
-        return new ImportTable(this.model, this.classes, ImmutableMap.of(), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+        return new ImportTable(this.c, this.model, this.classes, ImmutableMap.of(), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
     //</editor-fold>
 
@@ -376,7 +378,7 @@ public record ImportTable(
      */
     public void logUnknownPointerError(Region region, ObjectPath path) {
         var available = availableTypeNames();
-        Log.importError(new ImportError.UnknownImportType(region, path.mkString("::"), available));
+        Log.error(this.c, new ImportError.UnknownImportType(region, path.mkString("::"), available));
     }
 
     private Set<String> availableTypeNames() {
@@ -447,6 +449,11 @@ public record ImportTable(
 
 
         }
+    }
+
+    @Override
+    public Context intoContext() {
+        return this.c;
     }
 
     /**

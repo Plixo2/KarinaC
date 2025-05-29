@@ -123,7 +123,7 @@ public class LowerBranch {
 
         var primaryCondition = new KExpr.IsInstanceOf(region, variableReference,  branchPattern.type());
 
-        var thenBody = lowerPattern(variableReference, thenArmLower, branchPattern);
+        var thenBody = lowerPattern(ctx, variableReference, thenArmLower, branchPattern);
 
         var elsePart = getElsePart(variableReference, this.branch.elseArm(), ctx);
 
@@ -153,7 +153,7 @@ public class LowerBranch {
      * @param variableExpr reference to the $pattern variable
      * @param body should be lowered before
      */
-    private KExpr lowerPattern(KExpr variableExpr, KExpr body, BranchPattern pattern) {
+    private KExpr lowerPattern(LoweringContext ctx, KExpr variableExpr, KExpr body, BranchPattern pattern) {
         var region = variableExpr.region();
 
         return switch (pattern) {
@@ -184,7 +184,7 @@ public class LowerBranch {
                 );
             }
             case BranchPattern.Destruct destruct -> {
-                Log.temp(variableExpr.region(), "Destruct not implemented");
+                Log.temp(ctx, variableExpr.region(), "Destruct not implemented");
                 throw new Log.KarinaException();
             }
             case BranchPattern.JustType justType -> {
@@ -207,7 +207,7 @@ public class LowerBranch {
         }
 
         // new body with casted expression
-        var patternApplied = lowerPattern(variableExpr, body, elsePattern);
+        var patternApplied = lowerPattern(ctx, variableExpr, body, elsePattern);
 
         // tests when body cases are covered, so we can skip the check
         var shouldCast = !(this.branch.symbol() instanceof BranchYieldSymbol.None);
@@ -230,41 +230,4 @@ public class LowerBranch {
 
         return new ElsePart(elseBranch, null);
     }
-
-
-    /*private KExpr createUnreachable(LoweringContext context, Region region) {
-        var classModel = context.model().getClass(KType.MATCH_EXCEPTION.pointer());
-
-        var classType = new KType.ClassType(classModel.pointer(), List.of());
-        var superLiteral = new KExpr.SpecialCall(region, new InvocationType.NewInit(classType));
-        var inits = classModel.getMethodCollectionShallow("<init>");
-        if (inits.isEmpty()) {
-            Log.temp(region, "Missing Constructor for MatchException");
-            throw new Log.KarinaException();
-        }
-        var constructorPointer = inits.methods().getFirst();
-
-        var symbol = new CallSymbol.CallSuper(
-                constructorPointer, List.of(), classType,
-                superLiteral.invocationType()
-        );
-
-        if (constructorPointer.erasedParameters().size() != 2) {
-            Log.temp(region, "MatchException constructor has wrong number of parameters");
-            throw new Log.KarinaException();
-        }
-
-        List<KExpr> args = List.of(
-                new KExpr.StringExpr(
-                        region,
-                        "Unreachable",
-                        false
-                ),
-                new KExpr.Literal(region, "null", new LiteralSymbol.Null(region))
-        );
-        return new KExpr.Call(region, superLiteral, List.of(), args, symbol);
-
-
-    }
-*/
 }

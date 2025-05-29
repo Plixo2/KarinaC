@@ -25,6 +25,7 @@ import java.util.Objects;
  */
 public record AttributionContext(
         Model model,
+        Context c,
         @Nullable Variable selfVariable,
         boolean isLoop,
         @Nullable MethodModel owningMethod,
@@ -34,7 +35,7 @@ public record AttributionContext(
         StaticImportTable table,
         TypeChecking checking,
         ProtectionChecking protection
-) {
+) implements IntoContext {
     /**
      * Unboxing and boxing of primitive types, see {@link #boxing} and {@link #unboxing}
      */
@@ -49,18 +50,18 @@ public record AttributionContext(
 
     public AttributionContext setInLoop(boolean isLoop) {
         return new AttributionContext(
-                this.model, this.selfVariable, isLoop, this.owningMethod, this.owningClass, this.returnType, this.variables, this.table,
+                this.model, this.c, this.selfVariable, isLoop, this.owningMethod, this.owningClass, this.returnType, this.variables, this.table,
                 this.checking, this.protection
         );
     }
 
     public AttributionContext addVariable(Variable variable) {
         if (variable.name().equals("_")) {
-            Log.warn("Variable name '_' is reserved for ignored variables, this should not happen");
+            Log.warn(this.c, "Variable name '_' is reserved for ignored variables, this should not happen");
         }
         if (this.variables.contains(variable.name())) {
             var existingVariable = Objects.requireNonNull(this.variables.get(variable.name()));
-            Log.attribError(
+            Log.error(this.c,
                     new AttribError.DuplicateVariable(
                             existingVariable.region(),
                             variable.region(),
@@ -69,14 +70,14 @@ public record AttributionContext(
             throw new Log.KarinaException();
         }
         return new AttributionContext(
-                this.model, this.selfVariable, this.isLoop,this.owningMethod, this.owningClass, this.returnType,
+                this.model, this.c, this.selfVariable, this.isLoop,this.owningMethod, this.owningClass, this.returnType,
                 this.variables.add(variable), this.table, this.checking, this.protection
         );
     }
 
     public AttributionContext markImmutable(Variable variable) {
         return new AttributionContext(
-                this.model, this.selfVariable, this.isLoop ,this.owningMethod, this.owningClass, this.returnType,
+                this.model, this.c, this.selfVariable, this.isLoop ,this.owningMethod, this.owningClass, this.returnType,
                 this.variables.markImmutable(variable), this.table, this.checking, this.protection
         );
     }
@@ -102,12 +103,12 @@ public record AttributionContext(
             return boxed;
         }
 
-        if (!this.checking.canAssign(checkingRegion, left, rightType, false)) {
+        if (!this.checking.canAssign(this, checkingRegion, left, rightType, false)) {
             return null;
         }
         if (mutate) {
             //yes this is intentional this way
-            this.checking.canAssign(checkingRegion, left, rightType, true);
+            this.checking.canAssign(this, checkingRegion, left, rightType, true);
         }
         return right;
     }
@@ -119,7 +120,7 @@ public record AttributionContext(
         var rightType = right.type();
         var conversion = getConversion(checkingRegion, left, right, true, true);
         if (conversion == null) {
-            Log.attribError(new AttribError.TypeMismatch(checkingRegion, left, rightType));
+            Log.error(this.c, new AttribError.TypeMismatch(checkingRegion, left, rightType));
             throw new Log.KarinaException();
         }
         return conversion;
@@ -137,7 +138,7 @@ public record AttributionContext(
             if (unboxFrom != null) {
                 var toType = new KType.ClassType(unboxFrom.pointer, List.of());
                 //we just say, that the type is now a Boxed version, and let the makeAssignment handle the rest
-                resolvable.tryResolve(checkingRegion, toType);
+                resolvable.tryResolve(this.c, checkingRegion, toType);
 
                 return makeAssignment(checkingRegion, left, right);
             }
@@ -215,10 +216,10 @@ public record AttributionContext(
             var call = createBoxingCall(right, classTypeToConvert, primitive, debug);
 
             //it should be resolvable, even tho currently, this should not happen
-            if (!resolvable.canResolve(checkingRegion, classTypeToConvert)) {
+            if (!resolvable.canResolve(this.c, checkingRegion, classTypeToConvert)) {
                 return null;
             }
-            resolvable.tryResolve(checkingRegion, classTypeToConvert);
+            resolvable.tryResolve(this.c, checkingRegion, classTypeToConvert);
             //to prevent infinite loops, even tho currently, this should not happen
             if (!resolvable.isResolved()) {
                 return null;
@@ -301,6 +302,11 @@ public record AttributionContext(
                         false
                 )
         );
+    }
+
+    @Override
+    public Context intoContext() {
+        return this.c;
     }
 
     //helper records

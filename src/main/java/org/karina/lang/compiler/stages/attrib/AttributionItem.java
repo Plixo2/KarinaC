@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class AttributionItem {
 
 
-    public static KClassModel attribClass(Model model, KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
+    public static KClassModel attribClass(Context c, Model model, KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
 
         var logName = "class-" + classModel.name();
         Log.beginType(Log.LogTypes.CLASS_NAME, logName);
@@ -50,33 +50,34 @@ public class AttributionItem {
         );
 
         for (var kClassModel : classModel.innerClasses()) {
-            var inner = attribClass(model, classModelNew, kClassModel, modelBuilder);
+            var inner = attribClass(c, model, classModelNew, kClassModel, modelBuilder);
             innerToFill.add(inner);
         }
 
         if (classModelNew.symbolTable() == null) {
-            Log.temp(classModelNew.region(), "No symbol table was created");
+            Log.temp(c, classModelNew.region(), "No symbol table was created");
             throw new Log.KarinaException();
         }
         var importTable = StaticImportTable.fromImportTable(classModel.pointer(), model, classModelNew.symbolTable());
 
+
         for (var method : classModel.methods()) {
             if (!(method instanceof KMethodModel kMethodModel)) {
-                Log.temp(method.region(), "Invalid method");
+                Log.temp(c, method.region(), "Invalid method");
                 throw new Log.KarinaException();
             }
-            var attribMethod = attribMethod(model, classModelNew, importTable, kMethodModel);
+            var attribMethod = attribMethod(c, model, classModelNew, importTable, kMethodModel);
             methodsToFill.add(attribMethod);
         }
         Log.endType(Log.LogTypes.CLASS_NAME, logName);
 
-        modelBuilder.addClass(classModelNew);
+        modelBuilder.addClass(c, classModelNew);
         return classModelNew;
     }
 
 
 
-    public static KMethodModel attribMethod(Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
+    public static KMethodModel attribMethod(Context c, Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
 
         var logName = "method-" + methodModel.name() + "-" + methodModel.signature().toString() + " in " + classModel.name();
         Log.beginType(Log.LogTypes.METHOD_NAME, logName);
@@ -92,7 +93,7 @@ public class AttributionItem {
         var parameters = methodModel.signature().parameters();
         var names = methodModel.parameters();
         if (parameters.size() != names.size()) {
-            Log.temp(methodModel.region(), "Invalid parameters");
+            Log.temp(c, methodModel.region(), "Invalid parameters");
             throw new Log.KarinaException();
         }
 
@@ -100,6 +101,7 @@ public class AttributionItem {
         var protection = new ProtectionChecking(model);
         var contextNew = new AttributionContext(
                 model,
+                c,
                 self,
                 false,
                 methodModel,
@@ -143,13 +145,13 @@ public class AttributionItem {
         //TODO this should not be here. Validate before this stage
         if (methodModel.isConstructor()) {
             if (Modifier.isStatic(methodModel.modifiers())) {
-                Log.attribError(new AttribError.NotSupportedExpression(
+                Log.error(c, new AttribError.NotSupportedExpression(
                         methodModel.region(),
                         "Constructor cannot be static"
                 ));
                 throw new Log.KarinaException();
             } else if (!returnType.isVoid()) {
-                 Log.attribError(new AttribError.NotSupportedExpression(
+                 Log.error(c, new AttribError.NotSupportedExpression(
                          methodModel.region(),
                          "Constructor must return void"
                  ));

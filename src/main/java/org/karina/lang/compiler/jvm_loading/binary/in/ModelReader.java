@@ -6,6 +6,7 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.utils.Context;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,7 +26,7 @@ public class ModelReader {
 
     }
 
-    public Model read() throws IOException {
+    public Model read(Context c) throws IOException {
         var builder = new ModelBuilder();
         var ttyl = new TTYL();
 
@@ -70,9 +71,9 @@ public class ModelReader {
                 Runnable runnable = () -> {
                     try {
                         var innerReader = getClassReader(finalIndex, offsets, remainingBytes);
-                        var _ = innerReader.read(ttyl, builder);
+                        var _ = innerReader.read(c, ttyl, builder);
                     } catch (IOException e) {
-                        Log.fileError(new FileLoadError.Resource(e));
+                        Log.fileError(c, new FileLoadError.Resource(e));
                         throw new Log.KarinaException();
                     }
                 };
@@ -94,11 +95,11 @@ public class ModelReader {
 
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
-            Log.fileError(new FileLoadError.Resource(e));
+            Log.fileError(c, new FileLoadError.Resource(e));
             throw new Log.KarinaException();
         }
 
-        var finished = builder.build();
+        var finished = builder.build(c);
         Log.begin("resolve");
         ttyl.resolve(finished);
         Log.end("resolve");

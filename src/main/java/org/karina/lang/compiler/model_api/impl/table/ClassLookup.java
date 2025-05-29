@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * Abstraction for a class lookup table.
- * A HashMap should be the fastest... Every Trie should be slower
+ * A HashMap should be the fastest, Tries are slower
  * @see ObjectPath
  */
 public interface ClassLookup {

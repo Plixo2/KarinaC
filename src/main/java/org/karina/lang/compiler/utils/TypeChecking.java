@@ -14,16 +14,16 @@ public record TypeChecking(Model model) {
      * Returns the most common super type of the two types.
      */
 
-    public @Nullable KType superType(Region checkingRegion, KType a, KType b) {
-        return superTypeInner(checkingRegion, a, b);
+    public @Nullable KType superType(IntoContext c, Region checkingRegion, KType a, KType b) {
+        return superTypeInner(c.intoContext(), checkingRegion, a, b);
     }
 
-    private @Nullable KType superTypeInner(Region checkingRegion, KType a, KType b) {
+    private @Nullable KType superTypeInner(Context c, Region checkingRegion, KType a, KType b) {
         var mutable = true;
-        if (canAssign(checkingRegion, a, b, mutable)) {
+        if (canAssign(c, checkingRegion, a, b, mutable)) {
             Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + a);
             return a;
-        } else if (canAssign(checkingRegion, b, a, mutable)) {
+        } else if (canAssign(c, checkingRegion, b, a, mutable)) {
             Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + b);
             return b;
         }
@@ -42,7 +42,7 @@ public record TypeChecking(Model model) {
                 return KType.ROOT;
             }
 
-            var inner = superType(checkingRegion, a, b);
+            var inner = superType(c, checkingRegion, a, b);
             if (inner == null) {
                 return KType.ROOT;
             }
@@ -59,8 +59,8 @@ public record TypeChecking(Model model) {
         var interfacesA = new ArrayList<KType.ClassType>();
         var interfacesB = new ArrayList<KType.ClassType>();
 
-        var aSuperTypes = getSuperTypes(aClass, interfacesA);
-        var bSuperTypes = getSuperTypes(bClass, interfacesB);
+        var aSuperTypes = getSuperTypes(c, aClass, interfacesA);
+        var bSuperTypes = getSuperTypes(c, bClass, interfacesB);
 
         //can be replaced with a while loop with an early return,
         // without having to test the rest of the super types, but kept for debugging
@@ -69,7 +69,7 @@ public record TypeChecking(Model model) {
                 break; //skip, we might find a common interface. Object is the fallback anyway
             }
             for (KType.ClassType currentSuper : aSuperTypes) {
-                if (classStrictEquals(checkingRegion, currentSuper, current, mutable)) {
+                if (classStrictEquals(c, checkingRegion, currentSuper, current, mutable)) {
                     Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + current);
                     return current;
                 }
@@ -78,13 +78,13 @@ public record TypeChecking(Model model) {
 
         //add interfaces, of the base class
         // superclass interfaces are already added by the 'getSuperTypes' call
-        putInterfaces(aClass, interfacesA);
-        putInterfaces(bClass, interfacesB);
+        putInterfaces(c, aClass, interfacesA);
+        putInterfaces(c, bClass, interfacesB);
         //TODO Not breadth first, so not most common, fix this
 
         for (var interfaceA : interfacesA) {
             for (var interfaceB : interfacesB) {
-                if (classStrictEquals(checkingRegion, interfaceA, interfaceB, mutable)) {
+                if (classStrictEquals(c, checkingRegion, interfaceA, interfaceB, mutable)) {
                     Log.recordType(Log.LogTypes.BRANCH, "Common super type found for " + a + " and " + b + " is " + interfaceA);
                     return interfaceA;
                 }
@@ -104,16 +104,16 @@ public record TypeChecking(Model model) {
      * Returns the super types of the class
      * Can fill the collection with the interfaces of the superclass, when not null
      */
-    private List<KType.ClassType> getSuperTypes(KType.ClassType cls, @Nullable List<KType.ClassType> collection) {
+    private List<KType.ClassType> getSuperTypes(Context c, KType.ClassType cls, @Nullable List<KType.ClassType> collection) {
         var superTypes = new ArrayList<KType.ClassType>();
 
-        var superType = Types.getSuperType(this.model, cls);
+        var superType = Types.getSuperType(c, this.model, cls);
         while (superType != null) {
             if (collection != null) {
-                putInterfaces(superType, collection);
+                putInterfaces(c, superType, collection);
             }
             superTypes.add(superType);
-            superType = Types.getSuperType(this.model, superType);
+            superType = Types.getSuperType(c, this.model, superType);
         }
 
         return superTypes;
@@ -122,9 +122,9 @@ public record TypeChecking(Model model) {
     /**
      * (breadth first) recursive search for the interfaces of the class
      */
-    private void putInterfaces(KType.ClassType cls, List<KType.ClassType> collection) {
+    private void putInterfaces(Context c, KType.ClassType cls, List<KType.ClassType> collection) {
 
-        var interfaces = Types.getInterfaces(this.model, cls);
+        var interfaces = Types.getInterfaces(c, this.model, cls);
         for (var anInterface : interfaces) {
             if (collection.contains(anInterface)) {
                 continue;
@@ -135,7 +135,7 @@ public record TypeChecking(Model model) {
             if (collection.contains(anInterface)) {
                 continue;
             }
-            putInterfaces(anInterface, collection);
+            putInterfaces(c, anInterface, collection);
         }
     }
 
@@ -147,27 +147,27 @@ public record TypeChecking(Model model) {
      * Example:
      * {@code let a: left = right}
      */
-    public boolean canAssign(Region checkingRegion, KType left, KType right, boolean mutable) {
+    public boolean canAssign(IntoContext c, Region checkingRegion, KType left, KType right, boolean mutable) {
         var logName = "type-checking (" + left + " from " + right + ")" + (mutable ? " mutable" : "");
         Log.beginType(Log.LogTypes.CHECK_TYPE, logName);
-        var resultInner = canAssignInner(checkingRegion, left, right, mutable);
+        var resultInner = canAssignInner(c.intoContext(), checkingRegion, left, right, mutable);
         Log.endType(Log.LogTypes.CHECK_TYPE, logName, "result: " + resultInner, checkingRegion, "left: " + left, "right: " + right);
         return resultInner;
     }
 
-    private boolean canAssignInner(Region checkingRegion, KType left, KType right, boolean mutable) {
+    private boolean canAssignInner(Context c, Region checkingRegion, KType left, KType right, boolean mutable) {
         var logName = left + " from " + right;
         Log.beginType(Log.LogTypes.CHECK_TYPE, logName);
 
         if (left instanceof KType.Resolvable resolvable) {
             if (resolvable.isResolved()) {
-                var resultInner = canAssignInner(checkingRegion, resolvable.get(), right, mutable);
+                var resultInner = canAssignInner(c, checkingRegion, resolvable.get(), right, mutable);
                 Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Left Resolvable resolved", resultInner);
                 return resultInner;
             } else {
-                var canResolve = resolvable.canResolve(checkingRegion, right);
+                var canResolve = resolvable.canResolve(c, checkingRegion, right);
                 if (mutable && canResolve) {
-                    resolvable.tryResolve(checkingRegion, right);
+                    resolvable.tryResolve(c, checkingRegion, right);
                     //we dont test again if it was resolved, since the resolvable might reference itself
                 }
 
@@ -176,13 +176,13 @@ public record TypeChecking(Model model) {
             }
         } else if (right instanceof KType.Resolvable resolvable) {
             if (resolvable.isResolved()) {
-                var resultInner = canAssignInner(checkingRegion, left, resolvable.get(), mutable);
+                var resultInner = canAssignInner(c, checkingRegion, left, resolvable.get(), mutable);
                 Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Right Resolvable resolved", resultInner);
                 return resultInner;
             } else {
-                var canResolve = resolvable.canResolve(checkingRegion, left);
+                var canResolve = resolvable.canResolve(c, checkingRegion, left);
                 if (mutable && canResolve) {
-                    resolvable.tryResolve(checkingRegion, left);
+                    resolvable.tryResolve(c, checkingRegion, left);
                     //we dont test again if it was resolved, since the resolvable might reference itself
                 }
                 Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Trying to resolve right", canResolve);
@@ -198,7 +198,10 @@ public record TypeChecking(Model model) {
             case KType.ArrayType arrayType -> {
                 if (right instanceof KType.ArrayType(KType elementType)) {
                     var resultInner = canAssignInner(
-                            checkingRegion, arrayType.elementType(), elementType,
+                            c,
+                            checkingRegion,
+                            arrayType.elementType(),
+                            elementType,
                             mutable
                     );
                     Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Array match", resultInner);
@@ -212,7 +215,7 @@ public record TypeChecking(Model model) {
                 var isObject = classType.pointer().isRoot();
 
                 if (right instanceof KType.ClassType rightClassType) {
-                    var classCheck = canAssignClass(checkingRegion, classType, rightClassType, mutable);
+                    var classCheck = canAssignClass(c, checkingRegion, classType, rightClassType, mutable);
                     Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class match", classCheck);
                     yield classCheck;
                 } else if (right instanceof KType.GenericLink) {
@@ -228,7 +231,7 @@ public record TypeChecking(Model model) {
                         Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Object match with function", true);
                         yield true;
                     }
-                    var resultInner = canAssignFunctionToClass(checkingRegion, classType, functionType, mutable);
+                    var resultInner = canAssignFunctionToClass(c, checkingRegion, classType, functionType, mutable);
                     Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class match via Function interface", resultInner);
                     yield resultInner;
                 } else if (right instanceof KType.ArrayType) {
@@ -250,7 +253,7 @@ public record TypeChecking(Model model) {
                         yield false;
                     }
                     for (int i = 0; i < functionType.arguments().size(); i++) {
-                        if (!canAssignInner(checkingRegion, functionType.arguments().get(i), rightFunctionType.arguments().get(i), mutable)) {
+                        if (!canAssignInner(c, checkingRegion, functionType.arguments().get(i), rightFunctionType.arguments().get(i), mutable)) {
                             Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Function arguments mismatch", false);
                             yield false;
                         }
@@ -258,7 +261,7 @@ public record TypeChecking(Model model) {
                     //test all interfaces, direct and indirect
                     var leftReturnType = functionType.returnType();
                     var rightReturnType = rightFunctionType.returnType();
-                    var returnResult = canAssignInner(checkingRegion, leftReturnType, rightReturnType, mutable);
+                    var returnResult = canAssignInner(c, checkingRegion, leftReturnType, rightReturnType, mutable);
                     Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Function return match",  returnResult);
                     yield returnResult;
                 } else {
@@ -280,7 +283,7 @@ public record TypeChecking(Model model) {
             }
             case KType.UnprocessedType unprocessedType -> {
                 Log.endType(Log.LogTypes.CHECK_TYPE, logName, "UnprocessedType match", false);
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
+                Log.temp(c, unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
                 throw new Log.KarinaException();
             }
             case KType.VoidType voidType -> right.isVoid();
@@ -290,7 +293,7 @@ public record TypeChecking(Model model) {
 
     }
 
-    private boolean canAssignFunctionToClass(Region checkingRegion, KType.ClassType left, KType.FunctionType right, boolean mutable) {
+    private boolean canAssignFunctionToClass(Context c, Region checkingRegion, KType.ClassType left, KType.FunctionType right, boolean mutable) {
         var classModelLeft = this.model.getClass(left.pointer());
 
         if (Modifier.isInterface(classModelLeft.modifiers())) {
@@ -299,7 +302,7 @@ public record TypeChecking(Model model) {
                   //  Log.recordType(Log.LogTypes.CHECK_TYPE, "test if interface " + left + " implements " + rightInterfaceClassType);
                    // var replacedInterface = Types.projectGenerics(this.model, left, rightInterfaceClassType);
 
-                    if (doesImplementInterface(checkingRegion, left, rightInterfaceClassType, mutable)) {
+                    if (doesImplementInterface(c, checkingRegion, left, rightInterfaceClassType, mutable)) {
                         return true;
                     }
                 }
@@ -310,24 +313,24 @@ public record TypeChecking(Model model) {
 
     }
 
-    private boolean canAssignClass(Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
+    private boolean canAssignClass(Context c, Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
 
-        if (classStrictEquals(checkingRegion, left, right, mutable)) {
+        if (classStrictEquals(c, checkingRegion, left, right, mutable)) {
             return true;
         }
 
         var classModelLeft = this.model.getClass(left.pointer());
 
         if (Modifier.isInterface(classModelLeft.modifiers())) {
-            return doesImplementInterface(checkingRegion, left, right, mutable);
+            return doesImplementInterface(c, checkingRegion, left, right, mutable);
         } else {
-            return isSuperClassOf(checkingRegion, left, right, mutable);
+            return isSuperClassOf(c, checkingRegion, left, right, mutable);
         }
 
     }
 
-    private boolean doesImplementInterface(Region checkingRegion, KType.ClassType interfaceModel, KType.ClassType right, boolean mutable) {
-        if (classStrictEquals(checkingRegion, interfaceModel, right, mutable)) {
+    private boolean doesImplementInterface(Context c, Region checkingRegion, KType.ClassType interfaceModel, KType.ClassType right, boolean mutable) {
+        if (classStrictEquals(c, checkingRegion, interfaceModel, right, mutable)) {
             return true;
         }
 
@@ -335,9 +338,9 @@ public record TypeChecking(Model model) {
         Log.recordType(Log.LogTypes.CHECK_TYPE,"test if interface " + right + " implements " + interfaceModel + " with " + rightModel.interfaces().size() + " interface(s)");
         for (var interfaceOfRight : rightModel.interfaces()) {
 
-            var replacedInterface = Types.projectGenerics(this.model, right, interfaceOfRight);
+            var replacedInterface = Types.projectGenerics(c, this.model, right, interfaceOfRight);
 
-            if (doesImplementInterface(checkingRegion, interfaceModel, replacedInterface, mutable)) {
+            if (doesImplementInterface(c, checkingRegion, interfaceModel, replacedInterface, mutable)) {
                 return true;
             }
         }
@@ -345,18 +348,18 @@ public record TypeChecking(Model model) {
     }
 
 
-    private boolean isSuperClassOf(Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
+    private boolean isSuperClassOf(Context c, Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
 
-        if (classStrictEquals(checkingRegion, left, right, mutable)) {
+        if (classStrictEquals(c, checkingRegion, left, right, mutable)) {
             return true;
         }
 
-        var superClass = Types.getSuperType(this.model, right);
+        var superClass = Types.getSuperType(c, this.model, right);
         if (superClass == null) {
             return false;
         }
 
-        return isSuperClassOf(checkingRegion, left, superClass, mutable);
+        return isSuperClassOf(c, checkingRegion, left, superClass, mutable);
     }
 
 
@@ -364,21 +367,21 @@ public record TypeChecking(Model model) {
     /**
      * Strict equals for classes, checks if the classes are the same, and if the generics are the same
      */
-    private boolean classStrictEquals(Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
+    private boolean classStrictEquals(Context c, Region checkingRegion, KType.ClassType left, KType.ClassType right, boolean mutable) {
         Log.beginType(Log.LogTypes.CHECK_TYPE, "strict equals check");
         Log.recordType(Log.LogTypes.CHECK_TYPE, "Class strict equals " + left + " and " + right);
         if (left.pointer().equals(right.pointer())) {
             if (left.generics().size() != right.generics().size()) {
                 Log.record("(warn) Generic mismatch, probably a Java side issue");
-                Log.temp(checkingRegion, "Generics size mismatch, should not happen");
-                Log.temp(left.pointer().region(), "Left of mismatch, with " + left.generics().size() + " generics");
-                Log.temp(right.pointer().region(), "Right of mismatch, with " + right.generics().size() + " generics");
+                Log.temp(c, checkingRegion, "Generics size mismatch, should not happen");
+                Log.temp(c, left.pointer().region(), "Left of mismatch, with " + left.generics().size() + " generics");
+                Log.temp(c, right.pointer().region(), "Right of mismatch, with " + right.generics().size() + " generics");
                 throw new Log.KarinaException();
             }
             for (var i = 0; i < left.generics().size(); i++) {
                 var leftGeneric = left.generics().get(i);
                 var rightGeneric = right.generics().get(i);
-                if (!canAssignInner(checkingRegion, leftGeneric, rightGeneric, mutable)) {
+                if (!canAssignInner(c, checkingRegion, leftGeneric, rightGeneric, mutable)) {
                     Log.recordType(Log.LogTypes.CHECK_TYPE, "cannot assign generics", leftGeneric, "from", rightGeneric);
                     Log.endType(Log.LogTypes.CHECK_TYPE, "strict equals check", false);
                     return false;
