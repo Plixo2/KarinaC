@@ -47,6 +47,7 @@ After the installation, you can run the compiler from the command line:
 ```shell
 karina -v
 ```
+> Karina: v0.5 \
 > Java: OpenJDK 64-Bit Server VM 23.0.2
 
 
