@@ -75,8 +75,6 @@ public class AttributionItem {
         return classModelNew;
     }
 
-
-
     public static KMethodModel attribMethod(Context c, Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
 
         var logName = "method-" + methodModel.name() + "-" + methodModel.signature().toString() + " in " + classModel.name();
@@ -129,7 +127,7 @@ public class AttributionItem {
                     true
             );
             if (name.equals("_")) {
-                 continue;
+                continue;
             }
             variables.add(variable);
             contextNew = contextNew.addVariable(variable);
@@ -151,11 +149,11 @@ public class AttributionItem {
                 ));
                 throw new Log.KarinaException();
             } else if (!returnType.isVoid()) {
-                 Log.error(c, new AttribError.NotSupportedExpression(
-                         methodModel.region(),
-                         "Constructor must return void"
-                 ));
-                 throw new Log.KarinaException();
+                Log.error(c, new AttribError.NotSupportedExpression(
+                        methodModel.region(),
+                        "Constructor must return void"
+                ));
+                throw new Log.KarinaException();
             }
         }
         Log.endType(Log.LogTypes.METHOD_NAME, logName);

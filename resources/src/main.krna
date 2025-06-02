@@ -1,9 +1,32 @@
 
-
-
-
-fn main(args: [string]) {
-    println("Hello, World!")
-    //example::printHelloWorld()
+fn main(args: [String]) {
+    let c = CustomClass{}
+    println(c.make())
 }
 
+/*
+1. super() or this() has to be called
+*/
+
+struct CustomClass {
+    s: string
+    fn (self) {
+        self.s = "Hello, World!"
+        super<Object>()
+    }
+
+    fn make(self) -> String {
+        super<CustomClass>.toString()
+        ""
+    }
+}
+
+
+@Super = {
+    type: type { java::lang::RuntimeException }
+}
+struct WrongRegexException {
+    fn (self, message: string) {
+        super<RuntimeException>(message)
+    }
+}

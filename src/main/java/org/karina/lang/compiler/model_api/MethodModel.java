@@ -24,4 +24,7 @@ public interface MethodModel {
     default boolean isConstructor() {
         return name().equals("<init>");
     }
+    default boolean isStaticConstructor() {
+        return name().equals("<clinit>");
+    }
 }

@@ -11,7 +11,7 @@ item: annotation* (function | struct | enum | interface | const);
 
 function: 'override'? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
-const: 'const' id ':' type '=' expression ';'?;
+const: 'static' id ':' 'mut'? type '=' expression ';'?;
 
 //TODO implement boundWhere
 struct: 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;

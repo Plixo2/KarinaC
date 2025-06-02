@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.stages.generate;
 
+import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
@@ -35,6 +36,8 @@ public class GenerationProcessor {
 
         var manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().put(new Attributes.Name("Karina-Version"), KarinaCompiler.VERSION);
+
         manifest.getMainAttributes().put(Attributes.Name.MAIN_CLASS, mainClass);
         manifest.getMainAttributes().put(Attributes.Name.CLASS_PATH, "karina_base.jar");
 

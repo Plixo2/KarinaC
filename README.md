@@ -47,7 +47,7 @@ After the installation, you can run the compiler from the command line:
 ```shell
 karina -v
 ```
-> Karina: v0.5 \
+> Karina: v0.6 \
 > Java: OpenJDK 64-Bit Server VM 23.0.2
 
 
@@ -63,7 +63,7 @@ karina run
 
 ### Documentation
 
-The official documentation is available at 
+The official documentation is available at
 [karina-lang.org](https://karina-lang.org/guide/hello.html).
 
 
@@ -117,8 +117,8 @@ You can set System environment flags via [build.gradle](build.gradle) or the vm 
 
 ```groovy
 application {
-    // ...
-    applicationDefaultJvmArgs = ['-Dkarina.source="resources/local/"'] // set the source folder to your local dev folder
+  // ...
+  applicationDefaultJvmArgs = ['-Dkarina.source="resources/local/"'] // set the source folder to your local dev folder
 }
 ```
 
@@ -152,8 +152,8 @@ Enables/Disables the flight recorder output to the console. Defaults to `true`
 #### karina.binary
 > `karina.binary="<true/false>"`
 
-Enables/Disables the usage of a binary format for faster reading of precompiled classes. 
-Can improve the startup performance over 20 times, but untested and may cause issues. 
+Enables/Disables the usage of a binary format for faster reading of precompiled classes.
+Can improve the startup performance over 20 times, but untested and may cause issues.
 Defaults to `false`
 
 
@@ -172,7 +172,7 @@ Useful for debugging the compiler.
 You can set custom log types in
 [here](src/main/java/org/karina/lang/compiler/logging/Log.java#L45).
 
-Adding log types will enable logging for specific parts of the compiler. 
+Adding log types will enable logging for specific parts of the compiler.
 You can get a detailed view of the inner workings of the compiler
 by setting the correct logging types.
 
@@ -196,7 +196,7 @@ This will write the bytecode of the `main.class` file to `main.txt`, where it ca
 ## Rebuild the standard library
 
 You can rebuild the [standard library](src/main/java/karina/lang/) with the
-Gradle task `KARINA-BASE`. 
+Gradle task `KARINA-BASE`.
 
 This will create a new  `karina_base.jar` file, located in [`src/main/resources`](src/main/resources)
 
@@ -238,7 +238,7 @@ Other important classes:
 - [model_api](src/main/java/org/karina/lang/compiler/model_api)
   - The API for the ClassModel. Represents all loaded classes and their fields, methods, etc
 - [stages](src/main/java/org/karina/lang/compiler/stages)
-  - All stages of the compiler. 
+  - All stages of the compiler.
 
 </details>
 

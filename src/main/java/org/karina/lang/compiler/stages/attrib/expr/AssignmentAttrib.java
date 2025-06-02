@@ -42,9 +42,15 @@ public class AssignmentAttrib {
                 } else if (literalSymbol instanceof LiteralSymbol.StaticFieldReference(var innerRegion, var fieldPointer, _)) {
                     var fieldModel = ctx.model().getField(fieldPointer);
                     if (Modifier.isFinal(fieldModel.modifiers())) {
+                        if (ctx.owningMethod() == null || !ctx.owningMethod().isStaticConstructor()) {
                             Log.error(ctx,
-                                    new AttribError.FinalAssignment(expr.region(), innerRegion, fieldPointer.name()));
+                                    new AttribError.FinalAssignment(
+                                            expr.region(), innerRegion,
+                                            fieldPointer.name()
+                                    )
+                            );
                             throw new Log.KarinaException();
+                        }
                     }
                     var fieldType = fieldModel.type(); //no need for replacement
                     yield new AssignmentSymbol.StaticField(fieldPointer, fieldType);
@@ -60,9 +66,9 @@ public class AssignmentAttrib {
                 if (Modifier.isFinal(fieldModel.modifiers())) {
                     if (ctx.owningMethod() == null || !ctx.owningMethod().isConstructor()) {
                         Log.error(ctx, new AttribError.FinalAssignment(
-                                        expr.region(),
-                                        fieldModel.region(),
-                                        pointer.name()
+                                expr.region(),
+                                fieldModel.region(),
+                                pointer.name()
                         ));
                         throw new Log.KarinaException();
                     }
@@ -71,10 +77,10 @@ public class AssignmentAttrib {
                 yield new AssignmentSymbol.Field(object, pointer, type, owner);
             }
             case KExpr.GetArrayElement getArrayElement -> {
-                    yield new AssignmentSymbol.ArrayElement(
-                            getArrayElement.left(), getArrayElement.index(),
-                            getArrayElement.elementType()
-                    );
+                yield new AssignmentSymbol.ArrayElement(
+                        getArrayElement.left(), getArrayElement.index(),
+                        getArrayElement.elementType()
+                );
             }
             default -> {
                 Log.error(ctx, new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));

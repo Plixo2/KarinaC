@@ -76,7 +76,7 @@ public class GenerateItem {
                 fieldModel.name(),
                 descriptor,
                 signature,
-                null
+                fieldModel.defaultValue()
         );
     }
 
