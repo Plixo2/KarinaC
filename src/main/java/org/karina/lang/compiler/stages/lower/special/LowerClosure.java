@@ -166,8 +166,7 @@ public class LowerClosure {
                     fieldName.type(),
                     Modifier.PRIVATE | Modifier.FINAL,
                     this.region,
-                    classPointer,
-                    null
+                    classPointer
             );
             fields.add(field);
         }

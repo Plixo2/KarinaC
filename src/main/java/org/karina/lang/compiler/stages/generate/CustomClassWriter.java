@@ -32,7 +32,6 @@ public class CustomClassWriter extends ClassWriter {
 
     @Override
     protected String getCommonSuperClass(final String type1, final String type2) {
-
         var pathA = ObjectPath.fromJavaPath(type1);
         var pathB = ObjectPath.fromJavaPath(type2);
 

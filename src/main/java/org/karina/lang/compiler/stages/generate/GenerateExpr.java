@@ -342,6 +342,7 @@ public class GenerateExpr {
                             case InvocationType.SpecialInvoke specialInvoke -> {
                                 //Load 'this'
                                 ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
+//                                addExpression(call.left(), ctx);
 
                                 var internalName = TypeEncoding.getType(specialInvoke.superType()).getInternalName();
                                 var desc = TypeEncoding.getDesc(callSuper.pointer(), callSuper.pointer().returnType());

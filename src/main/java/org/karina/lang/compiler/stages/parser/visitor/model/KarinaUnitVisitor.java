@@ -1,9 +1,7 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
@@ -59,13 +57,14 @@ public class KarinaUnitVisitor {
 
         var imports = ImmutableList.copyOf(ctx.import_().stream().map(this::visitImport).toList());
         var interfaces = ImmutableList.<KType.ClassType>of();
-
+        var fields = ImmutableList.<KFieldModel>of();
 
         var methods = ImmutableList.<KMethodModel>builder();
         var generics = ImmutableList.<Generic>of();
         var superClass = KType.ROOT;
         var currentClass = ClassPointer.of(region, this.path);
-        var constructor = KarinaStructVisitor.createDefaultConstructor(region, currentClass, List.of(), Modifier.PRIVATE, superClass);
+        var constructor =
+                KarinaStructVisitor.createDefaultConstructor(region, currentClass, List.of(), Modifier.PRIVATE, superClass);
         methods.add(constructor);
         for (var itemContext : ctx.item()) {
             if (itemContext.function() != null) {
@@ -84,34 +83,8 @@ public class KarinaUnitVisitor {
             }
         }
 
-        var permittedSubClasses = ImmutableList.<ClassPointer>of();
+            var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
-        var fields = ImmutableList.<KFieldModel>builder();
-
-        var constNames = new ArrayList<String>();
-        var constValues = new ArrayList<KExpr>();
-
-        for (var itemContext : ctx.item()) {
-            if (itemContext.const_() != null) {
-                var visitExpression = this.exprVisitor.visitExpression(itemContext.const_().expression());
-                var constModel = this.visitConst(itemContext.const_(), visitExpression, currentClass);
-
-                constNames.add(constModel.name());
-                constValues.add(visitExpression);
-
-                fields.add(constModel);
-            }
-        }
-        if (!constNames.isEmpty()) {
-            var clinit = createStaticConstructor(
-                    this.c,
-                    region,
-                    currentClass,
-                    constNames,
-                    constValues
-            );
-            methods.add(clinit);
-        }
 
         var innerClassesToFill = new ArrayList<KClassModel>();
         var annotations = ImmutableList.<KAnnotation>of();
@@ -125,7 +98,7 @@ public class KarinaUnitVisitor {
                 null,
                 interfaces,
                 innerClassesToFill,
-                fields.build(),
+                fields,
                 methods.build(),
                 generics,
                 imports,
@@ -158,7 +131,7 @@ public class KarinaUnitVisitor {
             } else if (itemContext.interface_() != null) {
                 var interface_ = this.interfaceVisitor.visit(classModel, this.path, kAnnotations, itemContext.interface_(), builder);
                 innerClassesToFill.add(interface_);
-            } else if (itemContext.function() == null && itemContext.const_() == null) {
+            } else if (itemContext.function() == null) {
                 Log.syntaxError(this.c, this.conv.toRegion(itemContext), "Invalid item");
                 throw new Log.KarinaException();
             }
@@ -175,7 +148,7 @@ public class KarinaUnitVisitor {
             deepInnerClass.updateNestMembers(nestMembersToFill);
         }
 
-        builder.addClass(this.c, classModel);
+        builder.addClass(c, classModel);
 
         return classModel.pointer();
     }
@@ -250,93 +223,6 @@ public class KarinaUnitVisitor {
             }
             return mapped;
         }).toList();
-    }
-
-    public KFieldModel visitConst(KarinaParser.ConstContext ctx, @Nullable KExpr constExpr, ClassPointer owningClass) {
-
-        var region = this.conv.toRegion(ctx);
-        var name = this.conv.escapeID(ctx.id());
-        var type = this.typeVisitor.visitType(ctx.type());
-        int mods = Modifier.STATIC | Modifier.PUBLIC;
-        if (ctx.MUT() == null) {
-            mods |= Modifier.FINAL;
-        }
-
-        Object defaultValue = null;
-        if (type instanceof KType.PrimitiveType(var primitive)) {
-            if (constExpr instanceof KExpr.Number number) {
-                switch (primitive) {
-                    case INT, SHORT, BYTE, CHAR -> {
-                        defaultValue = number.number().intValue();
-                    }
-                    case FLOAT -> {
-                        defaultValue = number.number().floatValue();
-                    }
-                    case DOUBLE -> {
-                        defaultValue = number.number().doubleValue();
-                    }
-                    case LONG -> {
-                        defaultValue = number.number().longValue();
-                    }
-                }
-            } else if (constExpr instanceof KExpr.Boolean booleanExpr) {
-                if (primitive == KType.KPrimitive.BOOL) {
-                    defaultValue = booleanExpr.value();
-                }
-            }
-        } else if (constExpr instanceof KExpr.StringExpr stringLiteral) {
-            //if we have a string literal, just assume it's a string, it will be checked later
-            defaultValue = stringLiteral.value();
-        }
-
-        return new KFieldModel(name, type, mods, region, owningClass, defaultValue);
-
-    }
-
-    public static KMethodModel createStaticConstructor(
-            IntoContext c,
-            Region region,
-            ClassPointer owningClass,
-            List<String> staticFieldsNames,
-            List<KExpr> staticFieldsValues
-    ) {
-        if (staticFieldsNames.size() != staticFieldsValues.size()) {
-            Log.temp(c, region, "Static fields names and values size mismatch");
-            throw new Log.KarinaException();
-        }
-
-        var assignments = new ArrayList<KExpr>();
-
-        for (var i = 0; i < staticFieldsNames.size(); i++) {
-            var name = staticFieldsNames.get(i);
-            var value = staticFieldsValues.get(i);
-
-            var self = new KExpr.StaticPath(region, owningClass.path(), owningClass);
-            var fieldName = RegionOf.region(region, name);
-            var lhs = new KExpr.GetMember(region, self, fieldName, false, null);
-            var assign = new KExpr.Assignment(region, lhs, value, null);
-            assignments.add(assign);
-        }
-
-        var expression = new KExpr.Block(
-                region,
-                assignments,
-                null,
-                false
-        );
-
-        return new KMethodModel(
-                "<clinit>",
-                Modifier.STATIC | Modifier.PUBLIC,
-                Signature.emptyArgs(KType.NONE),
-                ImmutableList.of(),
-                ImmutableList.of(),
-                expression,
-                ImmutableList.of(),
-                region,
-                owningClass,
-                List.of()
-        );
     }
 
     public List<Generic> visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {

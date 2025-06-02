@@ -9,7 +9,6 @@ import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -573,14 +572,8 @@ public class KarinaExprVisitor implements IntoContext {
                 }
                 var name = this.conv.escapeID(text.substring(i+1, next));
                 i = next-1;
-
-                var literal = new KExpr.Literal(
-                        region,
-                        name,
-                        null
-                );
                 components.add(
-                        new StringComponent.ExpressionComponent(region, literal)
+                        new StringComponent.ExpressionComponent(region, name, null)
                 );
                 previousAddedIndexEnd = next;
             }
