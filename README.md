@@ -7,7 +7,6 @@
   karina-lang.org
 </a>
 
-
 </div>
 
 <br>
@@ -23,9 +22,9 @@
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)
 <br>
 
-Karina is a statically typed, general-purpose high-level programming language emphasizing simplicity, interoperability, and concise notation.
+**Karina is a statically typed, general-purpose high-level programming language emphasizing simplicity, interoperability, and concise notation.
 Karina is fully compatible with Java, allowing you to use existing libraries and frameworks seamlessly
-while providing a modern programming experience.
+while providing a modern programming experience.**
 
 <br>
 
