@@ -1,0 +1,8 @@
+struct CustomClass {
+
+    fn make(self) -> String {
+        super<CustomClass>.toString()
+        super<Object>()
+        ""
+    }
+}

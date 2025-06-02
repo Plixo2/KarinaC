@@ -1,0 +1,18 @@
+
+fn main(args: [String]) {}
+
+struct CustomClass {
+    fn make(self) -> String {
+        super<Object>.toString()
+    }
+}
+
+
+@Super = {
+    type: type { java::lang::RuntimeException }
+}
+struct WrongRegexException {
+    fn (self, message: string) {
+        super<RuntimeException>(message)
+    }
+}
