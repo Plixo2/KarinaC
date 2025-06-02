@@ -38,6 +38,12 @@ public class SpecialCallAttrib {
                     ));
                     throw new Log.KarinaException();
                 }
+                if (!methodModel.isConstructor() && specialInvoke.name().equals("<init>")) {
+                    Log.error(ctx, new AttribError.NotSupportedExpression(
+                            expr.region(), "Cannot call constructor in a non-constructor method"
+                    ));
+                    throw new Log.KarinaException();
+                }
 
                 if (!Types.isSuperTypeOrInterface(ctx.model(), ctx.owningClass(), classType.pointer())) {
                     Log.error(ctx, new AttribError.NotSupportedType(expr.region(), classType));

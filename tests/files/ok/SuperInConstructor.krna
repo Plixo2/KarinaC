@@ -1,0 +1,12 @@
+struct CustomClass {
+    s: string
+    fn (self) {
+        self.s = "Hello, World!"
+        super<Object>()
+    }
+
+    fn make(self) -> String {
+        super<CustomClass>.toString()
+        ""
+    }
+}
