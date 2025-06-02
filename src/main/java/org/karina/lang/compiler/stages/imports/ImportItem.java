@@ -158,7 +158,8 @@ public class ImportItem {
                 type,
                 field.modifiers(),
                 field.region(),
-                field.classPointer()
+                field.classPointer(),
+                field.defaultValue()
         );
     }
 

@@ -75,8 +75,6 @@ public class AttributionItem {
         return classModelNew;
     }
 
-
-
     public static KMethodModel attribMethod(Context c, Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
 
         var logName = "method-" + methodModel.name() + "-" + methodModel.signature().toString() + " in " + classModel.name();

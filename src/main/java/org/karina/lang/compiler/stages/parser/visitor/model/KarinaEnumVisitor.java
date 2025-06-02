@@ -171,7 +171,7 @@ public class KarinaEnumVisitor implements IntoContext {
         var name = this.context.escapeID(ctx.id());
         var type = this.visitor.typeVisitor.visitType(ctx.type());
         var mods = Modifier.PUBLIC | Modifier.FINAL;
-        return new KFieldModel(name, type, mods, region, owningClass);
+        return new KFieldModel(name, type, mods, region, owningClass, null);
 
 
     }

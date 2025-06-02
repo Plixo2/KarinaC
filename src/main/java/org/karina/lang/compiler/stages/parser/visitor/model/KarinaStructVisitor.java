@@ -80,7 +80,8 @@ public class KarinaStructVisitor implements IntoContext {
             }
         }
 
-        boolean containsConstructor = false;
+        var containsConstructor = false;
+        var containsToString = false;
         for (var functionContext : ctx.function()) {
             var methodModel = this.visitor.methodVisitor.visit(
                     currentClass,
@@ -91,6 +92,10 @@ public class KarinaStructVisitor implements IntoContext {
 
             if (methodModel.name().equals("<init>")) {
                 containsConstructor = true;
+            } else if (methodModel.name().equals("toString")) {
+                if (methodModel.parameters().isEmpty()) {
+                    containsToString = true;
+                }
             }
         }
 
@@ -100,10 +105,38 @@ public class KarinaStructVisitor implements IntoContext {
             fields.add(this.visitField(fieldContext, currentClass));
         }
 
+        var constNames = new ArrayList<String>();
+        var constValues = new ArrayList<KExpr>();
+        for (var constContext : ctx.const_()) {
+            var visitExpression = this.visitor.exprVisitor.visitExpression(constContext.expression());
+            var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
+            constNames.add(constModel.name());
+            constValues.add(visitExpression);
+            fields.add(constModel);
+        }
 
+
+        var fieldsList = fields.build();
+
+        var memberFields = fieldsList.stream().filter(ref -> !Modifier.isStatic(ref.modifiers())).toList();
         if (!containsConstructor) {
-            var constructor = createDefaultConstructor(region, currentClass, fields.build(), Modifier.PUBLIC, superClass);
+            var constructor = createDefaultConstructor(region, currentClass, memberFields, Modifier.PUBLIC, superClass);
             methods.add(constructor);
+        }
+        if (!containsToString) {
+            var toStringMethod = createToStringMethod(region, name, currentClass, memberFields);
+            methods.add(toStringMethod);
+        }
+
+        if (!constNames.isEmpty()) {
+            var clinit = KarinaUnitVisitor.createStaticConstructor(
+                    this,
+                    region,
+                    currentClass,
+                    constNames,
+                    constValues
+            );
+            methods.add(clinit);
         }
 
         var generics = ImmutableList.<Generic>of();
@@ -125,7 +158,7 @@ public class KarinaStructVisitor implements IntoContext {
                 owningClass,
                 interfaces.build(),
                 List.of(),
-                fields.build(),
+                fieldsList,
                 methods.build(),
                 generics,
                 imports,
@@ -154,8 +187,7 @@ public class KarinaStructVisitor implements IntoContext {
         }
         mods |= Modifier.PUBLIC;
 
-        return new KFieldModel(name, type, mods, region, owningClass);
-
+        return new KFieldModel(name, type, mods, region, owningClass, null);
     }
 
     public static KMethodModel createDefaultConstructor(
@@ -178,7 +210,7 @@ public class KarinaStructVisitor implements IntoContext {
         var superLiteral = new KExpr.SpecialCall(
                 region,
                 new InvocationType.SpecialInvoke(
-                        "<init>",
+                        name,
                         superClass
                 )
         );
@@ -199,7 +231,6 @@ public class KarinaStructVisitor implements IntoContext {
 
 
 
-
         var expression = new KExpr.Block(region, expressions, null, false);
 
         return new KMethodModel(
@@ -208,6 +239,64 @@ public class KarinaStructVisitor implements IntoContext {
                 signature,
                 paramNames,
                 generics,
+                expression,
+                ImmutableList.of(),
+                region,
+                classPointer,
+                List.of()
+        );
+    }
+    public static KMethodModel createToStringMethod(
+            Region region,
+            String className,
+            ClassPointer classPointer,
+            List<KFieldModel> fields
+    ) {
+
+
+        var components = new ArrayList<StringComponent>();
+
+        components.add(new StringComponent.StringLiteralComponent(
+                className + "{"
+        ));
+
+
+        for (var i = 0; i < fields.size(); i++) {
+            var field = fields.get(i);
+            var isFirst = i == 0;
+
+            var namePrefix = isFirst ? "" : ", ";
+            var name = field.name();
+
+            components.add(new StringComponent.StringLiteralComponent(
+                    namePrefix + name + "="
+            ));
+            var self = new KExpr.Self(region, null);
+            var fieldName = RegionOf.region(region, name);
+            var getField = new KExpr.GetMember(region, self, fieldName, false, null);
+
+            components.add(new StringComponent.ExpressionComponent(
+                    region,
+                    getField
+            ));
+        }
+
+
+        components.add(new StringComponent.StringLiteralComponent(
+                "}"
+        ));
+
+        var expression = new KExpr.StringInterpolation(
+                region,
+                ImmutableList.copyOf(components)
+        );
+
+        return new KMethodModel(
+                "toString",
+                Modifier.PUBLIC,
+                Signature.emptyArgs(KType.STRING),
+                ImmutableList.of(),
+                ImmutableList.of(),
                 expression,
                 ImmutableList.of(),
                 region,
@@ -236,6 +325,7 @@ public class KarinaStructVisitor implements IntoContext {
         }
 
     }
+
 
 
     @Override

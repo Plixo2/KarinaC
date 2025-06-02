@@ -42,9 +42,15 @@ public class AssignmentAttrib {
                 } else if (literalSymbol instanceof LiteralSymbol.StaticFieldReference(var innerRegion, var fieldPointer, _)) {
                     var fieldModel = ctx.model().getField(fieldPointer);
                     if (Modifier.isFinal(fieldModel.modifiers())) {
+                        if (ctx.owningMethod() == null || !ctx.owningMethod().isStaticConstructor()) {
                             Log.error(ctx,
-                                    new AttribError.FinalAssignment(expr.region(), innerRegion, fieldPointer.name()));
+                                    new AttribError.FinalAssignment(
+                                            expr.region(), innerRegion,
+                                            fieldPointer.name()
+                                    )
+                            );
                             throw new Log.KarinaException();
+                        }
                     }
                     var fieldType = fieldModel.type(); //no need for replacement
                     yield new AssignmentSymbol.StaticField(fieldPointer, fieldType);

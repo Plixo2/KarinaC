@@ -13,6 +13,7 @@ import org.karina.lang.compiler.utils.StringComponent;
 
 import java.util.HashSet;
 
+import static org.karina.lang.compiler.stages.attrib.AttributionExpr.attribExpr;
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.of;
 
 public class StringInterpolationAttrib {
@@ -28,7 +29,7 @@ public class StringInterpolationAttrib {
                         Log.record("Literal: '" + stringLiteralComponent.value() + "'");
                     }
                     case StringComponent.ExpressionComponent expressionComponent -> {
-                        Log.record("Variable: '" + expressionComponent.name() + "'");
+                        Log.record("Expression: '" + expressionComponent.getClass() + "'");
                     }
                 }
             }
@@ -41,28 +42,34 @@ public class StringInterpolationAttrib {
                 case StringComponent.StringLiteralComponent stringLiteralComponent -> {
                     newComponents.add(stringLiteralComponent);
                 }
-                case StringComponent.ExpressionComponent(var region, var name, _) -> {
+                case StringComponent.ExpressionComponent(var region, var stringExpr) -> {
 
-                    var variable = ctx.variables().get(name);
-                    if (variable == null) {
-                        var available = new HashSet<>(ctx.variables().names());
-                        Log.error(ctx, new AttribError.UnknownIdentifier(region, name, available));
+                    var newStringExpr = attribExpr(KType.ROOT, ctx, stringExpr).expr();
+                    if (newStringExpr.type().isVoid()) {
+                        Log.error(ctx, new AttribError.NotSupportedType(region, KType.NONE));
                         throw new Log.KarinaException();
                     }
-                    variable.incrementUsageCount();
-                    var literal = new KExpr.Literal(
-                            region,
-                            variable.name(),
-                            new LiteralSymbol.VariableReference(region, variable)
-                    );
-                    //cannot be void, since a variable can never be void
+
                     newComponents.add(
                             new StringComponent.ExpressionComponent(
                                     region,
-                                    name,
-                                    literal
+                                    newStringExpr
                             )
                     );
+
+//                    var variable = ctx.variables().get(name);
+//                    if (variable == null) {
+//                        var available = new HashSet<>(ctx.variables().names());
+//                        Log.error(ctx, new AttribError.UnknownIdentifier(region, name, available));
+//                        throw new Log.KarinaException();
+//                    }
+//                    variable.incrementUsageCount();
+//                    var literal = new KExpr.Literal(
+//                            region,
+//                            variable.name(),
+//                            new LiteralSymbol.VariableReference(region, variable)
+//                    );
+                    //cannot be void, since a variable can never be void
 
                 }
             }
