@@ -535,7 +535,7 @@ public class KarinaExprVisitor implements IntoContext {
             return new KExpr.StringExpr(region, text, true);
         }
 
-        //TODO make better regions for better error messages
+        //TODO make better regions for better error message, or move logic into grammar if possible
 
         var components = ImmutableList.<StringComponent>builder();
 
@@ -592,6 +592,14 @@ public class KarinaExprVisitor implements IntoContext {
         }
 
         var stringComponents = components.build();
+        if (stringComponents.size() == 1 &&
+                stringComponents.getFirst() instanceof StringComponent.StringLiteralComponent(
+                        var value
+                )) {
+
+            return new KExpr.StringExpr(region, value, false);
+
+        }
         return new KExpr.StringInterpolation(region, stringComponents);
     }
 

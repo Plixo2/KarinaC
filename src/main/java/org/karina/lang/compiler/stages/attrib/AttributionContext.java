@@ -82,6 +82,13 @@ public record AttributionContext(
         );
     }
 
+    public AttributionContext withNewContext(Context c) {
+        return new AttributionContext(
+                this.model, c, this.selfVariable, this.isLoop ,this.owningMethod, this.owningClass, this.returnType,
+                this.variables, this.table, this.checking, this.protection
+        );
+    }
+
     public boolean isMutable(Variable variable) {
         return this.variables.isMutable(variable);
     }
