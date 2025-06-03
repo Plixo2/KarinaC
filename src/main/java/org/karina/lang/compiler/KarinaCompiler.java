@@ -74,14 +74,6 @@ public class KarinaCompiler {
 
         Log.begin("compilation");
         try {
-//            try {
-//                var source = FileLoader.loadUTF8("resources/grammar/language/KarinaParser.g4");
-//                var parsed = GrammarParser.parse(c, source);
-//            } catch (IOException e) {
-//                Log.internal(c, e);
-//                throw new Log.KarinaException();
-//            }
-
 
             Model bytecodeClasses;
             if (cache != null) {

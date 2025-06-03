@@ -64,14 +64,21 @@ public class ModelReader {
         Log.record("cache with " + offsets.length + " offsets and " + availableProcessors + " threads");
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var readers = new ClassReader[offsets.length];
+            Log.begin("calculating offsets");
+            for (var index = 0; index < offsets.length; index++) {
+                readers[index] = getClassReader(index, offsets, remainingBytes);
+            }
+            Log.end("calculating offsets");
+
             Log.begin("setup");
             var tasks = new ArrayList<Runnable>();
+
             for (var index = 0; index < offsets.length; index++) {
-                int finalIndex = index;
+                var reader = readers[index];
                 Runnable runnable = () -> {
                     try {
-                        var innerReader = getClassReader(finalIndex, offsets, remainingBytes);
-                        var _ = innerReader.read(c, ttyl, builder);
+                        var _ = reader.read(c, ttyl, builder);
                     } catch (IOException e) {
                         Log.fileError(c, new FileLoadError.Resource(e));
                         throw new Log.KarinaException();
