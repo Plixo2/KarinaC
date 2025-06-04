@@ -20,6 +20,7 @@
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat&logo=linux&logoColor=black)
+![Release](https://img.shields.io/github/milestones/progress-percent/Plixo2/KarinaC/1)
 <br>
 
 **Karina is a statically typed, general-purpose, high-level programming language that emphasizes simplicity, 
