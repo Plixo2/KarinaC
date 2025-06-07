@@ -420,6 +420,7 @@ public class LowerClosure {
 
         var nestMemberToAdd = List.of(classModel.pointer());
         for (var possibleAccess : allClasses) {
+            //TODO replace with non mutable state
             possibleAccess.updateNestMembers(nestMemberToAdd);
         }
 

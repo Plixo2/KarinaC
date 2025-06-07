@@ -17,7 +17,7 @@ import java.util.Objects;
 public class GenerateExpr {
 
 
-    public static void addExpression(KExpr expr, GenerationContext ctx) {
+    public static void generate(KExpr expr, GenerationContext ctx) {
 
         var region = expr.region();
         var currentLine = region.start().line() + 1;
@@ -33,15 +33,15 @@ public class GenerateExpr {
                 assert assignment.symbol() != null;
                 switch (assignment.symbol()) {
                     case AssignmentSymbol.ArrayElement arrayElement -> {
-                        addExpression(arrayElement.array(), ctx);
-                        addExpression(arrayElement.index(), ctx);
-                        addExpression(assignment.right(), ctx);
+                        generate(arrayElement.array(), ctx);
+                        generate(arrayElement.index(), ctx);
+                        generate(assignment.right(), ctx);
                         var type = TypeEncoding.getType(arrayElement.elementType());
                         ctx.add(new InsnNode(type.getOpcode(Opcodes.IASTORE)));
                     }
                     case AssignmentSymbol.Field field -> {
-                        addExpression(field.object(), ctx);
-                        addExpression(assignment.right(), ctx);
+                        generate(field.object(), ctx);
+                        generate(assignment.right(), ctx);
                         var owner = TypeEncoding.getType(field.fieldOwner());
                         var fieldType = TypeEncoding.getType(field.fieldType());
                         ctx.add(new FieldInsnNode(
@@ -52,13 +52,13 @@ public class GenerateExpr {
                         ));
                     }
                     case AssignmentSymbol.LocalVariable localVariable -> {
-                        addExpression(assignment.right(), ctx);
+                        generate(assignment.right(), ctx);
                         var index = ctx.getVariableIndex(assignment.region(), localVariable.variable());
                         var type = TypeEncoding.getType(localVariable.variable().type());
                         ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ISTORE), index));
                     }
                     case AssignmentSymbol.StaticField staticField -> {
-                        addExpression(assignment.right(), ctx);
+                        generate(assignment.right(), ctx);
                         var owner = TypeEncoding.getType(staticField.pointer().classPointer());
                         var fieldType = TypeEncoding.getType(staticField.fieldType());
                         ctx.add(new FieldInsnNode(
@@ -73,8 +73,8 @@ public class GenerateExpr {
             }
             case KExpr.Binary binary -> {
 
-                addExpression(binary.left(), ctx);
-                addExpression(binary.right(), ctx);
+                generate(binary.left(), ctx);
+                generate(binary.right(), ctx);
                 assert binary.symbol() != null;
                 switch (binary.symbol()) {
                     case BinOperatorSymbol.BoolOP boolOP -> {
@@ -204,7 +204,7 @@ public class GenerateExpr {
                 assert block.symbol() != null;
                 while (iterator.hasNext()) {
                     var next = iterator.next();
-                    addExpression(next, ctx);
+                    generate(next, ctx);
                     var type = next.type();
                     if (!type.isVoid() && (iterator.hasNext() || block.symbol().isVoid())) {
                         var size = TypeEncoding.jvmSize(TypeEncoding.getType(type));
@@ -229,10 +229,10 @@ public class GenerateExpr {
                     throw new Log.KarinaException();
                 }
 
-                addExpression(branch.condition(), ctx);
+                generate(branch.condition(), ctx);
                 var falseTarget = new LabelNode();
                 ctx.add(new JumpInsnNode(Opcodes.IFEQ, falseTarget));
-                addExpression(branch.thenArm(), ctx);
+                generate(branch.thenArm(), ctx);
                 var endTarget = new LabelNode();
                 if (branch.elseArm() != null) {
                     ctx.add(new JumpInsnNode(Opcodes.GOTO, endTarget));
@@ -245,7 +245,7 @@ public class GenerateExpr {
                         throw new Log.KarinaException();
                     }
 
-                    addExpression(branch.elseArm().expr(), ctx);
+                    generate(branch.elseArm().expr(), ctx);
                     ctx.add(endTarget);
                 }
 
@@ -273,7 +273,7 @@ public class GenerateExpr {
                         var opcode = Opcodes.INVOKESTATIC;
 
                         for (var argument : call.arguments()) {
-                            addExpression(argument, ctx);
+                            generate(argument, ctx);
                         }
 
                         ctx.add(new MethodInsnNode(
@@ -286,7 +286,7 @@ public class GenerateExpr {
                         applyCorrectReturnType(ctx, callStatic.pointer(), callStatic.returnType());
                     }
                     case CallSymbol.CallVirtual callVirtual -> {
-                        addExpression(call.left(), ctx);
+                        generate(call.left(), ctx);
 
                         var path = callVirtual.pointer().classPointer().path().append(callVirtual.pointer().name());
                         var owner = Type.getObjectType(TypeEncoding.toJVMPath(path.everythingButLast()));
@@ -296,7 +296,7 @@ public class GenerateExpr {
 //                        var isInterface = ctx.
 
                         for (var argument : call.arguments()) {
-                            addExpression(argument, ctx);
+                            generate(argument, ctx);
                         }
                         if ( callVirtual.onInterface()) {
                             ctx.add(new MethodInsnNode(
@@ -328,7 +328,7 @@ public class GenerateExpr {
                                 ctx.add(new InsnNode(Opcodes.DUP));
 
                                 for (var argument : call.arguments()) {
-                                    addExpression(argument, ctx);
+                                    generate(argument, ctx);
                                 }
 
                                 ctx.add(new MethodInsnNode(
@@ -347,7 +347,7 @@ public class GenerateExpr {
                                 var desc = TypeEncoding.getDesc(callSuper.pointer(), callSuper.pointer().returnType());
 
                                 for (var argument : call.arguments()) {
-                                    addExpression(argument, ctx);
+                                    generate(argument, ctx);
                                 }
 
                                 ctx.add(new MethodInsnNode(
@@ -364,7 +364,7 @@ public class GenerateExpr {
                 }
             }
             case KExpr.Cast cast -> {
-                addExpression(cast.expression(), ctx);
+                generate(cast.expression(), ctx);
                 assert cast.symbol() != null;
                 switch (cast.symbol()) {
                     case CastSymbol.PrimitiveCast primitiveCast -> {
@@ -409,7 +409,7 @@ public class GenerateExpr {
                 for (var element : createArray.elements()) {
                     ctx.add(new InsnNode(Opcodes.DUP));
                     ctx.add(new LdcInsnNode(index));
-                    addExpression(element, ctx);
+                    generate(element, ctx);
                     ctx.add(new InsnNode(storeOp));
                     index += 1;
                 }
@@ -450,8 +450,8 @@ public class GenerateExpr {
                 throw new Log.KarinaException();
             }
             case KExpr.GetArrayElement getArrayElement -> {
-                addExpression(getArrayElement.left(), ctx);
-                addExpression(getArrayElement.index(), ctx);
+                generate(getArrayElement.left(), ctx);
+                generate(getArrayElement.index(), ctx);
                 assert getArrayElement.elementType() != null;
                 var type = TypeEncoding.getType(getArrayElement.elementType());
                 ctx.add(new InsnNode(type.getOpcode(Opcodes.IALOAD)));
@@ -460,11 +460,11 @@ public class GenerateExpr {
                 assert getMember.symbol() != null;
                 switch (getMember.symbol()) {
                     case MemberSymbol.ArrayLength arrayLength -> {
-                        addExpression(getMember.left(), ctx);
+                        generate(getMember.left(), ctx);
                         ctx.add(new InsnNode(Opcodes.ARRAYLENGTH));
                     }
                     case MemberSymbol.FieldSymbol fieldSymbol -> {
-                        addExpression(getMember.left(), ctx);
+                        generate(getMember.left(), ctx);
                         var owner = TypeEncoding.getType(fieldSymbol.pointer().classPointer());
                         var fieldType = TypeEncoding.getType(fieldSymbol.type());
                         var name = fieldSymbol.pointer().name();
@@ -481,7 +481,7 @@ public class GenerateExpr {
                 }
             }
             case KExpr.IsInstanceOf isInstanceOf -> {
-                addExpression(isInstanceOf.left(), ctx);
+                generate(isInstanceOf.left(), ctx);
                 var type = TypeEncoding.getType(isInstanceOf.isType());
                 ctx.add(new TypeInsnNode(Opcodes.INSTANCEOF, type.getInternalName()));
             }
@@ -540,7 +540,7 @@ public class GenerateExpr {
             }
             case KExpr.Return aReturn -> {
                 if (aReturn.value() != null) {
-                    addExpression(aReturn.value(), ctx);
+                    generate(aReturn.value(), ctx);
                     assert aReturn.returnType() != null;
                     var returnCode = TypeEncoding.getType(aReturn.returnType()).getOpcode(Opcodes.IRETURN);
                     ctx.add(new InsnNode(returnCode));
@@ -562,11 +562,11 @@ public class GenerateExpr {
                 }
             }
             case KExpr.Throw aThrow -> {
-                addExpression(aThrow.value(), ctx);
+                generate(aThrow.value(), ctx);
                 ctx.add(new InsnNode(Opcodes.ATHROW));
             }
             case KExpr.Unary unary -> {
-                addExpression(unary.value(), ctx);
+                generate(unary.value(), ctx);
                 assert unary.symbol() != null;
                 switch (unary.symbol()) {
                     case UnaryOperatorSymbol.NegateOP neg -> {
@@ -595,7 +595,7 @@ public class GenerateExpr {
                 var symbol = variableDefinition.symbol();
                 assert symbol != null;
                 ctx.putVariable(symbol);
-                addExpression(variableDefinition.value(), ctx);
+                generate(variableDefinition.value(), ctx);
                 var target = ctx.getVariableIndex(variableDefinition.region(), symbol);
                 var type = TypeEncoding.getType(symbol.type());
 
@@ -623,12 +623,12 @@ public class GenerateExpr {
                 var startOfLoop = new LabelNode();
                 var endOfLoop = new LabelNode();
                 ctx.add(startOfLoop);
-                addExpression(aWhile.condition(), ctx);
+                generate(aWhile.condition(), ctx);
                 ctx.add(new JumpInsnNode(Opcodes.IFEQ, endOfLoop));
                 ctx.setBreakTarget(endOfLoop);
                 ctx.setContinueTarget(startOfLoop);
 
-                addExpression(aWhile.body(), ctx);
+                generate(aWhile.body(), ctx);
 
                 //pop value when there is one
                 var yieldType = aWhile.body().type();

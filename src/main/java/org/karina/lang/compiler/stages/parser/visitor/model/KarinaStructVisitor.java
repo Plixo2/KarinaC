@@ -16,6 +16,7 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.*;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -293,7 +294,7 @@ public class KarinaStructVisitor implements IntoContext {
 
         return new KMethodModel(
                 "toString",
-                Modifier.PUBLIC,
+                Modifier.PUBLIC | Opcodes.ACC_SYNTHETIC,
                 Signature.emptyArgs(KType.STRING),
                 ImmutableList.of(),
                 ImmutableList.of(),
