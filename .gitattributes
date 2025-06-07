@@ -1,2 +1,1 @@
-*.krna linguist-language=racket
-*.krna linguist-detectable
+*.krna linguist-detectable=true
