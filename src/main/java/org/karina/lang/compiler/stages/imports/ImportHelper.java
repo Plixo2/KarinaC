@@ -2,6 +2,8 @@ package org.karina.lang.compiler.stages.imports;
 
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.stages.imports.table.ImportTable;
+import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
@@ -26,7 +28,7 @@ public class ImportHelper {
      * @param ctx previous import table to build upon
      * @return the new import table with the items added
      */
-    public static ImportTable importItemsOfClass(ClassModel classModel, ImportTable ctx) {
+    public static UserImportTable importItemsOfClass(ClassModel classModel, UserImportTable ctx) {
         var newCtx = ctx;
 
         //create 'buckets' for each method name, so they can be added all at once
@@ -63,7 +65,7 @@ public class ImportHelper {
      * @param owner the class that is currently importing the prelude,
      *              since we want to point to the start of the current file, if a error occurs
      */
-    public static ImportTable importPrelude(ClassModel owner, ImportTable ctx, Prelude prelude) {
+    public static ImportTable importPrelude(ClassModel owner, UserImportTable ctx, Prelude prelude) {
 
         var newCtx = ctx;
         for (var classPointer : prelude.classes()) {
@@ -88,7 +90,7 @@ public class ImportHelper {
         return newCtx;
     }
 
-    private static ImportTable importItemsOfClassByName(Context c, ClassModel classModel, ImportTable ctx, String namePredicate, Region importRegion) {
+    private static UserImportTable importItemsOfClassByName(Context c, ClassModel classModel, UserImportTable ctx, String namePredicate, Region importRegion) {
         var newCtx = ctx;
 
         boolean added = false;
@@ -129,7 +131,7 @@ public class ImportHelper {
 
 
 
-    public static ImportTable addImport(Context c, Region region, KImport kImport, ImportTable ctx) {
+    public static UserImportTable addImport(Context c, Region region, KImport kImport, UserImportTable ctx) {
 
         var pointer = ctx.model().getClassPointer(region, kImport.path());
         if (pointer == null) {
@@ -138,7 +140,7 @@ public class ImportHelper {
             throw new Log.KarinaException();
         }
         var modelClass = ctx.model().getClass(pointer);
-        ImportTable newCtx = ctx;
+        UserImportTable newCtx = ctx;
         switch (kImport.importType()) {
             case KImport.TypeImport.All all -> {
                 //inner classes and static fields and methods

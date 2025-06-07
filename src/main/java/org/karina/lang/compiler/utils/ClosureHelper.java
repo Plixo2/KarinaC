@@ -156,6 +156,9 @@ public class ClosureHelper {
         return interfaceToUse;
     }
 
+    public static boolean isInterfaceAlreadyAdded(KType.ClassType classType, List<KType.ClassType> interfaces) {
+        return interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
+    }
 
 
     /**

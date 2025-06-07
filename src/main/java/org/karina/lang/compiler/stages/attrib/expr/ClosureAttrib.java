@@ -121,7 +121,7 @@ public class ClosureAttrib  {
             Log.endType(Log.LogTypes.CLOSURE, "Checking annotated interface");
 
             //TODO check if interface is a supertype or subType of a already added interface
-            var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
+            var alreadyAdded = ClosureHelper.isInterfaceAlreadyAdded(classType, interfaces);
             if (alreadyAdded) {
                 Log.record("Interface already added");
                 Log.error(ctx, new AttribError.DuplicateInterface(region, classType));
@@ -135,7 +135,7 @@ public class ClosureAttrib  {
         if (hint instanceof KType.ClassType classType) {
             Log.beginType(Log.LogTypes.CLOSURE, "Checking hint interface");
             //TODO check if interface is a supertype or subType of a already added interface
-            var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
+            var alreadyAdded = ClosureHelper.isInterfaceAlreadyAdded(classType, interfaces);
             if (alreadyAdded) {
                 Log.recordType(Log.LogTypes.CLOSURE, "hint interface already added");
             } else if (ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, classType)) {
@@ -149,7 +149,7 @@ public class ClosureAttrib  {
 
         var primaryInterface = ClosureHelper.getDefaultInterface(ctx.intoContext(), region, ctx.model(), args, returnType);
         if (primaryInterface != null) {
-            var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(primaryInterface.pointer()));
+            var alreadyAdded = ClosureHelper.isInterfaceAlreadyAdded(primaryInterface, interfaces);
             if (!alreadyAdded) {
                 if (ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, primaryInterface)) {
                     Log.recordType(Log.LogTypes.CLOSURE, "Using default as interface");
@@ -194,6 +194,8 @@ public class ClosureAttrib  {
         ));
 
     }
+
+
 
     private static void checkForPreexistingVariable(AttributionContext ctx, RegionOf<String> argument) {
         var name = argument.value();

@@ -1,4 +1,4 @@
-package org.karina.lang.compiler.stages.imports;
+package org.karina.lang.compiler.stages.imports.table;
 
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
@@ -16,10 +16,12 @@ import org.karina.lang.compiler.utils.*;
 import java.util.*;
 
 /*
- * Import table for a single file.
+ * Import table for importing types.
+ * This is the first importing step
  * This structure is immutable (without inner mutability).
  * Top level classes will append to this table and will get a new table in return.
  * This filled-in table will be passes to all items and subclasses, that will append to it.
+ *
  * TODO create a mutable linked list for faster mutation and then create one mutable table at the end.
  *  Also separate the generics, or find another place
  *  this is very slow, should be replaced by faster lookup and insertion
@@ -27,18 +29,21 @@ import java.util.*;
  *  import, class, subClass, method and generic.
  *  prelude alone has > 300 entries.
  */
-public record ImportTable(
+public record UserImportTable(
         Context c,
         Model model,
         ImmutableMap<String, ImportEntry<ClassPointer>> classes,
         ImmutableMap<String, ImportEntry<Generic>> generics,
+
         //list of UntypedMethodCollection, as we dont know the signature yet, see 'UntypedMethodCollection'
         ImmutableMap<String, ImportEntry<UntypedMethodCollection>> untypedStaticMethods,
         //for prelude methods, we know the signature
         ImmutableMap<String, ImportEntry<MethodCollection>> typedStaticMethods,
+
         ImmutableMap<String, ImportEntry<FieldPointer>> staticFields
-) implements IntoContext {
-    public ImportTable(Context c, Model model) {
+) implements IntoContext, ImportTable {
+
+    public UserImportTable(Context c, Model model) {
         this(c, model, ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of());
     }
 
@@ -46,6 +51,7 @@ public record ImportTable(
     /**
      *  Import a Type with default ImportGenericBehavior.
      */
+    @Override
     public KType importType(Region region, KType kType) {
         return importType(region, kType, ImportGenericBehavior.DEFAULT);
     }
@@ -54,6 +60,7 @@ public record ImportTable(
      * Main type import function.
      * Replaced all unknown imports recursively.
      */
+    @Override
     public KType importType(Region region, KType kType, ImportGenericBehavior flags) {
         return switch (kType) {
             case KType.ArrayType arrayType -> new KType.ArrayType(importType(region, arrayType.elementType()));
@@ -71,7 +78,7 @@ public record ImportTable(
      * Type lookup bases on a path.
      * @return the ClassType or a Generic (path is one element and generics is empty)
      */
-    private KType importUnprocessedType(Region region, ObjectPath path, List<KType> generics, ImportGenericBehavior flags) {
+    KType importUnprocessedType(Region region, ObjectPath path, List<KType> generics, ImportGenericBehavior flags) {
 
         if (path.isEmpty()) {
             Log.temp(this, region, "Empty path, this should not happen");
@@ -244,31 +251,6 @@ public record ImportTable(
             return classType;
         }).toList());
 
-        var primaryInterface = ClosureHelper.getDefaultInterface(this.intoContext(), region, this.model, arguments, returnType);
-        if (primaryInterface != null) {
-            var alreadyAddedDefault =
-                    interfaces.stream().anyMatch(ref -> ref.pointer().equals(primaryInterface.pointer()));
-            if (!alreadyAddedDefault) {
-                interfaces.add(primaryInterface);
-            }
-        }
-        if (interfaces.isEmpty()) {
-            Log.temp(this, region,
-                    "Cannot find default interface for " + arguments.size() + " arguments and return type " + returnType + ". " +
-                            "Please specify an interface via 'impl'"
-            );
-            throw new Log.KarinaException();
-        }
-
-        for (var anInterface : interfaces) {
-            if (!ClosureHelper.canUseInterface(region, this.intoContext(), this.model, arguments, returnType, anInterface)) {
-                Log.error(this, new AttribError.NotAValidInterface(region, arguments, returnType, anInterface));
-                throw new Log.KarinaException();
-            }
-        }
-
-        //TODO extract, duplicate in ClosureAttrib
-
         Log.recordType(Log.LogTypes.CLOSURE, "Function type with interfaces", interfaces);
 
         return new KType.FunctionType(arguments, returnType, interfaces);
@@ -278,29 +260,29 @@ public record ImportTable(
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Table Insertion">
-    public ImportTable addClass(Region declarationRegion, String name, ClassPointer pointer, boolean declaredExplicit, boolean prelude) {
+    public UserImportTable addClass(Region declarationRegion, String name, ClassPointer pointer, boolean declaredExplicit, boolean prelude) {
         var newClasses = new HashMap<>(this.classes);
         var declare = testDuplicate(newClasses, declarationRegion, name, declaredExplicit);
         if (declare) {
             newClasses.put(name, new ImportEntry<>(declarationRegion, pointer, declaredExplicit, prelude));
         }
-        return new ImportTable(this.c, this.model, ImmutableMap.copyOf(newClasses), this.generics, this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+        return new UserImportTable(this.c, this.model, ImmutableMap.copyOf(newClasses), this.generics, this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
 
     /*
      * Add a generic to the table.
      * they always overwrite existing generics
      */
-    public ImportTable addGeneric(Region declarationRegion, Generic generic) {
+    public UserImportTable addGeneric(Region declarationRegion, Generic generic) {
         var newGenerics = new HashMap<>(this.generics);
         newGenerics.put(generic.name(), new ImportEntry<>(declarationRegion, generic, true, false));
-        return new ImportTable(this.c, this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+        return new UserImportTable(this.c, this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
 
     /**
      * TODO Replace with {@link MethodCollection}
      */
-    public @NotNull ImportTable addStaticMethod(Region declarationRegion, String name, ClassPointer classPointer, boolean declaredExplicit, boolean prelude) {
+    public @NotNull UserImportTable addStaticMethod(Region declarationRegion, String name, ClassPointer classPointer, boolean declaredExplicit, boolean prelude) {
         var newStaticMethods = new HashMap<>(this.untypedStaticMethods);
         var declare = testDuplicate(newStaticMethods, declarationRegion, name, declaredExplicit);
         if (declare) {
@@ -311,10 +293,10 @@ public record ImportTable(
         //remove any duplicates
         newTypedStaticMethods.remove(name);
 
-        return new ImportTable(this.c, this.model, this.classes, this.generics, ImmutableMap.copyOf(newStaticMethods), ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
+        return new UserImportTable(this.c, this.model, this.classes, this.generics, ImmutableMap.copyOf(newStaticMethods), ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
     }
 
-    public @NotNull ImportTable addPreludeMethods(Region declarationRegion, String name, List<MethodPointer> methods) {
+    public @NotNull UserImportTable addPreludeMethods(Region declarationRegion, String name, List<MethodPointer> methods) {
         if (this.untypedStaticMethods.containsKey(name)) {
             return this;
         }
@@ -323,16 +305,16 @@ public record ImportTable(
         var typedCollection = new MethodCollection(name, methods);
         newTypedStaticMethods.put(name, new ImportEntry<>(declarationRegion, typedCollection, false, true));
 
-        return new ImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
+        return new UserImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
     }
 
-    public @NotNull ImportTable addStaticField(Region declarationRegion, String name, FieldPointer reference, boolean declaredExplicit, boolean prelude) {
+    public @NotNull UserImportTable addStaticField(Region declarationRegion, String name, FieldPointer reference, boolean declaredExplicit, boolean prelude) {
         var newStaticFields = new HashMap<>(this.staticFields);
         var declare = testDuplicate(newStaticFields, declarationRegion, name, declaredExplicit);
         if (declare) {
             newStaticFields.put(name, new ImportEntry<>(declarationRegion, reference, declaredExplicit, prelude));
         }
-        return new ImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, this.typedStaticMethods, ImmutableMap.copyOf(newStaticFields));
+        return new UserImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, this.typedStaticMethods, ImmutableMap.copyOf(newStaticFields));
     }
 
     /**
@@ -359,12 +341,12 @@ public record ImportTable(
      * Remove all generics from the import table.
      * Used in static methods, where generics are from the outer environment allowed.
      */
-    public ImportTable removeGenerics() {
-        return new ImportTable(this.c, this.model, this.classes, ImmutableMap.of(), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+    public UserImportTable removeGenerics() {
+        return new UserImportTable(this.c, this.model, this.classes, ImmutableMap.of(), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
     }
     //</editor-fold>
 
-
+    //<editor-fold desc="Debugging and Error Logging" collapsed="true">
     /**
      * When error occurs, log the error with the relevant information.
      * Dont forget to throw the exception after this call
@@ -440,9 +422,9 @@ public record ImportTable(
 
             Log.endType(Log.LogTypes.IMPORTS, "static fields");
 
-
         }
     }
+    //</editor-fold>
 
     @Override
     public Context intoContext() {
@@ -452,7 +434,7 @@ public record ImportTable(
     /**
      * A given entry in the import table.
      * @param definedRegion where the entry was defined. Used when a collision happens.
-     * @param reference the object to import, see the argument of the {@link ImportTable} constructor.
+     * @param reference the object to import, see the argument of the {@link UserImportTable} constructor.
      * @param wasDeclaredExplicit when true, this entry was declared explicitly, so it cannot be overridden.
      *                            when another entry is declared with the same name, it will be an error.
      *                            Otherwise the import was implicit (like 'import java::util::Arrays *'
@@ -461,26 +443,6 @@ public record ImportTable(
      * @param <T> type of import
      */
     public record ImportEntry<T>(Region definedRegion, T reference, boolean wasDeclaredExplicit, boolean prelude) { }
-
-
-    /**
-     * Used to determine how deal with generics when resolving types.
-     * DEFAULT: import as is, generics have to be defined, so we check count of generics.
-     * INSTANCE_CHECK: The type is not allowed to define generics other than KType.ROOT (java.lang.Object).
-     *                 Replace potential generics with KType.ROOT, when not defined.
-     *                 Also check the count of generics when defined.
-     *                 Only used in instance checks (if .. is Object cast) and match expressions.
-     * OBJECT_CREATION: Generics can be omitted, they can be inferred from the field types.
-     *                  Check the count of generics, if defined.
-     *                  Only used for object creation.
-     *
-     * @see ImportTable#importUnprocessedType
-     */
-    public enum ImportGenericBehavior {
-        DEFAULT,
-        INSTANCE_CHECK,
-        OBJECT_CREATION;
-    }
 
 
 }

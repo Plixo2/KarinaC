@@ -8,8 +8,8 @@ import org.karina.lang.compiler.utils.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.karina.lang.compiler.stages.imports.ImportTable.ImportGenericBehavior.INSTANCE_CHECK;
-import static org.karina.lang.compiler.stages.imports.ImportTable.ImportGenericBehavior.OBJECT_CREATION;
+import static org.karina.lang.compiler.stages.imports.table.ImportTable.ImportGenericBehavior.INSTANCE_CHECK;
+import static org.karina.lang.compiler.stages.imports.table.ImportTable.ImportGenericBehavior.OBJECT_CREATION;
 
 public class ImportExpr {
 
@@ -50,31 +50,7 @@ public class ImportExpr {
     }
 
     private static KExpr importPath(ImportContext ctx, KExpr.StaticPath staticPath) {
-
-        var region = staticPath.region();
-        var path = staticPath.path();
-        var pointer = ctx.table().getClassPointerNullable(region, path);
-        if (pointer == null) {
-            if (path.size() <= 1) {
-                ctx.table().logUnknownPointerError(region, path);
-                throw new Log.KarinaException();
-            }
-            var potentialFunctionName = path.last();
-            var potentialClassName = path.everythingButLast();
-            var potentialClass = ctx.table().getClassPointer(region, potentialClassName);
-
-            return new KExpr.GetMember(
-                    region,
-                    new KExpr.StaticPath(region, potentialClassName, potentialClass),
-                    RegionOf.region(region, potentialFunctionName),
-                    true,
-                    null
-            );
-
-        } else {
-            return new KExpr.StaticPath(region, path, pointer);
-        }
-
+        return ctx.importStaticPath(staticPath);
     }
 
     private static KExpr importUnwrap(ImportContext ctx, KExpr.Unwrap unwrap) {
@@ -89,7 +65,7 @@ public class ImportExpr {
             case InvocationType.NewInit newInit -> newInit;
             case InvocationType.SpecialInvoke(var name, var tpe) -> {
                 yield new InvocationType.SpecialInvoke(
-                        name,  ctx.resolveType(expr.region(), tpe)
+                        name, ctx.resolveType(expr.region(), tpe)
                 );
             }
         };
