@@ -12,7 +12,7 @@ fn printHelloWorld() {
     let my_object = CustomObject::create()
     my_object.set("World!")
 
-    let the_world = my_object.get()
+    let the_world = (my_object as java::util::function::Supplier<string>).get()
     out.println(' $the_world')
 }
 
@@ -29,7 +29,9 @@ struct CustomObject {
         self.val = s
     }
 
-    fn get(self) -> string = self.val
+    impl java::util::function::Supplier<string> {
+        fn get(self) -> string = self.val
+    }
 }
 
 fn createHelloFunction<T>() -> fn(T) -> string {

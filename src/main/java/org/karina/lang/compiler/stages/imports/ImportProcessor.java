@@ -59,7 +59,7 @@ public class ImportProcessor {
      * Applies and validates functional interfaces to function types in the model.
      */
     private static Model applyFunctionalInterfaces(Context c, Model model) {
-
+        Log.begin("functional interfaces");
         var build = new ModelBuilder();
         try(var importFork = c.fork()) {
             for (var kClassModel : model.getUserClasses()) {
@@ -80,8 +80,9 @@ public class ImportProcessor {
         for (var bytecodeClass : model.getBinaryClasses()) {
             build.addClass(c, bytecodeClass);
         }
-
-        return build.build(c);
+        var newModel = build.build(c);
+        Log.end("functional interfaces");
+        return newModel;
     }
 
 
