@@ -1,2 +1,2 @@
-*.krna linguist-language=java
+*.krna linguist-language=racket
 *.krna linguist-detectable
