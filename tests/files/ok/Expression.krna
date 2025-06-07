@@ -84,7 +84,7 @@ fn create<T>(value: T) -> int {
     let annotatedCall = annotated.generic<Integer>(1)
 
 
-    let index = 0;
+    let index = 0
     let nested = ({
         let getElement = array[index]
         0

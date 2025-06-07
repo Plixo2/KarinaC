@@ -101,7 +101,7 @@ fn main(args: [string]) {
 
     pathA = files::getPath("DOES_NOT_EXIST").expect("valid path")
     let error = files::loadFile(pathA).inverse().expect("a error")
-    println('file load error: $error');
+    println('file load error: $error')
 
 
 
@@ -125,7 +125,7 @@ fn main(args: [string]) {
 
 
 fn f<T>(first: T) {
-    let create: [T] = [first];
+    let create: [T] = [first]
     let objects: [string] = ["string"]
     cc(create)
     c(objects)
@@ -156,7 +156,7 @@ fn get() -> ? {
 
     map.forEach(fn(key, value) {
         let str: String = key
-        let s: int = value;
+        let s: int = value
         println('Key: $key Value: $value')
     })
 
@@ -244,7 +244,7 @@ fn test() -> bool {
     }
     println(manualUnwrap)
 
-    let i = 100;
+    let i = 100
 
 
     for ww in range(0, 10).reversed() {

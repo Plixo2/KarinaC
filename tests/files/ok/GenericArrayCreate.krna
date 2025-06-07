@@ -1,6 +1,6 @@
 
 
 fn f<T>() {
-    let create: [T] = [];
+    let create: [T] = []
 
 }

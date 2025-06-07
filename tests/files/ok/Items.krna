@@ -44,7 +44,7 @@ enum EnumObj {
 
 
 fn create<T>(value: T) -> T {
-    return value;
+    return value
 }
 
 fn shortFn(value: W) -> W = value

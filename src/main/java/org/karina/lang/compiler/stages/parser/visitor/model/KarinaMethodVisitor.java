@@ -30,12 +30,6 @@ public class KarinaMethodVisitor implements IntoContext {
             name = "<init>";
         }
 
-        if (function.OVERRIDE() != null) {
-            var region = this.context.toRegion(function.OVERRIDE());
-            Log.error(this, new ImportError.InvalidName(region, "override", "Override is not allowed here"));
-            throw new Log.KarinaException();
-        }
-
         var region = this.context.toRegion(function);
 
         var generics = ImmutableList.<Generic>of();

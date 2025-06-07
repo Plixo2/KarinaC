@@ -9,9 +9,9 @@ commaWordChain: id (',' id)*;
 
 item: annotation* (function | struct | enum | interface | const);
 
-function: 'override'? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
+function: 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
-const: 'static' id ':' 'mut'? type '=' expression ';'?;
+const: 'static' id ':' 'mut'? type '=' expression;
 
 //TODO implement boundWhere
 struct: 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;
@@ -84,7 +84,7 @@ jsonMethod: 'fn' '{' function '}';
 jsonValue: STRING_LITERAL | NUMBER | jsonObj | jsonArray | 'true' | 'false' | 'null' | jsonExpression | jsonType | jsonMethod;
 
 
-block: '{' (expression ';'?)* '}';
+block: '{' expression* '}';
 
 exprWithBlock : block | expression;
 
