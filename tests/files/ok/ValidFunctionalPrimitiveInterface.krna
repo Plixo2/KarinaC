@@ -1,0 +1,16 @@
+//TODO test all sorts of primitive interfaces
+
+
+fn a(a: fn(int) -> int) {
+
+}
+
+fn b(a: fn(int) -> int impl java::util::function::IntUnaryOperator) {
+
+}
+
+fn c(a: fn(string, double) -> void impl java::util::function::ObjDoubleConsumer<string>) {
+    let c = fn (b) impl java::util::function::LongToIntFunction {
+        b as int
+    }
+}

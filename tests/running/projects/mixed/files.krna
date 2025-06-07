@@ -1,0 +1,41 @@
+
+import java::io::IOException
+import java::nio::file::Files
+import java::nio::file::Path
+import java::nio::file::InvalidPathException
+
+import errors { Modifier }
+
+fn loadFile(path: Path) -> Result<string, IOException> {
+
+    let call = fn() {
+        let abs_path = path.toAbsolutePath()
+        let content = String { _: Files.readAllBytes(abs_path) } ;
+        content
+    }
+
+    errors::safeCallExpect(call, IOException)
+}
+
+fn test(f: java::lang::module::ModuleDescriptor$Exports$Modifier) {
+    let syn = Option::instanceOf(String, java::lang::module::ModuleDescriptor$Exports$Modifier.SYNTHETIC)
+
+/*
+    if syn as Object is String o {
+
+    } else is String {
+
+    }
+*/
+}
+
+
+
+fn getPath(path: string) -> Result<Path, InvalidPathException> {
+    errors::safeCallExpect(fn() Path.of(path, []), InvalidPathException)
+}
+
+fn exists(path: Path) -> bool {
+    Files.exists(path, [])
+}
+

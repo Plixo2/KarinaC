@@ -1,0 +1,14 @@
+
+//Bug here:
+// this line:  fn(Integer) -> Integer impl Consumer2
+// implements Consumer2. Consumer2 will be tested if it can be used as a function interface.
+// To test if it can be used, we need Consumer2 to be already imported (for equality check and generic projection)
+
+
+struct FnWithImpl {
+    fnWithImpl: fn(Integer) -> Integer impl Consumer2
+}
+
+interface Consumer2 {
+    fn consume(self, input: Integer) -> Integer
+}

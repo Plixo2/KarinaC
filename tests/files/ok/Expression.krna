@@ -6,17 +6,17 @@ fn create<T>(value: T) -> int {
 
     let array: [int] = [1, 2, 3, 4, 5]
 
-    for i in array {
-        if i == 3 {
-            return 0
-        }
-
-        if i == 4 {
-            return 0
-        } else {
-            return 1
-        }
-    }
+//     for i in array {
+//         if i == 3 {
+//             return 0
+//         }
+//
+//         if i == 4 {
+//             return 0
+//         } else {
+//             return 1
+//         }
+//     }
 
     while true {
         if true {

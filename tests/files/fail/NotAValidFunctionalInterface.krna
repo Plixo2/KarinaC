@@ -1,0 +1,4 @@
+
+fn f(a: fn(string) -> string impl java::util::function::Consumer<string>) {
+
+}
