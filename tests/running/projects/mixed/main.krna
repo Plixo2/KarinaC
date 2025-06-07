@@ -91,7 +91,7 @@ fn main(args: [string]) {
     let arrayInt = Values::newArray(Integer, 10, fn(_) 10)
     let arrayId = Values::newArray(Integer, 10, fn(a) a)
     let arrayIdIndirect = Values::newArray(Integer, 10,  fn(a) a)
-    let stringsFromIndex = Values::newArray(String, 10, fn(index: int) String.valueOf(index))
+    let stringsFromIndex = Values::newArray(String, 10, fn(index) String.valueOf(index))
 
     expect(create().okOr("Hello"), "Error")
 
