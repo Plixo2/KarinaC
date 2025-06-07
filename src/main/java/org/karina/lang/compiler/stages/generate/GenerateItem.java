@@ -54,6 +54,13 @@ public class GenerateItem {
         } else {
             classNode.outerClass = null;
         }
+        var nestHost = classModel.nestHost();
+        if (nestHost != null) {
+            classNode.nestHostClass = TypeEncoding.toJVMPath(nestHost.path());
+        } else {
+            classNode.nestHostClass = null;
+        }
+
         classNode.interfaces = classModel.interfaces().stream().map(ref ->
                 TypeEncoding.toJVMPath(ref.pointer().path())
         ).toList();

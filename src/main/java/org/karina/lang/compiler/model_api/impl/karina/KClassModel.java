@@ -20,7 +20,7 @@ import org.karina.lang.compiler.utils.KType;
 import java.util.ArrayList;
 import java.util.List;
 
-
+//TODO add outerMethod and outerMethodDescriptor
 @RequiredArgsConstructor
 public class KClassModel implements ClassModel {
     private final String name;
@@ -28,6 +28,7 @@ public class KClassModel implements ClassModel {
     private final int modifiers;
     private final KType.ClassType superClass;
     private final @Nullable KClassModel outerClass;
+    private final @Nullable ClassPointer nestHost;
     private final ImmutableList<KType.ClassType> interfaces;
     private final List<KClassModel> innerClasses;
     private final ImmutableList<KFieldModel> fields;
@@ -80,6 +81,11 @@ public class KClassModel implements ClassModel {
     @Override
     public @Nullable KClassModel outerClass() {
         return this.outerClass;
+    }
+
+    @Override
+    public @Nullable ClassPointer nestHost() {
+        return this.nestHost;
     }
 
     @Override

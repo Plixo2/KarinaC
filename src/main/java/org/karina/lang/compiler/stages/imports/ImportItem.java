@@ -99,6 +99,7 @@ public class ImportItem {
                 classModel.modifiers(),
                 superClassImported,
                 outerClass,
+                classModel.nestHost(),
                 interfaces.build(),
                 innerClassesToBeFilled,
                 fields.build(),
