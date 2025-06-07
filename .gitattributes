@@ -1,2 +1,2 @@
-*.krna linguist-language=groovy
+*.krna linguist-language=typescript
 *.krna linguist-detectable
