@@ -37,7 +37,7 @@ public class InterfaceLinker {
         this.typeGen = new TypeDecoding();
     }
 
-    public JClassModel createClass(Context c, @Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder) {
+    public JClassModel createClass(Context c, @Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder, @Nullable String innerName) {
         var node = cls.node();
 
         Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading class: " + node.name);
@@ -54,6 +54,9 @@ public class InterfaceLinker {
         var pointer = TypeDecoding.internalNameToPointer(region, node.name);
         var name = pointer.path().last();
         var path = pointer.path();
+        if (innerName != null) {
+            name = innerName;
+        }
 
 
         var modifiers = node.access;
@@ -151,18 +154,20 @@ public class InterfaceLinker {
             methodsToFill.add(buildMethod(c, classModel, region, method));
         }
         if (node.innerClasses != null) {
-            for (var innerClass : node.innerClasses) {
-                var args = new Object[]{
-                        innerClass.name,
-                        "outerName",
-                        innerClass.outerName,
-                        "innerName",
-                        innerClass.innerName,
-                        "access",
-                        innerClass.access,
-                        Modifier.toString(innerClass.access),
-                };
-                Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "inner class " + innerClass.name, args);
+            if (Log.LogTypes.JVM_CLASS_LOADING.isVisible()) {
+                for (var innerClass : node.innerClasses) {
+                    var args = new Object[]{
+                            innerClass.name,
+                            "outerName",
+                            innerClass.outerName,
+                            "innerName",
+                            innerClass.innerName,
+                            "access",
+                            innerClass.access,
+                            Modifier.toString(innerClass.access),
+                    };
+                    Log.record("inner class " + innerClass.name, args);
+                }
             }
             for (var innerClass : node.innerClasses) {
                 if (innerClass.outerName == null) {
@@ -176,7 +181,7 @@ public class InterfaceLinker {
                     Log.bytecode(c, region, node.name, "Cannot load inner class: " + innerClass.name);
                     throw new Log.KarinaException();
                 }
-                var aClass = createClass(c, classModel, loadedClass, openSet, visited, modelBuilder);
+                var aClass = createClass(c, classModel, loadedClass, openSet, visited, modelBuilder, innerClass.innerName);
                 innerClassesToFill.add(aClass);
             }
         }

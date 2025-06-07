@@ -189,13 +189,13 @@ public class PostImportValidator {
 
         var duplicateInner = Unique.testUnique(
                 classModel.innerClasses(),
-                ClassModel::name
+                ClassModel::path
         );
         if (duplicateInner != null) {
             Log.error(c, new ImportError.DuplicateItem(
                     duplicateInner.first().region(),
                     duplicateInner.duplicate().region(),
-                    duplicateInner.value()
+                    duplicateInner.value().toString()
             ));
             throw new Log.KarinaException();
         }
@@ -215,13 +215,13 @@ public class PostImportValidator {
 
         var duplicateInterface = Unique.testUnique(
                 classModel.interfaces().stream().map(ref -> model.getClass(ref.pointer())).toList(),
-                ClassModel::name
+                ClassModel::path
         );
         if (duplicateInterface != null) {
             Log.error(c, new ImportError.DuplicateItem(
                     duplicateInterface.first().region(),
                     duplicateInterface.duplicate().region(),
-                    duplicateInterface.value()
+                    duplicateInterface.value().toString()
             ));
             throw new Log.KarinaException();
         }

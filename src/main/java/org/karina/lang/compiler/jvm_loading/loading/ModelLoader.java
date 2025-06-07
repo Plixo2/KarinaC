@@ -134,7 +134,7 @@ public class ModelLoader {
         var linker = new InterfaceLinker();
 
         for (var topClass : jdkSet.removeTopClasses()) {
-            var _ = linker.createClass(c, null, topClass, jdkSet, new HashSet<>(), builder);
+            var _ = linker.createClass(c, null, topClass, jdkSet, new HashSet<>(), builder, null);
         }
 
         for (var value : jdkSet.getOpenSet().values()) {
