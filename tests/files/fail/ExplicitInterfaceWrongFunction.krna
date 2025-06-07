@@ -5,5 +5,5 @@ struct FnWithImpl {
 }
 
 interface Consumer2 {
-    fn consume(self, input: Integer) -> Integer
+    fn consume(self, input: Integer) -> Boolean
 }

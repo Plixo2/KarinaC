@@ -654,10 +654,6 @@ public class KarinaExprVisitor implements IntoContext {
         KType returnType;
         if (ctx.type() != null) {
             returnType = this.typeVisitor.visitType(ctx.type());
-            if (returnType.isPrimitive()) {
-                Log.error(this, new AttribError.NotSupportedType(this.conv.toRegion(ctx.type()), returnType));
-                throw new Log.KarinaException();
-            }
         } else {
             returnType = null;
         }
@@ -665,13 +661,6 @@ public class KarinaExprVisitor implements IntoContext {
 
         var args = visitOptTypeList(ctx.optTypeList());
         var body = visitExprWithBlock(ctx.exprWithBlock());
-
-        for (var arg : args) {
-            if (arg.type() != null && arg.type().isPrimitive()) {
-                Log.error(this, new AttribError.NotSupportedType(arg.region(), arg.type()));
-                throw new Log.KarinaException();
-            }
-        }
 
         List<KType> interfaces;
         if (ctx.interfaceImpl() != null) {

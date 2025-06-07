@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
-import org.karina.lang.compiler.stages.imports.ImportTable;
+import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -45,7 +45,7 @@ public record StaticImportTable(
         return null;
     }
 
-    public static StaticImportTable fromImportTable(ClassPointer referenceSite, Model model, ImportTable importTable) {
+    public static StaticImportTable fromImportTable(ClassPointer referenceSite, Model model, UserImportTable importTable) {
         var classes = ImmutableMap.<String, ClassPointer>builder();
 
         importTable.classes().forEach((name, ptr) -> {

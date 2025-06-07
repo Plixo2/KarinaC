@@ -114,7 +114,7 @@ public class GenerateItem {
 
         var expression = methodModel.expression();
         if (expression != null) {
-            GenerateExpr.addExpression(expression, context);
+            GenerateExpr.generate(expression, context);
         }
 
 

@@ -211,19 +211,14 @@ struct WrongRegexException {
 }
 
 
-fn bugA(a: fn(int) -> int) {
-
+struct FnWithImpl {
+    fnWithImpl: fn(Integer, int) -> Integer impl Consumer2
 }
-//
-// fn bugC(a: fn(int) -> int impl java::util::function::IntUnaryOperator) {
-//
-// }
-//
-// fn bugC(a: fn(string, int) -> void impl java::util::function::ObjDoubleConsumer) {
-//     let c = fn (a) impl java::util::function::LongToIntFunction {
-//         a as int
-//     }
-// }
+
+interface Consumer2 {
+    fn consume(self, input: Integer, i: int) -> Integer
+}
+
 
 fn test() -> bool {
 

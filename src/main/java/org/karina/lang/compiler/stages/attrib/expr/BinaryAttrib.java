@@ -125,8 +125,8 @@ public class BinaryAttrib {
         return new BinResult(left, right, op);
     }
 
-    private static boolean hasIdentity(KType type) {
-        return switch (type) {
+    public static boolean hasIdentity(KType type) {
+        return switch (type.unpack()) {
             case KType.ArrayType _,
                  KType.ClassType _,
                  KType.FunctionType _,

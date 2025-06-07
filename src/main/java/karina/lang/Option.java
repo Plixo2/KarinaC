@@ -1,12 +1,11 @@
 package karina.lang;
 
-import karina.lang.internal.functions.Function0_1;
-import karina.lang.internal.functions.Function1_1;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.lang.reflect.Array;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 //Build-in Option type, needed for ? unwrapping and ? type annotations
@@ -51,7 +50,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         };
     }
 
-    default <E> Result<T, E> okOrGet(Function0_1<E> error) {
+    default <E> Result<T, E> okOrGet(Supplier<E> error) {
         return switch (this) {
             case Option.Some<T> v -> Result.ok(v.value);
             case Option.None<T> n -> Result.err(error.get());
@@ -79,28 +78,28 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         };
     }
 
-    default <V> Option<V> map(Function1_1<T, V> function) {
+    default <V> Option<V> map(Function<T, V> function) {
         return switch (this) {
             case Option.Some<T> v -> Option.some(function.apply(v.value));
             case Option.None<T> n -> Option.none();
         };
     }
 
-    default <V> V mapOrElse(Function1_1<T, V> mapFunction, V defaultValue) {
+    default <V> V mapOrElse(Function<T, V> mapFunction, V defaultValue) {
         return switch (this) {
             case Option.Some<T> v -> mapFunction.apply(v.value);
             case Option.None<T> n -> defaultValue;
         };
     }
 
-    default <V> Option<V> flatMap(Function1_1<T, Option<V>> function) {
+    default <V> Option<V> flatMap(Function<T, Option<V>> function) {
         return switch (this) {
             case Option.Some<T> v -> function.apply(v.value);
             case Option.None<T> n -> Option.none();
         };
     }
 
-    default <V> V flatMapOrElse(Function1_1<T, V> function, V defaultValue) {
+    default <V> V flatMapOrElse(Function<T, V> function, V defaultValue) {
         return switch (this) {
             case Option.Some<T> v -> function.apply(v.value);
             case Option.None<T> n -> defaultValue;
