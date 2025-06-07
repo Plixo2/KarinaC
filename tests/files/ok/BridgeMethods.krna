@@ -31,13 +31,13 @@ fn create() -> Integer? {
     let toStr = fn(a: Integer) String.valueOf(a)
     let opt = getValue().map(toStr)?
 
-    let optStr = Option$Some { _: "Hello" } as string?
+    let optStr = Option::Some { _: "Hello" } as string?
     let unwrapped = optStr?
   //  let unwrapped3 = if optStr is Option::Some some { some.value } else { return Option::None {}}
-    let unwrapped2 = Option$Some { _: Option$Some { _: "Hello" } }.value()?
+    let unwrapped2 = Some { _: Some { _: "Hello" } }.value()?
     let sizeOf = optStr?.length()
 
-    Option$Some { _: sizeOf * 2 }
+    Option::Some { _: sizeOf * 2 }
 }
 
 

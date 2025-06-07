@@ -45,7 +45,7 @@ public class CallAttrib  {
         } else if (left instanceof KExpr.SpecialCall specialCallExpr) {
             symbol = getSuper(ctx, expr, specialCallExpr.invocationType(), genericsAnnotated, newArguments);
         } else {
-            Log.temp(ctx, expr.region(), "Invalid call onto " + left.getClass().getSimpleName());
+            Log.temp(ctx, expr.region(), "Invalid call onto " + left.getClass().getSimpleName() + " with type " + left.type());
             throw new Log.KarinaException();
         }
 

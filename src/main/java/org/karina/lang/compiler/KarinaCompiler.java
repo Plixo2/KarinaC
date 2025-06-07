@@ -35,7 +35,7 @@ public class KarinaCompiler {
     public static final int BINARY_MAGIC_NUMBER = 20000411;
 
     public static final boolean useThreading = false;
-    public static final boolean allowMultipleErrors = false;
+    public static final boolean allowMultipleErrors = true;
 
     /**
      * Cache for faster testing

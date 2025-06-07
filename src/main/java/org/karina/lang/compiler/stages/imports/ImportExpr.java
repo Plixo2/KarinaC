@@ -99,9 +99,7 @@ public class ImportExpr {
         List<KExpr> expressions;
         try (var fork = ctx.intoContext().<KExpr>fork()) {
             for (var sub : expr.expressions()) {
-                fork.collect(subC -> {
-                    return importExpr(ctx.withNewContext(subC), sub);
-                });
+                fork.collect(subC -> importExpr(ctx.withNewContext(subC), sub));
             }
             expressions = fork.dispatch();
         }
