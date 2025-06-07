@@ -21,6 +21,7 @@ public interface ClassModel {
     ObjectPath path();
     @Nullable KType.ClassType superClass();
     @Nullable ClassModel outerClass();
+    @Nullable ClassPointer nestHost();
     ImmutableList<KType.ClassType> interfaces();
     ImmutableList<? extends ClassModel> innerClasses();
     ImmutableList<? extends FieldModel> fields();

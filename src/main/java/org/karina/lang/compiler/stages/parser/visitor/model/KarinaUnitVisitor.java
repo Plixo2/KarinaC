@@ -123,6 +123,7 @@ public class KarinaUnitVisitor {
                 mods,
                 superClass,
                 null,
+                null,
                 interfaces,
                 innerClassesToFill,
                 fields.build(),
@@ -165,15 +166,6 @@ public class KarinaUnitVisitor {
         }
         //get all inner classes and add them as nest members, so they have access to stuff on the top level
         putNestMembers(innerClassesToFill, nestMembersToFill);
-
-        //same classes as nestMembersToFill
-        var allInnerClasses = new ArrayList<KClassModel>();
-        putAllClassesDeep(innerClassesToFill, allInnerClasses);
-
-        //we update nest members for all inner classes, so they have access to each other
-        for (var deepInnerClass : allInnerClasses) {
-            deepInnerClass.updateNestMembers(nestMembersToFill);
-        }
 
         builder.addClass(this.c, classModel);
 

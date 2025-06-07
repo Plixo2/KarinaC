@@ -55,6 +55,7 @@ public class LoweringItem {
                 classModel.modifiers(),
                 classModel.superClass(),
                 outerClass,
+                classModel.nestHost(),
                 classModel.interfaces(),
                 innerToFill,
                 fields.build(),

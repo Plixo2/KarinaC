@@ -44,7 +44,12 @@ public class ClassWriter {
         } else {
             this.stream.writeClassPointer(outerClass.pointer());
         }
-
+        var nestHost = model.nestHost();
+        if (outerClass == null) {
+            this.stream.writeClassPointer(null);
+        } else {
+            this.stream.writeClassPointer(nestHost);
+        }
 
         this.stream.writeInt(model.interfaces().size());
         for (var anInterface : model.interfaces()) {

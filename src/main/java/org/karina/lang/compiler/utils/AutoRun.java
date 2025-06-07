@@ -39,7 +39,7 @@ public class AutoRun {
                     .out(System.out);
 
             mainMethod.invoke(null, (Object) new String[]{});
-        } catch (ReflectiveOperationException e) {
+        } catch (Exception e) {
             if (failWithException) {
                 throw new RuntimeException("Failed to run main method", e);
             }

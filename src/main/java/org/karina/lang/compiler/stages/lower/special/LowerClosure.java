@@ -188,8 +188,7 @@ public class LowerClosure {
 
     private ClassModel createClassModel(LoweringContext ctx) {
         var primary = this.interfaces.getFirst();
-        var defName = ctx.definitionMethod().name().replace("<", "$").replace(">", "$");
-        var name = ctx.definitionClass().name() + "$" + defName + "$" + ctx.syntheticCounter().incrementAndGet();
+        var name = ctx.definitionClass().name() + "$" + ctx.syntheticCounter().incrementAndGet();
         var path = ctx.definitionClass().path().append(name);
         Log.recordType(Log.LogTypes.LOWERING, "Lowering closure to class " + path);
         for (var generic : this.generics) {
@@ -227,6 +226,15 @@ public class LowerClosure {
             fields.add(field);
         }
 
+        var host = ctx.definitionClass();
+        if (host.nestHost() != null) {
+            host = ctx.model().getClass(host.nestHost());
+        }
+        //TODO remove mutable state
+        if (host instanceof KClassModel kClassModel) {
+            kClassModel.updateNestMembers(List.of(classPointer));
+        }
+
         var methods = new ArrayList<KMethodModel>();
 
         var classModel = new KClassModel(
@@ -235,6 +243,7 @@ public class LowerClosure {
                 Modifier.PUBLIC | Modifier.FINAL | Opcodes.ACC_SYNTHETIC,
                 KType.ROOT,
                 outerClass,
+                host.pointer(),
                 ImmutableList.copyOf(interfacesAsClasses),
                 List.of(),
                 ImmutableList.copyOf(fields),
@@ -272,6 +281,9 @@ public class LowerClosure {
         Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
         methods.addAll(LoweringItem.createBridgeMethods(ctx.intoContext(), newModel, classModel));
         Log.endType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
+
+
+
 
         return classModel;
     }
@@ -407,22 +419,7 @@ public class LowerClosure {
     private KExpr createInstance(LoweringContext ctx) {
         var classModel = createClassModel(ctx);
 
-        var allClasses = new HashSet<KClassModel>();
 
-        var outest = ctx.definitionClass();
-        var currentOutest = outest;
-        while (currentOutest != null) {
-            outest = currentOutest;
-            currentOutest = outest.outerClass();
-        }
-        assert outest != null;
-        putAllClassesDeep(List.of(outest), allClasses);
-
-        var nestMemberToAdd = List.of(classModel.pointer());
-        for (var possibleAccess : allClasses) {
-            //TODO replace with non mutable state
-            possibleAccess.updateNestMembers(nestMemberToAdd);
-        }
 
 
         var classType = classModel.getDefaultClassType();
@@ -459,14 +456,6 @@ public class LowerClosure {
     }
 
 
-    private void putAllClassesDeep(List<? extends ClassModel> children, Set<KClassModel> collection) {
-        for (var child : children) {
-            if (child instanceof KClassModel kChild) {
-                collection.add(kChild);
-            }
-            putAllClassesDeep(child.innerClasses(), collection);
-        }
-    }
 
 
 }

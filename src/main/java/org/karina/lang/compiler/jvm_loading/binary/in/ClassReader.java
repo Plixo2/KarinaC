@@ -59,6 +59,7 @@ public class ClassReader {
         }
 
         var outerClassPtr = this.stream.readClassPointer(source);
+        var nestHost = this.stream.readClassPointer(source);
 
 
         var interfaceCount = this.stream.readInt();
@@ -115,13 +116,14 @@ public class ClassReader {
             throw new IOException("Invalid class file format, expected magic number 902939823 but got " + endCheck);
         }
 
-        var model =  new JClassModel(
+        var model = new JClassModel(
                 name,
                 path,
                 version,
                 modifiers,
                 superClass,
                 null,
+                nestHost,
                 interfaces.build(),
                 innerClasses,
                 fields,

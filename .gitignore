@@ -1,8 +1,13 @@
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+resources/flight.txt
+resources/howToCode.md
+resources/*.txt
+resources/*.class
+/resources/src_local/*.krna
+/src/main/resources/java_base/
+
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -41,46 +46,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-resources/attributed.json
-resources/imported.json
-resources/raw.json
-src/main/resources/grammar_old.txt
-src/main/resources/grammarOld.txt
-src/main/java/org/karina/lang/MutableList.java
-src/main/java/org/karina/lang/ImmutableList.java
-resources/sugar.json
-resources/jars/commons-cli-1.9.0.jar
-resources/jars/java_base/
-src/main/resources/jdk21.jar
-resources/jars/
-/src/main/resources/jdk
-resources/corelib/compile.cmd
-/resources/corelib
-resources/flight.txt
-resources/howToCode.md
-resources/jdk.bin
-resources/Object.class
-resources/TestA.class
-resources/TestA.java
-resources/TODO.txt
-src/main/java/test/Inner.java
-src/main/java/test/pack/Pack.java
-src/main/java/org/karina/lang/bench/Benchmark.java
-/src/main/java/test/A.java
-/src/main/java/test/Abst.java
-/src/main/java/test/AbstImpl.java
-/resources/Abstract2.class
-/src/main/java/test/AImpl.java
-/src/main/java/test/B.java
-/src/main/java/org/karina/lang/bench/DebugWriter.java
-/src/main/java/test/Main.java
-/resources/orgOld/karina/lang/model.krna
-/resources/orgOld/karina/lang/region.krna
-/resources/strings.txt
-/src/main/java/test/TestA.java
-/resources/orgOld/karina/lang/type.krna
-/resources/src_local/errors.krna
-/resources/src_local/files.krna
-/resources/src_local/main.krna
-/resources/src_local/main.krna__
-/src/main/resources/java_base/
+

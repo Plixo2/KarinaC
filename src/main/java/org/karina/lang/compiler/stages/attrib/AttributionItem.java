@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 public class AttributionItem {
 
 
-    public static KClassModel attribClass(Context c, Model model, KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
+    public static KClassModel attribClass(Context c, Model model, @Nullable KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
 
         var logName = "class-" + classModel.name();
         Log.beginType(Log.LogTypes.CLASS_NAME, logName);
@@ -27,6 +28,7 @@ public class AttributionItem {
             }
         }
 
+
         var methodsToFill = new ArrayList<KMethodModel>();
         var innerToFill = new ArrayList<KClassModel>();
         var classModelNew = new KClassModel(
@@ -35,6 +37,7 @@ public class AttributionItem {
                 classModel.modifiers(),
                 classModel.superClass(),
                 outerClass,
+                classModel.nestHost(),
                 classModel.interfaces(),
                 innerToFill,
                 fields.build(),

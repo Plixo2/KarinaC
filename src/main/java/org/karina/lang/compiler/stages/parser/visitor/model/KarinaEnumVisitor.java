@@ -26,7 +26,7 @@ public class KarinaEnumVisitor implements IntoContext {
     }
 
     public KClassModel visit(
-            @Nullable KClassModel owningClass,
+            KClassModel owningClass,
             ObjectPath owningPath,
             ImmutableList<KAnnotation> annotations,
             KarinaParser.EnumContext ctx,
@@ -57,7 +57,10 @@ public class KarinaEnumVisitor implements IntoContext {
 
         var imports = ImmutableList.<KImport>of();
 
-
+        var host = owningClass.pointer();
+        if (owningClass.nestHost() != null) {
+            host = owningClass.nestHost();
+        }
 
         var innerClassesToFill = new ArrayList<KClassModel>();
         var permittedSubClassesToFill = new ArrayList<ClassPointer>();
@@ -68,6 +71,7 @@ public class KarinaEnumVisitor implements IntoContext {
                 mods,
                 superClass,
                 owningClass,
+                host,
                 interfaces,
                 innerClassesToFill,
                 fields,
@@ -138,6 +142,11 @@ public class KarinaEnumVisitor implements IntoContext {
         var enumInterfaceClassType = new KType.ClassType(enumInterfacePointer, mappedGenerics);
         var interfaces = ImmutableList.of(enumInterfaceClassType);
 
+        var host = enumClass.pointer();
+        if (enumClass.nestHost() != null) {
+            host = enumClass.nestHost();
+        }
+
         var annotations = ImmutableList.<KAnnotation>of();
         var nestMembers =  new ArrayList<ClassPointer>();
         var enumClassInner = new KClassModel(
@@ -146,6 +155,7 @@ public class KarinaEnumVisitor implements IntoContext {
                 mods,
                 superClass,
                 enumClass,
+                host,
                 interfaces,
                 innerClasses,
                 fields.build(),

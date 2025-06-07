@@ -28,7 +28,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
     }
 
     public KClassModel visit(
-            @Nullable KClassModel owningClass,
+            KClassModel owningClass,
             ObjectPath owningPath,
             ImmutableList<KAnnotation> annotations,
             KarinaParser.InterfaceContext ctx,
@@ -77,12 +77,18 @@ public class KarinaInterfaceVisitor implements IntoContext {
 
         var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
+        var host = owningClass.pointer();
+        if (owningClass.nestHost() != null) {
+            host = owningClass.nestHost();
+        }
+
         var classModel = new KClassModel(
                 name,
                 path,
                 mods,
                 superClass,
                 owningClass,
+                host,
                 interfaces.build(),
                 List.of(),
                 fields,

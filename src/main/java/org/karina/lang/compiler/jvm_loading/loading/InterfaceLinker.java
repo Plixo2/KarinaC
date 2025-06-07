@@ -100,6 +100,23 @@ public class InterfaceLinker {
                 permittedSubclasses.add(interfacePointer);
             }
         }
+//        if (node.outerClass == null) {
+//            if (outerClassModel != null) {
+//                 TODO why does this happen?
+//                Log.temp(c, region, "Outer class model is not null but node.outerClass is null for " + node.name + " (" + outerClassModel.name() + ")");
+//                throw new Log.KarinaException();
+//            }
+//        } else {
+//            if (outerClassModel == null) {
+//                Log.temp(c, region, "Outer class model is null but node.outerClass is not null for " + node.name);
+//                throw new Log.KarinaException();
+//            }
+//            if (!TypeDecoding.internalNameToPointer(region, node.outerClass).path().equals(outerClassModel.path())) {
+//                Log.temp(c, region, "Outer class model path does not match node.outerClass for " + node.name);
+//                throw new Log.KarinaException();
+//            }
+//        }
+        var nestHost = node.nestHostClass == null ? null : TypeDecoding.internalNameToPointer(region, node.nestHostClass);
 
         var version = node.version;
         var nestMembers = ImmutableList.<ClassPointer>of();
@@ -114,6 +131,7 @@ public class InterfaceLinker {
                 modifiers,
                 superType,
                 outerClassModel,
+                nestHost,
                 interfaces,
                 innerClassesToFill,
                 fieldsToFill,
