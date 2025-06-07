@@ -37,8 +37,7 @@ fn create<T>(value: T) -> int {
     let closureImplNoReturn = fn(x: Integer) impl FunctionInterface {
             "Hello"
     }
-
-    let secretValue: Integer = (Option$Some { _: 2 }).value()
+    let secretValue: Integer = (Option::Some { _: 2 }).value
 
 
     let helloWord = {

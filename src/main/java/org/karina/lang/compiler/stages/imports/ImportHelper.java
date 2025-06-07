@@ -1,7 +1,9 @@
 package org.karina.lang.compiler.stages.imports;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.imports.table.ImportTable;
 import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;
@@ -129,11 +131,37 @@ public class ImportHelper {
         return newCtx;
     }
 
+    public static @Nullable ClassPointer getUserClassPointer(Model model, Region region, ObjectPath path) {
+        var pointer = model.getClassPointer(region, path);
+        if (pointer != null) {
+            return pointer;
+        }
+        if (path.isEmpty()) {
+            return null;
+        }
+        var left = path.everythingButLast();
+        var right = path.last();
+        pointer = model.getClassPointer(region, left);
+        if (pointer != null) {
+            var classModel = model.getClass(pointer);
+            for (var innerClass : classModel.innerClasses()) {
+                if (innerClass.name().equals(right)) {
+                    return innerClass.pointer();
+                }
+            }
+        } else if (!left.isEmpty()) {
+            var leftLeft = left.everythingButLast();
+            var leftRight = left.last();
+            var last = leftRight + "$" + right;
+            return model.getClassPointer(region, leftLeft.append(last));
+        }
+        return null;
 
+    }
 
     public static UserImportTable addImport(Context c, Region region, KImport kImport, UserImportTable ctx) {
 
-        var pointer = ctx.model().getClassPointer(region, kImport.path());
+        var pointer = getUserClassPointer(ctx.model(), region, kImport.path());
         if (pointer == null) {
             //TODO add suggestions
             Log.error(c, new ImportError.NoClassFound(kImport.region(), kImport.path()));

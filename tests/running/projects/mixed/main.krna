@@ -233,13 +233,13 @@ fn test() -> bool {
 
     let box = fn(value: Integer) -> Integer { value }
 
-    let s: Integer? = Option$Some { _: 10 } as Integer?
+    let s: Integer? = Option::Some { _: 10 } as Integer?
 
     let s2: TestInterface<Integer, String> = Test { inner: box(10) }
 
-    let manualUnwrap: int = if s is Option$Some some {
+    let manualUnwrap: int = if s is Some some {
         some.value().intValue()
-    } else is Option$None {
+    } else is None {
         -1000
     }
     println(manualUnwrap)
@@ -341,14 +341,14 @@ fn create() -> Integer? {
     let toStr = fn(a: Integer) String::valueOf(a)
     let opt = getValue().map(toStr)?
 
-    let optStr = Option$Some { _: "Hello" } as string?
+    let optStr = Option::Some { _: "Hello" } as string?
     let unwrapped = optStr?
-    let unwrapped3 = if optStr is Option$Some some { some.value() } else { return Option$None {}}
-    let unwrapped2 = Option$Some { _: Option$Some { _: "Hello" } }.value()?
+    let unwrapped3 = if optStr is Some some { some.value() } else { return Option::None {}}
+    let unwrapped2 = Some { _: Option::Some { _: "Hello" } }.value()?
     let sizeOf = optStr?.length()
 
 
-    Option$Some { _: sizeOf * 2 }
+    Some { _: sizeOf * 2 }
 }
 
 struct Test<W> {
@@ -366,7 +366,7 @@ struct Inf<T> {
     }
 
     fn ret(self) -> Inf<T>? {
-        Option$Some { value: self }
+        Option::Some { value: self }
     }
 
     fn testTwo<W>(self, other: Inf<W>) {
@@ -458,7 +458,7 @@ struct Inner {
 
     fn function(self, _: int) {
         let initBasedObject = BasedObject {
-            value: Option$Some { _: "Hello" }
+            value: Option::Some { _: "Hello" }
         }
     }
 
@@ -493,9 +493,9 @@ fn expect<T, E>(result: Result<T, E>) -> T {
 
 fn expect<T, E>(result: Result<T, E>, message: string) -> T {
 
-    if result is Result$Ok ok {
+    if result is Ok ok {
         ok.value()
-    } else is Result$Err e {
+    } else is Result::Err e {
         let suffix = if message.isEmpty() { "" } else { ': $message' }
 
         throw java::lang::RuntimeException {

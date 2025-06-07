@@ -188,8 +188,10 @@ public class LowerClosure {
 
     private ClassModel createClassModel(LoweringContext ctx) {
         var primary = this.interfaces.getFirst();
-        var name = ctx.definitionClass().name() + "$" + ctx.syntheticCounter().incrementAndGet();
-        var path = ctx.definitionClass().path().append(name);
+        var objectPath = ctx.definitionClass().path();
+        var name = objectPath.last() + "$" + ctx.syntheticCounter().incrementAndGet();
+        var leftPath = objectPath.everythingButLast();
+        var path = leftPath.append(name);
         Log.recordType(Log.LogTypes.LOWERING, "Lowering closure to class " + path);
         for (var generic : this.generics) {
             Log.recordType(Log.LogTypes.LOWERING, "with generics ", generic);

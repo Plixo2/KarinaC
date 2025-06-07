@@ -10,6 +10,7 @@ import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.stages.imports.ImportHelper;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.*;
 
@@ -182,7 +183,7 @@ public record UserImportTable(
             classPointer = this.getClass(head);
         } else {
             // find the class by the name of the first element and find child classes by the rest of the path
-            classPointer = this.getClassNested(head, path.tail());
+            classPointer = this.getClassNested(path, region);
         }
 
         // when all fails, check for a qualified path.
@@ -204,27 +205,36 @@ public record UserImportTable(
     /**
      * find the class by the name of the first element and find child classes by the rest of the path
      */
-    private @Nullable ClassPointer getClassNested(String first, ObjectPath tail) {
-        //TODO convert into recursive calls, should be cleaner
-        if (this.classes.containsKey(first)) {
-            var topLevel = Objects.requireNonNull(this.classes.get(first)).reference();
-            var referedClassModel = this.model.getClass(topLevel);
-            for (var element : tail.elements()) {
-                boolean found = false;
-                for (var innerClass : referedClassModel.innerClasses()) {
-                    if (innerClass.name().equals(element)) {
-                        referedClassModel = innerClass;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    return null;
+    private @Nullable ClassPointer getClassNested(ObjectPath path, Region region) {
+        var userClassPointer = ImportHelper.getUserClassPointer(this.model, region, path);
+        if (userClassPointer != null) {
+            return userClassPointer;
+        }
+
+
+        var first = path.first();
+        var tail = path.tail();
+
+        if (!this.classes.containsKey(first)) {
+            return null;
+        }
+        var start = Objects.requireNonNull(this.classes.get(first)).reference();
+
+        var referedClassModel = this.model.getClass(start);
+        for (var element : tail.elements()) {
+            boolean found = false;
+            for (var innerClass : referedClassModel.innerClasses()) {
+                if (innerClass.name().equals(element)) {
+                    referedClassModel = innerClass;
+                    found = true;
+                    break;
                 }
             }
-            return referedClassModel.pointer();
+            if (!found) {
+                return null;
+            }
         }
-        return null;
+        return referedClassModel.pointer();
     }
 
     /**
