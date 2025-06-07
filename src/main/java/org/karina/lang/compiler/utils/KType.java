@@ -380,8 +380,6 @@ public sealed interface KType {
     /**
      * Represents a type that can resolve to another type.
      * This is mainly used for generics but also for other expressions.
-     *
-     * TODO test if the Resolvable is backed by a Generic, or just unknown
      */
     final class Resolvable implements KType {
 
@@ -421,7 +419,6 @@ public sealed interface KType {
          * Make sure to call this before calling {@link #tryResolve}. Otherwise there might be cycles.
          */
         public boolean canResolve(IntoContext c, Region checkingRegion, KType resolved) {
-            //TODO this?
             resolved = resolved.unpack();
             /*
              * return true if the resolved type refers to itself.

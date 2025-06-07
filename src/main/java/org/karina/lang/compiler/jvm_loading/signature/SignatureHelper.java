@@ -102,16 +102,6 @@ public class SignatureHelper {
         }
     }
 
-    //for errors
-    public static List<String> nestNames(JClassModel outer) {
-        var names = new ArrayList<String>();
-        while (outer != null) {
-            names.add(outer.name());
-            outer = outer.outerClass();
-        }
-        return names;
-    }
-
     public static List<String> nestNamesA(JClassModel outer) {
         var names = new ArrayList<String>();
         while (outer != null) {

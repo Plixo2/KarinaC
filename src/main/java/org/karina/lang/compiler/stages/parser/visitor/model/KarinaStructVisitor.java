@@ -209,7 +209,6 @@ public class KarinaStructVisitor implements IntoContext {
         var signature = new Signature(paramTypes, KType.NONE);
         var generics = ImmutableList.<Generic>of();
 
-        //TODO fill super call with parameters,
         var expressions = new ArrayList<KExpr>();
 
         var superLiteral = new KExpr.SpecialCall(

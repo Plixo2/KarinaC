@@ -73,7 +73,7 @@ public class ClosureHelper {
     private static @Nullable ParamsAndReturn getParameterTypesFromInterface(Context c, Model model, int argsSize, KType.ClassType toCheck) {
         Log.recordType(Log.LogTypes.CLOSURE, toCheck.toString());
         var classModel = model.getClass(toCheck.pointer());
-        if (!Modifier.isAbstract(classModel.modifiers())) { //TODO replace with isAbstract check?
+        if (!Modifier.isAbstract(classModel.modifiers())) {
             Log.recordType(Log.LogTypes.CLOSURE, "Not a interface");
             return null;
         } else if (Modifier.isFinal(classModel.modifiers())) {

@@ -267,7 +267,7 @@ public class LogFactory<T extends LogBuilder> {
         switch (errorType) {
             case ImportError.NoClassFound(var region, var path) -> {
                 builder.setTitle("No class found");
-                var target = path.mkString(".");
+                var target = path.mkString("::");
                 builder.append("No Class found for path '").append(target).append("'");
                 builder.setPrimarySource(region);
             }
