@@ -1,6 +1,5 @@
 package org.karina.lang.compiler;
 
-import lombok.SneakyThrows;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.*;
 import org.karina.lang.compiler.utils.AutoRun;
@@ -15,8 +14,8 @@ import java.nio.file.Path;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        var failWithException = args.length != 0 && args[0].equals("--test");
-        var run = args.length != 0 && args[0].equals("--run");
+        var failWithException = argB(args, "--test");
+        var run = argB(args, "--run");
 
         var startTime = System.currentTimeMillis();
 
@@ -99,7 +98,7 @@ public class Main {
             onSuccess(outputFile, warnings, endTime - startTime);
 
             if (run && compiler.getJarCompilation() != null) {
-                AutoRun.run(compiler.getJarCompilation());
+                AutoRun.run(compiler.getJarCompilation(), failWithException);
             }
 
         } else {
@@ -171,4 +170,12 @@ public class Main {
         }
     }
 
+    private static boolean argB(String[] args, String value) {
+        for (var arg : args) {
+            if (arg.equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

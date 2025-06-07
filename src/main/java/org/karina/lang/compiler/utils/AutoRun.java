@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public class AutoRun {
 
-    public static void run(JarCompilation compilation) {
+    public static void run(JarCompilation compilation, boolean failWithException) {
         var classLoader = new CompilationClassLoader(compilation);
         var mainClass = compilation.manifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
         if (mainClass == null) {
@@ -40,6 +40,9 @@ public class AutoRun {
 
             mainMethod.invoke(null, (Object) new String[]{});
         } catch (ReflectiveOperationException e) {
+            if (failWithException) {
+                throw new RuntimeException("Failed to run main method", e);
+            }
             Throwable inner = e;
             while (inner.getCause() != null) {
                 inner = inner.getCause();

@@ -12,7 +12,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 
-public class SyntaxTests {
+public class SingleTests {
     private static final String TEST_DIR = "tests/files/";
 
     @Test
@@ -30,14 +30,14 @@ public class SyntaxTests {
             throws MalformedURLException, ClassNotFoundException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
 
-        URLClassLoader clsLoader = new URLClassLoader(
+        var clsLoader = new URLClassLoader(
                 new URL[] {
                         new File(System.getProperty("karina.out", "resources/out/build.jar")).toURI().toURL()
                 },
                 Main.class.getClassLoader()
         );
         var classToLoad = Class.forName("main", true, clsLoader);
-        Method method = classToLoad.getDeclaredMethod("main", String[].class);
+        var method = classToLoad.getDeclaredMethod("main", String[].class);
         var args = new Object[] {
                 new String[] {}
         };
@@ -66,8 +66,8 @@ public class SyntaxTests {
                 var source = FileLoader.loadUTF8(ref.getAbsolutePath());
                 return DynamicTest.dynamicTest(
                         ref.getName(), () -> {
-                            var toTest = new TestFile(name, source, expectedResult);
-                            toTest.expect();
+                            var toTest = new TestFile(name, source);
+                            toTest.expect(expectedResult);
                         }
                 );
             } catch (IOException e) {
@@ -76,7 +76,7 @@ public class SyntaxTests {
         }).toList();
     }
 
-    public static List<File> loadSingleFiles(String testDir) {
+    private static List<File> loadSingleFiles(String testDir) {
         var files = new ArrayList<File>();
 
         var directory = new File(testDir);
