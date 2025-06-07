@@ -50,7 +50,7 @@ public class ClosureAttrib  {
 
         //make all variables from the outside immutable in the body
         for (var variable : ctx.variables()) {
-            // dont... do this.
+            //TODO dont
             bodyContext = bodyContext.markImmutable(variable);
         }
 
@@ -113,8 +113,8 @@ public class ClosureAttrib  {
                 Log.error(ctx, new AttribError.NotAInterface(region, classType));
                 throw new Log.KarinaException();
             }
-            if (!ClosureHelper.canUseInterface(region, ctx, args, returnType, classType)) {
-                Log.record("Impl is not a matching interface");
+            if (!ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, classType)) {
+                Log.record("Impl is not a functional interface");
                 Log.error(ctx, new AttribError.NotAValidInterface(region, args, returnType, classType));
                 throw new Log.KarinaException();
             }
@@ -138,48 +138,39 @@ public class ClosureAttrib  {
             var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
             if (alreadyAdded) {
                 Log.recordType(Log.LogTypes.CLOSURE, "hint interface already added");
-            } else if (ClosureHelper.canUseInterface(region, ctx, args, returnType, classType)) {
+            } else if (ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, classType)) {
                 Log.recordType(Log.LogTypes.CLOSURE, "Using hint as interface");
                 interfaces.add(classType);
+            } else {
+                //Dont throw an error here, we just ignore the hint if it is not valid
             }
             Log.endType(Log.LogTypes.CLOSURE, "Checking hint interface");
         }
 
-        var doesReturn = !returnType.isVoid();
-        var primaryInterface = KType.FUNCTION_BASE(ctx.model(), args.size(), doesReturn);
-        if (primaryInterface == null) {
-            Log.temp(ctx, region, "Cannot find default interface for " + args.size() + " arguments and return type " + returnType);
-            throw new Log.KarinaException();
-        }
-        {
-            var totalGenerics = args.size() + (doesReturn ? 1 : 0);
-
-            var model = ctx.model().getClass(primaryInterface);
-            if (model.generics().size() != totalGenerics) {
-                Log.temp(ctx, region, "Expected " + totalGenerics + " generics, but got " + model.generics().size());
-                throw new Log.KarinaException();
-            }
-
-            var generics = new ArrayList<KType>();
-            for (var i = 0; i < totalGenerics; i++) {
-                generics.add(new KType.Resolvable());
-            }
-
-            var classType = new KType.ClassType(primaryInterface, generics);
-            var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(classType.pointer()));
+        var primaryInterface = ClosureHelper.getDefaultInterface(ctx.intoContext(), region, ctx.model(), args, returnType);
+        if (primaryInterface != null) {
+            var alreadyAdded = interfaces.stream().anyMatch(ref -> ref.pointer().equals(primaryInterface.pointer()));
             if (!alreadyAdded) {
-                if (ClosureHelper.canUseInterface(region, ctx, args, returnType, classType)) {
+                if (ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, primaryInterface)) {
                     Log.recordType(Log.LogTypes.CLOSURE, "Using default as interface");
-                    interfaces.add(classType);
+                    interfaces.add(primaryInterface);
                 } else {
-                    Log.recordType(Log.LogTypes.CLOSURE, "(error) Could not use default as interface");
+                    //TODO should we throw an error here?
+                    Log.recordType(Log.LogTypes.CLOSURE, "(error) Could not use default as interface ", primaryInterface);
                 }
             } else {
                 Log.recordType(Log.LogTypes.CLOSURE, "default already added");
             }
-
+            interfaces = sortInterfaces(ctx, primaryInterface.pointer(), interfaces);
         }
-        interfaces = sortInterfaces(ctx, primaryInterface, interfaces);
+
+        if (interfaces.isEmpty()) {
+            Log.temp(ctx, region,
+                    "Cannot find default interface for " + args.size() + " arguments and return type " + returnType + ". " +
+                    "Please specify an interface via 'impl'"
+            );
+            throw new Log.KarinaException();
+        }
 
         var functionType = new KType.FunctionType(
                 args,
@@ -203,11 +194,6 @@ public class ClosureAttrib  {
         ));
 
     }
-
-
-
-
-
 
     private static void checkForPreexistingVariable(AttributionContext ctx, RegionOf<String> argument) {
         var name = argument.value();

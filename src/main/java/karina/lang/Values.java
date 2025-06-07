@@ -1,8 +1,8 @@
 package karina.lang;
 
-import karina.lang.internal.functions.Function1_1;
 
 import java.lang.reflect.Array;
+import java.util.function.IntFunction;
 
 public final class Values {
 
@@ -14,7 +14,7 @@ public final class Values {
         return null;
     }
 
-    public static <T> T[] newArray(Class<T> aClass, int size, Function1_1<Integer, T> initializer) {
+    public static <T> T[] newArray(Class<T> aClass, int size, IntFunction<T> initializer) {
         T[] array = (T[]) Array.newInstance(aClass, size);
         for (int i = 0; i < size; i++) {
             array[i] = initializer.apply(i);

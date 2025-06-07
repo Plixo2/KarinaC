@@ -61,13 +61,15 @@ public class AttributionItem {
         var importTable = StaticImportTable.fromImportTable(classModel.pointer(), model, classModelNew.symbolTable());
 
 
-        for (var method : classModel.methods()) {
-            if (!(method instanceof KMethodModel kMethodModel)) {
-                Log.temp(c, method.region(), "Invalid method");
-                throw new Log.KarinaException();
+        try (var fork = c.<KMethodModel>fork()){
+            for (var method : classModel.methods()) {
+                if (!(method instanceof KMethodModel kMethodModel)) {
+                    Log.temp(c, method.region(), "Invalid method");
+                    throw new Log.KarinaException();
+                }
+                fork.collect(subC -> attribMethod(subC, model, classModelNew, importTable, kMethodModel));
             }
-            var attribMethod = attribMethod(c, model, classModelNew, importTable, kMethodModel);
-            methodsToFill.add(attribMethod);
+            methodsToFill.addAll(fork.dispatch());
         }
         Log.endType(Log.LogTypes.CLASS_NAME, logName);
 

@@ -11,6 +11,7 @@ import org.karina.lang.compiler.utils.Context;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -33,7 +34,7 @@ public class BinaryFormatLinker {
             }
 
         } catch (IOException e) {
-            Log.warn(c, e.getMessage());
+            Log.warn(c, Objects.requireNonNullElse(e.getMessage(), "An error occurred while reading the binary model."), e);
             return null;
         }
     }

@@ -145,6 +145,12 @@ public class Context implements IntoContext {
                             var result = function.apply(context);
                             return new ParallelEntry<>(result, context);
                         } catch (Log.KarinaException e) {
+                            if (!KarinaCompiler.allowMultipleErrors) {
+                                synchronized (this.context) {
+                                    this.context.mergeUp(context);
+                                }
+                                throw e;
+                            }
                             error.set(true);
                             return new ParallelEntry<>(null, context);
                         }
@@ -209,6 +215,10 @@ public class Context implements IntoContext {
                     var result = sub.apply(context);
                     results.add(result);
                 } catch(Log.KarinaException e) {
+                    if (!KarinaCompiler.allowMultipleErrors) {
+                        this.context.mergeUp(context);
+                        throw e;
+                    }
                     error = true;
                 }
                 this.context.mergeUp(context);

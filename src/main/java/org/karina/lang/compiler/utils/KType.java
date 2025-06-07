@@ -162,9 +162,7 @@ public sealed interface KType {
         final String FUNCTIONS_NAME = "Function";
         var name = FUNCTIONS_NAME + args + "_" + (doesReturn ? "1" : "0");
 
-
         var objectPath = ClassPointer.FUNCTIONS_BASE.append(name);
-        Log.recordType(Log.LogTypes.CLOSURE, objectPath.toString());
         return model.getClassPointer(KARINA_LIB, objectPath);
     }
 
@@ -261,6 +259,12 @@ public sealed interface KType {
         public String toString() {
             return "void";
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof KType type) obj = type.unpack();
+            return obj instanceof VoidType;
+        }
     }
 
     /**
@@ -281,6 +285,17 @@ public sealed interface KType {
         public String toString() {
             return "[" + this.elementType + "]";
         }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof KType type) object = type.unpack();
+            return object instanceof ArrayType(KType type) && Objects.equals(this.elementType, type);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(this.elementType);
+        }
     }
 
     record FunctionType(
@@ -296,6 +311,20 @@ public sealed interface KType {
             var impls = this.interfaces.isEmpty() ? "" : " impl (" + String.join(", ", this.interfaces.stream().map(KType::toString).toList()) + ")";
             return "fn(" + String.join(", ", this.arguments.stream().map(KType::toString).toList()) + ")" + impls + " -> " + returnType;
         }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof KType type) object = type.unpack();
+            return object instanceof FunctionType(var args, var type, var interfaces2) &&
+                    Objects.equals(this.returnType, type) &&
+                    Objects.equals(this.arguments, args) &&
+                    Objects.equals(this.interfaces, interfaces2);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.arguments, this.returnType, this.interfaces);
+        }
     }
 
     record ClassType(ClassPointer pointer, List<KType> generics) implements KType {
@@ -310,6 +339,19 @@ public sealed interface KType {
 
             return this.pointer.path().mkString("::") + suffix;
         }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof KType type) object = type.unpack();
+            return object instanceof ClassType(ClassPointer pointer1, List<KType> generics1) &&
+                    Objects.equals(this.pointer, pointer1) &&
+                    Objects.equals(this.generics, generics1);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.pointer, this.generics);
+        }
     }
 
     /**
@@ -323,6 +365,16 @@ public sealed interface KType {
             return this.link.name();
         }
 
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof KType type) object = type.unpack();
+            return object instanceof GenericLink(Generic link1) && Objects.equals(this.link, link1);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(this.link);
+        }
     }
 
     /**
@@ -461,6 +513,20 @@ public sealed interface KType {
                 return "?" + readable + " as " + this.resolved;
             }
         }
+
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof KType type) object = type.unpack();
+            if (this.resolved != null) {
+                return this.resolved.equals(object);
+            }
+            return this == object;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.canUsePrimitives, this.canUseVoid, this.resolved);
+        }
     }
 
 
@@ -471,6 +537,17 @@ public sealed interface KType {
             return this.primitive().toString().toLowerCase();
         }
 
+        @Override
+        public boolean equals(Object object) {
+            if (object instanceof KType type) object = type.unpack();
+
+            return object instanceof PrimitiveType(var primitive1) && this.primitive == primitive1;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(this.primitive);
+        }
     }
 
 

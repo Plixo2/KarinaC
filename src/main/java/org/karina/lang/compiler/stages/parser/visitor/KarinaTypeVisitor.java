@@ -102,13 +102,7 @@ public class KarinaTypeVisitor implements IntoContext {
         var interfaces = ctx.interfaceImpl() != null ? visitInterfaceImpl(ctx.interfaceImpl()) : List.<KType>of();
         var args = visitTypeList(ctx.typeList());
 
-
         var returnType = ctx.type() != null ? visitType(ctx.type()) : KType.NONE;
-
-        if (returnType != null && returnType.isPrimitive()) {
-            Log.error(this, new AttribError.NotSupportedType(this.conv.toRegion(ctx.type()), returnType));
-            throw new Log.KarinaException();
-        }
 
         List<KType> interfacesCast = interfaces.stream().map(ref -> (KType)ref).toList();
         return new KType.FunctionType(args, returnType, interfacesCast);
@@ -119,7 +113,7 @@ public class KarinaTypeVisitor implements IntoContext {
 
         return ctx.type().stream().map(ref -> {
             var mapped = visitType(ref);
-            if (mapped.isVoid() || mapped.isPrimitive()) {
+            if (mapped.isVoid()) {
                 var innerRegion = this.conv.toRegion(ref);
                 Log.error(this, new AttribError.NotSupportedType(innerRegion, mapped));
                 throw new Log.KarinaException();

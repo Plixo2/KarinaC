@@ -2,16 +2,17 @@ package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.MethodModel;
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.model_api.pointer.MethodPointer;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+import org.karina.lang.compiler.stages.attrib.expr.BinaryAttrib;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntUnaryOperator;
 
 public class ClosureHelper {
 
@@ -21,14 +22,15 @@ public class ClosureHelper {
     // than test if the functions are already implemented in the given argument
     // allow auto conversion in any way??
 
+
     /**
      * checks if a given class type is a functional interface and if it can be used to implement a
      * function given the parameter and return types.
      * @param toCheck the class to check
      * @return true if the class is a functional interface and can be used to implement a function
      */
-    public static boolean canUseInterface(Region region, AttributionContext ctx, List<KType> types, KType returnType, KType.ClassType toCheck) {
-        var paramsFromType = getParameterTypesFromInterface(ctx, types.size(), toCheck);
+    public static boolean canUseInterface(Region region, Context c, Model model, List<KType> types, KType returnType, KType.ClassType toCheck) {
+        var paramsFromType = getParameterTypesFromInterface(c, model, types.size(), toCheck);
         if (paramsFromType == null || paramsFromType.returnType() == null) {
             return false;
         }
@@ -39,13 +41,24 @@ public class ClosureHelper {
             var mappedParam = mappedParameters.get(i);
             var type = types.get(i);
 
-            if (!ctx.checking().canAssign(ctx, region, mappedParam, type, true)) {
-                Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i,mappedParam, "from", type);
+            //TODO what equals or canAssign method should be used here?
+            if (!mappedParam.equals(type)) {
+                Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i, mappedParam, "from", type);
                 return false;
             }
+//            if (!ctx.checking().canAssign(ctx, region, mappedParam, type, true)) {
+//                Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i,mappedParam, "from", type);
+//                return false;
+//            }
         }
 
-        var returnMatch = ctx.checking().canAssign(ctx, region, returnType, methodReturnType, true);
+        //TODO what equals or canAssign method should be used here?
+
+//        var returnMatch = ctx.checking().canAssign(ctx, region, returnType, methodReturnType, true);
+//        Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);
+//        return returnMatch;
+
+        var returnMatch = returnType.equals(methodReturnType);
         Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);
         return returnMatch;
     }
@@ -57,9 +70,9 @@ public class ClosureHelper {
      *         (including generic projection).
      *
      */
-    private static @Nullable ParamsAndReturn getParameterTypesFromInterface(AttributionContext ctx, int argsSize, KType.ClassType toCheck) {
+    private static @Nullable ParamsAndReturn getParameterTypesFromInterface(Context c, Model model, int argsSize, KType.ClassType toCheck) {
         Log.recordType(Log.LogTypes.CLOSURE, toCheck.toString());
-        var classModel = ctx.model().getClass(toCheck.pointer());
+        var classModel = model.getClass(toCheck.pointer());
         if (!Modifier.isAbstract(classModel.modifiers())) { //TODO replace with isAbstract check?
             Log.recordType(Log.LogTypes.CLOSURE, "Not a interface");
             return null;
@@ -67,8 +80,7 @@ public class ClosureHelper {
             Log.recordType(Log.LogTypes.CLOSURE, "interface is final");
             return null;
         }
-
-        var method = MethodHelper.getMethodsToImplementForClass(ctx.intoContext(), ctx.model(), toCheck);
+        var method = MethodHelper.getMethodsToImplementForClass(c, model, toCheck);
 
         if (method.size() > 1) {
             return null;
@@ -78,24 +90,6 @@ public class ClosureHelper {
             return null;
         }
         var methodToImplement = method.getFirst();
-
-//        MethodPointer pointer = null;
-//        MethodModel methodModel = null;
-//        for (var method : classModel.methods()) {
-//            if (!Modifier.isAbstract(method.modifiers())) {
-//                continue;
-//            }
-//            if (pointer == null) {
-//                pointer = method.pointer();
-//                methodModel = method;
-//            } else {
-//                return null;
-//            }
-//        }
-//        if (pointer == null) {
-//            Log.recordType(Log.LogTypes.CLOSURE, "No method found");
-//            return null;
-//        }
 
         //dont have to check, they should be always public
         //ctx.protection().canReference(ctx.owningClass(), pointer.classPointer(), methodModel.modifiers());
@@ -108,35 +102,6 @@ public class ClosureHelper {
         var methodReturnType = methodToImplement.returnType();
 
         return new ParamsAndReturn(parameters, methodReturnType);
-
-
-//        var mapped = new HashMap<Generic, KType>();
-//        for (var i = 0; i < classModel.generics().size(); i++) {
-//            var generic = classModel.generics().get(i);
-//            var type = toCheck.generics().get(i);
-//            mapped.put(generic, type);
-//        }
-//        var methodGenerics = methodModel.generics();
-//        for (var i = 0; i < methodGenerics.size(); i++) {
-//            var generic = methodGenerics.get(i);
-//            var type = new KType.Resolvable();
-//            mapped.put(generic, type);
-//        }
-//        for (var genericKTypeEntry : mapped.entrySet()) {
-//            Log.recordType(Log.LogTypes.CLOSURE, "generic",
-//                    genericKTypeEntry.getKey(),
-//                    " -> ",
-//                    genericKTypeEntry.getValue()
-//            );
-//        }
-//        var methodReturnType = Types.projectGenerics(methodModel.signature().returnType(), mapped);
-//
-//        var unmappedParameters = methodModel.signature().parameters();
-//        var mappedParameters = unmappedParameters.stream().map(ref ->
-//                Types.projectGenerics(ref, mapped)
-//        ).toList();
-//        return new ParamsAndReturn(mappedParameters, methodReturnType);
-
     }
 
 
@@ -157,7 +122,7 @@ public class ClosureHelper {
                 return getClosureTypes(expr, args);
             }
         } else if (hint instanceof KType.ClassType classType) {
-            var paramsFromType = getParameterTypesFromInterface(ctx, expr.args().size(), classType);
+            var paramsFromType = getParameterTypesFromInterface(ctx.intoContext(), ctx.model(), expr.args().size(), classType);
             if (paramsFromType != null) {
                 return getClosureTypes(expr, paramsFromType);
             }
@@ -165,8 +130,33 @@ public class ClosureHelper {
 
         return defaultClosureTypes(expr);
 
-
     }
+
+
+    public static @Nullable KType.ClassType getDefaultInterface(Context c, Region region, Model model, List<KType> args, KType returnType) {
+        var interfaceToUse = DefaultClosureTable.getType(
+                args.stream().map(KType::unpack).toList(),
+                returnType.unpack()
+        );
+        if (interfaceToUse != null) {
+            var classModel = model.getClassNullable(interfaceToUse.pointer());
+            if (classModel == null) {
+                Log.temp(c, region, "Default interface " + interfaceToUse + " not found in model, this should not happen");
+                throw new Log.KarinaException();
+            } else {
+                if (interfaceToUse.generics().size() != classModel.generics().size()) {
+                    Log.temp(c, region,
+                            "Default interface " + interfaceToUse + " has wrong number of generics, this should not happen ("
+                            + interfaceToUse.generics().size() + " != " + classModel.generics().size() + ")"
+                    );
+                    throw new Log.KarinaException();
+                }
+            }
+        }
+        return interfaceToUse;
+    }
+
+
 
     /**
      * Returns the default arguments types and return type for a closure
@@ -207,7 +197,7 @@ public class ClosureHelper {
      * Use the given type for each parameter when given, otherwise use the types from 'fromHint'
      * @return The parameters and return type of the closure.
      */
-    private static ArgsAndReturnType getClosureTypes(KExpr.Closure expr, ClosureHelper.ParamsAndReturn fromHint) {
+    private static ArgsAndReturnType getClosureTypes(KExpr.Closure expr, ParamsAndReturn fromHint) {
         var newArgs = new ArrayList<NameAndOptType>();
         for (var i = 0; i < fromHint.params().size(); i++) {
             var suggestedType = fromHint.params().get(i);
@@ -259,4 +249,378 @@ public class ClosureHelper {
     public record ParamsAndReturn(List<KType> params, @Nullable KType returnType) {}
     public record ArgsAndReturnType(List<NameAndOptType> args, KType returnType) {}
 
+    /**
+     * Entry for a function. Each type can either be a primitive, void or KType.ROOT (when a generic is used).
+     * @param args
+     * @param returnType
+     */
+    private record FunctionClosureType(List<KType> args, KType returnType) { }
+
+    /**
+     * To get a class (given a list of arguments and a return type), that can be used as a closure.
+     */
+    private static class DefaultClosureTable {
+
+        /* (...) -> void */
+        private static final ObjectPath RUNNABLE = ObjectPath.fromJavaPath("java/lang/Runnable");
+        private static final ObjectPath CONSUMER = ObjectPath.fromJavaPath("java/util/function/Consumer");
+        private static final ObjectPath DOUBLE_CONSUMER = ObjectPath.fromJavaPath("java/util/function/DoubleConsumer");
+        private static final ObjectPath INT_CONSUMER = ObjectPath.fromJavaPath("java/util/function/IntConsumer");
+        private static final ObjectPath LONG_CONSUMER = ObjectPath.fromJavaPath("java/util/function/LongConsumer");
+        private static final ObjectPath BI_CONSUMER = ObjectPath.fromJavaPath("java/util/function/BiConsumer");
+        private static final ObjectPath OBJ_DOUBLE_CONSUMER = ObjectPath.fromJavaPath("java/util/function/ObjDoubleConsumer");
+        private static final ObjectPath OBJ_INT_CONSUMER = ObjectPath.fromJavaPath("java/util/function/ObjIntConsumer");
+        private static final ObjectPath OBJ_LONG_CONSUMER = ObjectPath.fromJavaPath("java/util/function/ObjLongConsumer");
+
+        /* (...) -> void */
+        private static final ObjectPath SUPPLIER = ObjectPath.fromJavaPath("java/util/function/Supplier");
+        private static final ObjectPath FUNCTION = ObjectPath.fromJavaPath("java/util/function/Function");
+        private static final ObjectPath DOUBLE_FUNCTION = ObjectPath.fromJavaPath("java/util/function/DoubleFunction");
+        private static final ObjectPath INT_FUNCTION = ObjectPath.fromJavaPath("java/util/function/IntFunction");
+        private static final ObjectPath LONG_FUNCTION = ObjectPath.fromJavaPath("java/util/function/LongFunction");
+        private static final ObjectPath BI_FUNCTION = ObjectPath.fromJavaPath("java/util/function/BiFunction");
+        private static final ObjectPath BINARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/BinaryOperator");
+        private static final ObjectPath UNARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/UnaryOperator");
+
+        /* (...) -> boolean */
+        private static final ObjectPath BOOLEAN_SUPPLIER = ObjectPath.fromJavaPath("java/util/function/BooleanSupplier");
+        private static final ObjectPath PREDICATE = ObjectPath.fromJavaPath("java/util/function/Predicate");
+        private static final ObjectPath BI_PREDICATE = ObjectPath.fromJavaPath("java/util/function/BiPredicate");
+        private static final ObjectPath DOUBLE_PREDICATE = ObjectPath.fromJavaPath("java/util/function/DoublePredicate");
+        private static final ObjectPath INT_PREDICATE = ObjectPath.fromJavaPath("java/util/function/IntPredicate");
+        private static final ObjectPath LONG_PREDICATE = ObjectPath.fromJavaPath("java/util/function/LongPredicate");
+
+        /* (...) -> int */
+        private static final ObjectPath TO_INT_FUNCTION = ObjectPath.fromJavaPath("java/util/function/ToIntFunction");
+        private static final ObjectPath TO_INT_BI_FUNCTION = ObjectPath.fromJavaPath("java/util/function/ToIntBiFunction");
+        private static final ObjectPath DOUBLE_TO_INT_FUNCTION = ObjectPath.fromJavaPath("java/util/function/DoubleToIntFunction");
+        private static final ObjectPath INT_UNARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/IntUnaryOperator");
+        private static final ObjectPath LONG_TO_INT_FUNCTION = ObjectPath.fromJavaPath("java/util/function/LongToIntFunction");
+        private static final ObjectPath INT_SUPPLIER = ObjectPath.fromJavaPath("java/util/function/IntSupplier");
+        private static final ObjectPath INT_BINARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/IntBinaryOperator");
+
+        /* (...) -> long */
+        private static final ObjectPath TO_LONG_FUNCTION = ObjectPath.fromJavaPath("java/util/function/ToLongFunction");
+        private static final ObjectPath TO_LONG_BI_FUNCTION = ObjectPath.fromJavaPath("java/util/function/ToLongBiFunction");
+        private static final ObjectPath DOUBLE_TO_LONG_FUNCTION = ObjectPath.fromJavaPath("java/util/function/DoubleToLongFunction");
+        private static final ObjectPath INT_TO_LONG_FUNCTION = ObjectPath.fromJavaPath("java/util/function/IntToLongFunction");
+        private static final ObjectPath LONG_UNARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/LongUnaryOperator");
+        private static final ObjectPath LONG_SUPPLIER = ObjectPath.fromJavaPath("java/util/function/LongSupplier");
+        private static final ObjectPath LONG_BINARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/LongBinaryOperator");
+
+        /* (...) -> double */
+        private static final ObjectPath TO_DOUBLE_FUNCTION = ObjectPath.fromJavaPath("java/util/function/ToDoubleFunction");
+        private static final ObjectPath TO_DOUBLE_BI_FUNCTION = ObjectPath.fromJavaPath("java/util/function/ToDoubleBiFunction");
+        private static final ObjectPath DOUBLE_UNARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/DoubleUnaryOperator");
+        private static final ObjectPath INT_TO_DOUBLE_FUNCTION = ObjectPath.fromJavaPath("java/util/function/IntToDoubleFunction");
+        private static final ObjectPath LONG_TO_DOUBLE_FUNCTION = ObjectPath.fromJavaPath("java/util/function/LongToDoubleFunction");
+        private static final ObjectPath DOUBLE_SUPPLIER = ObjectPath.fromJavaPath("java/util/function/DoubleSupplier");
+        private static final ObjectPath DOUBLE_BINARY_OPERATOR = ObjectPath.fromJavaPath("java/util/function/DoubleBinaryOperator");
+
+        private static @Nullable KType.ClassType getType(List<KType> args, KType returnType) {
+            return switch (returnType) {
+                case KType.VoidType _ -> getConsumer(args);
+                case KType w when isObject(w) -> getFunctions(args, returnType);
+                case KType.PrimitiveType(var p) when p == KType.KPrimitive.BOOL -> getSupplier(args);
+                case KType.PrimitiveType(var p) when p == KType.KPrimitive.INT -> getToIntFunction(args);
+                case KType.PrimitiveType(var p) when p == KType.KPrimitive.LONG -> getToLongFunction(args);
+                case KType.PrimitiveType(var p) when p == KType.KPrimitive.DOUBLE -> getToDoubleFunction(args);
+                default -> null;
+            };
+
+        }
+
+        //<editor-fold desc="(...) -> double" collapsed="true">
+
+        /// `(...) -> double`
+        ///
+        /// | Interface                  | Signature                 |
+        /// | --------------------       | ------------              |
+        /// | `ToDoubleFunction<T>`      | T → double                |
+        /// | `ToDoubleBiFunction<T, U>` | (T, U) → double           |
+        /// | `DoubleUnaryOperator`      | double → double           |
+        /// | `IntToDoubleFunction`      | int → double              |
+        /// | `LongToDoubleFunction`     | long → double             |
+        /// | `DoubleSupplier`           | () → double               |
+        /// | `DoubleBinaryOperator`     | (double, double) → double |
+        private static @Nullable KType.ClassType getToDoubleFunction(List<KType> args) {
+            return getPrimitiveFunction(
+                    args,
+                    TO_DOUBLE_FUNCTION,
+                    TO_DOUBLE_BI_FUNCTION,
+                    DOUBLE_UNARY_OPERATOR,
+                    INT_TO_DOUBLE_FUNCTION,
+                    LONG_TO_DOUBLE_FUNCTION,
+                    DOUBLE_SUPPLIER,
+                    KType.KPrimitive.DOUBLE,
+                    DOUBLE_BINARY_OPERATOR
+            );
+        }
+
+        //</editor-fold>
+
+        //<editor-fold desc="(...) -> long" collapsed="true">
+
+        /// `(...) -> long`
+        ///
+        /// | Interface                | Signature           |
+        /// | --------------------     | ------------        |
+        /// | `ToLongFunction<T>`      | T → long          |
+        /// | `ToLongBiFunction<T, U>` | (T, U) → long       |
+        /// | `DoubleToLongFunction`   | double → long       |
+        /// | `IntToLongFunction`      | int → long          |
+        /// | `LongUnaryOperator`      | long → long         |
+        /// | `LongSupplier`           | () → long           |
+        /// | `LongBinaryOperator`     | (long, long) → long |
+        private static @Nullable KType.ClassType getToLongFunction(List<KType> args) {
+            return getPrimitiveFunction(
+                    args,
+                    TO_LONG_FUNCTION,
+                    TO_LONG_BI_FUNCTION,
+                    DOUBLE_TO_LONG_FUNCTION,
+                    INT_TO_LONG_FUNCTION,
+                    LONG_UNARY_OPERATOR,
+                    LONG_SUPPLIER,
+                    KType.KPrimitive.LONG,
+                    LONG_BINARY_OPERATOR
+            );
+        }
+
+        //</editor-fold>
+
+        //<editor-fold desc="(...) -> int" collapsed="true">
+
+        /// `(...) -> int`
+        ///
+        /// | Interface               | Signature          |
+        /// | --------------------    | ------------       |
+        /// | `ToIntFunction<T>`        | T → int          |
+        /// | `ToIntBiFunction<T, U>` | (T, U) → int       |
+        /// | `DoubleToIntFunction`   | double → int       |
+        /// | `IntUnaryOperator`      | int → int          |
+        /// | `LongToIntFunction`     | long → int         |
+        /// | `IntSupplier`           | () → int           |
+        /// | `IntBinaryOperator`     | (int, int) → int   |
+        private static @Nullable KType.ClassType getToIntFunction(List<KType> args) {
+            return getPrimitiveFunction(
+                    args,
+                    TO_INT_FUNCTION,
+                    TO_INT_BI_FUNCTION,
+                    DOUBLE_TO_INT_FUNCTION,
+                    INT_UNARY_OPERATOR,
+                    LONG_TO_INT_FUNCTION,
+                    INT_SUPPLIER,
+                    KType.KPrimitive.INT,
+                    INT_BINARY_OPERATOR
+            );
+        }
+
+        //</editor-fold>
+
+        //<editor-fold desc="(...) -> boolean" collapsed="true">
+
+        /// `(...) -> boolean`
+        ///
+        /// | Interface              | Signature          |
+        /// | --------------------   | ------------       |
+        /// | `Predicate<T>`         | T → boolean        |
+        /// | `BiPredicate<T, U>`    | (T, U) → boolean   |
+        /// | `DoublePredicate`      | double → boolean   |
+        /// | `IntPredicate`         | int → boolean      |
+        /// | `LongPredicate`        | long → boolean     |
+        /// | `BooleanSupplier`      | () → boolean       |
+        private static @Nullable KType.ClassType getSupplier(List<KType> args) {
+            return getPrimitiveFunction(
+                    args,
+                    PREDICATE,
+                    BI_PREDICATE,
+                    DOUBLE_PREDICATE,
+                    INT_PREDICATE,
+                    LONG_PREDICATE,
+                    BOOLEAN_SUPPLIER,
+                    KType.KPrimitive.BOOL,
+                    null // no binary operator for boolean
+            );
+        }
+
+        //</editor-fold>
+
+        //<editor-fold desc="(...) -> Object" collapsed="true">
+
+        /// `(...) -> Object`
+        ///
+        /// | Interface              | Signature          |
+        /// | --------------------   | ------------       |
+        /// | `BiFunction<T, U, R>`  | (T, U) → R         |
+        /// | `BinaryOperator<T>`    | (T, T) → T         |
+        /// | `DoubleFunction<R>`    | double → R         |
+        /// | `Function<T, R>`       | T → R              |
+        /// | `IntFunction<R>`       | int → R            |
+        /// | `LongFunction<R>`      | long → R           |
+        /// | `Supplier<T>`          | () → T             |
+        /// | `UnaryOperator<T>`     | T → T              |
+        private static @Nullable KType.ClassType getFunctions(List<KType> args, KType returnType) {
+
+            if (args.isEmpty()) {
+                return mkClassType(SUPPLIER, Collections.singletonList(returnType));
+            }
+            var first = args.getFirst();
+            if (args.size() == 1) {
+                return switch (first) {
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.DOUBLE ->
+                            mkClassType(DOUBLE_FUNCTION, Collections.singletonList(returnType));
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.INT ->
+                            mkClassType(INT_FUNCTION, Collections.singletonList(returnType));
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.LONG ->
+                            mkClassType(LONG_FUNCTION, Collections.singletonList(returnType));
+                    case KType w when isObject(w) -> {
+                        if (first.equals(returnType)) {
+                            yield mkClassType(UNARY_OPERATOR, Collections.singletonList(first));
+                        } else {
+                            yield mkClassType(FUNCTION, List.of(first, returnType));
+                        }
+                    }
+                    default -> null;
+                };
+            } else if (args.size() == 2) {
+                var second = args.get(1);
+                if (!isObject(first) || !isObject(second)) {
+                    return null;
+                }
+                if (first.equals(second) && first.equals(returnType)) {
+                    return mkClassType(BINARY_OPERATOR, List.of(first));
+                } else {
+                    return mkClassType(BI_FUNCTION, List.of(first, second, returnType));
+                }
+            } else {
+                return null;
+            }
+        }
+
+        //</editor-fold>
+
+        //<editor-fold desc="(...) -> void" collapsed="true">
+
+        /// `(...) -> void`
+        ///
+        /// | Interface              | Signature          |
+        /// | --------------------   | ------------       |
+        /// | `Runnable`             | () → void          |
+        /// | `Consumer<T>`          | T → void           |
+        /// | `DoubleConsumer`       | double → void      |
+        /// | `IntConsumer`          | int → void         |
+        /// | `LongConsumer`         | long → void        |
+        /// | `BiConsumer<T, U>`     | (T, U) → void      |
+        /// | `ObjDoubleConsumer<T>` | (T, double) → void |
+        /// | `ObjIntConsumer<T>`    | (T, int) → void    |
+        /// | `ObjLongConsumer<T>`   | (T, long) → void   |
+        private static @Nullable KType.ClassType getConsumer(List<KType> args) {
+
+            if (args.isEmpty()) {
+                return mkClassType(RUNNABLE, Collections.emptyList());
+            }
+            var first = args.getFirst();
+            if (args.size() == 1) {
+                return switch (first) {
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.DOUBLE ->
+                            mkClassType(DOUBLE_CONSUMER, Collections.emptyList());
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.INT ->
+                            mkClassType(INT_CONSUMER, Collections.emptyList());
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.LONG ->
+                            mkClassType(LONG_CONSUMER, Collections.emptyList());
+                    case KType w when isObject(w) ->
+                            mkClassType(CONSUMER, Collections.singletonList(first));
+                    default -> null;
+                };
+            } else if (args.size() == 2) {
+                var second = args.get(1);
+                if (!isObject(first)) {
+                    return null;
+                }
+                return switch (second) {
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.DOUBLE ->
+                            mkClassType(OBJ_DOUBLE_CONSUMER, Collections.singletonList(first));
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.INT ->
+                            mkClassType(OBJ_INT_CONSUMER, Collections.singletonList(first));
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.LONG ->
+                            mkClassType(OBJ_LONG_CONSUMER, Collections.singletonList(first));
+                    case KType w when isObject(w) ->
+                            mkClassType(BI_CONSUMER, List.of(first, second));
+                    default -> null;
+                };
+
+            } else {
+                return null;
+            }
+        }
+
+        //</editor-fold>
+
+        //<editor-fold desc="(...) -> primitive" collapsed="true">
+
+        /// Helper for `(...) -> primitive`
+        ///
+        /// Ordering:
+        ///
+        /// | Interface                     | Signature                          |
+        /// | --------------------          | ------------                       |
+        /// | `PrimitiveFunction<T>`        | T → primitive                      |
+        /// | `ToPrimitiveBiFunction<T, U>` | (T, U) → primitive                 |
+        /// | `DoubleToPrimitiveFunction`   | double → primitive                 |
+        /// | `IntToPrimitiveFunction`      | int → primitive                    |
+        /// | `LongToPrimitiveFunction`     | long → primitive                   |
+        /// | `PrimitiveSupplier`           | () → primitive                     |
+        /// | `PrimitiveBinaryFunction`     | (primitive, primitive) → primitive |
+        ///
+        /// `PrimitiveBinaryFunction` can be null
+        ///
+        private static @Nullable KType.ClassType getPrimitiveFunction(
+                List<KType> args, ObjectPath ObjectArg, ObjectPath ObjectObjectArg,
+                ObjectPath doubleArg, ObjectPath IntArg, ObjectPath LongArg, ObjectPath noArgs,
+                KType.KPrimitive primitive, @Nullable ObjectPath binaryOperator
+        ) {
+            if (args.isEmpty()) {
+                return mkClassType(noArgs, Collections.emptyList());
+            }
+            var first = args.getFirst();
+            if (args.size() == 1) {
+                return switch (first) {
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.DOUBLE ->
+                            mkClassType(doubleArg, Collections.emptyList());
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.INT ->
+                            mkClassType(IntArg, Collections.emptyList());
+                    case KType.PrimitiveType(var p) when p == KType.KPrimitive.LONG ->
+                            mkClassType(LongArg, Collections.emptyList());
+                    case KType w when isObject(w) ->
+                            mkClassType(ObjectArg, Collections.singletonList(first));
+                    default -> null;
+                };
+            } else if (args.size() == 2) {
+                var second = args.get(1);
+                if (first instanceof KType.PrimitiveType(var p) && second instanceof KType.PrimitiveType(var p2) && p == primitive && p2 == primitive) {
+                    if (binaryOperator != null) {
+                        return mkClassType(binaryOperator, Collections.emptyList());
+                    } else {
+                        return null;
+                    }
+                } else if (!isObject(first) || !isObject(second)) {
+                    return null;
+                }
+                return mkClassType(ObjectObjectArg, List.of(first, second));
+            } else {
+                return null;
+            }
+        }
+
+        //</editor-fold>
+
+        private static boolean isObject(KType type) {
+            return BinaryAttrib.hasIdentity(type);
+        }
+
+        private static KType.ClassType mkClassType(ObjectPath path, List<KType> generics) {
+            return new KType.ClassType(ClassPointer.of(KType.JAVA_LIB, path), generics);
+        }
+
+    }
 }

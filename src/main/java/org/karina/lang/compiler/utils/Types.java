@@ -24,7 +24,6 @@ public class Types {
             }
         }
 
-
         return true;
     }
 
@@ -306,6 +305,7 @@ public class Types {
                         + " of " + classToMap
                         + " in " + testingModelToGetIndexFrom.pointer()
                         + " generics: " + testingModelToGetIndexFrom.generics()
+                        + " this should not happen"
                         ;
                 Log.temp(c, testingModelToGetIndexFrom.region(), message);
                 throw new Log.KarinaException();

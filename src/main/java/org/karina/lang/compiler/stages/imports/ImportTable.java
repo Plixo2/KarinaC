@@ -56,66 +56,13 @@ public record ImportTable(
      */
     public KType importType(Region region, KType kType, ImportGenericBehavior flags) {
         return switch (kType) {
-            case KType.ArrayType arrayType -> {
-                yield new KType.ArrayType(importType(region, arrayType.elementType()));
-            }
-            case KType.FunctionType functionType -> {
-                var returnType = importType(region, functionType.returnType());
-                var arguments = functionType.arguments().stream().map(ref -> importType(region, ref)).toList();
-                var interfaces = new ArrayList<>(functionType.interfaces().stream().map(ref -> {
-                    var imported = importType(region, ref);
-                    if (!(imported instanceof KType.ClassType classType)) {
-                        Log.error(this, new AttribError.NotAClass(region, imported));
-                        throw new Log.KarinaException();
-                    }
-                    return classType;
-                }).toList());
-
-                var doesReturn = !returnType.isVoid();
-                var defaultInterface = KType.FUNCTION_BASE(this.model, arguments.size(), doesReturn);
-                if (defaultInterface == null) {
-                    Log.temp(this, region, "Cannot find default interface for " + arguments.size() + " arguments and return type " + returnType);
-                    throw new Log.KarinaException();
-                }
-                //TODO test return types of the interfaces with the actual return type that is annotated by the type
-
-                //TODO extract, duplicate in ClosureAttrib
-                var alreadyAddedDefault =
-                        interfaces.stream().anyMatch(ref -> ref.pointer().equals(defaultInterface));
-                if (!alreadyAddedDefault) {
-                    var totalGenerics = arguments.size() + (doesReturn ? 1 : 0);
-
-                    var classModel = this.model.getClass(defaultInterface);
-                    if (classModel.generics().size() != totalGenerics) {
-                        Log.temp(this, region, "Expected " + totalGenerics + " generics, but got " +
-                                classModel.generics().size()
-                        );
-                        throw new Log.KarinaException();
-                    }
-
-                    var generics = new ArrayList<KType>();
-                    for (var i = 0; i < totalGenerics; i++) {
-                        generics.add(new KType.Resolvable());
-                    }
-                    var classType = new KType.ClassType(defaultInterface, generics);
-
-                    interfaces.add(classType);
-                }
-
-                Log.recordType(Log.LogTypes.CLOSURE, "Function type with interfaces", interfaces);
-
-                yield new KType.FunctionType(arguments, returnType, interfaces);
-            }
+            case KType.ArrayType arrayType -> new KType.ArrayType(importType(region, arrayType.elementType()));
+            case KType.FunctionType functionType -> importFunctionType(region, functionType);
             case KType.GenericLink genericLink -> genericLink;
             case KType.PrimitiveType primitiveType -> primitiveType;
             case KType.Resolvable resolvable -> resolvable;
-            case KType.ClassType classType -> {
-                //revalidate class pointers
-                yield importUnprocessedType(region, classType.pointer().path(), classType.generics(), flags);
-            }
-            case KType.UnprocessedType unprocessedType -> {
-                yield importUnprocessedType(unprocessedType.region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
-            }
+            case KType.ClassType classType -> importUnprocessedType(region, classType.pointer().path(), classType.generics(), flags);
+            case KType.UnprocessedType unprocessedType -> importUnprocessedType(unprocessedType.region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
             case KType.VoidType _ -> KType.NONE;
         };
     }
@@ -282,6 +229,52 @@ public record ImportTable(
         }
         return null;
     }
+
+    private KType.FunctionType importFunctionType(Region region, KType.FunctionType functionType) {
+
+        // Import types
+        var returnType = importType(region, functionType.returnType());
+        var arguments = functionType.arguments().stream().map(ref -> importType(region, ref)).toList();
+        var interfaces = new ArrayList<>(functionType.interfaces().stream().map(ref -> {
+            var imported = importType(region, ref);
+            if (!(imported instanceof KType.ClassType classType)) {
+                Log.error(this, new AttribError.NotAClass(region, imported));
+                throw new Log.KarinaException();
+            }
+            return classType;
+        }).toList());
+
+        var primaryInterface = ClosureHelper.getDefaultInterface(this.intoContext(), region, this.model, arguments, returnType);
+        if (primaryInterface != null) {
+            var alreadyAddedDefault =
+                    interfaces.stream().anyMatch(ref -> ref.pointer().equals(primaryInterface.pointer()));
+            if (!alreadyAddedDefault) {
+                interfaces.add(primaryInterface);
+            }
+        }
+        if (interfaces.isEmpty()) {
+            Log.temp(this, region,
+                    "Cannot find default interface for " + arguments.size() + " arguments and return type " + returnType + ". " +
+                            "Please specify an interface via 'impl'"
+            );
+            throw new Log.KarinaException();
+        }
+
+        for (var anInterface : interfaces) {
+            if (!ClosureHelper.canUseInterface(region, this.intoContext(), this.model, arguments, returnType, anInterface)) {
+                Log.error(this, new AttribError.NotAValidInterface(region, arguments, returnType, anInterface));
+                throw new Log.KarinaException();
+            }
+        }
+
+        //TODO extract, duplicate in ClosureAttrib
+
+        Log.recordType(Log.LogTypes.CLOSURE, "Function type with interfaces", interfaces);
+
+        return new KType.FunctionType(arguments, returnType, interfaces);
+    }
+
+
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Table Insertion">
