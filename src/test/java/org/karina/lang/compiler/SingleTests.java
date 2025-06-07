@@ -17,8 +17,10 @@ public class SingleTests {
 
     @Test
     public void testMain() throws IOException {
+        KarinaCompiler.cache = null;
         System.setProperty("karina.binary", "false");
         Main.main(new String[]{"--test"});
+        KarinaCompiler.cache = null;
         System.setProperty("karina.binary", "true");
         Main.main(new String[]{"--test"});
     }

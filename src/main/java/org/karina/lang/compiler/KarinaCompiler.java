@@ -40,7 +40,7 @@ public class KarinaCompiler {
     /**
      * Cache for faster testing
      */
-    private static Model cache = null;
+    public static Model cache = null;
 
 
 

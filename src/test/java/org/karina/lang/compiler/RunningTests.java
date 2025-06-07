@@ -23,8 +23,10 @@ public class RunningTests {
 
     @Test
     public void testMain() throws IOException {
+        KarinaCompiler.cache = null; // Clear the cache before running tests
         System.setProperty("karina.binary", "false");
         Main.main(new String[]{"--test", "--run"});
+        KarinaCompiler.cache = null;
         System.setProperty("karina.binary", "true");
         Main.main(new String[]{"--test", "--run"});
     }
