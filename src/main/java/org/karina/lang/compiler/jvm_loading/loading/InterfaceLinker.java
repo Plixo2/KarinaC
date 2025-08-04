@@ -14,10 +14,7 @@ import org.karina.lang.compiler.jvm_loading.signature.ClassSignatureBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.SignatureVisitor;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.utils.Context;
-import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.*;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -37,7 +34,7 @@ public class InterfaceLinker {
         this.typeGen = new TypeDecoding();
     }
 
-    public JClassModel createClass(Context c, @Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder, @Nullable String innerName) {
+    public JClassModel createClass(IntoContext c, @Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder, @Nullable String innerName) {
         var node = cls.node();
 
         Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading class: " + node.name);
@@ -78,7 +75,7 @@ public class InterfaceLinker {
         if (node.signature != null) {
             var signatureParser = new SignatureVisitor(region, node.signature);
             var signature = signatureParser.parseClassSignature();
-            var builder = new ClassSignatureBuilder(c, node.name, region, signature, outerClassModel);
+            var builder = new ClassSignatureBuilder(c.intoContext(), node.name, region, signature, outerClassModel);
             generics = builder.generics();
             superType = builder.superClass();
             if (interfaces.size() != builder.interfaces().size()) {
@@ -192,21 +189,21 @@ public class InterfaceLinker {
 
     }
 
-    private JFieldModel buildField(Context c, JClassModel owner, Region region, FieldNode fieldNode) {
+    private JFieldModel buildField(IntoContext c, JClassModel owner, Region region, FieldNode fieldNode) {
         var name = fieldNode.name;
         var type = this.typeGen.fromType(region, fieldNode.desc);
 
         if (fieldNode.signature != null) {
             var signatureParser = new SignatureVisitor(region, fieldNode.signature);
             var signature = signatureParser.parseFieldSignature();
-            var builder = new FieldSignatureBuilder(c, name, region, signature, owner);
+            var builder = new FieldSignatureBuilder(c.intoContext(), name, region, signature, owner);
             type = builder.type();
         }
         var modifiers = fieldNode.access;
         return new JFieldModel(name, type, modifiers, region, owner.pointer());
     }
 
-    private JMethodModel buildMethod(Context c, JClassModel owner, Region region, MethodNode methodNode) {
+    private JMethodModel buildMethod(IntoContext c, JClassModel owner, Region region, MethodNode methodNode) {
         Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading method: " + methodNode.name + " of " + owner.path());
         Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "mods: " + Modifier.toString(methodNode.access));
 
@@ -224,7 +221,7 @@ public class InterfaceLinker {
         if (methodNode.signature != null && !isSynthetic) {
             var signatureParser = new SignatureVisitor(region, methodNode.signature);
             var signature = signatureParser.parseMethodSignature();
-            var builder = new MethodSignatureBuilder(c, owner.name(), region, signature, owner);
+            var builder = new MethodSignatureBuilder(c.intoContext(), owner.name(), region, signature, owner);
             generics = builder.generics();
             parameterTypes = builder.parameters();
             returnType = builder.returnType();

@@ -3,6 +3,7 @@ package org.karina.lang.compiler;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public class TestFile {
@@ -33,29 +34,27 @@ public class TestFile {
     }
 
     private void expect(boolean expectedResult, boolean run) {
-        var compiler = new KarinaCompiler();
         var collection = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
-        compiler.setErrorCollection(collection);
-        compiler.setWarningCollection(warnings);
+        var compiler = KarinaCompiler.builder()
+                .errorCollection(collection)
+                .warningCollection(warnings)
+                .setOutputFile(Path.of("resources/out/build.jar"))
+                .build();
 
-        compiler.setOutputFile("resources/out/build.jar");
 
-        var result = compiler.compile(this.fileTree);
+        var compilation = compiler.compile(this.fileTree);
 
         if (expectedResult) {
-            if (!result) {
+            if (compilation == null) {
                 printErrDiagnostic(collection, true);
                 throw new AssertionError("Expected success for '" + this.identifier + "'");
             }
-            if (compiler.getJarCompilation() == null) {
-                throw new AssertionError("Jar compilation is null for '" + this.identifier + "'");
-            }
             if (run) {
-                AutoRun.run(compiler.getJarCompilation(), true);
+                AutoRun.run(compilation);
             }
         } else {
-            if (result) {
+            if (compilation != null) {
                 throw new AssertionError("Expected failure for '" + this.identifier + "'");
             }
         }

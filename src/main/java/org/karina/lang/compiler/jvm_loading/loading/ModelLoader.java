@@ -9,8 +9,10 @@ import org.karina.lang.compiler.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.IntoContext;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -22,73 +24,74 @@ public class ModelLoader {
             new ResourceLibrary("karina-base", "karina_base.jar")
     );
 
-    private static final String BIN_FILE = "/base.bin.gz";
+    private static final String BIN_FILE = "base.bin.gz";
 
 
+    public static Model getJarModel(IntoContext c, boolean useBinaryFormat) {
 
-    public Model getJarModel(Context c) {
-
-        if (!System.getProperty("karina.binary", "false").equals("true")) {
-            if (System.getProperty("karina.cli", "false").equals("true")) {
-                ColorOut.begin(LogColor.GRAY)
-                        .append("- not using binary format, use '-b'/'--binary' to enable it")
-                        .out(System.out);
-            } else {
-                ColorOut.begin(LogColor.GRAY)
-                        .append("- not using binary format, set '-Dkarina.binary=true' to enable it")
-                        .out(System.out);
-            }
+        if (useBinaryFormat) {
+            return getBinaryModel(c);
+        } else {
             return modelFromResource(c, RESOURCE_LIBRARIES);
         }
 
-        if (binFileExist()) {
-            ColorOut.begin(LogColor.GRAY)
-                    .append("- using cache '")
-                    .append(BIN_FILE)
-                    .append("'")
-                    .out(System.out);
+    }
 
+    public static void ensureModel(IntoContext c, Path destination) {
+        var file = destination.resolve(BIN_FILE);
+        if (binFileExist()) {
+            if (BinaryFormatLinker.canReadCache(BIN_FILE)) {
+                return;
+            }
+            Log.record("Invalid cache, rebuilding ... ", file);
+        } else {
+            Log.record("No cache found, rebuilding ... ", file);
+        }
+
+
+        if (!Files.exists(destination)) {
+            Log.record("Cannot find destination directory while rebuilding cache");
+            return;
+        }
+
+        rebuildCache(c, file);
+    }
+
+    /// Returns a model from the binary cache or from the resources if not valid
+    private static Model getBinaryModel(IntoContext c) {
+        if (binFileExist()) {
             Log.begin("load-cache");
             var binary = BinaryFormatLinker.readBinary(c, BIN_FILE);
             if (binary == null) {
-                Log.end("load-cache", "cannot load cache, rebuilding ...");
-                return rebuildCache(c);
+                Log.end("load-cache", "cannot load cache ...");
+            } else {
+                Log.end("load-cache", "with " + binary.getClassCount() + " classes");
+                return binary;
             }
-            Log.end("load-cache", "with " + binary.getClassCount() + " classes");
-            return binary;
-        }
-        if (System.getProperty("karina.cli", "false").equals("true")) {
-            ColorOut.begin(LogColor.GRAY)
-                    .append("- no cache found")
-                    .out(System.out);
-
-            return modelFromResource(c, RESOURCE_LIBRARIES);
         }
 
-
-        return rebuildCache(c);
+        return modelFromResource(c, RESOURCE_LIBRARIES);
     }
 
-    private static Model rebuildCache(Context c) {
+    private static void rebuildCache(IntoContext c, Path path) {
         Log.begin("rebuild-cache");
         var loadedModel = modelFromResource(c, RESOURCE_LIBRARIES);
         //TODO add condition to only generate binary cache when needed
-        BinaryFormatLinker.writeBinary(c, loadedModel, Path.of("src/main/resources/", BIN_FILE));
+        BinaryFormatLinker.writeBinary(c, loadedModel, path);
 
         Log.end("rebuild-cache");
-        return loadedModel;
     }
 
 
     private static boolean binFileExist() {
-        try (var resourceStream = ModelLoader.class.getResourceAsStream(BIN_FILE)) {
+        try (var resourceStream = ModelLoader.class.getResourceAsStream("/" + BIN_FILE)) {
             return resourceStream != null;
         } catch (IOException e) {
             return false;
         }
     }
 
-    private static Model modelFromResource(Context c, List<ResourceLibrary> libraries) {
+    private static Model modelFromResource(IntoContext c, List<ResourceLibrary> libraries) {
         Log.begin("jar-load");
 
         var models = new Model[libraries.size()];
@@ -105,7 +108,7 @@ public class ModelLoader {
     }
 
 
-    private static Model loadFromResource(Context c, ResourceLibrary library) {
+    private static Model loadFromResource(IntoContext c, ResourceLibrary library) {
         Log.begin("read-jar");
         var jdkSet = new OpenSet();
 

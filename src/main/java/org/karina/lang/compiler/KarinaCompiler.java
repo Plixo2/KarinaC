@@ -1,11 +1,10 @@
 package org.karina.lang.compiler;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
+import org.karina.lang.compiler.stages.writing.WritingProcessor;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.FlightRecordCollection;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
@@ -20,23 +19,28 @@ import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.ParseProcessor;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 
-/**
- * Main Compiler class
- * Responsible for passing the source files through the different stages of the compiler
- * Parser -> Import -> Attribution -> Lowering -> Generation
- */
+///
+/// Main Compiler class
+/// Responsible for passing the source files through the different stages of the compiler \
+/// `Parser` -> `Import` -> `Attribution` -> `Lowering` -> `Generation` -> `Writing`
+///
+/// Use [KarinaCompiler#builder()] to create a new instance of the compiler.
+///
 
 public class KarinaCompiler {
     public static final String VERSION = "v0.6";
 
-    /// 16 bits for the version, 16 bits for the binary format
-    public static final int BINARY_VERSION = 6 << 16 | 3;
+    /// 16 bits for the version, 16 bits for iteration
+    public static final int BINARY_VERSION = 6 << 16 | 4;
     public static final int BINARY_MAGIC_NUMBER = 20000411;
 
     public static final boolean useThreading = false;
     public static final boolean allowMultipleErrors = true;
+
+    private KarinaCompiler() {}
 
     /**
      * Cache for faster testing
@@ -44,18 +48,15 @@ public class KarinaCompiler {
     @VisibleForTesting
     public static Model cache = null;
 
-
-
     // Configuration
-    @Setter private @Nullable String outputFile;
-    @Setter private boolean emitClasses;
+    private @Nullable Config.OutputConfig outputConfig;
+    private boolean useBinaryFormat = false;
+
 
     // Logging
-    @Setter private @Nullable DiagnosticCollection errorCollection;
-    @Setter private @Nullable DiagnosticCollection warningCollection;
-    @Setter private @Nullable FlightRecordCollection flightRecordCollection;
-
-    @Getter private @Nullable JarCompilation jarCompilation;
+    private @Nullable DiagnosticCollection errorCollection;
+    private @Nullable DiagnosticCollection warningCollection;
+    private @Nullable FlightRecordCollection flightRecordCollection;
 
     /**
      * Compiles the given files.
@@ -63,28 +64,30 @@ public class KarinaCompiler {
      * @param files the file tree to compile
      * @return true if the compilation was successful, false otherwise
      */
-    public boolean compile(FileTreeNode<TextSource> files) {
+    public JarCompilation compile(FileTreeNode<TextSource> files) {
         // Context is always referred to as 'c' in the codebase
         var c = Log.emptyContext();
 
 
-        // The 5 stages of the compiler:
-        final ParseProcessor parser = new ParseProcessor();
-        final ImportProcessor importProcessor = new ImportProcessor();
-        final AttributionProcessor attributionProcessor = new AttributionProcessor();
-        final LoweringProcessor lowering = new LoweringProcessor();
-        final GenerationProcessor backend = new GenerationProcessor();
+        // The 6 stages of the compiler:
+        ParseProcessor parser = new ParseProcessor();
+        ImportProcessor importProcessor = new ImportProcessor();
+        AttributionProcessor attributionProcessor = new AttributionProcessor();
+        LoweringProcessor lowering = new LoweringProcessor();
+        GenerationProcessor backend = new GenerationProcessor();
+        WritingProcessor writing = new WritingProcessor();
 
         Log.begin("compilation");
         try {
 
-            Model bytecodeClasses;
-            if (cache != null) {
-                bytecodeClasses = cache;
-            } else {
-                var modelLoader = new ModelLoader();
-                bytecodeClasses = cache = modelLoader.getJarModel(c);
+            if (this.useBinaryFormat && System.getProperty("karina.allowCacheRebuilding", "false").equals("true")) {
+                ModelLoader.ensureModel(c, Path.of("src\\main\\resources"));
             }
+
+            var bytecodeClasses = cache = Objects.requireNonNullElseGet(
+                    cache,
+                    () -> ModelLoader.getJarModel(c, this.useBinaryFormat)
+            );
 
             ImportHelper.logFullModel(bytecodeClasses);
             KType.validateBuildIns(c, bytecodeClasses);
@@ -110,42 +113,27 @@ public class KarinaCompiler {
             var loweredTree = lowering.lowerTree(c, attributedTree);
             Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
 
-            if (this.outputFile != null) {
+            Log.begin("generation");
+            var compiled = backend.compileTree(c, loweredTree, "main");
+            Log.end("generation");
 
-                Log.begin("generation");
-                var compiled = backend.compileTree(c, loweredTree, "main");
-                var path = Path.of(this.outputFile);
-                Log.record("compiled to " + path.toAbsolutePath());
-                Log.end("generation");
+            Log.begin("write");
+            writing.writeCompilation(c, compiled, this.outputConfig);
+            Log.end("write");
 
-                this.jarCompilation = compiled;
 
-                Log.begin("write");
-                Log.begin("jar");
-                compiled.writeJar(c, path);
-                Log.end("jar");
-
-                if (this.emitClasses) {
-                    Log.begin("classes");
-                    compiled.writeClasses(c, path.getParent().resolve("classes"));
-                    Log.end("classes");
-                }
-                Log.end("write");
-
-                var amountFiles = files.leafCount();
-                var amountDefined = userModel.getUserClasses().size();
-                var amountCompiled = loweredTree.getUserClasses().size();
-                var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
-                Log.record(amountMessage);
-
-            }
+            var amountFiles = files.leafCount();
+            var amountDefined = userModel.getUserClasses().size();
+            var amountCompiled = loweredTree.getUserClasses().size();
+            var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
+            Log.record(amountMessage);
 
             if (c.hasErrors()) {
                 Log.internal(c,new IllegalStateException("Errors in log, this should not happen"));
                 throw new Log.KarinaException(); // trigger error handling
             }
 
-            return true;
+            return compiled;
         } catch (Exception error) {
             if (!(error instanceof Log.KarinaException)) {
                 Log.internal(c, error);
@@ -154,7 +142,7 @@ public class KarinaCompiler {
                 Log.internal(c, new IllegalStateException("An exception was thrown, but no errors were logged"));
             }
 
-            return false;
+            return null;
         } finally {
             Log.end("compilation");
 
@@ -171,11 +159,93 @@ public class KarinaCompiler {
             Log.clearAllLogs();
         }
 
-
     }
 
 
 
+
+
+    public static KarinaCompilerBuilder builder() {
+        return new KarinaCompilerBuilder();
+    }
+
+
+    public static class KarinaCompilerBuilder {
+        // Configuration
+        private @Nullable Config.OutputConfig outputConfig;
+        private boolean useBinaryFormat = false;
+
+        // Logging
+        private @Nullable DiagnosticCollection errorCollection;
+        private @Nullable DiagnosticCollection warningCollection;
+        private @Nullable FlightRecordCollection flightRecordCollection;
+
+
+        private KarinaCompilerBuilder() {}
+
+        public KarinaCompilerBuilder outputConfig(@Nullable Config.OutputConfig outputConfig) {
+            this.outputConfig = outputConfig;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder setOutputFile(Path outputFile) {
+            record SimpleOutConfig(
+                Path outputFile,
+                boolean emitClassFiles
+            ) implements Config.OutputConfig {}
+            this.outputConfig = new SimpleOutConfig(outputFile, false);
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder useBinaryFormat(boolean useBinaryFormat) {
+            this.useBinaryFormat = useBinaryFormat;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder enableBinaryFormat() {
+            this.useBinaryFormat = true;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder disableBinaryFormat() {
+            this.useBinaryFormat = false;
+            return this;
+        }
+
+        public KarinaCompilerBuilder errorCollection(@Nullable DiagnosticCollection errorCollection) {
+            this.errorCollection = errorCollection;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder warningCollection(@Nullable DiagnosticCollection warningCollection) {
+            this.warningCollection = warningCollection;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder flightRecordCollection(@Nullable FlightRecordCollection flightRecordCollection) {
+            this.flightRecordCollection = flightRecordCollection;
+            return this;
+        }
+
+
+        public KarinaCompiler build() {
+            var compiler = new KarinaCompiler();
+            compiler.outputConfig = this.outputConfig;
+            compiler.useBinaryFormat = this.useBinaryFormat;
+            compiler.errorCollection = this.errorCollection;
+            compiler.warningCollection = this.warningCollection;
+            compiler.flightRecordCollection = this.flightRecordCollection;
+            return compiler;
+        }
+
+
+    }
 
 
 }

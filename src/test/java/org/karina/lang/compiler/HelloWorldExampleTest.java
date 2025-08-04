@@ -25,10 +25,23 @@ public class HelloWorldExampleTest {
     public void testMain() throws IOException {
         KarinaCompiler.cache = null;
         System.setProperty("karina.binary", "false");
-        Main.main(new String[]{"--test"});
+        testLikeMain();
         KarinaCompiler.cache = null;
         System.setProperty("karina.binary", "true");
-        Main.main(new String[]{"--test"});
+        testLikeMain();
+    }
+
+    static void testLikeMain() throws IOException {
+
+        // Allow automatic cache rebuilding.
+        System.setProperty("karina.allowCacheRebuilding", "true");
+
+        var config = Config.fromProperties();
+        var result = ConsoleCompiler.compile(config);
+
+        if (!result) {
+            throw new RuntimeException("Compilation failed. Check the logs for details.");
+        }
     }
 
 

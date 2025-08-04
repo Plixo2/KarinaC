@@ -75,7 +75,7 @@ public class Context implements IntoContext {
     }
 
     public void addWarn(Log.LogWithTrace log) {
-        this.errors.add(log);
+        this.warning.add(log);
     }
 
     public boolean hasErrors() {

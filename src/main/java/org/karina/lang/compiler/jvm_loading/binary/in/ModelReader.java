@@ -7,6 +7,7 @@ import org.karina.lang.compiler.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.IntoContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,16 +44,19 @@ public class ModelReader {
 
         var formatVersion = outerReader.readInt();
         if (formatVersion != KarinaCompiler.BINARY_VERSION) {
+            var major = KarinaCompiler.BINARY_VERSION >> 16;
+            var minor = KarinaCompiler.BINARY_VERSION & 0xFFFF;
+            var formatMajor = formatVersion >> 16;
+            var formatMinor = formatVersion & 0xFFFF;
             throw new IOException(
-                    "Invalid Karina binary file version, expected " +
-                    KarinaCompiler.BINARY_VERSION +
+                    "Invalid Karina binary file version, expected version " +
+                    major + "." + minor +
                     " but got " +
-                    formatVersion
+                    formatMajor + "." + formatMinor
             );
         }
 
         var offsets = outerReader.readIntList();
-
 
 
         var remainingBytes = this.stream.readAllBytes();
@@ -101,8 +105,7 @@ public class ModelReader {
             Log.end("link");
 
         } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
-            Log.fileError(c, new FileLoadError.Resource(e));
+            Log.internal(c, e);
             throw new Log.KarinaException();
         }
 
@@ -124,6 +127,7 @@ public class ModelReader {
         var innerBuffer = new ByteArrayInputStream(remainingBytes, modelOffset, length);
         return new ClassReader(innerBuffer);
     }
+
 
 
     public static class TTYL {

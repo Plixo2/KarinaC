@@ -31,11 +31,11 @@ public class ModelBuilder {
     }
 
 
-    public Model build(Context c) {
-        return new JKModel(c, this.tree.lock());
+    public Model build(IntoContext c) {
+        return new JKModel(c.intoContext(), this.tree.lock());
     }
 
-    public static Model merge(Context c, Model... models) {
+    public static Model merge(IntoContext c, Model... models) {
         var modelBuilder = new ModelBuilder();
 
         for (var other : models) {
