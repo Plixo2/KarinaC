@@ -2,6 +2,7 @@ lexer grammar KarinaLexer;
 
 
 EXPR: 'expr';
+ANY: 'any';
 TYPE: 'type';
 FN: 'fn';
 IS: 'is';
@@ -100,7 +101,7 @@ fragment CHAR_VARIABLE: '$' (ID | 'expr' | 'type' | '\\' ESCAPED);
 fragment ESCAPED: FN | IS | IN | AS | EXTEND
                    | MATCH | OVERRIDE | VIRTUAL | YIELD
                    | STRUCT | TRAIT | IMPL | LET
-                   | SELF | STRING | JSON | BOOL | WHERE | CONST | MUT;
+                   | SELF | STRING | JSON | BOOL | WHERE | CONST | MUT | ANY;
 fragment ESCAPED_DOLLAR: '\\$';
 fragment CHAR_CHARACTERS: CHAR_CHARACTER+;
 fragment CHAR_CHARACTER: ~[$'\\\r\n] | ESCAPE_SEQUENCE;

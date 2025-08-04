@@ -28,8 +28,8 @@ public class KarinaTypeVisitor implements IntoContext {
         var inner = visitInnerType(ctx.typeInner());
 
         if (ctx.typePostFix() != null) {
-            //we return KType.ROOT. so the identity check can be done
-            if (inner.isPrimitive() || inner.isVoid() || inner == KType.ROOT) {
+
+            if (inner.isPrimitive() || inner.isVoid()) {
                 Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid optional type");
                 throw new Log.KarinaException();
             }
@@ -78,7 +78,7 @@ public class KarinaTypeVisitor implements IntoContext {
             return visitFunctionType(ctx.functionType());
         } else if (ctx.type() != null) {
             return visitType(ctx.type());
-        } else if (ctx.CHAR_QUESTION() != null) {
+        } else if (ctx.ANY() != null) {
             return KType.ROOT;
         }
         else {

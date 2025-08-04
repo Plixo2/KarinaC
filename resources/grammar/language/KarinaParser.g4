@@ -52,7 +52,7 @@ typeInner: 'void'
     | 'float'
     | 'bool'
     | 'string'
-    | '?'
+    | 'any'
     | structType
     | arrayType
     | functionType
@@ -90,7 +90,7 @@ exprWithBlock : block | expression;
 
 expression: varDef | closure | 'return' exprWithBlock? | match | if | while | for | conditionalOrExpression | 'break' | 'continue' | throw;
 
-varDef: 'let' id (':' type)? '=' (exprWithBlock);
+varDef: 'let' id (':' type)? '=' exprWithBlock;
 
 closure : 'fn' '(' optTypeList ')' ('->' type)? interfaceImpl? exprWithBlock;
 interfaceImpl: 'impl' (structTypeList | '(' structTypeList ')');
@@ -148,4 +148,4 @@ escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
 | STRUCT | TRAIT | IMPL | LET
 | SELF | STRING | JSON | BOOL | WHERE
-| CONST | MUT;
+| CONST | MUT | ANY;
