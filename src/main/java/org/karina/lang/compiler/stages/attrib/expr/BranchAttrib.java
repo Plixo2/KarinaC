@@ -35,6 +35,13 @@ public class BranchAttrib  {
             condition = ctx.makeAssignment(condition.region(), boolType, condition);
             trueBranchPattern = null;
         } else {
+            if (!InstanceOfAttrib.isReferenceType(ctx, condition.region(), condition.type())) {
+                Log.error(ctx, new AttribError.NotSupportedType(
+                        condition.region(),
+                        condition.type()
+                ));
+                throw new Log.KarinaException();
+            }
             var result = evalBranchPattern(ctx, expr.branchPattern(), condition.type());
             thenContext = result.thenContext();
             trueBranchPattern = result.attribPattern();
