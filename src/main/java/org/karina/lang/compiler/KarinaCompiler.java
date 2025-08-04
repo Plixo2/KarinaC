@@ -3,6 +3,7 @@ package org.karina.lang.compiler;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.utils.*;
@@ -40,6 +41,7 @@ public class KarinaCompiler {
     /**
      * Cache for faster testing
      */
+    @VisibleForTesting
     public static Model cache = null;
 
 
@@ -104,11 +106,11 @@ public class KarinaCompiler {
             var attributedTree = attributionProcessor.attribTree(c, importedTree);
             Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
 
-            if (this.outputFile != null) {
-                Log.begin("lowering");
-                var loweredTree = lowering.lowerTree(c, attributedTree);
-                Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
+            Log.begin("lowering");
+            var loweredTree = lowering.lowerTree(c, attributedTree);
+            Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
 
+            if (this.outputFile != null) {
 
                 Log.begin("generation");
                 var compiled = backend.compileTree(c, loweredTree, "main");
@@ -130,18 +132,17 @@ public class KarinaCompiler {
                 }
                 Log.end("write");
 
-
-
                 var amountFiles = files.leafCount();
                 var amountDefined = userModel.getUserClasses().size();
                 var amountCompiled = loweredTree.getUserClasses().size();
                 var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
                 Log.record(amountMessage);
+
             }
 
             if (c.hasErrors()) {
                 Log.internal(c,new IllegalStateException("Errors in log, this should not happen"));
-                throw new Log.KarinaException();
+                throw new Log.KarinaException(); // trigger error handling
             }
 
             return true;

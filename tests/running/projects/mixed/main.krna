@@ -133,11 +133,11 @@ fn f<T>(first: T) {
 
 fn c(a: [string]) {}
 
-fn cc(a: [?]) {}
+fn cc(a: [any]) {}
 
 fn test(a: string, b: string) {}
 
-fn get() -> ? {
+fn get() -> any {
 
     let indicesA = Arrays.asList([1, 2]).stream().map(fn(a) valueOf(a.intValue())).toList()
 
@@ -265,10 +265,10 @@ fn test() -> bool {
     let boxed_float: Float = 10.0
     let boxed_bool: Boolean = false
 
-    let any = Inf { }
-    any.test()
-    any.testTwo(any)
-    let ret = any.ret()
+    let anyObj = Inf { }
+    anyObj.test()
+    anyObj.testTwo(anyObj)
+    let ret = anyObj.ret()
     ret = Option.none()
 
     let testBox = Option.some(10)
@@ -308,7 +308,7 @@ fn test() -> bool {
     let customList: List<Boolean> = ArrayList{}
 
 
-    any != a
+    anyObj != a
 }
 
 fn result(state: bool) -> Result<Integer, string> {
@@ -444,7 +444,7 @@ struct BasedObject {
 
 }
 
-fn getAsAny<T>(t: T) -> ? = t
+fn getAsAny<T>(t: T) -> any = t
 
 struct Other<W> {}
 
@@ -520,6 +520,6 @@ struct Vector2D {
     fn new(d: float) -> Vector2D = Vector2D { x: d, y: d }
     fn new(x: float, y: float) -> Vector2D = Vector2D { _: x, _: y }
 
-    fn n() -> ? = Vector2D::new(0)
+    fn n() -> any = Vector2D::new(0)
 
 }

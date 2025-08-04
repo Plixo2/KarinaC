@@ -49,7 +49,6 @@ public class Main {
 
         System.out.println();
 
-
         var console = System.getProperty("karina.console", "true").equals("true");
         var flight = System.getProperty("karina.flight", "resources/flight.txt");
         var outputFile = System.getProperty("karina.out", "resources/out/build.jar");
@@ -132,17 +131,17 @@ public class Main {
         var file = absolutePath.getFileName();
         var path = absolutePath.getParent().toString().replace("\\", "/");
 
-        ColorOut.begin(LogColor.WHITE)
-                .append("'")
+        ColorOut.begin(LogColor.GRAY)
+                .append("- created '")
                 .append(file)
                 .append("'")
-                .append(" created in ")
+                .append(" in ")
                 .append("file:///")
                 .append(path)
                 .out(System.out);
 
-        ColorOut.begin(LogColor.WHITE)
-                .append("finished in ")
+        ColorOut.begin(LogColor.GRAY)
+                .append("Finished in ")
                 .append(deltaTime)
                 .append("ms")
                 .out(System.out);

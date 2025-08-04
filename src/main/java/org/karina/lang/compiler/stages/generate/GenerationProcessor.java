@@ -4,6 +4,7 @@ import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
+import org.objectweb.asm.Opcodes;
 
 import java.util.List;
 import java.util.jar.*;
@@ -13,7 +14,7 @@ import java.util.jar.*;
  */
 public class GenerationProcessor {
     //Java 21
-    public static final int CLASS_VERSION = 65;
+    public static final int CLASS_VERSION = Opcodes.V21;
 
 
 

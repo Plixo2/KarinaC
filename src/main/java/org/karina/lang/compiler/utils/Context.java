@@ -1,14 +1,12 @@
 package org.karina.lang.compiler.utils;
 
 import com.google.common.collect.ImmutableList;
+import com.google.errorprone.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.logging.FlightRecorder;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.FileLoadError;
 
-import javax.annotation.CheckReturnValue;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -164,21 +162,9 @@ public class Context implements IntoContext {
 
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
-                Log.fileError(this.context, new FileLoadError.Resource(e));
+                Log.internal(this.context, e);
                 throw new Log.KarinaException();
             }
-
-//            List<ParallelEntry<T>> results = this.functions.parallelStream().map(sub -> {
-//                var context = new Context();
-//                try {
-//                    var result = sub.apply(context);
-//                    return new ParallelEntry<>(result, context);
-//                } catch (Log.KarinaException e) {
-//                    error.set(true);
-//                    return new ParallelEntry<T>(null, context);
-//                }
-//            }).sequential().toList();
-
 
             for (var result : results) {
                 this.context.mergeUp(result.context);

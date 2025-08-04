@@ -30,20 +30,20 @@ public class ModelLoader {
 
         if (!System.getProperty("karina.binary", "false").equals("true")) {
             if (System.getProperty("karina.cli", "false").equals("true")) {
-                ColorOut.begin(LogColor.WHITE)
-                        .append("not using binary format, use '-b'/'--binary' to enable it")
+                ColorOut.begin(LogColor.GRAY)
+                        .append("- not using binary format, use '-b'/'--binary' to enable it")
                         .out(System.out);
             } else {
-                ColorOut.begin(LogColor.WHITE)
-                        .append("not using binary format, set '-Dkarina.binary=true' to enable it")
+                ColorOut.begin(LogColor.GRAY)
+                        .append("- not using binary format, set '-Dkarina.binary=true' to enable it")
                         .out(System.out);
             }
             return modelFromResource(c, RESOURCE_LIBRARIES);
         }
 
         if (binFileExist()) {
-            ColorOut.begin(LogColor.WHITE)
-                    .append("using cache '")
+            ColorOut.begin(LogColor.GRAY)
+                    .append("- using cache '")
                     .append(BIN_FILE)
                     .append("'")
                     .out(System.out);
@@ -58,8 +58,8 @@ public class ModelLoader {
             return binary;
         }
         if (System.getProperty("karina.cli", "false").equals("true")) {
-            ColorOut.begin(LogColor.WHITE)
-                    .append("no cache found")
+            ColorOut.begin(LogColor.GRAY)
+                    .append("- no cache found")
                     .out(System.out);
 
             return modelFromResource(c, RESOURCE_LIBRARIES);
