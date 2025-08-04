@@ -1,0 +1,2 @@
+import karina::lang::Console
+import java::io::Console as JavaConsole
