@@ -54,3 +54,10 @@ fn createHelloFunction<T>() -> fn(T) -> string {
         '$hello$add'
     }
 }
+
+enum CustomResult<T, E> {
+    A(v: T, msg: string)
+    B(e: E, msg: string)
+
+    fn msg(self) -> string
+}
