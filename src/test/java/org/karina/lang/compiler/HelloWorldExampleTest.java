@@ -33,8 +33,6 @@ public class HelloWorldExampleTest {
 
     static void testLikeMain() throws IOException {
 
-        // Allow automatic cache rebuilding.
-        System.setProperty("karina.allowCacheRebuilding", "true");
 
         var config = Config.fromProperties();
         var result = ConsoleCompiler.compile(config);

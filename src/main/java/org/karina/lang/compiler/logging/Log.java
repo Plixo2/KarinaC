@@ -70,6 +70,8 @@ public class Log {
                 var set = new HashSet<>(Set.of(LogTypes.values()));
                 set.remove(LogTypes.JVM_CLASS_LOADING);
                 set.remove(LogTypes.LOADED_CLASSES);
+                set.remove(LogTypes.IMPORTS);
+                set.remove(LogTypes.IMPORT_PRELUDE);
 
                 yield set;
             }

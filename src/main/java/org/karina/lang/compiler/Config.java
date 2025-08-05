@@ -44,14 +44,14 @@ public interface Config {
 
 
     static Config fromProperties() {
-        var run = System.getProperty("karina.run", "false").equals("true");
-        var console = System.getProperty("karina.console", "true").equals("true");
-        var consoleColor = System.getProperty("karina.color", "true").equals("true");
-        var flight = System.getProperty("karina.flight", "resources/flight.txt");
-        var outputFile = System.getProperty("karina.out", "resources/out/build.jar");
+        var run               = System.getProperty("karina.run", "false").equals("true");
+        var console           = System.getProperty("karina.console", "true").equals("true");
+        var consoleColor      = System.getProperty("karina.color", "true").equals("true");
+        var flight            = System.getProperty("karina.flight", "resources/flight.txt");
+        var outputFile        = System.getProperty("karina.out", "resources/out/build.jar");
         var shouldEmitClasses = System.getProperty("karina.classes", "true").equals("true");
-        var sourceDirectory = System.getProperty("karina.source", "resources/src/");
-        var useBinaryFormat = System.getProperty("karina.binary", "false").equals("true");
+        var sourceDirectory   = System.getProperty("karina.source", "resources/src/");
+        var useBinaryFormat   = System.getProperty("karina.binary", "false").equals("true");
 
         record FlightConfig(
                 boolean printToConsole,

@@ -100,7 +100,7 @@ public class ConsoleCompiler {
     }
 
 
-    private static void printVersions() {
+    public static void printVersions() {
         var javaVersion = System.getProperty("java.version", "<unknown java version>");
         var vmName = System.getProperty("java.vm.name", "<unknown vm name>");
 

@@ -18,7 +18,7 @@ Usage:
     karina run [options]
         Compile and run the project located in the current directory.
 
-    karina -version, -v
+    karina --version, -v
         Display the current version of Karina.
 
     karina --help, -h, -?
@@ -35,8 +35,8 @@ Options:
     --console, -c
         Displays log messages in the console.
     
-    --binary, -binary
-        Enable binary format for faster compilation.
+    --disable-format, -df
+        Disable binary format (slower load times).
         
 """;
 

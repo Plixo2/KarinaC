@@ -1,6 +1,8 @@
 package org.karina.lang.cli.commands;
 
 import org.karina.lang.cli.CLIParser;
+import org.karina.lang.compiler.Config;
+import org.karina.lang.compiler.ConsoleCompiler;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
 
 import java.io.FileOutputStream;
@@ -56,24 +58,19 @@ popd > /dev/null
         System.setProperty("karina.source", projectStr);
         System.setProperty("karina.out", buildFile);
         System.setProperty("karina.classes", "true");
-        System.setProperty("karina.cli", "true");
 
         System.setProperty("karina.flight", Objects.requireNonNullElse(compileOption.flight, logFile));
-        System.setProperty("karina.logging", Objects.requireNonNullElse(compileOption.logging, "basic"));
+        System.setProperty("karina.logging", Objects.requireNonNullElse(compileOption.logging, "verbose"));
         System.setProperty("karina.console", Boolean.toString(compileOption.console));
         System.setProperty("karina.binary", Boolean.toString(compileOption.binary));
+        System.setProperty("karina.run", Boolean.toString(run));
 
+        var config = Config.fromProperties();
+        var exitCode = ConsoleCompiler.compile(config);
 
-        // "--run" is a flag to run the program after compiling
-        String[] args;
-        if (run) {
-            args = new String[]{"--run"};
-        } else {
-            args = new String[]{};
+        if (!exitCode) {
+            System.exit(1);
         }
-
-        // main compile step, does exit on error
-        org.karina.lang.compiler.Main.main(args);
 
         // copy the karina standard library
         putKarinaLib(buildDir);
@@ -81,7 +78,6 @@ popd > /dev/null
         // copy build scripts
         putScript(buildDir, WINDOWS_COMMAND, "run.bat");
         putScript(buildDir, LINUX_COMMAND, "run");
-
 
     }
 

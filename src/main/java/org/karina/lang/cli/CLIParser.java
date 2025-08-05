@@ -94,13 +94,13 @@ public class CLIParser {
                     }
                     options.console = true;
                 }
-                case "-b", "--binary" -> {
-                    if (options.binary) {
+                case "-df", "--disable-format" -> {
+                    if (!options.binary) {
                         return new OptionsParseResult.Error(new PrimaryCommand.Error(
-                                "Duplicate option: --binary"
+                                "Duplicate option: --disable-format"
                         ));
                     }
-                    options.binary = true;
+                    options.binary = false;
                 }
                 default -> {
                     return new OptionsParseResult.Error(new PrimaryCommand.UnknownOption(arg));
@@ -137,7 +137,7 @@ public class CLIParser {
         public @Nullable String logging;
         public @Nullable String flight;
         public boolean console = false;
-        public boolean binary = false;
+        public boolean binary = true;
     }
 
     private sealed interface OptionsParseResult {
