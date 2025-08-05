@@ -63,6 +63,12 @@ public class GetMemberAttrib  {
             throw new Log.KarinaException();
         }
 
+        if (!expr.isNextACall()) {
+            if (fieldPointer != null) {
+                methods = new ArrayList<>();
+            }
+        }
+
         MemberSymbol symbol;
         if (!methods.isEmpty()) {
             var pointers = new ArrayList<MethodPointer>();

@@ -83,7 +83,7 @@ public class AssignmentAttrib {
                 );
             }
             default -> {
-                Log.error(ctx, new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side"));
+                Log.error(ctx, new AttribError.NotSupportedExpression(left.region(), "Unknown assignment symbol on the left side " + left.getClass().getSimpleName()));
                 throw new Log.KarinaException();
             }
         };

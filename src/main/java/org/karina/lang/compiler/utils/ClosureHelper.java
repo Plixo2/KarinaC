@@ -275,7 +275,7 @@ public class ClosureHelper {
         private static final ObjectPath OBJ_INT_CONSUMER = ObjectPath.fromJavaPath("java/util/function/ObjIntConsumer");
         private static final ObjectPath OBJ_LONG_CONSUMER = ObjectPath.fromJavaPath("java/util/function/ObjLongConsumer");
 
-        /* (...) -> void */
+        /* (...) -> object */
         private static final ObjectPath SUPPLIER = ObjectPath.fromJavaPath("java/util/function/Supplier");
         private static final ObjectPath FUNCTION = ObjectPath.fromJavaPath("java/util/function/Function");
         private static final ObjectPath DOUBLE_FUNCTION = ObjectPath.fromJavaPath("java/util/function/DoubleFunction");
