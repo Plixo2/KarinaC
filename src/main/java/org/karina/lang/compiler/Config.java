@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 
+/// Configuration interface for [ConsoleCompiler]
 public interface Config {
 
     /// @return Path to the source directory.

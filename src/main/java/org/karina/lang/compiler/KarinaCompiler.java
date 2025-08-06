@@ -85,8 +85,7 @@ public class KarinaCompiler {
             }
 
             var bytecodeClasses = cache = Objects.requireNonNullElseGet(
-                    cache,
-                    () -> ModelLoader.getJarModel(c, this.useBinaryFormat)
+                    cache, () -> ModelLoader.getJarModel(c, this.useBinaryFormat)
             );
 
             ImportHelper.logFullModel(bytecodeClasses);

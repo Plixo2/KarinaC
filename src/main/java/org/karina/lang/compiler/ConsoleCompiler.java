@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 
+/// Compiler starting point printing messages to the console.
 public class ConsoleCompiler {
 
     public static boolean compile(Config config) throws IOException {
