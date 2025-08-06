@@ -1,7 +1,6 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
@@ -12,6 +11,7 @@ import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -109,10 +109,8 @@ public class KarinaEnumVisitor implements IntoContext {
             var enumMember = innerEnumClass(classModel, currentClassPointer, path, enumMemberContext, generics, modelBuilder);
             innerClassesToFill.add(enumMember);
             permittedSubClassesToFill.add(enumMember.pointer());
-            nestMembersToFill.add(enumMember.pointer());
         }
         modelBuilder.addClass(this, classModel);
-
 
         return classModel;
     }
@@ -154,6 +152,12 @@ public class KarinaEnumVisitor implements IntoContext {
         for (var fieldModel : fieldModels) {
             methods.add(createGetterMethod(fieldModel));
         }
+        methods.add(KarinaStructVisitor.createToStringMethod(
+                region,
+                enumClass.name() + "::" + name,
+                currentClass,
+                fieldModels
+        ));
 
         var generics = ImmutableList.copyOf(genericsOuter.stream().map(ref -> {
             var generic = new Generic(region, ref.name());
@@ -213,7 +217,7 @@ public class KarinaEnumVisitor implements IntoContext {
 
         return new KMethodModel(
                 fieldModel.name(),
-                Modifier.PUBLIC | Modifier.FINAL,
+                Modifier.PUBLIC | Modifier.FINAL | Opcodes.ACC_SYNTHETIC,
                 new Signature(ImmutableList.of(), fieldModel.type()),
                 ImmutableList.of(),
                 ImmutableList.of(),

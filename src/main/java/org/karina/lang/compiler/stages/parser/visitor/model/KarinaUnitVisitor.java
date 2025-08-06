@@ -180,18 +180,6 @@ public class KarinaUnitVisitor {
         }
     }
 
-    /**
-     * Technically, the same as putNestMembers
-     */
-    private void putAllClassesDeep(List<? extends ClassModel> children, List<KClassModel> collection) {
-        for (var child : children) {
-            if (child instanceof KClassModel kChild) {
-                collection.add(kChild);
-            }
-            putAllClassesDeep(child.innerClasses(), collection);
-        }
-    }
-
     private KImport visitImport(KarinaParser.Import_Context ctx) {
 
         var region = this.conv.toRegion(ctx);
