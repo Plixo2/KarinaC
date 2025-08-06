@@ -9,13 +9,9 @@ import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 import org.karina.lang.compiler.utils.symbols.MemberSymbol;
-import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.compiler.utils.RegionOf;
-import org.karina.lang.compiler.utils.Variable;
 
 import java.util.List;
 
@@ -23,23 +19,24 @@ public record LoweringContext(
         ClassLookup newClasses, // mutable
         MutableInt syntheticCounter, // mutable
         Model model,
+        Context c,
         MethodModel definitionMethod, //were the Expressions are defined
         MethodModel owningMethod, //might be the same as definitionMethod, but changed when inside a closure
         ClassModel definitionClass, //were the Expressions are defined
         ClassModel owningClass,
         List<ClosureReplacement> toReplace
-) {
+) implements IntoContext {
 
     public KType.ClassType getOrCreateInterface(Region region, KType.FunctionType functionType) {
         if (functionType.interfaces().isEmpty()) {
-            Log.temp(region, "Function type has no interfaces");
+            Log.temp(this, region, "Function type has no interfaces");
             throw new Log.KarinaException();
         }
 
         if (functionType.interfaces().getFirst() instanceof KType.ClassType classType) {
             return classType;
         }
-        Log.temp(region, "Function interface is not a class type");
+        Log.temp(this, region, "Function interface is not a class type");
         throw new Log.KarinaException();
 
     }
@@ -55,7 +52,7 @@ public record LoweringContext(
 
     public KExpr lowerSelf(KExpr.Self self) {
         if (self.symbol() == null) {
-            Log.temp(self.region(), "Self reference is null");
+            Log.temp(this, self.region(), "Self reference is null");
             throw new Log.KarinaException();
         }
         var newRef = lowerVariableReference(self.region(), self.symbol());
@@ -88,6 +85,11 @@ public record LoweringContext(
         );
 
         return new KExpr.GetMember(region, selfExpr, RegionOf.region(region, varName), false, memberSymbol);
+    }
+
+    @Override
+    public Context intoContext() {
+        return this.c;
     }
 
 

@@ -25,14 +25,14 @@ public class CastAttrib  {
         switch (castTo) {
             case CastTo.AutoCast _ -> {
                 if (hint == null) {
-                    Log.attribError(new AttribError.UnknownCast(expr.region()));
+                    Log.error(ctx, new AttribError.UnknownCast(expr.region()));
                     throw new Log.KarinaException();
                 }
                 toType = hint;
                 //give hint, we want to convert to the type anyway
                 left = attribExpr(hint, ctx, expr.expression()).expr();
                 var leftType = left.type();
-                symbol = numericCast(expr.region(), leftType, toType, castTo);
+                symbol = numericCast(ctx, expr.region(), leftType, toType, castTo);
             }
             case CastTo.CastToType(var to) -> {
                 KType hintType = to;
@@ -46,13 +46,13 @@ public class CastAttrib  {
                 var leftType = left.type();
 
                 if (to instanceof KType.ClassType classType) {
-                    if (!ctx.checking().canAssign(expr.region(), classType, leftType, true)) {
-                        Log.attribError(new AttribError.InvalidNarrowingCast(expr.region()));
+                    if (!ctx.checking().canAssign(ctx, expr.region(), classType, leftType, true)) {
+                        Log.error(ctx, new AttribError.InvalidNarrowingCast(expr.region()));
                         throw new Log.KarinaException();
                     }
                     symbol = new CastSymbol.UpCast(leftType, classType);
                 } else {
-                    symbol = numericCast(expr.region(), leftType, toType, castTo);
+                    symbol = numericCast(ctx, expr.region(), leftType, toType, castTo);
                 }
             }
         }
@@ -66,33 +66,33 @@ public class CastAttrib  {
         ));
     }
 
-    private static CastSymbol numericCast(Region region, KType left, KType right, CastTo castTo) {
+    private static CastSymbol numericCast(AttributionContext ctx, Region region, KType left, KType right, CastTo castTo) {
         if (!(left instanceof KType.PrimitiveType(KType.KPrimitive fromPrimitive))) {
             if (castTo instanceof CastTo.AutoCast) {
-                Log.attribError(new AttribError.UnknownCast(region));
+                Log.error(ctx, new AttribError.UnknownCast(region));
             } else {
-                Log.temp(region, "Non Numeric Cast");
+                Log.temp(ctx, region, "Non Numeric Cast");
             }
             throw new Log.KarinaException();
         }
         if (!(right instanceof KType.PrimitiveType(KType.KPrimitive toPrimitive))) {
             if (castTo instanceof CastTo.AutoCast) {
-                Log.attribError(new AttribError.UnknownCast(region));
+                Log.error(ctx, new AttribError.UnknownCast(region));
             } else {
-                Log.temp(region, "Non Numeric Cast");
+                Log.temp(ctx, region, "Non Numeric Cast");
             }
             throw new Log.KarinaException();
         }
         if (!fromPrimitive.isNumeric() || !toPrimitive.isNumeric()) {
             if (castTo instanceof CastTo.AutoCast) {
-                Log.attribError(new AttribError.UnknownCast(region));
+                Log.error(ctx, new AttribError.UnknownCast(region));
             } else {
-                Log.temp(region, "Non Numeric Cast");
+                Log.temp(ctx, region, "Non Numeric Cast");
             }
             throw new Log.KarinaException();
         }
         if (fromPrimitive == toPrimitive) {
-            Log.warn(region, "Unnecessary Cast");
+            Log.warn(ctx, region, "Unnecessary Cast");
         }
 
         return new CastSymbol.PrimitiveCast(fromPrimitive, toPrimitive);

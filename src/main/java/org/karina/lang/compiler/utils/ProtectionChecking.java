@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.utils;
 
+import com.google.common.collect.ImmutableList;
 import lombok.RequiredArgsConstructor;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Model;
@@ -42,7 +43,14 @@ public class ProtectionChecking {
     }
 
     private boolean isANestMember(ClassModel referenceSite, ClassModel definitionSite) {
-        return definitionSite.nestMembers().contains(referenceSite.pointer());
+        var defHost = definitionSite.nestHost();
+        var refHost = referenceSite.nestHost();
+
+        if (defHost == null || refHost == null) {
+            return false;
+        }
+
+        return defHost.equals(refHost);
     }
 
     private boolean isSubclass(ClassModel referenceSite, ClassModel definitionSite) {

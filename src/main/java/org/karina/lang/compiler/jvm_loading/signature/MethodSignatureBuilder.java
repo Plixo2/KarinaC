@@ -6,6 +6,7 @@ import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.jvm_loading.signature.model.MethodSignature;
+import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.Region;
@@ -17,9 +18,10 @@ public class MethodSignatureBuilder {
     private final KType returnType;
     private final ImmutableList<KType> parameters;
 
-    public MethodSignatureBuilder(String name, Region region, MethodSignature signature, @Nullable JClassModel outer) {
+    public MethodSignatureBuilder(Context c, String name, Region region, MethodSignature signature, @Nullable JClassModel outer) {
 
         this.generics = SignatureHelper.mapGenerics(
+                c,
                 region,
                 name,
                 outer,
@@ -28,14 +30,14 @@ public class MethodSignatureBuilder {
 
         var returnSignature = signature.returnSignature();
         if (returnSignature != null) {
-            this.returnType = SignatureHelper.toType(region, name, outer, this.generics, returnSignature);
+            this.returnType = SignatureHelper.toType(c, region, name, outer, this.generics, returnSignature);
         } else {
             this.returnType = KType.NONE;
         }
         var parameters = ImmutableList.<KType>builder();
 
         for (var anParam : signature.parameters()) {
-            parameters.add(SignatureHelper.toType(region, name, outer, this.generics, anParam));
+            parameters.add(SignatureHelper.toType(c, region, name, outer, this.generics, anParam));
         }
 
         this.parameters = parameters.build();

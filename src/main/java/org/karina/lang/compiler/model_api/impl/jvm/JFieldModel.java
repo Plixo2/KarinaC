@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.model_api.impl.jvm;
 
 import lombok.AllArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
@@ -20,6 +21,11 @@ public class JFieldModel implements FieldModel {
     @Override
     public Region region() {
         return this.region;
+    }
+
+    @Override
+    public @Nullable Object defaultValue() {
+        return null;
     }
 
     @Override

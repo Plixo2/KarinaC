@@ -1,22 +1,31 @@
-package org.karina.lang.compiler.utils;
+package org.karina.lang.compiler.stages.generate;
 
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.compiler.utils.Region;
 import org.objectweb.asm.ClassWriter;
 
-
+/**
+ * Custom ClassWriter that overrides the {@link #getCommonSuperClass} method for generating stack frames
+ */
 public class CustomClassWriter extends ClassWriter {
 
-    Region region;
-    Model model;
-    public CustomClassWriter(final int flags, Model model, Region region) {
+    private final Region region;
+    private final Model model;
+    private final Context c;
+    public CustomClassWriter(Context c, int flags, Model model, Region region) {
         super(null, flags);
+        this.c = c;
         this.model = model;
         this.region = region;
     }
@@ -29,11 +38,11 @@ public class CustomClassWriter extends ClassWriter {
         var pointerA = this.model.getClassPointer(this.region, pathA);
         var pointerB = this.model.getClassPointer(this.region, pathB);
         if (pointerA == null) {
-            //Log.warn(this.region, "Cannot find class " + type1);
+            Log.warn(this.c, this.region, "Cannot find class while emitting bytecode" + type1);
             return "java/lang/Object";
         }
         if (pointerB == null) {
-           // Log.warn(this.region, "Cannot find class " + type2);
+            Log.warn(this.c, this.region, "Cannot find class while emitting bytecode" + type2);
             return "java/lang/Object";
         }
         return getCommonSuperClass(pointerA, pointerB).path().mkString("/");

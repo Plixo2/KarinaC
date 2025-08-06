@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
@@ -12,14 +13,14 @@ import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KAnnotation;
 import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.stages.imports.ImportTable;
+import org.karina.lang.compiler.stages.imports.table.ImportTable;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.KType;
 
 import java.util.ArrayList;
 import java.util.List;
 
-
+//TODO add outerMethod and outerMethodDescriptor
 @RequiredArgsConstructor
 public class KClassModel implements ClassModel {
     private final String name;
@@ -27,6 +28,7 @@ public class KClassModel implements ClassModel {
     private final int modifiers;
     private final KType.ClassType superClass;
     private final @Nullable KClassModel outerClass;
+    private final @Nullable ClassPointer nestHost;
     private final ImmutableList<KType.ClassType> interfaces;
     private final List<KClassModel> innerClasses;
     private final ImmutableList<KFieldModel> fields;
@@ -43,7 +45,7 @@ public class KClassModel implements ClassModel {
 
     @Getter
     @Accessors(fluent = true)
-    private final @Nullable @Symbol ImportTable symbolTable;
+    private final @Nullable @Symbol UserImportTable symbolTable;
 
 
     @Override
@@ -79,6 +81,11 @@ public class KClassModel implements ClassModel {
     @Override
     public @Nullable KClassModel outerClass() {
         return this.outerClass;
+    }
+
+    @Override
+    public @Nullable ClassPointer nestHost() {
+        return this.nestHost;
     }
 
     @Override
@@ -137,11 +144,13 @@ public class KClassModel implements ClassModel {
 
     public void updateNestMembers(List<ClassPointer> pointers) {
 //        this.nestMembers.clear();
-        for (var pointer : pointers) {
-            if (pointer.equals(this.pointer())) {
-                continue;
+        synchronized (this) {
+            for (var pointer : pointers) {
+                if (pointer.equals(this.pointer())) {
+                    continue;
+                }
+                this.nestMembers.add(pointer);
             }
-            this.nestMembers.add(pointer);
         }
     }
 

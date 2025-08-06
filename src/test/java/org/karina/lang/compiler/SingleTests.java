@@ -3,8 +3,10 @@ package org.karina.lang.compiler;
 import org.junit.jupiter.api.*;
 import org.karina.lang.compiler.utils.FileLoader;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -12,37 +14,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 
-public class SyntaxTests {
+public class SingleTests {
     private static final String TEST_DIR = "tests/files/";
-
-    @Test
-    public void testMain() throws IOException {
-        System.setProperty("karina.binary", "false");
-        Main.main(new String[]{"--test"});
-        System.setProperty("karina.binary", "true");
-        Main.main(new String[]{"--test"});
-    }
-
-
-
-    @AfterAll
-    public static void runMain()
-            throws MalformedURLException, ClassNotFoundException, NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException {
-
-        URLClassLoader clsLoader = new URLClassLoader(
-                new URL[] {
-                        new File(System.getProperty("karina.out", "resources/out/build.jar")).toURI().toURL()
-                },
-                Main.class.getClassLoader()
-        );
-        var classToLoad = Class.forName("main", true, clsLoader);
-        Method method = classToLoad.getDeclaredMethod("main", String[].class);
-        var args = new Object[] {
-                new String[] {}
-        };
-        var ignored = method.invoke(null, args);
-    }
 
     @TestFactory
     List<DynamicTest> testValid() {
@@ -66,8 +39,8 @@ public class SyntaxTests {
                 var source = FileLoader.loadUTF8(ref.getAbsolutePath());
                 return DynamicTest.dynamicTest(
                         ref.getName(), () -> {
-                            var toTest = new TestFile(name, source, expectedResult);
-                            toTest.expect();
+                            var toTest = new TestFile(name, source);
+                            toTest.expect(expectedResult);
                         }
                 );
             } catch (IOException e) {
@@ -76,7 +49,7 @@ public class SyntaxTests {
         }).toList();
     }
 
-    public static List<File> loadSingleFiles(String testDir) {
+    private static List<File> loadSingleFiles(String testDir) {
         var files = new ArrayList<File>();
 
         var directory = new File(testDir);

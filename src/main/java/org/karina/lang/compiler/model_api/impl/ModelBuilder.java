@@ -1,54 +1,57 @@
 package org.karina.lang.compiler.model_api.impl;
 
+import lombok.RequiredArgsConstructor;
 import org.karina.lang.compiler.model_api.impl.table.ClassLookup;
 import org.karina.lang.compiler.model_api.impl.table.LinearLookup;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
-//TODO replace, to slow
 /**
  * A Thread Safe builder for a Model
  */
 public class ModelBuilder {
 
-    final ClassLookup tree = new LinearLookup();
+    private final ClassLookup tree = new LinearLookup();
 
-    public void addClass(ClassModel classModel) {
+
+    public void addClass(IntoContext c, ClassModel classModel) {
         synchronized (this.tree) {
             var prev = this.tree.insert(classModel.path(), classModel);
             if (prev != null) {
-                testDuplicate(prev, classModel.region(), classModel.path());
+                testDuplicate(c.intoContext(), prev, classModel.region(), classModel.path());
                 throw new Log.KarinaException();
             }
         }
     }
 
 
-    public Model build() {
-        return new JKModel(this.tree.lock());
+    public Model build(IntoContext c) {
+        return new JKModel(c.intoContext(), this.tree.lock());
     }
 
-    public static Model merge(Model... models) {
+    public static Model merge(IntoContext c, Model... models) {
         var modelBuilder = new ModelBuilder();
 
         for (var other : models) {
             for (var allUserClass : other.getUserClasses()) {
-                modelBuilder.addClass(allUserClass);
+                modelBuilder.addClass(c, allUserClass);
             }
             for (var binaryClass : other.getBinaryClasses()) {
-                modelBuilder.addClass(binaryClass);
+                modelBuilder.addClass(c, binaryClass);
             }
         }
-        return modelBuilder.build();
+        return modelBuilder.build(c);
     }
 
-    private static void testDuplicate(ClassModel prev, Region classRegion, ObjectPath inserted) {
+    private static void testDuplicate(Context c, ClassModel prev, Region classRegion, ObjectPath inserted) {
         if (prev != null) {
-            Log.importError(new ImportError.DuplicateItem(
+            Log.error(c, new ImportError.DuplicateItem(
                     prev.region(),
                     classRegion,
                     inserted.toString()

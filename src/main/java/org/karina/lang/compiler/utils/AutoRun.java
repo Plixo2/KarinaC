@@ -39,20 +39,10 @@ public class AutoRun {
                     .out(System.out);
 
             mainMethod.invoke(null, (Object) new String[]{});
-        } catch (ReflectiveOperationException e) {
-            Throwable inner = e;
-            while (inner.getCause() != null) {
-                inner = inner.getCause();
-            }
 
-            ColorOut.begin(LogColor.RED)
-                    .append(inner.getClass().getName())
-                    .append(" ")
-                    .append(Objects.requireNonNullElse(inner.getMessage(), ""))
-                    .out(System.out);
 
-            System.out.flush();
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to run main method", e);
         }
     }
 

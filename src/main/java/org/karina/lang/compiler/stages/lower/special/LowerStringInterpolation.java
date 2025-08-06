@@ -13,9 +13,9 @@ import java.util.List;
 
 ///
 /// Converts a String interpolation like 'Hello $name' into calls to the StringInterpolation class.
-/// 'Hello $name !' is converted to:
+/// 'Hello $name!' is converted to:
 /// ```
-/// StringInterpolation.create().appendLiteral("Hello ").appendExpression(name).appendLiteral(" !").toString()
+/// StringInterpolation.create().appendLiteral("Hello ").appendExpression(name).appendLiteral("!").toString()
 /// ```
 ///
 /// Signature:
@@ -100,7 +100,7 @@ public class LowerStringInterpolation {
             }
         }
 
-        var toStringCall = new KExpr.Call(
+        return new KExpr.Call(
                 region,
                 left,
                 List.of(),
@@ -117,8 +117,6 @@ public class LowerStringInterpolation {
                         false
                 )
         );
-
-        return toStringCall;
     }
 
     private List<KType> getSignature(KExpr expr) {

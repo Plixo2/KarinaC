@@ -1,4 +1,9 @@
 
+
+fn main(args: [string]) {
+   test()
+}
+
 fn test() -> bool {
 
     testFloats()
@@ -10,9 +15,7 @@ fn test() -> bool {
     true
 }
 
-fn main(args: [string]) {
-   test()
-}
+
 
 
 fn testFloats() {

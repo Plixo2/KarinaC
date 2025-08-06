@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.Variable;
 import org.objectweb.asm.tree.*;
@@ -16,19 +18,20 @@ import java.util.Map;
 
 @AllArgsConstructor
 @Getter
-public class GenerationContext {
+public class GenerationContext implements IntoContext {
     @Setter
     private int lastLineNumber = 0;
     private final InsnList instructions;
-//    private final MethodNode node;
     private final Map<Variable, Integer> variables = new HashMap<>();
     private final List<LocalVariableNode> localVariables;
+    private final Context c;
 
     private int variablesCount = 0;
     @Setter
     private @Nullable LabelNode breakTarget;
     @Setter
     private @Nullable LabelNode continueTarget;
+
 
     public void add(AbstractInsnNode instruction) {
         this.instructions.add(instruction);
@@ -45,7 +48,7 @@ public class GenerationContext {
     public int getVariableIndex(Region region, Variable variable) {
         if (!this.variables.containsKey(variable)) {
             var available = this.variables.keySet().stream().map(Variable::name).toList();
-            Log.temp(region, "Variable '" + variable.name() + "' not found. This is a bug in the compiler, available " + available);
+            Log.temp(this, region, "Variable '" + variable.name() + "' not found. This is a bug in the compiler, available " + available);
             throw new Log.KarinaException();
         }
         return this.variables.get(variable);
@@ -56,4 +59,8 @@ public class GenerationContext {
     }
 
 
+    @Override
+    public Context intoContext() {
+        return this.c;
+    }
 }

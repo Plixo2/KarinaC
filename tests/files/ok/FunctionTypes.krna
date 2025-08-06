@@ -2,7 +2,7 @@
 
 fn f() {
     let a: fn(string) -> string = fn(ref) ref
-    applyJava(a);
+    applyJava(a)
 
     let withVoid : fn(string) -> void = fn(ref) {}
     let withVoid2: fn(string) = fn(ref) {}

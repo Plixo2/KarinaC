@@ -1,9 +1,6 @@
 package org.karina.lang.compiler.stages.parser;
 
-import org.karina.lang.compiler.utils.FileNode;
-import org.karina.lang.compiler.utils.FileTreeNode;
-import org.karina.lang.compiler.utils.TextSource;
-import org.karina.lang.compiler.logging.ErrorCollector;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
@@ -17,24 +14,30 @@ import java.util.List;
  */
 public class ParseProcessor {
 
-    public Model parseTree(FileTreeNode<TextSource> fileTree) {
-        try (var errorCollection = new ErrorCollector()) {
-            return this.parseFiles(fileTree, errorCollection);
+    public Model parseTree(Context c, FileTreeNode<TextSource> fileTree) {
+        var flatFiles = getFiles(fileTree);
+        ModelBuilder builder = new ModelBuilder();
+
+        try (var fork = c.fork()) {
+            for (var file : flatFiles) {
+                fork.collect(subC -> {
+                    var start = System.currentTimeMillis();
+                    var unitParser = new TextUnitParser(subC, file.content(), file.name(), file.path());
+                    // return null, and mutate thread-safe ModelBuilder
+                    unitParser.visit(builder);
+
+                    var end = System.currentTimeMillis();
+                    Log.record("parse-" + file.name() + ": " + (end - start) + "ms");
+
+                    return null;
+                });
+            }
+            var _ = fork.dispatchParallel();
         }
+        return builder.build(c);
     }
 
-    private Model parseFiles(FileTreeNode<TextSource> fileTree, ErrorCollector collector) {
-        ModelBuilder builder = new ModelBuilder();
-        for (var file : getFiles(fileTree)) {
-            Log.begin("parse-" + file.name());
-            collector.collect(() -> {
-                var unitParser = new TextUnitParser(file.content(), file.name(), file.path());
-                unitParser.visit(builder);
-            });
-            Log.end("parse-" + file.name());
-        }
-        return builder.build();
-    }
+
 
     private List<FileNode<TextSource>> getFiles(FileTreeNode<TextSource> fileTree) {
         var files = new ArrayList<FileNode<TextSource>>(fileTree.leafs());
@@ -43,5 +46,6 @@ public class ParseProcessor {
         }
         return files;
     }
+
 
 }

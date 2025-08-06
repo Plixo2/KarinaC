@@ -4,9 +4,9 @@ package org.karina.lang.compiler.stages.generate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
+import org.karina.lang.compiler.utils.Context;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -45,28 +45,31 @@ public class JarCompilation {
         }
     }
 
-    public void writeClasses(Path output) {
+    public void writeClasses(Context c, Path output) {
         var file = output.toFile();
         removePreviousFiles(file);
         var ignored = file.mkdirs();
         if (!Files.isDirectory(output)) {
-            Log.fileError(new FileLoadError.NotAFolder(file));
+            Log.fileError(c, new FileLoadError.NotAFolder(file));
             throw new Log.KarinaException();
         }
         var absolutePath = file.getAbsolutePath();
-        try (var collector = new ErrorCollector()) {
+        try (var fork = c.fork()) {
             for (var jarOutput : this.files) {
                 var path = absolutePath + "/" + jarOutput.path();
                 var subFile = new File(path);
-                collector.collect(() -> {
+                fork.collect(subC -> {
                     try {
                         writeByteArrayToFile(subFile, jarOutput.data());
                     } catch (IOException e) {
-                        Log.fileError(new FileLoadError.IO(subFile, e));
+                        Log.fileError(subC, new FileLoadError.IO(subFile, e));
                         throw new Log.KarinaException();
                     }
+                    // yield nothing
+                    return null;
                 });
             }
+            var _ = fork.dispatchParallel();
         }
     }
 
@@ -78,7 +81,7 @@ public class JarCompilation {
         }
     }
 
-    public void writeJar(Path output) {
+    public void writeJar(Context c, Path output) {
         var file = output.toFile();
         var writeTime = System.currentTimeMillis();
         try {
@@ -89,7 +92,7 @@ public class JarCompilation {
                 write(writeTime, stream, this.files, this.manifest);
             }
         } catch (IOException e) {
-            Log.fileError(new FileLoadError.IO(file, e));
+            Log.fileError(c, new FileLoadError.IO(file, e));
             throw new Log.KarinaException();
         }
     }

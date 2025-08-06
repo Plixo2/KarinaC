@@ -13,6 +13,7 @@ import org.karina.lang.compiler.utils.StringComponent;
 
 import java.util.HashSet;
 
+import static org.karina.lang.compiler.stages.attrib.AttributionExpr.attribExpr;
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.of;
 
 public class StringInterpolationAttrib {
@@ -28,49 +29,38 @@ public class StringInterpolationAttrib {
                         Log.record("Literal: '" + stringLiteralComponent.value() + "'");
                     }
                     case StringComponent.ExpressionComponent expressionComponent -> {
-                        Log.record("Variable: '" + expressionComponent.name() + "'");
+                        Log.record("Expression: '" + expressionComponent.getClass() + "'");
                     }
                 }
             }
             Log.end("String Interpolation");
         }
 
-        var newComponents = ImmutableList.<StringComponent>builder();
-        for (var component : expr.components()) {
-            switch (component) {
-                case StringComponent.StringLiteralComponent stringLiteralComponent -> {
-                    newComponents.add(stringLiteralComponent);
-                }
-                case StringComponent.ExpressionComponent(var region, var name, _) -> {
+        ImmutableList<StringComponent> newComponents;
+        try (var fork = ctx.intoContext().<StringComponent>fork()){
+            for (var component : expr.components()) {
+                fork.collect(subC -> switch (component) {
+                    case StringComponent.StringLiteralComponent str -> str;
+                    case StringComponent.ExpressionComponent(var region, var stringExpr) -> {
+                        var newStringExpr = attribExpr(null, ctx.withNewContext(subC), stringExpr).expr();
+                        if (newStringExpr.type().isVoid()) {
+                            Log.error(ctx, new AttribError.NotSupportedType(region, KType.NONE));
+                            throw new Log.KarinaException();
+                        }
 
-                    var variable = ctx.variables().get(name);
-                    if (variable == null) {
-                        var available = new HashSet<>(ctx.variables().names());
-                        Log.attribError(new AttribError.UnknownIdentifier(region, name, available));
-                        throw new Log.KarinaException();
+                        yield new StringComponent.ExpressionComponent(
+                                region,
+                                newStringExpr
+                        );
                     }
-                    variable.incrementUsageCount();
-                    var literal = new KExpr.Literal(
-                            region,
-                            variable.name(),
-                            new LiteralSymbol.VariableReference(region, variable)
-                    );
-                    //cannot be void, since a variable can never be void
-                    newComponents.add(
-                            new StringComponent.ExpressionComponent(
-                                    region,
-                                    name,
-                                    literal
-                            )
-                    );
-
-                }
+                });
             }
+            newComponents = ImmutableList.copyOf(fork.dispatch());
         }
 
         return of(ctx, new KExpr.StringInterpolation(
                 expr.region(),
-                newComponents.build()
+                newComponents
         ));
     }
 

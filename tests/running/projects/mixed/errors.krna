@@ -1,0 +1,32 @@
+
+// Expect a specific Error type, otherwise throw the other error
+fn safeCallExpect<R,T>(function: fn() -> R, cls: Class<T>) -> Result<R, T> {
+    Result::safeCall(function)
+        .mapErr(
+           // when we encounter any error, try to cast it to a InvalidPathException
+           // otherwise create a Result::Err(e) with the other error type
+           // then call expect on the Result::Err(e), this will rethrow the error
+           fn(e) Option::instanceOf(cls, e).okOr(e).expect("Unexpected Exception")
+        )
+}
+
+
+
+struct Modifier {
+
+}
+
+@Super = {
+    type: type { java::lang::RuntimeException }
+}
+struct RuntimeError {
+    message: string
+    cause: Throwable?
+
+    fn (self, message: string, cause: Throwable?) {
+        super<java::lang::RuntimeException>(message, cause.nullable())
+    }
+}
+
+
+struct Data

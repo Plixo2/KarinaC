@@ -1,5 +1,5 @@
 
 
 fn f() {
-    throw java::lang::RuntimeException { _: "test" };
+    throw java::lang::RuntimeException { _: "test" }
 }

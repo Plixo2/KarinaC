@@ -14,7 +14,7 @@ public class ContinueAttrib  {
 
     public static AttributionExpr attribContinue(@Nullable KType hint, AttributionContext ctx, KExpr.Continue expr) {
         if (!ctx.isLoop()) {
-            Log.attribError(new AttribError.ControlFlow(expr.region(), "continue statement outside of loop"));
+            Log.error(ctx, new AttribError.ControlFlow(expr.region(), "continue statement outside of loop"));
             throw new Log.KarinaException();
         }
         return of(ctx, expr);

@@ -14,10 +14,10 @@ import org.objectweb.asm.tree.*;
 
 import java.util.Objects;
 
-public class GenerateExpr {
+public class GenerateExpr implements Opcodes {
 
 
-    public static void addExpression(KExpr expr, GenerationContext ctx) {
+    public static void generate(KExpr expr, GenerationContext ctx) {
 
         var region = expr.region();
         var currentLine = region.start().line() + 1;
@@ -33,36 +33,36 @@ public class GenerateExpr {
                 assert assignment.symbol() != null;
                 switch (assignment.symbol()) {
                     case AssignmentSymbol.ArrayElement arrayElement -> {
-                        addExpression(arrayElement.array(), ctx);
-                        addExpression(arrayElement.index(), ctx);
-                        addExpression(assignment.right(), ctx);
+                        generate(arrayElement.array(), ctx);
+                        generate(arrayElement.index(), ctx);
+                        generate(assignment.right(), ctx);
                         var type = TypeEncoding.getType(arrayElement.elementType());
-                        ctx.add(new InsnNode(type.getOpcode(Opcodes.IASTORE)));
+                        ctx.add(new InsnNode(type.getOpcode(IASTORE)));
                     }
                     case AssignmentSymbol.Field field -> {
-                        addExpression(field.object(), ctx);
-                        addExpression(assignment.right(), ctx);
+                        generate(field.object(), ctx);
+                        generate(assignment.right(), ctx);
                         var owner = TypeEncoding.getType(field.fieldOwner());
                         var fieldType = TypeEncoding.getType(field.fieldType());
                         ctx.add(new FieldInsnNode(
-                                Opcodes.PUTFIELD,
+                                PUTFIELD,
                                 owner.getInternalName(),
                                 field.pointer().name(),
                                 fieldType.getDescriptor()
                         ));
                     }
                     case AssignmentSymbol.LocalVariable localVariable -> {
-                        addExpression(assignment.right(), ctx);
+                        generate(assignment.right(), ctx);
                         var index = ctx.getVariableIndex(assignment.region(), localVariable.variable());
                         var type = TypeEncoding.getType(localVariable.variable().type());
-                        ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ISTORE), index));
+                        ctx.add(new VarInsnNode(type.getOpcode(ISTORE), index));
                     }
                     case AssignmentSymbol.StaticField staticField -> {
-                        addExpression(assignment.right(), ctx);
+                        generate(assignment.right(), ctx);
                         var owner = TypeEncoding.getType(staticField.pointer().classPointer());
                         var fieldType = TypeEncoding.getType(staticField.fieldType());
                         ctx.add(new FieldInsnNode(
-                                Opcodes.PUTSTATIC,
+                                PUTSTATIC,
                                 owner.getInternalName(),
                                 staticField.pointer().name(),
                                 fieldType.getDescriptor()
@@ -73,27 +73,27 @@ public class GenerateExpr {
             }
             case KExpr.Binary binary -> {
 
-                addExpression(binary.left(), ctx);
-                addExpression(binary.right(), ctx);
+                generate(binary.left(), ctx);
+                generate(binary.right(), ctx);
                 assert binary.symbol() != null;
                 switch (binary.symbol()) {
                     case BinOperatorSymbol.BoolOP boolOP -> {
                         switch (boolOP) {
                             case BinOperatorSymbol.BoolOP.And and -> {
-                                ctx.add(new InsnNode(Opcodes.IAND));
+                                ctx.add(new InsnNode(IAND));
                             }
                             case BinOperatorSymbol.BoolOP.Equal equal -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPNE, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPNE, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.BoolOP.NotEqual notEqual -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPEQ, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPEQ, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.BoolOP.Or or -> {
-                                ctx.add(new InsnNode(Opcodes.IOR));
+                                ctx.add(new InsnNode(IOR));
                             }
                         }
                     }
@@ -106,49 +106,49 @@ public class GenerateExpr {
                     case BinOperatorSymbol.IntOP intOP -> {
                         switch (intOP) {
                             case BinOperatorSymbol.IntOP.Add add -> {
-                                ctx.add(new InsnNode(Opcodes.IADD));
+                                ctx.add(new InsnNode(IADD));
                             }
                             case BinOperatorSymbol.IntOP.Divide divide -> {
-                                ctx.add(new InsnNode(Opcodes.IDIV));
+                                ctx.add(new InsnNode(IDIV));
                             }
                             case BinOperatorSymbol.IntOP.Equal equal -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPNE, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPNE, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.IntOP.GreaterThan greaterThan -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPLE, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPLE, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.IntOP.GreaterThanOrEqual greaterThanOrEqual -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPLT, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPLT, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.IntOP.LessThan lessThan -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPGE, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPGE, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.IntOP.LessThanOrEqual lessThanOrEqual -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPGT, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPGT, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.IntOP.Modulus modulus -> {
-                                ctx.add(new InsnNode(Opcodes.IREM));
+                                ctx.add(new InsnNode(IREM));
                             }
                             case BinOperatorSymbol.IntOP.Multiply multiply -> {
-                                ctx.add(new InsnNode(Opcodes.IMUL));
+                                ctx.add(new InsnNode(IMUL));
                             }
                             case BinOperatorSymbol.IntOP.NotEqual notEqual -> {
                                 var target = new LabelNode();
-                                ctx.add(new JumpInsnNode(Opcodes.IF_ICMPEQ, target));
+                                ctx.add(new JumpInsnNode(IF_ICMPEQ, target));
                                 addEquals(ctx, target);
                             }
                             case BinOperatorSymbol.IntOP.Subtract subtract -> {
-                                ctx.add(new InsnNode(Opcodes.ISUB));
+                                ctx.add(new InsnNode(ISUB));
                             }
                         }
                     }
@@ -163,7 +163,7 @@ public class GenerateExpr {
                                 var desc = Type.getMethodDescriptor(Type.BOOLEAN_TYPE, argType, argType);
                                 var name = "equals";
 
-                                var opcode = Opcodes.INVOKESTATIC;
+                                var opcode = INVOKESTATIC;
                                 ctx.add(new MethodInsnNode(
                                         opcode,
                                         owner,
@@ -172,23 +172,23 @@ public class GenerateExpr {
                                         false
                                 ));
                                 if (objectEquals instanceof BinOperatorSymbol.ObjectEquals.NotEqual) {
-                                    ctx.add(new InsnNode(Opcodes.ICONST_1));
-                                    ctx.add(new InsnNode(Opcodes.IXOR));
+                                    ctx.add(new InsnNode(ICONST_1));
+                                    ctx.add(new InsnNode(IXOR));
                                 }
                             }
                             case BinOperatorSymbol.ObjectEquals.StrictEqual _, BinOperatorSymbol.ObjectEquals.StrictNotEqual _ -> {
-                                int opcode = Opcodes.IF_ACMPEQ;
+                                int opcode = IF_ACMPEQ;
                                 if (objectEquals instanceof BinOperatorSymbol.ObjectEquals.StrictNotEqual) {
-                                    opcode = Opcodes.IF_ACMPNE;
+                                    opcode = IF_ACMPNE;
                                 }
 
                                 var trueLabel = new LabelNode();
                                 var endLabel = new LabelNode();
                                 ctx.add(new JumpInsnNode(opcode, trueLabel));
-                                ctx.add(new InsnNode(Opcodes.ICONST_0));
-                                ctx.add(new JumpInsnNode(Opcodes.GOTO, endLabel));
+                                ctx.add(new InsnNode(ICONST_0));
+                                ctx.add(new JumpInsnNode(GOTO, endLabel));
                                 ctx.add(trueLabel);
-                                ctx.add(new InsnNode(Opcodes.ICONST_1));
+                                ctx.add(new InsnNode(ICONST_1));
                                 ctx.add(endLabel);
 
 
@@ -204,17 +204,17 @@ public class GenerateExpr {
                 assert block.symbol() != null;
                 while (iterator.hasNext()) {
                     var next = iterator.next();
-                    addExpression(next, ctx);
+                    generate(next, ctx);
                     var type = next.type();
                     if (!type.isVoid() && (iterator.hasNext() || block.symbol().isVoid())) {
                         var size = TypeEncoding.jvmSize(TypeEncoding.getType(type));
                         if (size == 2) {;
-                            ctx.add(new InsnNode(Opcodes.POP2));
+                            ctx.add(new InsnNode(POP2));
                         } else if (size == 1) {
-                            ctx.add(new InsnNode(Opcodes.POP));
+                            ctx.add(new InsnNode(POP));
                         } else {
                             for (int i = 0; i < size; i++) {
-                                ctx.add(new InsnNode(Opcodes.POP));
+                                ctx.add(new InsnNode(POP));
                             }
                         }
                     }
@@ -225,43 +225,43 @@ public class GenerateExpr {
             }
             case KExpr.Branch branch -> {
                 if (branch.branchPattern() != null) {
-                    Log.temp(expr.region(), "Cannot be expressed");
+                    Log.temp(ctx, expr.region(), "Cannot be expressed");
                     throw new Log.KarinaException();
                 }
 
-                addExpression(branch.condition(), ctx);
+                generate(branch.condition(), ctx);
                 var falseTarget = new LabelNode();
-                ctx.add(new JumpInsnNode(Opcodes.IFEQ, falseTarget));
-                addExpression(branch.thenArm(), ctx);
+                ctx.add(new JumpInsnNode(IFEQ, falseTarget));
+                generate(branch.thenArm(), ctx);
                 var endTarget = new LabelNode();
                 if (branch.elseArm() != null) {
-                    ctx.add(new JumpInsnNode(Opcodes.GOTO, endTarget));
+                    ctx.add(new JumpInsnNode(GOTO, endTarget));
                 }
                 ctx.add(falseTarget);
 
                 if (branch.elseArm() != null) {
                     if (branch.elseArm().elsePattern() != null) {
-                        Log.temp(expr.region(), "Cannot be expressed");
+                        Log.temp(ctx, expr.region(), "Cannot be expressed");
                         throw new Log.KarinaException();
                     }
 
-                    addExpression(branch.elseArm().expr(), ctx);
+                    generate(branch.elseArm().expr(), ctx);
                     ctx.add(endTarget);
                 }
 
             }
             case KExpr.Break aBreak -> {
                 assert ctx.getBreakTarget() != null;
-                ctx.add(new JumpInsnNode(Opcodes.GOTO, ctx.getBreakTarget()));
+                ctx.add(new JumpInsnNode(GOTO, ctx.getBreakTarget()));
             }
             case KExpr.Call call -> {
                 if (call.symbol() == null) {
-                    Log.temp(expr.region(), "No given symbol");
+                    Log.temp(ctx, expr.region(), "No given symbol");
                     throw new Log.KarinaException();
                 }
                 switch (call.symbol()) {
                     case CallSymbol.CallDynamic callDynamic -> {
-                        Log.temp(expr.region(), "Cannot be expressed");
+                        Log.temp(ctx, expr.region(), "Cannot be expressed");
                         throw new Log.KarinaException();
                     }
                     case CallSymbol.CallStatic callStatic -> {
@@ -270,14 +270,12 @@ public class GenerateExpr {
                         var desc = TypeEncoding.getDesc(callStatic.pointer(), callStatic.pointer().returnType());
                         var name = callStatic.pointer().name();
 
-                        var opcode = Opcodes.INVOKESTATIC;
-
                         for (var argument : call.arguments()) {
-                            addExpression(argument, ctx);
+                            generate(argument, ctx);
                         }
 
                         ctx.add(new MethodInsnNode(
-                                opcode,
+                                INVOKESTATIC,
                                 owner.getInternalName(),
                                 name,
                                 desc,
@@ -286,21 +284,19 @@ public class GenerateExpr {
                         applyCorrectReturnType(ctx, callStatic.pointer(), callStatic.returnType());
                     }
                     case CallSymbol.CallVirtual callVirtual -> {
-                        addExpression(call.left(), ctx);
+                        generate(call.left(), ctx);
 
                         var path = callVirtual.pointer().classPointer().path().append(callVirtual.pointer().name());
                         var owner = Type.getObjectType(TypeEncoding.toJVMPath(path.everythingButLast()));
                         var desc = TypeEncoding.getDesc(callVirtual.pointer(), callVirtual.pointer().returnType());
                         var name = callVirtual.pointer().name();
 
-//                        var isInterface = ctx.
-
                         for (var argument : call.arguments()) {
-                            addExpression(argument, ctx);
+                            generate(argument, ctx);
                         }
                         if ( callVirtual.onInterface()) {
                             ctx.add(new MethodInsnNode(
-                                    Opcodes.INVOKEINTERFACE,
+                                    INVOKEINTERFACE,
                                     owner.getInternalName(),
                                     name,
                                     desc,
@@ -308,7 +304,7 @@ public class GenerateExpr {
                             ));
                         } else {
                             ctx.add(new MethodInsnNode(
-                                    Opcodes.INVOKEVIRTUAL,
+                                    INVOKEVIRTUAL,
                                     owner.getInternalName(),
                                     name,
                                     desc,
@@ -323,16 +319,16 @@ public class GenerateExpr {
 
                                 var internalName = TypeEncoding.getType(newInit.classType()).getInternalName();
                                 var desc = TypeEncoding.getDesc(callSuper.pointer(), KType.NONE);
-                                ctx.add(new TypeInsnNode(Opcodes.NEW, internalName));
+                                ctx.add(new TypeInsnNode(NEW, internalName));
 
-                                ctx.add(new InsnNode(Opcodes.DUP));
+                                ctx.add(new InsnNode(DUP));
 
                                 for (var argument : call.arguments()) {
-                                    addExpression(argument, ctx);
+                                    generate(argument, ctx);
                                 }
 
                                 ctx.add(new MethodInsnNode(
-                                        Opcodes.INVOKESPECIAL,
+                                        INVOKESPECIAL,
                                         internalName,
                                         "<init>",
                                         desc,
@@ -341,18 +337,17 @@ public class GenerateExpr {
                             }
                             case InvocationType.SpecialInvoke specialInvoke -> {
                                 //Load 'this'
-                                ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
-//                                addExpression(call.left(), ctx);
+                                ctx.add(new VarInsnNode(ALOAD, 0));
 
                                 var internalName = TypeEncoding.getType(specialInvoke.superType()).getInternalName();
                                 var desc = TypeEncoding.getDesc(callSuper.pointer(), callSuper.pointer().returnType());
 
                                 for (var argument : call.arguments()) {
-                                    addExpression(argument, ctx);
+                                    generate(argument, ctx);
                                 }
 
                                 ctx.add(new MethodInsnNode(
-                                        Opcodes.INVOKESPECIAL,
+                                        INVOKESPECIAL,
                                         internalName,
                                         specialInvoke.name(),
                                         desc,
@@ -365,30 +360,30 @@ public class GenerateExpr {
                 }
             }
             case KExpr.Cast cast -> {
-                addExpression(cast.expression(), ctx);
+                generate(cast.expression(), ctx);
                 assert cast.symbol() != null;
                 switch (cast.symbol()) {
                     case CastSymbol.PrimitiveCast primitiveCast -> {
                         var from = primitiveCast.fromNumeric();
                         var to = primitiveCast.toNumeric();
                         var code = numericCast(from, to);
-                        if (code != Opcodes.NOP) {
+                        if (code != NOP) {
                             ctx.add(new InsnNode(code));
                         }
                     }
                     case CastSymbol.UpCast upCast -> {
                         var type = TypeEncoding.getType(upCast.toType());
-                        ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                        ctx.add(new TypeInsnNode(CHECKCAST, type.getInternalName()));
                     }
                 }
             }
             case KExpr.Closure closure -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.Continue aContinue -> {
                 assert ctx.getContinueTarget() != null;
-                ctx.add(new JumpInsnNode(Opcodes.GOTO, ctx.getContinueTarget()));
+                ctx.add(new JumpInsnNode(GOTO, ctx.getContinueTarget()));
             }
             case KExpr.CreateArray createArray -> {
                 assert createArray.symbol() != null;
@@ -397,35 +392,35 @@ public class GenerateExpr {
                 var size = createArray.elements().size();
                 ctx.add(new LdcInsnNode(size));
 
-                var storeOp = type.getOpcode(Opcodes.IASTORE);
+                var storeOp = type.getOpcode(IASTORE);
 
                 if (elementType.isPrimitive()) {
                     var arrayNewType = TypeEncoding.getNewArrayConstant(type);
-                    ctx.add(new IntInsnNode(Opcodes.NEWARRAY, arrayNewType));
+                    ctx.add(new IntInsnNode(NEWARRAY, arrayNewType));
                 } else {
-                    ctx.add(new TypeInsnNode(Opcodes.ANEWARRAY, type.getInternalName()));
+                    ctx.add(new TypeInsnNode(ANEWARRAY, type.getInternalName()));
                 }
 
                 var index = 0;
                 for (var element : createArray.elements()) {
-                    ctx.add(new InsnNode(Opcodes.DUP));
+                    ctx.add(new InsnNode(DUP));
                     ctx.add(new LdcInsnNode(index));
-                    addExpression(element, ctx);
+                    generate(element, ctx);
                     ctx.add(new InsnNode(storeOp));
                     index += 1;
                 }
 
             }
             case KExpr.CreateObject createObject -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
 //                assert createObject.symbol() != null;
 //                var type = TypeConversion.getType(createObject.symbol());
-//                ctx.add(new TypeInsnNode(Opcodes.NEW, type.getInternalName()));
+//                ctx.add(new TypeInsnNode(NEW, type.getInternalName()));
 //
-//                ctx.add(new InsnNode(Opcodes.DUP));
+//                ctx.add(new InsnNode(DUP));
 //                ctx.add(new MethodInsnNode(
-//                        Opcodes.INVOKESPECIAL,
+//                        INVOKESPECIAL,
 //                        type.getInternalName(),
 //                        "<init>",
 //                        "()V",
@@ -433,12 +428,12 @@ public class GenerateExpr {
 //                ));
 //
 //                for (var parameter : createObject.parameters()) {
-//                    ctx.add(new InsnNode(Opcodes.DUP));
+//                    ctx.add(new InsnNode(DUP));
 //                    addExpression(parameter.expr(), ctx);
 //                    assert parameter.symbol() != null;
 //                    var parameterType = TypeConversion.getType(parameter.symbol());
 //                    ctx.add(new FieldInsnNode(
-//                            Opcodes.PUTFIELD,
+//                            PUTFIELD,
 //                            type.getInternalName(),
 //                            TypeConversion.toJVMName(parameter.name().value()),
 //                            parameterType.getDescriptor()
@@ -447,30 +442,30 @@ public class GenerateExpr {
 
             }
             case KExpr.For aFor -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.GetArrayElement getArrayElement -> {
-                addExpression(getArrayElement.left(), ctx);
-                addExpression(getArrayElement.index(), ctx);
+                generate(getArrayElement.left(), ctx);
+                generate(getArrayElement.index(), ctx);
                 assert getArrayElement.elementType() != null;
                 var type = TypeEncoding.getType(getArrayElement.elementType());
-                ctx.add(new InsnNode(type.getOpcode(Opcodes.IALOAD)));
+                ctx.add(new InsnNode(type.getOpcode(IALOAD)));
             }
             case KExpr.GetMember getMember -> {
                 assert getMember.symbol() != null;
                 switch (getMember.symbol()) {
                     case MemberSymbol.ArrayLength arrayLength -> {
-                        addExpression(getMember.left(), ctx);
-                        ctx.add(new InsnNode(Opcodes.ARRAYLENGTH));
+                        generate(getMember.left(), ctx);
+                        ctx.add(new InsnNode(ARRAYLENGTH));
                     }
                     case MemberSymbol.FieldSymbol fieldSymbol -> {
-                        addExpression(getMember.left(), ctx);
+                        generate(getMember.left(), ctx);
                         var owner = TypeEncoding.getType(fieldSymbol.pointer().classPointer());
                         var fieldType = TypeEncoding.getType(fieldSymbol.type());
                         var name = fieldSymbol.pointer().name();
                         ctx.add(new FieldInsnNode(
-                                Opcodes.GETFIELD,
+                                GETFIELD,
                                 owner.getInternalName(),
                                 name,
                                 fieldType.getDescriptor()
@@ -482,9 +477,9 @@ public class GenerateExpr {
                 }
             }
             case KExpr.IsInstanceOf isInstanceOf -> {
-                addExpression(isInstanceOf.left(), ctx);
+                generate(isInstanceOf.left(), ctx);
                 var type = TypeEncoding.getType(isInstanceOf.isType());
-                ctx.add(new TypeInsnNode(Opcodes.INSTANCEOF, type.getInternalName()));
+                ctx.add(new TypeInsnNode(INSTANCEOF, type.getInternalName()));
             }
             case KExpr.Literal literal -> {
                 assert literal.symbol() != null;
@@ -500,27 +495,27 @@ public class GenerateExpr {
                     case LiteralSymbol.VariableReference variableReference -> {
                         var variable = variableReference.variable();
                         var index = ctx.getVariableIndex(literal.region(), variable);
-                        Log.recordType(Log.LogTypes.GENERATION, "variable " + variable.name() + " at index " + index);
+                        Log.recordType(Log.LogTypes.GENERATION_VAR, "variable " + variable.name() + " at index " + index);
                         var type = TypeEncoding.getType(variable.type());
-                        ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ILOAD), index));
+                        ctx.add(new VarInsnNode(type.getOpcode(ILOAD), index));
                     }
                     case LiteralSymbol.StaticFieldReference staticFieldReference -> {
                         var owner = TypeEncoding.getType(staticFieldReference.fieldPointer().classPointer());
                         var fieldType = TypeEncoding.getType(staticFieldReference.fieldType());
                         ctx.add(new FieldInsnNode(
-                                Opcodes.GETSTATIC,
+                                GETSTATIC,
                                 owner.getInternalName(),
                                 staticFieldReference.fieldPointer().name(),
                                 fieldType.getDescriptor()
                         ));
                     }
                     case LiteralSymbol.Null aNull -> {
-                        ctx.add(new InsnNode(Opcodes.ACONST_NULL));
+                        ctx.add(new InsnNode(ACONST_NULL));
                     }
                 }
             }
             case KExpr.Match match -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.Number number -> {
@@ -541,54 +536,54 @@ public class GenerateExpr {
             }
             case KExpr.Return aReturn -> {
                 if (aReturn.value() != null) {
-                    addExpression(aReturn.value(), ctx);
+                    generate(aReturn.value(), ctx);
                     assert aReturn.returnType() != null;
-                    var returnCode = TypeEncoding.getType(aReturn.returnType()).getOpcode(Opcodes.IRETURN);
+                    var returnCode = TypeEncoding.getType(aReturn.returnType()).getOpcode(IRETURN);
                     ctx.add(new InsnNode(returnCode));
                 } else {
-                    ctx.add(new InsnNode(Opcodes.RETURN));
+                    ctx.add(new InsnNode(RETURN));
                 }
             }
             case KExpr.Self self -> {
-                ctx.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                ctx.add(new VarInsnNode(ALOAD, 0));
             }
             case KExpr.StringExpr stringExpr -> {
                 var content = StringEscapeUtils.unescapeJava(stringExpr.value());
                 if (stringExpr.isChar()) {
                     var literalAsInt = (int) content.charAt(0);
                     ctx.add(new LdcInsnNode(literalAsInt));
-                    ctx.add(new InsnNode(Opcodes.I2C));
+                    ctx.add(new InsnNode(I2C));
                 } else {
                     ctx.add(new LdcInsnNode(content));
                 }
             }
             case KExpr.Throw aThrow -> {
-                addExpression(aThrow.value(), ctx);
-                ctx.add(new InsnNode(Opcodes.ATHROW));
+                generate(aThrow.value(), ctx);
+                ctx.add(new InsnNode(ATHROW));
             }
             case KExpr.Unary unary -> {
-                addExpression(unary.value(), ctx);
+                generate(unary.value(), ctx);
                 assert unary.symbol() != null;
                 switch (unary.symbol()) {
                     case UnaryOperatorSymbol.NegateOP neg -> {
                         switch (neg) {
                             case UnaryOperatorSymbol.NegateOP.DoubleOP doubleOP -> {
-                                ctx.add(new InsnNode(Opcodes.DNEG));
+                                ctx.add(new InsnNode(DNEG));
                             }
                             case UnaryOperatorSymbol.NegateOP.FloatOP floatOP -> {
-                                ctx.add(new InsnNode(Opcodes.FNEG));
+                                ctx.add(new InsnNode(FNEG));
                             }
                             case UnaryOperatorSymbol.NegateOP.IntOP intOP -> {
-                                ctx.add(new InsnNode(Opcodes.INEG));
+                                ctx.add(new InsnNode(INEG));
                             }
                             case UnaryOperatorSymbol.NegateOP.LongOP longOP -> {
-                                ctx.add(new InsnNode(Opcodes.LNEG));
+                                ctx.add(new InsnNode(LNEG));
                             }
                         }
                     }
                     case UnaryOperatorSymbol.NotOP not -> {
-                        ctx.add(new InsnNode(Opcodes.ICONST_1));
-                        ctx.add(new InsnNode(Opcodes.IXOR));
+                        ctx.add(new InsnNode(ICONST_1));
+                        ctx.add(new InsnNode(IXOR));
                     }
                 }
             }
@@ -596,7 +591,7 @@ public class GenerateExpr {
                 var symbol = variableDefinition.symbol();
                 assert symbol != null;
                 ctx.putVariable(symbol);
-                addExpression(variableDefinition.value(), ctx);
+                generate(variableDefinition.value(), ctx);
                 var target = ctx.getVariableIndex(variableDefinition.region(), symbol);
                 var type = TypeEncoding.getType(symbol.type());
 
@@ -616,7 +611,7 @@ public class GenerateExpr {
                 );
                 ctx.getLocalVariables().add(localVariableNode);
 
-                ctx.add(new VarInsnNode(type.getOpcode(Opcodes.ISTORE), target));
+                ctx.add(new VarInsnNode(type.getOpcode(ISTORE), target));
                 ctx.add(end);
             }
             case KExpr.While aWhile -> {
@@ -624,12 +619,12 @@ public class GenerateExpr {
                 var startOfLoop = new LabelNode();
                 var endOfLoop = new LabelNode();
                 ctx.add(startOfLoop);
-                addExpression(aWhile.condition(), ctx);
-                ctx.add(new JumpInsnNode(Opcodes.IFEQ, endOfLoop));
+                generate(aWhile.condition(), ctx);
+                ctx.add(new JumpInsnNode(IFEQ, endOfLoop));
                 ctx.setBreakTarget(endOfLoop);
                 ctx.setContinueTarget(startOfLoop);
 
-                addExpression(aWhile.body(), ctx);
+                generate(aWhile.body(), ctx);
 
                 //pop value when there is one
                 var yieldType = aWhile.body().type();
@@ -637,34 +632,34 @@ public class GenerateExpr {
                     var type = TypeEncoding.getType(yieldType);
                     var size = TypeEncoding.jvmSize(type);
                     if (size == 2) {;
-                        ctx.add(new InsnNode(Opcodes.POP2));
+                        ctx.add(new InsnNode(POP2));
                     } else if (size == 1) {
-                        ctx.add(new InsnNode(Opcodes.POP));
+                        ctx.add(new InsnNode(POP));
                     } else {
                         for (int i = 0; i < size; i++) {
-                            ctx.add(new InsnNode(Opcodes.POP));
+                            ctx.add(new InsnNode(POP));
                         }
                     }
                 }
 
-                ctx.add(new JumpInsnNode(Opcodes.GOTO, startOfLoop));
+                ctx.add(new JumpInsnNode(GOTO, startOfLoop));
                 ctx.add(endOfLoop);
 
             }
             case KExpr.SpecialCall specialCall -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.StaticPath staticPath -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.StringInterpolation stringInterpolation -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
             case KExpr.Unwrap unwrap -> {
-                Log.temp(expr.region(), "Cannot be expressed");
+                Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
         }
@@ -676,73 +671,71 @@ public class GenerateExpr {
             var original = TypeEncoding.getType(originalPointer.returnType());
             var type = TypeEncoding.getType(returnType);
             if (!original.equals(type)) {
-                ctx.add(new TypeInsnNode(Opcodes.CHECKCAST, type.getInternalName()));
+                ctx.add(new TypeInsnNode(CHECKCAST, type.getInternalName()));
             }
         }
     }
 
     private static int numericCast(KType.KPrimitive from, KType.KPrimitive to) {
         if (from == to) {
-            return Opcodes.NOP;
+            return NOP;
         }
         switch (from) {
-            case INT,CHAR,BOOL, BYTE, SHORT -> {
+            case INT, CHAR, BOOL, BYTE, SHORT -> {
                 switch (to) {
                     case DOUBLE -> {
-                        return Opcodes.I2D;
+                        return I2D;
                     }
                     case LONG -> {
-                        return Opcodes.I2L;
+                        return I2L;
                     }
                     case FLOAT -> {
-                        return Opcodes.I2F;
+                        return I2F;
                     }
                 }
             }
             case FLOAT -> {
                 switch (to) {
                     case INT, CHAR, BOOL, BYTE, SHORT -> {
-                        return Opcodes.F2I;
+                        return F2I;
                     }
                     case DOUBLE -> {
-                        return Opcodes.F2D;
+                        return F2D;
                     }
                     case LONG -> {
-                        return Opcodes.F2L;
+                        return F2L;
                     }
                 }
             }
             case DOUBLE -> {
-
                 switch (to) {
                     case INT, CHAR, BOOL, BYTE, SHORT -> {
-                        return Opcodes.D2I;
+                        return D2I;
                     }
                     case LONG -> {
-                        return Opcodes.D2L;
+                        return D2L;
                     }
                     case FLOAT -> {
-                        return Opcodes.D2F;
+                        return D2F;
                     }
                 }
 
             }
             case LONG -> {
-
                 switch (to) {
                     case INT, CHAR, BOOL, BYTE, SHORT -> {
-                        return Opcodes.L2I;
+                        return L2I;
                     }
                     case DOUBLE -> {
-                        return Opcodes.L2D;
+                        return L2D;
                     }
                     case FLOAT -> {
-                        return Opcodes.L2F;
+                        return L2F;
                     }
                 }
             }
         }
-        return Opcodes.NOP;
+        return NOP;
     }
 
     private static void binary(BinaryOperator operator, BinaryOperatorSet set, GenerationContext ctx) {
@@ -765,37 +758,37 @@ public class GenerateExpr {
             case EQUAL -> {
                 var target = new LabelNode();
                 ctx.add(new InsnNode(set.compare()));
-                ctx.add(new JumpInsnNode(Opcodes.IFNE, target));
+                ctx.add(new JumpInsnNode(IFNE, target));
                 addEquals(ctx, target);
             }
             case NOT_EQUAL -> {
                 var target = new LabelNode();
                 ctx.add(new InsnNode(set.compare()));
-                ctx.add(new JumpInsnNode(Opcodes.IFEQ, target));
+                ctx.add(new JumpInsnNode(IFEQ, target));
                 addEquals(ctx, target);
             }
             case LESS_THAN -> {
                 var target = new LabelNode();
                 ctx.add(new InsnNode(set.compare()));
-                ctx.add(new JumpInsnNode(Opcodes.IFGE, target));
+                ctx.add(new JumpInsnNode(IFGE, target));
                 addEquals(ctx, target);
             }
             case LESS_THAN_OR_EQUAL -> {
                 var target = new LabelNode();
                 ctx.add(new InsnNode(set.compare()));
-                ctx.add(new JumpInsnNode(Opcodes.IFGT, target));
+                ctx.add(new JumpInsnNode(IFGT, target));
                 addEquals(ctx, target);
             }
             case GREATER_THAN -> {
                 var target = new LabelNode();
                 ctx.add(new InsnNode(set.compare()));
-                ctx.add(new JumpInsnNode(Opcodes.IFLE, target));
+                ctx.add(new JumpInsnNode(IFLE, target));
                 addEquals(ctx, target);
             }
             case GREATER_THAN_OR_EQUAL -> {
                 var target = new LabelNode();
                 ctx.add(new InsnNode(set.compare()));
-                ctx.add(new JumpInsnNode(Opcodes.IFLT, target));
+                ctx.add(new JumpInsnNode(IFLT, target));
                 addEquals(ctx, target);
             }
             case AND, OR, CONCAT  -> {
@@ -807,7 +800,7 @@ public class GenerateExpr {
     private static void addEquals(GenerationContext ctx, LabelNode falseLabel) {
         var end = new LabelNode();
         ctx.add(new LdcInsnNode(1));
-        ctx.add(new JumpInsnNode(Opcodes.GOTO, end));
+        ctx.add(new JumpInsnNode(GOTO, end));
         ctx.add(falseLabel);
         ctx.add(new LdcInsnNode(0));
         ctx.add(end);
@@ -822,29 +815,29 @@ public class GenerateExpr {
             int compare
     ) {
         private static BinaryOperatorSet DOUBLE = new BinaryOperatorSet(
-                Opcodes.DADD,
-                Opcodes.DSUB,
-                Opcodes.DMUL,
-                Opcodes.DDIV,
-                Opcodes.DREM,
-                Opcodes.DCMPL
+                DADD,
+                DSUB,
+                DMUL,
+                DDIV,
+                DREM,
+                DCMPL
         );
         private static BinaryOperatorSet FLOAT = new BinaryOperatorSet(
-                Opcodes.FADD,
-                Opcodes.FSUB,
-                Opcodes.FMUL,
-                Opcodes.FDIV,
-                Opcodes.FREM,
-                Opcodes.FCMPL
+                FADD,
+                FSUB,
+                FMUL,
+                FDIV,
+                FREM,
+                FCMPL
         );
 
         private static BinaryOperatorSet LONG = new BinaryOperatorSet(
-                Opcodes.LADD,
-                Opcodes.LSUB,
-                Opcodes.LMUL,
-                Opcodes.LDIV,
-                Opcodes.LREM,
-                Opcodes.LCMP
+                LADD,
+                LSUB,
+                LMUL,
+                LDIV,
+                LREM,
+                LCMP
         );
     }
 }

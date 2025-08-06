@@ -21,6 +21,6 @@
 }
 @MarkSingle
 fn create<T>(value: T) -> T {
-    return value;
+    return value
 }
 

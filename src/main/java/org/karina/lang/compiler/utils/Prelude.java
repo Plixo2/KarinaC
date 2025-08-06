@@ -21,7 +21,7 @@ public class Prelude {
     private ImmutableList<FieldPointer> staticFields;
     private ImmutableList<MethodPointer> staticMethods;
 
-    public static Prelude fromModel(Model model) {
+    public static Prelude fromModel(Context c, Model model) {
 
         var classes = ImmutableList.<ClassPointer>builder();
         for (var entry : model.getBinaryClasses()) {
@@ -35,9 +35,9 @@ public class Prelude {
         var methods = ImmutableList.<MethodPointer>builder();
 
         var consolePath = new ObjectPath("karina", "lang", "Console");
-        putAllMethodsFromKarinaClass(model, consolePath, methods);
+        putAllMethodsFromKarinaClass(c, model, consolePath, methods);
         var rangePath = new ObjectPath("karina", "lang", "Range");
-        putAllMethodsFromKarinaClass(model, rangePath, methods);
+        putAllMethodsFromKarinaClass(c, model, rangePath, methods);
 
 
         return new Prelude(classes.build(), fields.build(), methods.build());
@@ -45,6 +45,7 @@ public class Prelude {
 
 
     public void log() {
+        Log.beginType(Log.LogTypes.IMPORT_PRELUDE, "prelude");
         if (Log.LogTypes.IMPORTS.isVisible()) {
 
             Log.begin("Classes");
@@ -64,17 +65,27 @@ public class Prelude {
                 Log.record(entry);
             }
             Log.end("Methods");
+
         }
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, "importing prelude with ");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, classes().size() + " classes");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, staticFields().size() + " static fields");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, staticMethods().size() + " static methods");
+        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, (classes().size() + staticFields().size() + staticMethods().size()) + " items");
+
+        Log.endType(Log.LogTypes.IMPORT_PRELUDE, "prelude");
+
+
     }
 
     /**
      * Import all public static methods from a given class
      */
-    private static void putAllMethodsFromKarinaClass(Model model, ObjectPath path,  ImmutableList.Builder<MethodPointer> collection) {
+    private static void putAllMethodsFromKarinaClass(Context c, Model model, ObjectPath path,  ImmutableList.Builder<MethodPointer> collection) {
         var classPointer = model.getClassPointer(KType.KARINA_LIB, path);
 
         if (classPointer == null) {
-            Log.bytecode(KType.KARINA_LIB, path.mkString("/"), "Build-in Karina class not found");
+            Log.bytecode(c, KType.KARINA_LIB, path.mkString("/"), "Build-in Karina class not found");
             throw new Log.KarinaException();
         }
 
@@ -86,11 +97,11 @@ public class Prelude {
         }
     }
 
-    private static void putStaticFieldFromKarinaClass(Model model, ObjectPath path, String name,  ImmutableList.Builder<FieldPointer> collection) {
+    private static void putStaticFieldFromKarinaClass(Context c, Model model, ObjectPath path, String name,  ImmutableList.Builder<FieldPointer> collection) {
         var classPointer = model.getClassPointer(KType.KARINA_LIB, path);
 
         if (classPointer == null) {
-            Log.bytecode(KType.KARINA_LIB, path.mkString("/"), "Build-in Karina class not found");
+            Log.bytecode(c, KType.KARINA_LIB, path.mkString("/"), "Build-in Karina class not found");
             throw new Log.KarinaException();
         }
 
@@ -100,7 +111,7 @@ public class Prelude {
                         Modifier.isPublic(fieldModel.modifiers())
         );
         if (fieldPointer == null) {
-            Log.bytecode(KType.KARINA_LIB, path.append(name).mkString("."), "Build-in Karina field not found");
+            Log.bytecode(c, KType.KARINA_LIB, path.append(name).mkString("."), "Build-in Karina field not found");
             throw new Log.KarinaException();
         }
 

@@ -1,0 +1,9 @@
+
+
+struct FnWithImpl {
+    fnWithImpl: fn(Integer) -> Integer impl Consumer2
+}
+
+interface Consumer2 {
+    fn consume(self, input: Integer) -> Integer
+}

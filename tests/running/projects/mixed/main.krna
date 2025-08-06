@@ -1,0 +1,525 @@
+
+import java::lang::String valueOf
+import karina::lang::Result { safeCall }
+/*ooo karina::lang::Result { Ok, Err } */
+import java::util::function::Supplier
+import java::lang::System out
+import karina::lang::Option
+//import Main.Option { some, none }
+import java::util::ArrayList
+import java::util::List
+import java::util::Arrays
+
+import java::util::regex::Pattern
+import errors
+import files
+
+
+
+fn test_regex() {
+    let pattern = Pattern.compile("a*(b*|aaa*)*a*")
+
+    let tries = 10000
+
+    for _ in range(0, tries) {
+        let randomString = generate_random_a_b_string((Math.random() * 100) as int)
+        test_str(randomString, pattern)
+    }
+
+}
+
+fn generate_random_a_b_string(length: int) -> string {
+    let sb = StringBuilder {}
+    for _ in range(0, length) {
+        let randomChar = if Math.random() < 0.5 { 'a' } else { 'b' }
+        sb.append(randomChar)
+    }
+    sb.toString()
+}
+
+fn test_str(str: string, pattern: Pattern) {
+    let matcher = pattern.matcher(str)
+    if matcher.matches() {
+        if str.contains("bab") {
+            throw java::lang::IllegalStateException{ _: 'Pattern $str matches, but contains "bab"' }
+        }
+    } else {
+        if !str.contains("bab") {
+            throw java::lang::IllegalStateException { _: 'Pattern $str does not match, but does not contain "bab"' }
+        }
+    }
+}
+
+
+
+fn main(args: [string]) {
+    println(1000 - 5)
+    println(main::ONE)
+    println(main::Vector2D::ZERO)
+    println(Vector2D::ZERO)
+    println(Vector2D::new())
+    println(Vector2D::new(1))
+
+
+    assert(identity() is java::util::function::Function, "Identity should return a java::util::function::Function")
+    assert(identity() is java::util::function::UnaryOperator, "Identity should return a java::util::function::UnaryOperator")
+
+
+    assert(identity2() is java::util::function::Function, "Identity2 should return a java::util::function::Function")
+    assert(identity2() is java::util::function::UnaryOperator, "Identity2 should return a java::util::function::UnaryOperator")
+
+//     let funnc: fn(string) -> string impl java::util::function::Consumer<string> = fn(s) {
+//         s
+//     }
+//     println(funnc("Hello World"))
+
+    "Hello, World!".chars().forEach(fn(c) print(c as char))
+    println()
+
+    test_regex()
+
+    result(false).inverse().expect("Error")
+    result(true).expect("Error")
+
+
+    let path = files::getPath("build.gradle").expect("a valid path")
+    println(files.exists(path))
+    files::loadFile(path)
+    let null_val = Values::Null()
+    let optionArrayInt = Option::newArray(Integer, 10)
+    let optionArray = Option::newArray(10)
+    let arrayInt = Values::newArray(Integer, 10, fn(_) 10)
+    let arrayId = Values::newArray(Integer, 10, fn(a) a)
+    let arrayIdIndirect = Values::newArray(Integer, 10,  fn(a) a)
+    let stringsFromIndex = Values::newArray(String, 10, fn(index) String.valueOf(index))
+
+    expect(create().okOr("Hello"), "Error")
+
+
+    let pathA = files::getPath("LICENSE").expect("valid path")
+    let content = files::loadFile(pathA).expect("file to load")
+
+    pathA = files::getPath("DOES_NOT_EXIST").expect("valid path")
+    let error = files::loadFile(pathA).inverse().expect("a error")
+    println('file load error: $error')
+
+
+
+    out.println("Hello World")
+    let array = <Object>[<int>[], <int>[1, 2]]
+    array[0] = array
+
+    println('Array: $array')
+
+    f("Hello World")
+
+    println('Array: \$array')
+
+    println(get())
+
+    println(create())
+    println(result(true))
+
+    test()
+}
+
+
+fn f<T>(first: T) {
+    let create: [T] = [first]
+    let objects: [string] = ["string"]
+    cc(create)
+    c(objects)
+}
+
+fn c(a: [string]) {}
+
+fn cc(a: [any]) {}
+
+fn test(a: string, b: string) {}
+
+fn get() -> any {
+
+    let indicesA = Arrays.asList([1, 2]).stream().map(fn(a) valueOf(a.intValue())).toList()
+
+    for text: string in indicesA {
+        if text.isEmpty() {
+            continue
+        }
+        let text2 = 'number $text'
+        let firstChar = Character.toUpperCase(text2.charAt(0))
+        let rest = text2.substring(1).toLowerCase()
+        println('$firstChar$rest')
+    }
+    let map = java::util::HashMap<> {}
+
+    map.put("Hello", 10)
+
+    map.forEach(fn(key, value) {
+        let str: String = key
+        let s: int = value
+        println('Key: $key Value: $value')
+    })
+
+
+    let list = ArrayList<Integer> {
+        _: List.of()
+    }
+    list.stream()
+    let _ = list.add(10)
+    let _ = list.add(20)
+    let c = []
+
+    for a in list {
+        let s: int = a
+    }
+    let indices = Arrays.asList([1, 2, 3, 4, 5, 6, 7, 8, 9]).stream().map(fn(a) valueOf(a)).toList()
+
+
+    for a in indices {
+        print(a)
+        print(": ")
+        println(a.length())
+    }
+
+
+    let a = "Hello"
+    let interpolated = 'Hello if $a'
+
+    let s  = ObjectSome {
+        \fn: "Hello"
+    }
+
+
+    if s is Object {
+        //The fabric of reality is still intact
+    } else {
+        throw java::lang::IllegalStateException { _: 'Not an Object' }
+    }
+
+    s.\fn = "World"
+    let str: string = s.\fn
+    str
+}
+
+@Super = {
+    type: type { java::lang::RuntimeException }
+}
+struct WrongRegexException {
+    fn (self, message: string) {
+        super<RuntimeException>(message)
+    }
+}
+
+
+struct FnWithImpl {
+    fnWithImpl: fn(Integer, int) -> Integer impl Consumer2
+}
+
+interface Consumer2 {
+    fn consume(self, input: Integer, i: int) -> Integer
+}
+
+
+fn test() -> bool {
+
+
+
+
+    create().expect("Success")
+    result(false).inverse().expect("No Error")
+    result(true).expect("No Error")
+
+    expect(create().okOr("Hello"), "Error")
+
+    let box = fn(value: Integer) -> Integer { value }
+
+    let s: Integer? = Option::Some { _: 10 } as Integer?
+
+    let s2: TestInterface<Integer, String> = Test { inner: box(10) }
+
+    let manualUnwrap: int = if s is Some some {
+        some.value().intValue()
+    } else is None {
+        -1000
+    }
+    println(manualUnwrap)
+
+    let i = 100
+
+
+    for ww in range(0, 10).reversed() {
+        let asL: Number = (ww.intValue() as long)
+        let array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        array[asL]
+    }
+
+    let unbox_int: int = Integer.valueOf(10)
+    let unbox_long: long = Long.valueOf(10)
+    let unbox_double: double = Double.valueOf(10)
+    let unbox_float: float = Float.valueOf(10)
+    let unbox_bool: bool = Boolean.valueOf(false)
+
+    let boxed_int: Integer = 0
+    let boxed_long: Long = 10
+    let boxed_double: Double = 10.0
+    let boxed_float: Float = 10.0
+    let boxed_bool: Boolean = false
+
+    let anyObj = Inf { }
+    anyObj.test()
+    anyObj.testTwo(anyObj)
+    let ret = anyObj.ret()
+    ret = Option.none()
+
+    let testBox = Option.some(10)
+
+    let WWW: int = 10.0 as _
+
+    let a_ = <int>[0]
+    a_[boxed_int] = 1
+
+    println("Hello World")
+    let \let = "ok"
+
+
+    let a: string = 'hello $a_ end'
+    let b: string = 'hello$a end'
+    let c: string = 'hello$a$b-end'
+    let d: string = '$c '
+    let e: string = '$d'
+    let f: string = '$\let'
+    let g: string = '\$let'
+
+
+
+    let wwww = if true {
+        "Hello"
+    } else {
+        return false
+    }
+
+    let array_assign: [Integer] = [1, 2, 3]
+
+    //box(10) == 10
+
+
+    let asInt: int = array_assign[2] + 0 + array_assign[1]
+
+    let customList: List<Boolean> = ArrayList{}
+
+
+    anyObj != a
+}
+
+fn result(state: bool) -> Result<Integer, string> {
+
+    let counter: int = create().okOr("Error")?
+    let counter2: Integer = create().okOrGet(fn() "Error")?
+    let failing: int = otherCall(state).inverse().mapErr(fn(e) String::valueOf(e))?
+
+    Result.ok(failing)
+}
+
+fn assert(condition: bool, message: string) {
+    if !condition {
+        throw java::lang::AssertionError { _: message }
+    }
+}
+
+fn otherCall(fail: bool) -> Result<string, Integer> {
+    if fail {
+        Result.err(-1)
+    } else {
+        Result.ok("Hello")
+    }
+}
+
+fn create() -> Integer? {
+
+
+    let getValue = fn() Option.some(100)
+    let toStr = fn(a: Integer) String::valueOf(a)
+    let opt = getValue().map(toStr)?
+
+    let optStr = Option::Some { _: "Hello" } as string?
+    let unwrapped = optStr?
+    let unwrapped3 = if optStr is Some some { some.value() } else { return Option::None {}}
+    let unwrapped2 = Some { _: Option::Some { _: "Hello" } }.value()?
+    let sizeOf = optStr?.length()
+
+
+    Some { _: sizeOf * 2 }
+}
+
+struct Test<W> {
+    inner: W
+
+    impl TestInterface<W, String> {
+
+    }
+}
+
+struct Inf<T> {
+
+    fn test(self) {
+        self
+    }
+
+    fn ret(self) -> Inf<T>? {
+        Option::Some { value: self }
+    }
+
+    fn testTwo<W>(self, other: Inf<W>) {
+
+    }
+
+    fn st() -> int {
+        10
+    }
+
+}
+
+interface TestInterface<T, B> {
+
+}
+
+fn identity<T>() -> (fn(T) -> T impl java::util::function::Function<T,T>) {
+    fn(t) t
+}
+fn identity2<T>() -> fn(T) -> T {
+    fn(t) t
+}
+
+
+//fn identity<T>() -> java.util.function.Function<T,T> {
+//    fn(t) t
+//}
+
+struct ObjectSome {
+    \fn: mut string
+}
+
+fn curry_test() {
+    let add = fn(a: Integer, b: Integer) -> Integer a.intValue() + b
+    let add10 = curry(add, 10)
+    let result = add10(20)
+}
+
+fn curry<T, U, V>(a: fn(T, U) -> V, b: T) -> (fn(U) -> V) {
+    fn(u) a(b, u)
+}
+
+fn completePath<W>(s: W) {
+    let vector = Vector2D::new(5, 5)
+}
+
+struct ObjectToBase {
+    element: int
+
+    fn (self, value: string) {
+        self.element = value.length()
+        super<Object>()
+    }
+
+    fn (self, length: int) {
+        self.element = length
+    }
+}
+
+
+@Super = {
+    type: type { ObjectToBase }
+}
+struct BasedObject {
+    value: string
+
+    fn (self, value: string) {
+        let len = value.length()
+        super<ObjectToBase>(len)
+    }
+    fn (self, value: string?) {
+        super<ObjectToBase>(value.map(fn(v) v.length()).orElse(0))
+    }
+
+
+}
+
+fn getAsAny<T>(t: T) -> any = t
+
+struct Other<W> {}
+
+@Super = {
+    type: type { Other<Integer> }
+}
+struct Inner {
+    a: int
+    b: main::Inner
+    type: int
+
+    fn function(self, _: int) {
+        let initBasedObject = BasedObject {
+            value: Option::Some { _: "Hello" }
+        }
+    }
+
+    fn staticMethodReference() {
+
+    }
+
+    impl Interface {
+        fn function(self) -> bool {
+            return true
+        }
+    }
+
+}
+
+struct SimpleSupplier {
+    value: int
+    impl Supplier<Integer> {
+        fn get(self) -> Integer {
+            return Integer.valueOf(self.value)
+        }
+    }
+}
+
+interface Interface {
+    fn function(self) -> bool
+}
+
+fn expect<T, E>(result: Result<T, E>) -> T {
+    expect(result, "")
+}
+
+fn expect<T, E>(result: Result<T, E>, message: string) -> T {
+
+    if result is Ok ok {
+        ok.value()
+    } else is Result::Err e {
+        let suffix = if message.isEmpty() { "" } else { ': $message' }
+
+        throw java::lang::RuntimeException {
+            message: 'Could not unwrap Result$suffix',
+            cause: Option.instanceOf(Throwable, e.error()).nullable()
+        }
+    }
+}
+
+static ONE: mut int = 1
+
+struct Vector2D {
+    static ZERO: Vector2D = Vector2D::new(0)
+
+
+    x: float
+
+    y: float
+
+
+    fn new() -> Vector2D = Vector2D::ZERO
+    fn new(d: float) -> Vector2D = Vector2D { x: d, y: d }
+    fn new(x: float, y: float) -> Vector2D = Vector2D { _: x, _: y }
+
+    fn n() -> any = Vector2D::new(0)
+
+}

@@ -9,6 +9,7 @@ import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.*;
+import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -18,7 +19,7 @@ import java.util.function.Predicate;
 /**
  * Used to convert AST expression objects to the corresponding {@link KExpr}.
  */
-public class KarinaExprVisitor {
+public class KarinaExprVisitor implements IntoContext {
     private final RegionContext conv;
     private final KarinaUnitVisitor visitor;
     private final KarinaTypeVisitor typeVisitor;
@@ -60,7 +61,7 @@ public class KarinaExprVisitor {
         } else if (ctx.throw_() != null) {
             return new KExpr.Throw(region, visitExprWithBlock(ctx.throw_().exprWithBlock()));
         } else {
-            Log.syntaxError(region, "Invalid expression");
+            Log.syntaxError(this, region, "Invalid expression");
             throw new Log.KarinaException();
         }
 
@@ -91,7 +92,7 @@ public class KarinaExprVisitor {
         BranchPattern branchPattern = null;
         if (condition instanceof KExpr.IsInstanceOf(Region instanceRegion, KExpr left, KType isType)) {
             if (isType.isVoid() || isType.isPrimitive()) {
-                Log.attribError(new AttribError.NotSupportedType(instanceRegion, isType));
+                Log.error(this, new AttribError.NotSupportedType(instanceRegion, isType));
                 throw new Log.KarinaException();
             }
             if (ctx.id() != null) {
@@ -108,7 +109,7 @@ public class KarinaExprVisitor {
             }
         } else {
             if (ctx.id() != null || ctx.optTypeList() != null) {
-                Log.syntaxError(this.conv.toRegion(ctx), "Invalid pattern match");
+                Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid pattern match");
                 throw new Log.KarinaException();
             }
         }
@@ -123,7 +124,7 @@ public class KarinaExprVisitor {
                 var isType = this.typeVisitor.visitType(shortPattern.type());
                 if (isType.isVoid() || isType.isPrimitive()) {
                     var regionInner = this.conv.toRegion(shortPattern.type());
-                    Log.attribError(new AttribError.NotSupportedType(regionInner, isType));
+                    Log.error(this, new AttribError.NotSupportedType(regionInner, isType));
                     throw new Log.KarinaException();
                 }
                 if (shortPattern.id() != null) {
@@ -150,7 +151,7 @@ public class KarinaExprVisitor {
             } else if (elseExpr.match() != null) {
                 elseBlock = visitMatch(elseExpr.match());
             } else {
-                Log.syntaxError(this.conv.toRegion(elseExpr), "Invalid else expression");
+                Log.syntaxError(this, this.conv.toRegion(elseExpr), "Invalid else expression");
                 throw new Log.KarinaException();
             }
 
@@ -252,7 +253,7 @@ public class KarinaExprVisitor {
                 position = this.conv.toRegion(ctx.CHAR_SMALLER());
                 operator = BinaryOperator.LESS_THAN;
             } else {
-                Log.syntaxError(region, "Invalid relational operator");
+                Log.syntaxError(this, region, "Invalid relational operator");
                 throw new Log.KarinaException();
             }
 
@@ -286,7 +287,7 @@ public class KarinaExprVisitor {
                 position = this.conv.toRegion(ctx.CHAR_AND());
                 operator = BinaryOperator.CONCAT;
             } else {
-                Log.syntaxError(region, "Invalid relational operator");
+                Log.syntaxError(this, region, "Invalid relational operator");
                 throw new Log.KarinaException();
             }
 
@@ -320,7 +321,7 @@ public class KarinaExprVisitor {
                 position = this.conv.toRegion(ctx.CHAR_STAR());
                 operator = BinaryOperator.MULTIPLY;
             } else {
-                Log.syntaxError(region, "Invalid relational operator");
+                Log.syntaxError(this, region, "Invalid relational operator");
                 throw new Log.KarinaException();
             }
 
@@ -415,7 +416,7 @@ public class KarinaExprVisitor {
             }
             return new KExpr.Cast(regionMerged, prev, castTo, null);
         } else {
-            Log.syntaxError(region, "Invalid postfix ");
+            Log.syntaxError(this, region, "Invalid postfix ");
 //            Log.syntaxError(region, "Invalid postfix " + ctx.toString(PARSER));
             throw new Log.KarinaException();
         }
@@ -438,7 +439,7 @@ public class KarinaExprVisitor {
                 var decimalStr = text.contains(".") || text.contains("e") || text.contains("E");
                 return new KExpr.Number(region, decimal, decimalStr, null);
             } catch (NumberFormatException e) {
-                Log.syntaxError(region, "Invalid number");
+                Log.syntaxError(this, region, "Invalid number");
                 throw new Log.KarinaException();
             }
         } else if (ctx.id() != null && !ctx.id().isEmpty()) {
@@ -459,7 +460,7 @@ public class KarinaExprVisitor {
                 }).toList();
                 var names = ctx.id().stream().map(this.conv::region).toList();
                 var regionOfName = names.stream().map(RegionOf::region).reduce(Region::merge).orElseThrow(() -> {
-                    Log.temp(region, "Invalid region");
+                    Log.temp(this, region, "Invalid region");
                     return new Log.KarinaException();
                 });
 
@@ -492,7 +493,7 @@ public class KarinaExprVisitor {
         } else if (ctx.TRUE() != null) {
             return new KExpr.Boolean(region, true);
         } else {
-            Log.syntaxError(region, "Invalid object");
+            Log.syntaxError(this, region, "Invalid object");
             throw new Log.KarinaException();
         }
 
@@ -534,7 +535,7 @@ public class KarinaExprVisitor {
             return new KExpr.StringExpr(region, text, true);
         }
 
-        //TODO make better regions for better error messages
+        //TODO make better regions for better error message, or move logic into grammar if possible
 
         var components = ImmutableList.<StringComponent>builder();
 
@@ -567,13 +568,19 @@ public class KarinaExprVisitor {
                 //this call also does range checking.
                 next = continueIdentifier(text, next);
                 if (next == -1) {
-                    Log.syntaxError(region, "Invalid string interpolation, expected identifier after $");
+                    Log.syntaxError(this, region, "Invalid string interpolation, expected identifier after $");
                     throw new Log.KarinaException();
                 }
                 var name = this.conv.escapeID(text.substring(i+1, next));
                 i = next-1;
+
+                var literal = new KExpr.Literal(
+                        region,
+                        name,
+                        null
+                );
                 components.add(
-                        new StringComponent.ExpressionComponent(region, name, null)
+                        new StringComponent.ExpressionComponent(region, literal)
                 );
                 previousAddedIndexEnd = next;
             }
@@ -585,6 +592,14 @@ public class KarinaExprVisitor {
         }
 
         var stringComponents = components.build();
+        if (stringComponents.size() == 1 &&
+                stringComponents.getFirst() instanceof StringComponent.StringLiteralComponent(
+                        var value
+                )) {
+
+            return new KExpr.StringExpr(region, value, false);
+
+        }
         return new KExpr.StringInterpolation(region, stringComponents);
     }
 
@@ -639,10 +654,6 @@ public class KarinaExprVisitor {
         KType returnType;
         if (ctx.type() != null) {
             returnType = this.typeVisitor.visitType(ctx.type());
-            if (returnType.isPrimitive()) {
-                Log.attribError(new AttribError.NotSupportedType(this.conv.toRegion(ctx.type()), returnType));
-                throw new Log.KarinaException();
-            }
         } else {
             returnType = null;
         }
@@ -650,13 +661,6 @@ public class KarinaExprVisitor {
 
         var args = visitOptTypeList(ctx.optTypeList());
         var body = visitExprWithBlock(ctx.exprWithBlock());
-
-        for (var arg : args) {
-            if (arg.type() != null && arg.type().isPrimitive()) {
-                Log.attribError(new AttribError.NotSupportedType(arg.region(), arg.type()));
-                throw new Log.KarinaException();
-            }
-        }
 
         List<KType> interfaces;
         if (ctx.interfaceImpl() != null) {
@@ -771,5 +775,8 @@ public class KarinaExprVisitor {
     }
 
 
-
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
+    }
 }

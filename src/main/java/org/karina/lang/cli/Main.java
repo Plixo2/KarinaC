@@ -3,7 +3,7 @@ package org.karina.lang.cli;
 import org.karina.lang.cli.commands.CompileProject;
 import org.karina.lang.cli.commands.CreateNewProject;
 import org.karina.lang.cli.commands.PrintHelp;
-import org.karina.lang.compiler.KarinaCompiler;
+import org.karina.lang.compiler.ConsoleCompiler;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -29,7 +29,7 @@ public class Main {
                 printHelp();
             }
             case CLIParser.PrimaryCommand.Version version -> {
-                printVersion();
+                ConsoleCompiler.printVersions();
             }
             case CLIParser.PrimaryCommand.New aNew -> {
                 if (!newProject(aNew.name())) {
@@ -96,14 +96,6 @@ public class Main {
 
     private static void printHelp() {
         PrintHelp.printHelp();
-    }
-
-    private static void printVersion() {
-        var javaVersion = System.getProperty("java.version", "<unknown java version>");
-        var vmName = System.getProperty("java.vm.name", "<unknown vm name>");
-
-        System.out.println("Karina: " + KarinaCompiler.VERSION);
-        System.out.println("Java: " + vmName + " " + javaVersion);
     }
 
 }

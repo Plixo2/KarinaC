@@ -75,8 +75,7 @@ public class TypeEncoding {
                 }
             }
             case KType.UnprocessedType unprocessedType -> {
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
-                throw new Log.KarinaException();
+                throw new IllegalStateException("Unprocessed type " + unprocessedType + " should not exist");
             }
             case KType.VoidType voidType -> {
                 return Type.VOID_TYPE;

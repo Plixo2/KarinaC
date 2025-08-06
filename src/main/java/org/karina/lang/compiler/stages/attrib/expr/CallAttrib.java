@@ -45,7 +45,7 @@ public class CallAttrib  {
         } else if (left instanceof KExpr.SpecialCall specialCallExpr) {
             symbol = getSuper(ctx, expr, specialCallExpr.invocationType(), genericsAnnotated, newArguments);
         } else {
-            Log.temp(expr.region(), "Invalid call onto " + left.getClass().getSimpleName());
+            Log.temp(ctx, expr.region(), "Invalid call onto " + left.getClass().getSimpleName() + " with type " + left.type());
             throw new Log.KarinaException();
         }
 
@@ -101,7 +101,7 @@ public class CallAttrib  {
             case InvocationType.SpecialInvoke specialInvoke -> {
                 if (!(specialInvoke.superType() instanceof KType.ClassType classType)) {
                     //check if supertype
-                    Log.attribError(
+                    Log.error(ctx,
                             new AttribError.NotAClass(
                                     expr.region(),
                                     specialInvoke.superType()
@@ -144,7 +144,7 @@ public class CallAttrib  {
 
         var mapped = new HashMap<Generic, KType>();
         if (superClassModel.generics().size() != superType.generics().size()) {
-            Log.temp(expr.region(), "Class generic count mismatch");
+            Log.temp(ctx, expr.region(), "Class generic count mismatch");
             throw new Log.KarinaException();
         }
         //this maps the class fieldType generics
@@ -186,7 +186,7 @@ public class CallAttrib  {
         var mapped = new HashMap<Generic, KType>();
         var classModel = ctx.model().getClass(classType.pointer());
         if (classModel.generics().size() != classType.generics().size()) {
-            Log.temp(expr.region(), "Class generic count mismatch");
+            Log.temp(ctx, expr.region(), "Class generic count mismatch");
             throw new Log.KarinaException();
         }
         //find all generic mappings for calling for application later
@@ -232,12 +232,12 @@ public class CallAttrib  {
         }
 
 
-        var superType = Types.getSuperType(ctx.model(), classType);
+        var superType = Types.getSuperType(ctx, ctx.model(), classType);
         if (superType != null) {
             putRecursiveGenerics(ctx, superType, mapped,  visited);
         }
 
-        var interfaces = Types.getInterfaces(ctx.model(), classType);
+        var interfaces = Types.getInterfaces(ctx, ctx.model(), classType);
         for (var interfaceType : interfaces) {
             putRecursiveGenerics(ctx, interfaceType, mapped, visited);
         }
@@ -257,7 +257,7 @@ public class CallAttrib  {
         var found = expr.arguments().size();
         if (found != expected) {
             var toMany = expr.arguments().get((found - expected) - 1);
-            Log.attribError(new AttribError.ParameterCountMismatch(toMany.region(), expected));
+            Log.error(ctx, new AttribError.ParameterCountMismatch(toMany.region(), expected));
             throw new Log.KarinaException();
         }
 
@@ -318,7 +318,7 @@ public class CallAttrib  {
             availableSignatures.add(RegionOf.region(method.region(), methodModel.signature().parameters()));
         }
 
-        Log.attribError(new AttribError.SignatureMismatch(
+        Log.error(ctx, new AttribError.SignatureMismatch(
                 expr.region(),
                 collection.name(),
                 foundTypes,

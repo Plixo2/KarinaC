@@ -1,7 +1,5 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.apache.commons.lang3.mutable.MutableObject;
-import org.karina.lang.compiler.logging.ErrorCollector;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.utils.Unique;
 import org.karina.lang.compiler.logging.errors.ImportError;
@@ -10,8 +8,8 @@ import org.karina.lang.compiler.utils.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.karina.lang.compiler.stages.imports.ImportTable.ImportGenericBehavior.INSTANCE_CHECK;
-import static org.karina.lang.compiler.stages.imports.ImportTable.ImportGenericBehavior.OBJECT_CREATION;
+import static org.karina.lang.compiler.stages.imports.table.ImportTable.ImportGenericBehavior.INSTANCE_CHECK;
+import static org.karina.lang.compiler.stages.imports.table.ImportTable.ImportGenericBehavior.OBJECT_CREATION;
 
 public class ImportExpr {
 
@@ -52,31 +50,7 @@ public class ImportExpr {
     }
 
     private static KExpr importPath(ImportContext ctx, KExpr.StaticPath staticPath) {
-
-        var region = staticPath.region();
-        var path = staticPath.path();
-        var pointer = ctx.table().getClassPointerNullable(region, path);
-        if (pointer == null) {
-            if (path.size() <= 1) {
-                ctx.table().logUnknownPointerError(region, path);
-                throw new Log.KarinaException();
-            }
-            var potentialFunctionName = path.last();
-            var potentialClassName = path.everythingButLast();
-            var potentialClass = ctx.table().getClassPointer(region, potentialClassName);
-
-            return new KExpr.GetMember(
-                    region,
-                    new KExpr.StaticPath(region, potentialClassName, potentialClass),
-                    RegionOf.region(region, potentialFunctionName),
-                    true,
-                    null
-            );
-
-        } else {
-            return new KExpr.StaticPath(region, path, pointer);
-        }
-
+        return ctx.importStaticPath(staticPath);
     }
 
     private static KExpr importUnwrap(ImportContext ctx, KExpr.Unwrap unwrap) {
@@ -91,7 +65,7 @@ public class ImportExpr {
             case InvocationType.NewInit newInit -> newInit;
             case InvocationType.SpecialInvoke(var name, var tpe) -> {
                 yield new InvocationType.SpecialInvoke(
-                        name,  ctx.resolveType(expr.region(), tpe)
+                        name, ctx.resolveType(expr.region(), tpe)
                 );
             }
         };
@@ -122,13 +96,12 @@ public class ImportExpr {
     }
 
     private static KExpr importBlock(ImportContext ctx, KExpr.Block expr) {
-        var expressions = new ArrayList<KExpr>();
-        try (var collector = new ErrorCollector()) {
+        List<KExpr> expressions;
+        try (var fork = ctx.intoContext().<KExpr>fork()) {
             for (var sub : expr.expressions()) {
-                collector.collect(() -> {
-                    expressions.add(importExpr(ctx, sub));
-                });
+                fork.collect(subC -> importExpr(ctx.withNewContext(subC), sub));
             }
+            expressions = fork.dispatch();
         }
         return new KExpr.Block(expr.region(), expressions, null, false);
     }
@@ -150,7 +123,7 @@ public class ImportExpr {
                 falseBranchPattern = null;
             } else {
                 if (expr.branchPattern() == null) {
-                    Log.temp(expr.condition().region(), "Missing primary branch pattern");
+                    Log.temp(ctx, expr.condition().region(), "Missing primary branch pattern");
                     throw new Log.KarinaException();
                 }
 
@@ -189,7 +162,7 @@ public class ImportExpr {
                 }
                 var uniqueVariables = Unique.testUnique(variables, NameAndOptType::name);
                 if (uniqueVariables != null) {
-                    Log.importError(new ImportError.DuplicateItem(
+                    Log.error(ctx, new ImportError.DuplicateItem(
                             uniqueVariables.first().name().region(),
                             uniqueVariables.duplicate().name().region(),
                             uniqueVariables.value().value()
@@ -214,18 +187,17 @@ public class ImportExpr {
     private static KExpr importCall(ImportContext ctx, KExpr.Call expr) {
         var left = importExpr(ctx, expr.left());
         var generics = new ArrayList<KType>();
-        var arguments = new ArrayList<KExpr>();
-        try (var collector = new ErrorCollector()) {
+        List<KExpr> arguments;
+        try (var fork = ctx.intoContext().<KExpr>fork()) {
             for (var argument : expr.arguments()) {
-                collector.collect(() -> {
-                    arguments.add(importExpr(ctx, argument));
+                fork.collect(subC -> {
+                    return importExpr(ctx.withNewContext(subC), argument);
                 });
             }
-            for (var generic : expr.generics()) {
-                collector.collect(() -> {
-                    generics.add(ctx.resolveType(expr.region(), generic));
-                });
-            }
+            arguments = fork.dispatch();
+        }
+        for (var generic : expr.generics()) {
+            generics.add(ctx.resolveType(expr.region(), generic));
         }
 
         return new KExpr.Call(expr.region(), left, generics, arguments, null);
@@ -247,33 +219,24 @@ public class ImportExpr {
 
     private static KExpr importClosure(ImportContext ctx, KExpr.Closure expr) {
         List<NameAndOptType> args;
-        var interfaces = new ArrayList<KType>();
+        List<KType> interfaces;
 
-
-        var returnType = new MutableObject<KType>();
-        var body = new MutableObject<KExpr>();
-        try (var collector = new ErrorCollector()) {
-            args = ImportHelper.importNameAndOptTypeList(ctx, expr.args(), collector);
+        try (var fork = ctx.intoContext().<KType>fork()) {
+            args = ImportHelper.importNameAndOptTypeList(ctx, expr.args());
             for (var kType : expr.interfaces()) {
-                collector.collect(() -> {
-                    interfaces.add(ctx.resolveType(expr.region(), kType));
+                fork.collect(subC -> {
+                    return ctx.withNewContext(subC).resolveType(expr.region(), kType);
                 });
             }
-
-            collector.collect(() -> {
-                if (expr.returnType() == null) {
-                    returnType.setValue(null);
-                } else {
-                    returnType.setValue(ctx.resolveType(expr.region(), expr.returnType()));
-                }
-            });
-
-            collector.collect(() -> {
-                body.setValue(importExpr(ctx, expr.body()));
-            });
+            interfaces = fork.dispatch();
         }
+        KType returnType = null;
+        if (expr.returnType() != null) {
+            returnType = ctx.resolveType(expr.region(), expr.returnType());
+        }
+        var body = importExpr(ctx, expr.body());
 
-        return new KExpr.Closure(expr.region(), args, returnType.getValue(), interfaces, body.getValue(), null);
+        return new KExpr.Closure(expr.region(), args, returnType, interfaces, body, null);
     }
 
 
@@ -282,13 +245,14 @@ public class ImportExpr {
     }
 
     private static KExpr importCreateArray(ImportContext ctx, KExpr.CreateArray expr) {
-        var elements = new ArrayList<KExpr>();
-        try (var collector = new ErrorCollector()) {
+        List<KExpr> elements;
+        try (var fork = ctx.intoContext().<KExpr>fork()) {
             for (var element : expr.elements()) {
-                collector.collect(() -> {
-                    elements.add(importExpr(ctx, element));
+                fork.collect(subC -> {
+                    return importExpr(ctx.withNewContext(subC), element);
                 });
             }
+            elements = fork.dispatch();
         }
         KType hint;
         if (expr.hint() == null) {
@@ -301,20 +265,21 @@ public class ImportExpr {
 
     private static KExpr importCreateObject(ImportContext ctx, KExpr.CreateObject expr) {
         var createdType = ctx.resolveType(expr.region(), expr.createType(), OBJECT_CREATION);
-        var parameters = new ArrayList<NamedExpression>();
-        try (var collector = new ErrorCollector()){
+        List<NamedExpression> parameters;
+        try (var collector = ctx.intoContext().<NamedExpression>fork()){
             for (var parameter : expr.parameters()) {
-                collector.collect(() -> {
+                collector.collect(subC -> {
                     var name = parameter.name();
-                    var value = importExpr(ctx, parameter.expr());
-                    parameters.add(new NamedExpression(
+                    var value = importExpr(ctx.withNewContext(subC), parameter.expr());
+                    return new NamedExpression(
                             parameter.region(),
                             name,
                             value,
                             null
-                    ));
+                    );
                 });
             }
+            parameters = collector.dispatch();
         }
         return new KExpr.CreateObject(expr.region(), createdType, parameters);
     }
@@ -338,15 +303,16 @@ public class ImportExpr {
 
     private static KExpr importMatch(ImportContext ctx, KExpr.Match expr) {
         var value = importExpr(ctx, expr.value());
-        var cases = new ArrayList<MatchPattern>();
-        try (var collector = new ErrorCollector()) {
+        List<MatchPattern> cases;
+        try (var collector = ctx.intoContext().<MatchPattern>fork()) {
             for (var aCase : expr.cases()) {
-                collector.collect(() -> {
-                    var newCase = switch (aCase) {
+                collector.collect(subC -> {
+                    var newContext = ctx.withNewContext(subC);
+                    return switch (aCase) {
                         case MatchPattern.Cast cast -> {
-                            var type = ctx.resolveType(cast.region(), cast.type(), INSTANCE_CHECK);
+                            var type = newContext.resolveType(cast.region(), cast.type(), INSTANCE_CHECK);
                             var newName = cast.name();
-                            var body = importExpr(ctx, cast.expr());
+                            var body = importExpr(newContext, cast.expr());
                             yield new MatchPattern.Cast(
                                     cast.region(),
                                     type,
@@ -355,12 +321,12 @@ public class ImportExpr {
                             );
                         }
                         case MatchPattern.Destruct destruct -> {
-                            var body = importExpr(ctx, destruct.expr());
-                            var type = ctx.resolveType(destruct.region(), destruct.type(), INSTANCE_CHECK);
+                            var body = importExpr(newContext, destruct.expr());
+                            var type = newContext.resolveType(destruct.region(), destruct.type(), INSTANCE_CHECK);
                             var args = new ArrayList<NameAndOptType>();
                             var uniqueArgs = Unique.testUnique(args, NameAndOptType::name);
                             if (uniqueArgs != null) {
-                                Log.importError(new ImportError.DuplicateItem(
+                                Log.error(newContext, new ImportError.DuplicateItem(
                                         uniqueArgs.first().name().region(),
                                         uniqueArgs.duplicate().name().region(),
                                         uniqueArgs.value().value()
@@ -374,16 +340,16 @@ public class ImportExpr {
                                     body);
                         }
                         case MatchPattern.Default aDefault -> {
-                            var body = importExpr(ctx, aDefault.expr());
+                            var body = importExpr(newContext, aDefault.expr());
                             yield new MatchPattern.Default(
                                     aDefault.region(),
                                     body
                             );
                         }
                     };
-                    cases.add(newCase);
                 });
             }
+            cases = collector.dispatch();
         }
         return new KExpr.Match(expr.region(), value, cases);
     }

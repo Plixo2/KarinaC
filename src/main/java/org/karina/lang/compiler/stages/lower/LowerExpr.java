@@ -15,48 +15,48 @@ import java.util.Objects;
 public class LowerExpr {
 
 
-    public static KExpr lower(LoweringContext context, KExpr expr) {
+    public static KExpr lower(LoweringContext ctx, KExpr expr) {
         return Objects.requireNonNull(switch (expr) {
-            case KExpr.Assignment assignment -> lowerAssignment(context, assignment);
-            case KExpr.Binary binary -> lowerBinary(context, binary);
-            case KExpr.Block block -> lowerBlock(context, block);
+            case KExpr.Assignment assignment -> lowerAssignment(ctx, assignment);
+            case KExpr.Binary binary -> lowerBinary(ctx, binary);
+            case KExpr.Block block -> lowerBlock(ctx, block);
             case KExpr.Boolean aBoolean -> aBoolean;
-            case KExpr.Branch branch -> lowerBranch(context, branch);
+            case KExpr.Branch branch -> lowerBranch(ctx, branch);
             case KExpr.Break aBreak -> aBreak;
-            case KExpr.Call call -> lowerCall(context, call);
-            case KExpr.Cast cast -> lowerCast(context, cast);
-            case KExpr.Closure closure -> lowerClosure(context, closure);
+            case KExpr.Call call -> lowerCall(ctx, call);
+            case KExpr.Cast cast -> lowerCast(ctx, cast);
+            case KExpr.Closure closure -> lowerClosure(ctx, closure);
             case KExpr.Continue aContinue -> aContinue;
-            case KExpr.CreateArray createArray -> lowerCreateArray(context, createArray);
+            case KExpr.CreateArray createArray -> lowerCreateArray(ctx, createArray);
             case KExpr.CreateObject createObject -> {
-                Log.temp(createObject.region(), "CreateObject no longer valid");
+                Log.temp(ctx, createObject.region(), "CreateObject no longer valid");
                 throw new Log.KarinaException();
             }
-            case KExpr.For aFor -> lowerFor(context, aFor);
-            case KExpr.GetArrayElement getArrayElement -> lowerGetArrayElement(context, getArrayElement);
-            case KExpr.GetMember getMember -> lowerGetMember(context, getMember);
-            case KExpr.IsInstanceOf isInstanceOf -> lowerInstanceOf(context, isInstanceOf);
-            case KExpr.Literal literal -> lowerLiteral(context, literal);
-            case KExpr.Match match -> lowerMatch(context, match);
+            case KExpr.For aFor -> lowerFor(ctx, aFor);
+            case KExpr.GetArrayElement getArrayElement -> lowerGetArrayElement(ctx, getArrayElement);
+            case KExpr.GetMember getMember -> lowerGetMember(ctx, getMember);
+            case KExpr.IsInstanceOf isInstanceOf -> lowerInstanceOf(ctx, isInstanceOf);
+            case KExpr.Literal literal -> lowerLiteral(ctx, literal);
+            case KExpr.Match match -> lowerMatch(ctx, match);
             case KExpr.Number number -> number;
-            case KExpr.Return aReturn -> lowerReturn(context, aReturn);
-            case KExpr.Self self -> lowerSelf(context, self);
+            case KExpr.Return aReturn -> lowerReturn(ctx, aReturn);
+            case KExpr.Self self -> lowerSelf(ctx, self);
             case KExpr.SpecialCall specialCall -> {
-                Log.lowerError(new LowerError.NotValidAnymore(
+                Log.error(ctx, new LowerError.NotValidAnymore(
                         specialCall.region(),
                         "Special Call cannot be expressed"
                 ));
                 throw new Log.KarinaException();
             }
             case KExpr.StringExpr stringExpr -> stringExpr;
-            case KExpr.StringInterpolation stringInterpolation -> lowerStringInterpolation(context, stringInterpolation);
-            case KExpr.Throw aThrow -> lowerThrow(context, aThrow);
-            case KExpr.Unary unary -> lowerUnary(context, unary);
-            case KExpr.Unwrap unwrap -> lowerUnwrap(context, unwrap);
-            case KExpr.VariableDefinition variableDefinition -> lowerVariableDefinition(context, variableDefinition);
-            case KExpr.While aWhile -> lowerWhile(context, aWhile);
+            case KExpr.StringInterpolation stringInterpolation -> lowerStringInterpolation(ctx, stringInterpolation);
+            case KExpr.Throw aThrow -> lowerThrow(ctx, aThrow);
+            case KExpr.Unary unary -> lowerUnary(ctx, unary);
+            case KExpr.Unwrap unwrap -> lowerUnwrap(ctx, unwrap);
+            case KExpr.VariableDefinition variableDefinition -> lowerVariableDefinition(ctx, variableDefinition);
+            case KExpr.While aWhile -> lowerWhile(ctx, aWhile);
             case KExpr.StaticPath staticPath -> {
-                Log.lowerError(new LowerError.NotValidAnymore(
+                Log.error(ctx, new LowerError.NotValidAnymore(
                         staticPath.region(),
                         "Paths cannot be expressed"
                 ));
@@ -142,7 +142,7 @@ public class LowerExpr {
     /// Signature:
     ///     `Match(Region region, KExpr value, List<MatchPattern> cases)`
     private static KExpr lowerMatch(LoweringContext context, KExpr.Match expr) {
-        Log.temp(expr.region(), "Not implemented yet");
+        Log.temp(context, expr.region(), "Not implemented yet");
         throw new Log.KarinaException();
     }
 
@@ -167,7 +167,7 @@ public class LowerExpr {
         var symbol = expr.symbol();
         assert symbol != null;
         if (symbol instanceof MemberSymbol.VirtualFunctionSymbol virtualFunctionSymbol) {
-            Log.lowerError(new LowerError.NotValidAnymore(virtualFunctionSymbol.region(), "Virtual functions cannot be expressed"));
+            Log.error(context, new LowerError.NotValidAnymore(virtualFunctionSymbol.region(), "Virtual functions cannot be expressed"));
             throw new Log.KarinaException();
         }
 
@@ -232,7 +232,7 @@ public class LowerExpr {
                 // ok
             }
             case LiteralSymbol.StaticMethodReference staticMethodReference -> {
-                Log.lowerError(new LowerError.NotValidAnymore(staticMethodReference.region(), "Static Method cannot be expressed"));
+                Log.error(context, new LowerError.NotValidAnymore(staticMethodReference.region(), "Static Method cannot be expressed"));
                 throw new Log.KarinaException();
             }
             case LiteralSymbol.VariableReference variableReference -> {
@@ -273,15 +273,16 @@ public class LowerExpr {
                 if (left.type() instanceof KType.FunctionType functionType) {
                     Log.recordType(Log.LogTypes.LOWERING, "Type is ", left.type());
                     if (functionType.interfaces().isEmpty()) {
-                        Log.temp(expr.region(), "No interface to call, this should not happen");
+                        Log.temp(context, expr.region(), "No interface to call, this should not happen");
                         throw new Log.KarinaException();
                     }
                     var firstToCall = functionType.interfaces().getFirst();
                     if (!(firstToCall instanceof KType.ClassType classType)) {
-                        Log.temp(expr.region(), "Invalid interface");
+                        Log.temp(context, expr.region(), "Invalid interface");
                         throw new Log.KarinaException();
                     }
-                    var toCall = LowerClosure.getMethodToImplement(
+                    var toCall = ClosureHelper.getMethodToImplement(
+                            context.intoContext(),
                             expr.region(),
                             context.model(),
                             classType
@@ -291,7 +292,7 @@ public class LowerExpr {
                     );
                     return new KExpr.Call(region, left, generics, arguments, newSymbol);
                 } else {
-                    Log.lowerError(new LowerError.NotValidAnymore(callDynamic.region(), "Dynamic Call cannot be expressed"));
+                    Log.error(context, new LowerError.NotValidAnymore(callDynamic.region(), "Dynamic Call cannot be expressed"));
                     throw new Log.KarinaException();
                 }
 

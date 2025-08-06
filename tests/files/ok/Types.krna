@@ -24,15 +24,6 @@ fn map(function: fn(Integer) -> Integer) {
     let nested: (fn((Integer)) -> Integer) = function
 }
 
-struct FnWithImpl {
-    fnWithImpl: fn(Integer) -> Integer impl Consumer
-
-}
-
-interface Consumer {
-    fn consume(self, input: Integer) -> Integer
-}
-
 
 
 fn returnVoid() -> void {

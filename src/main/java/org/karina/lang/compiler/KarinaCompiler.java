@@ -1,17 +1,15 @@
 package org.karina.lang.compiler;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
-import org.karina.lang.compiler.utils.FileTreeNode;
+import org.karina.lang.compiler.stages.writing.WritingProcessor;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.FlightRecordCollection;
-import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.generate.GenerationProcessor;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
@@ -21,43 +19,44 @@ import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.ParseProcessor;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 
-/**
- * Main Compiler class
- * Responsible for passing the source files through the different stages of the compiler
- * Parser -> Import -> Attribution -> Lowering -> Generation
- */
+///
+/// Main Compiler class
+/// Responsible for passing the source files through the different stages of the compiler \
+/// `Parser` -> `Import` -> `Attribution` -> `Lowering` -> `Generation` -> `Writing`
+///
+/// Use [KarinaCompiler#builder()] to create a new instance of the compiler.
+///
 
 public class KarinaCompiler {
-    public static final String VERSION = "v0.5";
+    public static final String VERSION = "v0.6";
 
-    /// 16 bits for the version, 16 bits for the binary format
-    public static final int BINARY_VERSION = 5 << 16 | 0b1;
+    /// 16 bits for the version, 16 bits for iteration
+    public static final int BINARY_VERSION = 6 << 16 | 4;
     public static final int BINARY_MAGIC_NUMBER = 20000411;
+
+    public static final boolean useThreading = false;
+    public static final boolean allowMultipleErrors = true;
+
+    private KarinaCompiler() {}
 
     /**
      * Cache for faster testing
      */
-    private static Model cache = null;
-
-    // The 5 stages of the compiler:
-    private final ParseProcessor parser = new ParseProcessor();
-    private final ImportProcessor importProcessor = new ImportProcessor();
-    private final AttributionProcessor attributionProcessor = new AttributionProcessor();
-    private final LoweringProcessor lowering = new LoweringProcessor();
-    private final GenerationProcessor backend = new GenerationProcessor();
+    @VisibleForTesting
+    public static Model cache = null;
 
     // Configuration
-    @Setter private @Nullable String outputFile;
-    @Setter private boolean emitClasses;
+    private @Nullable Config.OutputConfig outputConfig;
+    private boolean useBinaryFormat = false;
+
 
     // Logging
-    @Setter private @Nullable DiagnosticCollection errorCollection;
-    @Setter private @Nullable DiagnosticCollection warningCollection;
-    @Setter private @Nullable FlightRecordCollection flightRecordCollection;
-
-    @Getter private @Nullable JarCompilation jarCompilation;
+    private @Nullable DiagnosticCollection errorCollection;
+    private @Nullable DiagnosticCollection warningCollection;
+    private @Nullable FlightRecordCollection flightRecordCollection;
 
     /**
      * Compiles the given files.
@@ -65,90 +64,93 @@ public class KarinaCompiler {
      * @param files the file tree to compile
      * @return true if the compilation was successful, false otherwise
      */
-    public boolean compile(FileTreeNode<TextSource> files) {
+    public JarCompilation compile(FileTreeNode<TextSource> files) {
+        // Context is always referred to as 'c' in the codebase
+        var c = Log.emptyContext();
+
+
+        // The 6 stages of the compiler:
+        ParseProcessor parser = new ParseProcessor();
+        ImportProcessor importProcessor = new ImportProcessor();
+        AttributionProcessor attributionProcessor = new AttributionProcessor();
+        LoweringProcessor lowering = new LoweringProcessor();
+        GenerationProcessor backend = new GenerationProcessor();
+        WritingProcessor writing = new WritingProcessor();
 
         Log.begin("compilation");
         try {
 
-            Model bytecodeClasses;
-            if (cache != null) {
-                bytecodeClasses = cache;
-            } else {
-                var modelLoader = new ModelLoader();
-                bytecodeClasses = cache = modelLoader.getJarModel();
+            if (this.useBinaryFormat && System.getProperty("karina.allowCacheRebuilding", "false").equals("true")) {
+                ModelLoader.ensureModel(c, Path.of("src\\main\\resources"));
             }
 
+            var bytecodeClasses = cache = Objects.requireNonNullElseGet(
+                    cache,
+                    () -> ModelLoader.getJarModel(c, this.useBinaryFormat)
+            );
+
             ImportHelper.logFullModel(bytecodeClasses);
-            KType.validateBuildIns(bytecodeClasses);
+            KType.validateBuildIns(c, bytecodeClasses);
 
 
             Log.begin("parsing");
-            var userModel = this.parser.parseTree(files);
+            var userModel = parser.parseTree(c, files);
             Log.end("parsing");
 
             Log.begin("merging");
-            var languageModel = ModelBuilder.merge(userModel, bytecodeClasses);
+            var languageModel = ModelBuilder.merge(c, userModel, bytecodeClasses);
             Log.end("merging", "with " + languageModel.getClassCount() + " classes");
 
             Log.begin("importing");
-            var importedTree = this.importProcessor.importTree(languageModel);
+            var importedTree = importProcessor.importTree(c, languageModel);
             Log.end("importing", "with " + importedTree.getClassCount() + " classes");
 
             Log.begin("attribution");
-            var attributedTree = this.attributionProcessor.attribTree(importedTree);
+            var attributedTree = attributionProcessor.attribTree(c, importedTree);
             Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
 
-            if (this.outputFile != null) {
-                Log.begin("lowering");
-                var loweredTree = this.lowering.lowerTree(attributedTree);
-                Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
+            Log.begin("lowering");
+            var loweredTree = lowering.lowerTree(c, attributedTree);
+            Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
+
+            Log.begin("generation");
+            var compiled = backend.compileTree(c, loweredTree, "main");
+            Log.end("generation");
+
+            Log.begin("write");
+            writing.writeCompilation(c, compiled, this.outputConfig);
+            Log.end("write");
 
 
-                Log.begin("generation");
-                var compiled = this.backend.compileTree(loweredTree, "main");
-                this.jarCompilation = compiled;
-                var path = Path.of(this.outputFile);
+            var amountFiles = files.leafCount();
+            var amountDefined = userModel.getUserClasses().size();
+            var amountCompiled = loweredTree.getUserClasses().size();
+            var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
+            Log.record(amountMessage);
 
-                compiled.writeJar(path);
-
-                if (this.emitClasses) {
-                    compiled.writeClasses(path.getParent().resolve("classes"));
-                }
-
-                Log.record("compiled to " + path.toAbsolutePath());
-                Log.end("generation");
-
-
-                var amountFiles = files.leafCount();
-                var amountDefined = userModel.getUserClasses().size();
-                var amountCompiled = loweredTree.getUserClasses().size();
-                var amountMessage = "with " + amountFiles + " files, " + amountDefined + " defined classes and " + amountCompiled + " compiled classes";
-                Log.record(amountMessage);
+            if (c.hasErrors()) {
+                Log.internal(c,new IllegalStateException("Errors in log, this should not happen"));
+                throw new Log.KarinaException(); // trigger error handling
             }
 
-            if (Log.hasErrors()) {
-                Log.internal(new IllegalStateException("Errors in log, this should not happen"));
-                throw new Log.KarinaException();
-            }
-
-            return true;
+            return compiled;
         } catch (Exception error) {
             if (!(error instanceof Log.KarinaException)) {
-                Log.internal(error);
+                Log.internal(c, error);
             }
-            if (!Log.hasErrors()) {
-                Log.internal(new IllegalStateException("An exception was thrown, but no errors were logged"));
+            if (!c.hasErrors()) {
+                Log.internal(c, new IllegalStateException("An exception was thrown, but no errors were logged"));
             }
 
-            return false;
+            return null;
         } finally {
             Log.end("compilation");
 
             if (this.warningCollection != null) {
-                this.warningCollection.addAll(Log.getWarnings());
+                this.warningCollection.addAll(c.getWarnings());
             }
             if (this.errorCollection != null) {
-                this.errorCollection.addAll(Log.getEntries());
+                this.errorCollection.addAll(c.getErrors());
             }
             if (this.flightRecordCollection != null) {
                 this.flightRecordCollection.add(Log.getRecordedLogs());
@@ -157,11 +159,93 @@ public class KarinaCompiler {
             Log.clearAllLogs();
         }
 
-
     }
 
 
 
+
+
+    public static KarinaCompilerBuilder builder() {
+        return new KarinaCompilerBuilder();
+    }
+
+
+    public static class KarinaCompilerBuilder {
+        // Configuration
+        private @Nullable Config.OutputConfig outputConfig;
+        private boolean useBinaryFormat = false;
+
+        // Logging
+        private @Nullable DiagnosticCollection errorCollection;
+        private @Nullable DiagnosticCollection warningCollection;
+        private @Nullable FlightRecordCollection flightRecordCollection;
+
+
+        private KarinaCompilerBuilder() {}
+
+        public KarinaCompilerBuilder outputConfig(@Nullable Config.OutputConfig outputConfig) {
+            this.outputConfig = outputConfig;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder setOutputFile(Path outputFile) {
+            record SimpleOutConfig(
+                Path outputFile,
+                boolean emitClassFiles
+            ) implements Config.OutputConfig {}
+            this.outputConfig = new SimpleOutConfig(outputFile, false);
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder useBinaryFormat(boolean useBinaryFormat) {
+            this.useBinaryFormat = useBinaryFormat;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder enableBinaryFormat() {
+            this.useBinaryFormat = true;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder disableBinaryFormat() {
+            this.useBinaryFormat = false;
+            return this;
+        }
+
+        public KarinaCompilerBuilder errorCollection(@Nullable DiagnosticCollection errorCollection) {
+            this.errorCollection = errorCollection;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder warningCollection(@Nullable DiagnosticCollection warningCollection) {
+            this.warningCollection = warningCollection;
+            return this;
+        }
+
+
+        public KarinaCompilerBuilder flightRecordCollection(@Nullable FlightRecordCollection flightRecordCollection) {
+            this.flightRecordCollection = flightRecordCollection;
+            return this;
+        }
+
+
+        public KarinaCompiler build() {
+            var compiler = new KarinaCompiler();
+            compiler.outputConfig = this.outputConfig;
+            compiler.useBinaryFormat = this.useBinaryFormat;
+            compiler.errorCollection = this.errorCollection;
+            compiler.warningCollection = this.warningCollection;
+            compiler.flightRecordCollection = this.flightRecordCollection;
+            return compiler;
+        }
+
+
+    }
 
 
 }

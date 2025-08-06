@@ -12,7 +12,7 @@ fn printHelloWorld() {
     let my_object = CustomObject::create()
     my_object.set("World!")
 
-    let the_world = my_object.get()
+    let the_world = (my_object as java::util::function::Supplier<string>).get()
     out.println(' $the_world')
 }
 
@@ -29,7 +29,9 @@ struct CustomObject {
         self.val = s
     }
 
-    fn get(self) -> string = self.val
+    impl java::util::function::Supplier<string> {
+        fn get(self) -> string = self.val
+    }
 }
 
 fn createHelloFunction<T>() -> fn(T) -> string {
@@ -46,9 +48,16 @@ fn createHelloFunction<T>() -> fn(T) -> string {
     }
     let first = hello.substring(0, 1).toUpperCase()
     let rest = hello.substring(1)
-    hello = '$first$rest';
+    hello = '$first$rest'
 
     fn(add) {
         '$hello$add'
     }
+}
+
+enum CustomResult<T, E> {
+    A(v: T, msg: string)
+    B(e: E, msg: string)
+
+    fn msg(self) -> string
 }

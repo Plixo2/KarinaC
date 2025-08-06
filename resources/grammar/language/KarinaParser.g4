@@ -9,17 +9,17 @@ commaWordChain: id (',' id)*;
 
 item: annotation* (function | struct | enum | interface | const);
 
-function: OVERRIDE? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
+function: 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
-const: 'const' id ':' type '=' expression ';'?;
+const: 'static' id ':' 'mut'? type '=' expression;
 
-//boundWhere is not yet implemented
+//TODO implement boundWhere
 struct: 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;
 implementation: 'impl' structType ('{' function* '}')?;
 boundWhere : 'where' (('{' genericWithBounds '}') | genericWithBounds) ('{' function* '}');
 genericWithBounds: (genericWithBound (',' genericWithBound)*)?;
 
-genericWithBound: ID bounds?;
+genericWithBound: id bounds?;
 bounds: ':' (bound ('&' bound)*)?;
 bound: ('impl' structType | 'extend' structType);
 
@@ -52,7 +52,7 @@ typeInner: 'void'
     | 'float'
     | 'bool'
     | 'string'
-    | '?'
+    | 'any'
     | structType
     | arrayType
     | functionType
@@ -84,13 +84,13 @@ jsonMethod: 'fn' '{' function '}';
 jsonValue: STRING_LITERAL | NUMBER | jsonObj | jsonArray | 'true' | 'false' | 'null' | jsonExpression | jsonType | jsonMethod;
 
 
-block: '{' (expression ';'?)* '}';
+block: '{' expression* '}';
 
 exprWithBlock : block | expression;
 
 expression: varDef | closure | 'return' exprWithBlock? | match | if | while | for | conditionalOrExpression | 'break' | 'continue' | throw;
 
-varDef: 'let' id (':' type)? '=' (exprWithBlock);
+varDef: 'let' id (':' type)? '=' exprWithBlock;
 
 closure : 'fn' '(' optTypeList ')' ('->' type)? interfaceImpl? exprWithBlock;
 interfaceImpl: 'impl' (structTypeList | '(' structTypeList ')');
@@ -148,4 +148,4 @@ escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
 | STRUCT | TRAIT | IMPL | LET
 | SELF | STRING | JSON | BOOL | WHERE
-| CONST | MUT;
+| CONST | MUT | ANY;

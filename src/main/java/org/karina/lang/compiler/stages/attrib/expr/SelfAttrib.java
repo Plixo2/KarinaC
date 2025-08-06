@@ -15,7 +15,7 @@ public class SelfAttrib  {
             @Nullable KType hint, AttributionContext ctx, KExpr.Self expr) {
 
         if (ctx.selfVariable() == null) {
-            Log.attribError(new AttribError.UnqualifiedSelf(
+            Log.error(ctx, new AttribError.UnqualifiedSelf(
                     expr.region(), expr.region()
             ));
             throw new Log.KarinaException();

@@ -1,0 +1,10 @@
+
+fn main(args: [String]) {}
+
+struct CustomClass {
+    fn make(self) -> String {
+        super<String>.toString()
+    }
+}
+
+

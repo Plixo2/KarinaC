@@ -4,6 +4,9 @@ import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Region;
 
+/**
+ * TODO implement
+ */
 public class LowerType {
     private final LoweringContext context;
 
@@ -27,8 +30,9 @@ public class LowerType {
             }
             case KType.VoidType voidType -> voidType;
             case KType.UnprocessedType unprocessedType -> {
-                Log.temp(this.context.owningMethod().region(), "Unprocessed type");
-                throw new Log.KarinaException();
+//                Log.temp(this.context.owningMethod().region(), "Unprocessed type");
+//                throw new Log.KarinaException();
+                throw new NullPointerException("Not implemented");
             }
         };
 

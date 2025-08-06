@@ -2,7 +2,6 @@ package org.karina.lang.compiler.model_api.impl.jvm;
 
 import com.google.common.collect.ImmutableList;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
@@ -13,7 +12,6 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
-import org.objectweb.asm.tree.ClassNode;
 
 import java.util.List;
 
@@ -25,6 +23,7 @@ public class JClassModel implements ClassModel {
     private final int modifiers;
     private final @Nullable KType.ClassType superClass;
     private @Nullable JClassModel outerClass;
+    private @Nullable ClassPointer nestHost;
     private final ImmutableList<KType.ClassType> interfaces;
     private final List<JClassModel> innerClasses;
     private final List<JFieldModel> fields;
@@ -63,6 +62,11 @@ public class JClassModel implements ClassModel {
     @Override
     public @Nullable JClassModel outerClass() {
         return this.outerClass;
+    }
+
+    @Override
+    public @Nullable ClassPointer nestHost() {
+        return this.nestHost;
     }
 
     @Override

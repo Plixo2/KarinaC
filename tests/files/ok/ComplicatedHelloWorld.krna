@@ -44,7 +44,7 @@ fn createHelloFunction<T>() -> fn(T) -> string {
     }
     let first = hello.substring(0, 1).toUpperCase()
     let rest = hello.substring(1)
-    hello = '$first$rest';
+    hello = '$first$rest'
 
     fn(add) {
         '$hello$add'

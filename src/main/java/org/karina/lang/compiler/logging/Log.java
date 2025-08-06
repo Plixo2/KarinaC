@@ -1,14 +1,14 @@
 package org.karina.lang.compiler.logging;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.logging.errors.*;
 import org.karina.lang.compiler.logging.errors.Error;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
 
 /**
  * Error logging system for the compiler.
@@ -18,24 +18,25 @@ import java.util.function.Supplier;
  *
  * Remember to throw a {@link KarinaException} when an error is logged.
  * The {@link KarinaException} cannot contain any information about the error,
- * as the error information is stored in the log.
+ * as the error information is stored in the log in the {@link Context}.
  * <p>
  *
  *
  *<pre>
  * {@code
- * Log.syntaxError(region, "Expected a number");
+ * // c is the context
+ * Log.syntaxError(c, region, "Expected a number");
  * throw new Log.KarinaException();
  * }
  * </pre>
  *
- * Use {@link ErrorCollector} to collect multiple errors with a single try-with-resources block.
+ * Use {@link Context#fork} to collect multiple errors with a single try-with-resources block.
  * <p>
- * This class with global state should be replaced with local state!
  *
  */
 public class Log {
 
+    //TODO make recorder local to the context
     /**
      * The default logs that are enabled.
      * You can add custom logs here to enable them by default.
@@ -69,6 +70,8 @@ public class Log {
                 var set = new HashSet<>(Set.of(LogTypes.values()));
                 set.remove(LogTypes.JVM_CLASS_LOADING);
                 set.remove(LogTypes.LOADED_CLASSES);
+                set.remove(LogTypes.IMPORTS);
+                set.remove(LogTypes.IMPORT_PRELUDE);
 
                 yield set;
             }
@@ -109,8 +112,9 @@ public class Log {
         MEMBER,
         LOWERING,
         LOWERING_BRIDGE_METHODS,
-        GENERATION
-
+        GENERATION,
+        GENERATION_CLASS,
+        GENERATION_VAR
 
         ;
 
@@ -120,9 +124,9 @@ public class Log {
     }
 
 
-    //A thread-safe List of logs
-    private static final List<LogWithTrace> ENTRIES = new CopyOnWriteArrayList<>();
-    private static final List<LogWithTrace> WARNINGS = new CopyOnWriteArrayList<>();
+//    A thread-safe List of logs
+//    private static final List<LogWithTrace> ENTRIES = new CopyOnWriteArrayList<>();
+//    private static final List<LogWithTrace> WARNINGS = new CopyOnWriteArrayList<>();
 
     //Flight recorder for logging. Not safe for concurrent use.
     private static final FlightRecorder FLIGHT_RECORDER = new FlightRecorder();
@@ -140,12 +144,6 @@ public class Log {
         }
         synchronized (FLIGHT_RECORDER) {
             FLIGHT_RECORDER.begin(name);
-        }
-    }
-
-    public static void end(String name) {
-        synchronized (FLIGHT_RECORDER) {
-            FLIGHT_RECORDER.end(name);
         }
     }
 
@@ -216,115 +214,65 @@ public class Log {
         }
     }
 
-    public static void warn(Region region, String warning) {
-        addWarning(new Error.TemporaryErrorRegion(region, warning));
+
+    public static void warn(IntoContext c, Region region, String warning) {
+        addWarning(c, new Error.TemporaryErrorRegion(region, warning));
     }
 
-    public static void warn(Object... args) {
+    public static void warn(IntoContext c, Object... args) {
         var string = String.join(" ", Arrays.stream(args).map(Log::objectToString).toList());
-        addWarning(new Error.Warn(string));
+        addWarning(c, new Error.Warn(string));
     }
 
-    public static void assert_(boolean args, Object... message) {
-        if (!args) {
-            var messageStr = String.join(" ", Arrays.stream(message).map(Log::objectToString).toList());
-            messageStr = "(warn) Assertion failed: " + messageStr;
-            Log.recordType(Log.LogTypes.ASSERTIONS, messageStr);
-            internal(new AssertionError(messageStr));
-            throw new KarinaException();
-        }
+    public static void fileError(IntoContext c, FileLoadError error) {
+        addError(c, error);
     }
 
-    public static void assert_(Supplier<Boolean> function, Object... message) {
-        assert_(function.get(), message);
+    public static void syntaxError(IntoContext c, Region region, String message) {
+        addError(c, new Error.SyntaxError(region, message));
     }
 
-
-
-    public static void fileError(FileLoadError error) {
-        addError(error);
+    public static void error(IntoContext c, Error errorType) {
+        addError(c, errorType);
     }
 
-    public static void syntaxError(Region region, String message) {
-        addError(new Error.SyntaxError(region, message));
+    public static void invalidName(IntoContext c, Region region, String name) {
+        addError(c, new ImportError.InvalidName(region, name, null));
     }
 
-    public static void lowerError(LowerError error) {
-        addError(error);
+    public static void temp(IntoContext c, Region region, String msg) {
+        addError(c, new Error.TemporaryErrorRegion(region, msg));
     }
 
-    public static void attribError(AttribError error) {
-        addError(error);
+    public static void internal(IntoContext c, Throwable e) {
+        addError(c, new Error.InternalException(e));
     }
 
-    public static void importError(ImportError errorType) {
-        addError(errorType);
+    public static void bytecode(IntoContext c, TextSource resource, String name, String msg) {
+        addError(c, new Error.BytecodeLoading(resource.resource(), name, msg));
     }
 
-    public static void invalidName(Region region, String name) {
-        addError(new ImportError.InvalidName(region, name, null));
-    }
-    public static void invalidName(Region region, String name, String message) {
-        addError(new ImportError.InvalidName(region, name, message));
+    public static void bytecode(IntoContext c, Region region, String name, String msg) {
+        addError(c, new Error.BytecodeLoading(region.source().resource(), name, msg));
     }
 
-    public static void temp(Region region, String msg) {
-        addError(new Error.TemporaryErrorRegion(region, msg));
-    }
-
-    public static void internal(Throwable e) {
-        addError(new Error.InternalException(e));
-    }
-
-    public static void bytecode(TextSource resource, String name, String msg) {
-        addError(new Error.BytecodeLoading(resource.resource(), name, msg));
-    }
-
-    public static void bytecode(Region region, String name, String msg) {
-        addError(new Error.BytecodeLoading(region.source().resource(), name, msg));
-    }
-
-
-    public static void cliParseError(String message) {
-        addError(new Error.ParseError(message));
-    }
-
-    public static void invalidState(Region region, Class<?> aClass, String expectedState) {
-        addError(new Error.InvalidState(region, aClass, expectedState));
-    }
-
-    private static void addError(Error entry) {
-
+    private static void addError(IntoContext context, Error entry) {
         var stackTrace = Thread.currentThread().getStackTrace();
-        ENTRIES.add(new LogWithTrace(stackTrace, entry));
-
+        context.intoContext().addError(new LogWithTrace(stackTrace, entry));
     }
 
-    private static void addWarning(Error entry) {
-
+    private static void addWarning(IntoContext context,Error entry) {
         var stackTrace = Thread.currentThread().getStackTrace();
-        WARNINGS.add(new LogWithTrace(stackTrace, entry));
-
-    }
-
-    public static List<LogWithTrace> getEntries() {
-        return new ArrayList<>(ENTRIES);
-    }
-
-    public static List<LogWithTrace> getWarnings() {
-        return new ArrayList<>(WARNINGS);
-    }
-
-    public static boolean hasErrors() {
-        return !ENTRIES.isEmpty();
+        context.intoContext().addWarn(new LogWithTrace(stackTrace, entry));
     }
 
     public static void clearAllLogs() {
-        ENTRIES.clear();
-        WARNINGS.clear();
         FLIGHT_RECORDER.clear();
     }
 
+    public static Context emptyContext() {
+        return Context.empty();
+    }
 
     public static class KarinaException extends RuntimeException {}
 
@@ -350,62 +298,6 @@ public class Log {
         }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
 

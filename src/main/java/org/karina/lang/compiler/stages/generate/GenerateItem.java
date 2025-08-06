@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.stages.generate;
 
-import org.karina.lang.compiler.utils.CustomClassWriter;
+import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
@@ -9,15 +9,13 @@ import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Region;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.*;
-import org.objectweb.asm.util.TraceClassVisitor;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class GenerateItem {
 
 
-    public static JarCompilation.JarOutput compileClass(Model model, KClassModel classModel, int classVersion) {
+    public static JarCompilation.JarOutput compileClass(Context c, Model model, KClassModel classModel, int classVersion) {
 
         var classNode = new ClassNode();
 
@@ -25,7 +23,7 @@ public class GenerateItem {
             var name = "Method " + method.name();
             Log.beginType(Log.LogTypes.GENERATION, name);
             if (method instanceof KMethodModel kMethodModel) {
-                classNode.methods.add(compileMethod(kMethodModel));
+                classNode.methods.add(compileMethod(c, kMethodModel));
             }
             Log.endType(Log.LogTypes.GENERATION, name);
         }
@@ -56,6 +54,13 @@ public class GenerateItem {
         } else {
             classNode.outerClass = null;
         }
+        var nestHost = classModel.nestHost();
+        if (nestHost != null) {
+            classNode.nestHostClass = TypeEncoding.toJVMPath(nestHost.path());
+        } else {
+            classNode.nestHostClass = null;
+        }
+
         classNode.interfaces = classModel.interfaces().stream().map(ref ->
                 TypeEncoding.toJVMPath(ref.pointer().path())
         ).toList();
@@ -66,12 +71,11 @@ public class GenerateItem {
         var superClass = classModel.superClass();
         assert superClass != null;
         classNode.superName = TypeEncoding.toJVMPath(superClass.pointer().path());
-        return getJarOutput(model, classModel.region(), classNode);
+        return getJarOutput(c, model, classModel.region(), classNode);
     }
 
     private static FieldNode compileField(KFieldModel fieldModel) {
         var descriptor = TypeEncoding.getType(fieldModel.type()).getDescriptor();
-        Log.recordType(Log.LogTypes.GENERATION,"Field: ", fieldModel.name(), descriptor, fieldModel.type());
         var signature = GenerateSignature.fieldSignature(fieldModel.type());
 
         return new FieldNode(
@@ -79,11 +83,11 @@ public class GenerateItem {
                 fieldModel.name(),
                 descriptor,
                 signature,
-                null
+                fieldModel.defaultValue()
         );
     }
 
-    private static MethodNode compileMethod(KMethodModel methodModel) {
+    private static MethodNode compileMethod(Context c, KMethodModel methodModel) {
         var methodNode = new MethodNode();
 
         methodNode.access = methodModel.modifiers();
@@ -100,7 +104,15 @@ public class GenerateItem {
 
         var instructions = new InsnList();
         methodNode.localVariables = new ArrayList<>();
-        var context = new GenerationContext(-1, instructions, methodNode.localVariables, 0, null, null);
+        var context = new GenerationContext(
+                -1,
+                instructions,
+                methodNode.localVariables,
+                c,
+                0,
+                null,
+                null
+        );
 
         for (var paramVariable : methodModel.getParamVariables()) {
             context.putVariable(paramVariable);
@@ -109,28 +121,29 @@ public class GenerateItem {
 
         var expression = methodModel.expression();
         if (expression != null) {
-            GenerateExpr.addExpression(expression, context);
+            GenerateExpr.generate(expression, context);
         }
 
-//        context.getVariables().
 
         methodNode.instructions = instructions;
 
         return methodNode;
     }
 
-    public static JarCompilation.JarOutput getJarOutput(Model model, Region region, ClassNode classNode) {
-        var cw = new CustomClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, model, region);
+    public static JarCompilation.JarOutput getJarOutput(Context c, Model model, Region region, ClassNode classNode) {
+        var cw = new CustomClassWriter(c, ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, model, region);
         try {
             classNode.accept(cw);
         } catch(Exception e) {
-            Log.internal(e);
-            Log.temp(region, "Error while generating class " + classNode.name);
+            Log.internal(c, e);
+            Log.temp(c, region, "Error while generating class " + classNode.name);
 
-            PrintWriter pw = new PrintWriter(System.out);
+//          TODO write to recorder or log
 
-            TraceClassVisitor tracer = new TraceClassVisitor(pw);
-            classNode.accept(tracer);
+//            PrintWriter pw = new PrintWriter(System.out);
+//
+//            TraceClassVisitor tracer = new TraceClassVisitor(pw);
+//            classNode.accept(tracer);
 
             throw new Log.KarinaException();
         }

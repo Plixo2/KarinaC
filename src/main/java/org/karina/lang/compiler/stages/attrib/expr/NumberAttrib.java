@@ -35,7 +35,7 @@ public class NumberAttrib  {
                 try {
                     symbol = new NumberSymbol.LongValue(expr.region(), number.longValueExact());
                 } catch(ArithmeticException e1) {
-                    Log.syntaxError(expr.region(), "Number too large for long");
+                    Log.syntaxError(ctx, expr.region(), "Number too large for long");
                     throw new Log.KarinaException();
                 }
             } else {
@@ -45,7 +45,7 @@ public class NumberAttrib  {
                     try {
                         symbol = new NumberSymbol.LongValue(expr.region(), number.longValueExact());
                     } catch(ArithmeticException e2) {
-                        Log.syntaxError(expr.region(), "Number too large for long");
+                        Log.syntaxError(ctx, expr.region(), "Number too large for long");
                         throw new Log.KarinaException();
                     }
                 }

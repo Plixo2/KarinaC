@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 public class AttributionItem {
 
 
-    public static KClassModel attribClass(Model model, KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
+    public static KClassModel attribClass(Context c, Model model, @Nullable KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
 
         var logName = "class-" + classModel.name();
         Log.beginType(Log.LogTypes.CLASS_NAME, logName);
@@ -27,6 +28,7 @@ public class AttributionItem {
             }
         }
 
+
         var methodsToFill = new ArrayList<KMethodModel>();
         var innerToFill = new ArrayList<KClassModel>();
         var classModelNew = new KClassModel(
@@ -35,6 +37,7 @@ public class AttributionItem {
                 classModel.modifiers(),
                 classModel.superClass(),
                 outerClass,
+                classModel.nestHost(),
                 classModel.interfaces(),
                 innerToFill,
                 fields.build(),
@@ -50,33 +53,34 @@ public class AttributionItem {
         );
 
         for (var kClassModel : classModel.innerClasses()) {
-            var inner = attribClass(model, classModelNew, kClassModel, modelBuilder);
+            var inner = attribClass(c, model, classModelNew, kClassModel, modelBuilder);
             innerToFill.add(inner);
         }
 
         if (classModelNew.symbolTable() == null) {
-            Log.temp(classModelNew.region(), "No symbol table was created");
+            Log.temp(c, classModelNew.region(), "No symbol table was created");
             throw new Log.KarinaException();
         }
         var importTable = StaticImportTable.fromImportTable(classModel.pointer(), model, classModelNew.symbolTable());
 
-        for (var method : classModel.methods()) {
-            if (!(method instanceof KMethodModel kMethodModel)) {
-                Log.temp(method.region(), "Invalid method");
-                throw new Log.KarinaException();
+
+        try (var fork = c.<KMethodModel>fork()){
+            for (var method : classModel.methods()) {
+                if (!(method instanceof KMethodModel kMethodModel)) {
+                    Log.temp(c, method.region(), "Invalid method");
+                    throw new Log.KarinaException();
+                }
+                fork.collect(subC -> attribMethod(subC, model, classModelNew, importTable, kMethodModel));
             }
-            var attribMethod = attribMethod(model, classModelNew, importTable, kMethodModel);
-            methodsToFill.add(attribMethod);
+            methodsToFill.addAll(fork.dispatch());
         }
         Log.endType(Log.LogTypes.CLASS_NAME, logName);
 
-        modelBuilder.addClass(classModelNew);
+        modelBuilder.addClass(c, classModelNew);
         return classModelNew;
     }
 
-
-
-    public static KMethodModel attribMethod(Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
+    public static KMethodModel attribMethod(Context c, Model model, KClassModel classModel, StaticImportTable importTable, KMethodModel methodModel) {
 
         var logName = "method-" + methodModel.name() + "-" + methodModel.signature().toString() + " in " + classModel.name();
         Log.beginType(Log.LogTypes.METHOD_NAME, logName);
@@ -92,7 +96,7 @@ public class AttributionItem {
         var parameters = methodModel.signature().parameters();
         var names = methodModel.parameters();
         if (parameters.size() != names.size()) {
-            Log.temp(methodModel.region(), "Invalid parameters");
+            Log.temp(c, methodModel.region(), "Invalid parameters");
             throw new Log.KarinaException();
         }
 
@@ -100,6 +104,7 @@ public class AttributionItem {
         var protection = new ProtectionChecking(model);
         var contextNew = new AttributionContext(
                 model,
+                c,
                 self,
                 false,
                 methodModel,
@@ -127,7 +132,7 @@ public class AttributionItem {
                     true
             );
             if (name.equals("_")) {
-                 continue;
+                continue;
             }
             variables.add(variable);
             contextNew = contextNew.addVariable(variable);
@@ -143,17 +148,17 @@ public class AttributionItem {
         //TODO this should not be here. Validate before this stage
         if (methodModel.isConstructor()) {
             if (Modifier.isStatic(methodModel.modifiers())) {
-                Log.attribError(new AttribError.NotSupportedExpression(
+                Log.error(c, new AttribError.NotSupportedExpression(
                         methodModel.region(),
                         "Constructor cannot be static"
                 ));
                 throw new Log.KarinaException();
             } else if (!returnType.isVoid()) {
-                 Log.attribError(new AttribError.NotSupportedExpression(
-                         methodModel.region(),
-                         "Constructor must return void"
-                 ));
-                 throw new Log.KarinaException();
+                Log.error(c, new AttribError.NotSupportedExpression(
+                        methodModel.region(),
+                        "Constructor must return void"
+                ));
+                throw new Log.KarinaException();
             }
         }
         Log.endType(Log.LogTypes.METHOD_NAME, logName);

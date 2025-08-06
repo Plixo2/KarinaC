@@ -1,18 +1,16 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.logging.ErrorCollector;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.utils.Unique;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.stages.imports.table.ImportTable;
+import org.karina.lang.compiler.stages.imports.table.UserImportTable;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.utils.NameAndOptType;
-import org.karina.lang.compiler.utils.Prelude;
-import org.karina.lang.compiler.utils.Region;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -20,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * TODO redo this mess a third time
+ */
 public class ImportHelper {
 
     //TODO rename methods
@@ -29,7 +30,7 @@ public class ImportHelper {
      * @param ctx previous import table to build upon
      * @return the new import table with the items added
      */
-    public static ImportTable importItemsOfClass(ClassModel classModel, ImportTable ctx) {
+    public static UserImportTable importItemsOfClass(ClassModel classModel, UserImportTable ctx) {
         var newCtx = ctx;
 
         //create 'buckets' for each method name, so they can be added all at once
@@ -66,12 +67,7 @@ public class ImportHelper {
      * @param owner the class that is currently importing the prelude,
      *              since we want to point to the start of the current file, if a error occurs
      */
-    public static ImportTable importPrelude(ClassModel owner, ImportTable ctx, Prelude prelude) {
-        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, "importing prelude with ");
-        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, prelude.classes().size() + " classes");
-        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, prelude.staticFields().size() + " static fields");
-        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, prelude.staticMethods().size() + " static methods");
-        Log.recordType(Log.LogTypes.IMPORT_PRELUDE, (prelude.classes().size() + prelude.staticFields().size() + prelude.staticMethods().size()) + " items");
+    public static ImportTable importPrelude(ClassModel owner, UserImportTable ctx, Prelude prelude) {
 
         var newCtx = ctx;
         for (var classPointer : prelude.classes()) {
@@ -96,7 +92,7 @@ public class ImportHelper {
         return newCtx;
     }
 
-    private static ImportTable importItemsOfClassByName(ClassModel classModel, ImportTable ctx, String namePredicate, Region importRegion) {
+    private static UserImportTable importItemsOfClassByName(Context c, ClassModel classModel, UserImportTable ctx, String namePredicate, Region importRegion) {
         var newCtx = ctx;
 
         boolean added = false;
@@ -128,25 +124,51 @@ public class ImportHelper {
 
 
         if (!added) {
-            Log.importError(new ImportError.NoItemFound(importRegion, namePredicate, classModel.pointer().path()));
+            Log.error(c, new ImportError.NoItemFound(importRegion, namePredicate, classModel.pointer().path()));
             throw new Log.KarinaException();
         }
 
         return newCtx;
     }
 
+    public static @Nullable ClassPointer getUserClassPointer(Model model, Region region, ObjectPath path) {
+        var pointer = model.getClassPointer(region, path);
+        if (pointer != null) {
+            return pointer;
+        }
+        if (path.isEmpty()) {
+            return null;
+        }
+        var left = path.everythingButLast();
+        var right = path.last();
+        pointer = model.getClassPointer(region, left);
+        if (pointer != null) {
+            var classModel = model.getClass(pointer);
+            for (var innerClass : classModel.innerClasses()) {
+                if (innerClass.name().equals(right)) {
+                    return innerClass.pointer();
+                }
+            }
+        } else if (!left.isEmpty()) {
+            var leftLeft = left.everythingButLast();
+            var leftRight = left.last();
+            var last = leftRight + "$" + right;
+            return model.getClassPointer(region, leftLeft.append(last));
+        }
+        return null;
 
+    }
 
-    public static ImportTable addImport(Region region, KImport kImport, ImportTable ctx) {
+    public static UserImportTable addImport(Context c, Region region, KImport kImport, UserImportTable ctx) {
 
-        var pointer = ctx.model().getClassPointer(region, kImport.path());
+        var pointer = getUserClassPointer(ctx.model(), region, kImport.path());
         if (pointer == null) {
             //TODO add suggestions
-            Log.importError(new ImportError.NoClassFound(kImport.region(), kImport.path()));
+            Log.error(c, new ImportError.NoClassFound(kImport.region(), kImport.path()));
             throw new Log.KarinaException();
         }
         var modelClass = ctx.model().getClass(pointer);
-        ImportTable newCtx = ctx;
+        UserImportTable newCtx = ctx;
         switch (kImport.importType()) {
             case KImport.TypeImport.All all -> {
                 //inner classes and static fields and methods
@@ -159,13 +181,13 @@ public class ImportHelper {
             case KImport.TypeImport.Names names -> {
                 for (var name : names.names()) {
                     //all items by name
-                    newCtx = importItemsOfClassByName(modelClass, newCtx, name, kImport.region());
+                    newCtx = importItemsOfClassByName(c, modelClass, newCtx, name, kImport.region());
                 }
             }
             case KImport.TypeImport.BaseAs baseAs -> {
                 var name = modelClass.name();
                 if (!baseAs.alias().toLowerCase().contains(name.toLowerCase())) {
-                    Log.importError(new ImportError.InvalidAlias(
+                    Log.error(c, new ImportError.InvalidAlias(
                             baseAs.region(),
                             baseAs.alias(),
                             modelClass.name()
@@ -173,7 +195,7 @@ public class ImportHelper {
                     throw new Log.KarinaException();
                 }
                 if (!newCtx.classes().containsKey(name)) {
-                    Log.importError(new ImportError.UnnecessaryAlias(
+                    Log.error(c, new ImportError.UnnecessaryAlias(
                             baseAs.region(),
                             baseAs.alias()
                     ));
@@ -189,10 +211,9 @@ public class ImportHelper {
 
 
 
-    public static List<NameAndOptType> importNameAndOptTypeList(ImportContext ctx, List<NameAndOptType> list, ErrorCollector collector) {
+    public static List<NameAndOptType> importNameAndOptTypeList(ImportContext ctx, List<NameAndOptType> list) {
         var result = new ArrayList<NameAndOptType>();
         for (var item : list) {
-            collector.collect(() -> {
                 KType type;
                 if (item.type() == null) {
                     type = null;
@@ -205,19 +226,16 @@ public class ImportHelper {
                         type,
                         null
                 ));
-            });
         }
-        collector.collect(() -> {
             var uniqueArgs = Unique.testUnique(result, NameAndOptType::name);
             if (uniqueArgs != null) {
-                Log.importError(new ImportError.DuplicateItem(
+                Log.error(ctx, new ImportError.DuplicateItem(
                         uniqueArgs.first().name().region(),
                         uniqueArgs.duplicate().name().region(),
                         uniqueArgs.value().value()
                 ));
                 throw new Log.KarinaException();
             }
-        });
 
         return result;
 
@@ -236,9 +254,9 @@ public class ImportHelper {
         return buckets;
     }
 
-    public static void testName(Region region, String name) {
+    public static void testName(Context ctx, Region region, String name) {
         if (name.equals("_")) {
-            Log.invalidName(region, name);
+            Log.invalidName(ctx, region, name);
             throw new Log.KarinaException();
         }
     }

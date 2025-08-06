@@ -1,9 +1,5 @@
 
-
-
-
 fn main(args: [string]) {
     println("Hello, World!")
     //example::printHelloWorld()
 }
-

@@ -30,12 +30,12 @@ public class UnaryAttrib  {
         }
 
         if (!(value.type() instanceof KType.PrimitiveType(KType.KPrimitive primitive))) {
-            Log.attribError(new AttribError.NotSupportedType(value.region(), value.type()));
+            Log.error(ctx, new AttribError.NotSupportedType(value.region(), value.type()));
             throw new Log.KarinaException();
         }
         var symbol = UnaryOperatorSymbol.fromOperator(primitive, expr.operator());
         if (symbol == null) {
-            Log.attribError(new AttribError.NotSupportedType(value.region(), value.type()));
+            Log.error(ctx, new AttribError.NotSupportedType(value.region(), value.type()));
             throw new Log.KarinaException();
         }
 

@@ -25,7 +25,7 @@ public class LiteralAttrib  {
         var staticField = ctx.table().getStaticField(expr.name());
 
         if (expr.name().equals("_")) {
-            Log.invalidName(expr.region(), expr.name());
+            Log.invalidName(ctx, expr.region(), expr.name());
         }
 
         if (variable != null) {
@@ -43,7 +43,7 @@ public class LiteralAttrib  {
         } else {
             var available = new HashSet<>(ctx.variables().names());
             available.addAll(ctx.table().availableItemNames());
-            Log.attribError(new AttribError.UnknownIdentifier(expr.region(), expr.name(), available));
+            Log.error(ctx, new AttribError.UnknownIdentifier(expr.region(), expr.name(), available));
             throw new Log.KarinaException();
         }
 

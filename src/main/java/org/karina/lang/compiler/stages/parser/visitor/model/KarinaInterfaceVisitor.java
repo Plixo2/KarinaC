@@ -9,30 +9,26 @@ import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.utils.KAnnotation;
-import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
-import org.karina.lang.compiler.utils.Generic;
-import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KarinaInterfaceVisitor {
+public class KarinaInterfaceVisitor implements IntoContext {
 
     private final RegionContext context;
-    private final KarinaUnitVisitor base;
+    private final KarinaUnitVisitor visitor;
 
     public KarinaInterfaceVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
-        this.base = base;
+        this.visitor = base;
         this.context = regionContext;
     }
 
     public KClassModel visit(
-            @Nullable KClassModel owningClass,
+            KClassModel owningClass,
             ObjectPath owningPath,
             ImmutableList<KAnnotation> annotations,
             KarinaParser.InterfaceContext ctx,
@@ -49,8 +45,7 @@ public class KarinaInterfaceVisitor {
         var interfaces = ImmutableList.<KType.ClassType>builder();
 
         for (var implCtx : ctx.interfaceExtension()) {
-            //TODO has to be validated
-            var structType = this.base.typeVisitor.visitStructType(implCtx.structType());
+            var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
             var clsType = new KType.ClassType(classPointer, structType.generics());
             interfaces.add(clsType);
@@ -58,14 +53,14 @@ public class KarinaInterfaceVisitor {
 
         var methods = ImmutableList.<KMethodModel>builder();
         for (var functionContext : ctx.function()) {
-            var method = this.base.methodVisitor.visit(
+            var method = this.visitor.methodVisitor.visit(
                     currentClass, ImmutableList.of(),
                     functionContext
             );
             methods.add(method);
 
             if (method.name().equals("<init>")) {
-                Log.attribError(new AttribError.UnqualifiedSelf(region, method.region()));
+                Log.error(this, new AttribError.UnqualifiedSelf(region, method.region()));
                 throw new Log.KarinaException();
             }
         }
@@ -74,12 +69,17 @@ public class KarinaInterfaceVisitor {
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
-            generics = ImmutableList.copyOf(this.base.visitGenericHintDefinition(ctx.genericHintDefinition()));
+            generics = ImmutableList.copyOf(this.visitor.visitGenericHintDefinition(ctx.genericHintDefinition()));
         }
 
         var imports = ImmutableList.<KImport>of();
 
         var permittedSubClasses = ImmutableList.<ClassPointer>of();
+
+        var host = owningClass.pointer();
+        if (owningClass.nestHost() != null) {
+            host = owningClass.nestHost();
+        }
 
         var classModel = new KClassModel(
                 name,
@@ -87,6 +87,7 @@ public class KarinaInterfaceVisitor {
                 mods,
                 superClass,
                 owningClass,
+                host,
                 interfaces.build(),
                 List.of(),
                 fields,
@@ -100,9 +101,13 @@ public class KarinaInterfaceVisitor {
                 region,
                 null
         );
-        modelBuilder.addClass(classModel);
+        modelBuilder.addClass(this, classModel);
 
         return classModel;
     }
 
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
+    }
 }

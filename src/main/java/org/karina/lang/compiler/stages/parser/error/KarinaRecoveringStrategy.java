@@ -5,6 +5,7 @@ import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.ATNState;
 import org.antlr.v4.runtime.misc.IntervalSet;
 import org.antlr.v4.runtime.misc.Pair;
+import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
@@ -14,9 +15,10 @@ public class KarinaRecoveringStrategy extends DefaultErrorStrategy {
     public static final String MISSING_FIELD = "<auto>";
 
     private final TextSource source;
-
-    public KarinaRecoveringStrategy(TextSource source) {
+    private final Context c;
+    public KarinaRecoveringStrategy(Context c, TextSource source) {
         this.source = source;
+        this.c = c;
     }
 
 
@@ -98,7 +100,7 @@ public class KarinaRecoveringStrategy extends DefaultErrorStrategy {
                 }
             }
             var missingSymbol = getMissingSymbol(recognizer);
-            Log.warn(region, "Inserted " + missingSymbol.getText());
+            Log.warn(this.c, region, "Inserted " + missingSymbol.getText());
         }
         return contains;
     }

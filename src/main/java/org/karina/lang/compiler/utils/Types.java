@@ -24,7 +24,6 @@ public class Types {
             }
         }
 
-
         return true;
     }
 
@@ -111,8 +110,7 @@ public class Types {
                 yield  primitiveType.primitive() == ((KType.PrimitiveType) b).primitive();
             }
             case KType.UnprocessedType unprocessedType -> {
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
-                throw new Log.KarinaException();
+                throw new IllegalStateException("Unprocessed type " + unprocessedType + " should not exist");
             }
             case KType.VoidType _ -> true;
         };
@@ -159,8 +157,7 @@ public class Types {
                 dependencies.add(new TypeDependency(voidType, level));
             }
             case KType.UnprocessedType unprocessedType -> {
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
-                throw new Log.KarinaException();
+                throw new IllegalStateException("Unprocessed type " + unprocessedType + " should not exist");
             }
         }
     }
@@ -186,7 +183,7 @@ public class Types {
      * <p>
      * Used to map generics to their actual types
      * </p>
-     * See {@link Types#projectGenerics(Model, KType.ClassType, KType.ClassType)}
+     * See {@link Types#projectGenerics(IntoContext, Model, KType.ClassType, KType.ClassType)}
      * to construct generics from a ClassType, where the generics are not linked to the correct mapping.
      * (only used for interfaces and super classes)
      */
@@ -248,8 +245,7 @@ public class Types {
                 }
             }
             case KType.UnprocessedType unprocessedType -> {
-                Log.temp(unprocessedType.region(), "Unprocessed type " + unprocessedType + " should not exist");
-                throw new Log.KarinaException();
+                throw new IllegalStateException("Unprocessed type " + unprocessedType + " should not exist");
             }
             case KType.VoidType _ -> KType.NONE;
         };
@@ -259,7 +255,7 @@ public class Types {
     /**
      * Returns the correctly mapped superClass of cls
      */
-    public static @Nullable KType.ClassType getSuperType(Model model, KType.ClassType cls) {
+    public static @Nullable KType.ClassType getSuperType(IntoContext c, Model model, KType.ClassType cls) {
         var rightModel = model.getClass(cls.pointer());
         var superClass = rightModel.superClass();
 
@@ -267,18 +263,18 @@ public class Types {
             return null;
         }
 
-        return projectGenerics(model, cls, superClass);
+        return projectGenerics(c, model, cls, superClass);
     }
 
     /**
      * Returns the correctly mapped direct interfaces of cls (non recursive)
      */
-    public static List<KType.ClassType> getInterfaces(Model model, KType.ClassType cls) {
+    public static List<KType.ClassType> getInterfaces(IntoContext c, Model model, KType.ClassType cls) {
         var rightModel = model.getClass(cls.pointer());
         var list = new ArrayList<KType.ClassType>();
 
         for (var interfaceOfRight : rightModel.interfaces()) {
-            list.add(projectGenerics(model, cls, interfaceOfRight));
+            list.add(projectGenerics(c, model, cls, interfaceOfRight));
         }
 
         return list;
@@ -290,6 +286,7 @@ public class Types {
      * mapped with the information from the classModel
      */
     public static @NotNull KType.ClassType projectGenerics(
+            IntoContext c,
             Model model,
             KType.ClassType owningClass,
             KType.ClassType classToMap
@@ -308,8 +305,9 @@ public class Types {
                         + " of " + classToMap
                         + " in " + testingModelToGetIndexFrom.pointer()
                         + " generics: " + testingModelToGetIndexFrom.generics()
+                        + " this should not happen"
                         ;
-                Log.temp(testingModelToGetIndexFrom.region(), message);
+                Log.temp(c, testingModelToGetIndexFrom.region(), message);
                 throw new Log.KarinaException();
             }
 

@@ -1,6 +1,9 @@
 package org.karina.lang.compiler.stages.parser.visitor;
 
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.Unique;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.KAnnotation;
@@ -10,13 +13,14 @@ import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 
 import java.util.stream.Collectors;
 
-public class KarinaAnnotationVisitor {
+public class KarinaAnnotationVisitor implements IntoContext {
     private final RegionContext conv;
+    private final KarinaUnitVisitor visitor;
     private final KarinaTypeVisitor typeVisitor;
     private final KarinaExprVisitor exprVisitor;
 
-    public KarinaAnnotationVisitor(
-            RegionContext conv, KarinaTypeVisitor typeVisitor, KarinaExprVisitor exprVisitor) {
+    public KarinaAnnotationVisitor(KarinaUnitVisitor visitor, RegionContext conv, KarinaTypeVisitor typeVisitor, KarinaExprVisitor exprVisitor) {
+        this.visitor = visitor;
         this.conv = conv;
         this.typeVisitor = typeVisitor;
         this.exprVisitor = exprVisitor;
@@ -47,7 +51,7 @@ public class KarinaAnnotationVisitor {
                 var decimal = this.exprVisitor.parseNumber(text);
                 return new AnnotationNumber(region, decimal);
             } catch (NumberFormatException e) {
-                Log.syntaxError(region, "Invalid number");
+                Log.syntaxError(this, region, "Invalid number");
                 throw new Log.KarinaException();
             }
         } else if (ctx.TRUE() != null) {
@@ -65,7 +69,7 @@ public class KarinaAnnotationVisitor {
         } else if (ctx.jsonType() != null) {
             return visitType(ctx.jsonType());
         } else {
-            Log.temp(region, "Unknown annotation value: " + ctx.getText());
+            Log.temp(this, region, "Unknown annotation value: " + ctx.getText());
             throw new Log.KarinaException();
         }
 
@@ -89,7 +93,7 @@ public class KarinaAnnotationVisitor {
 
         var duplicate = Unique.testUnique(ctx.jsonPair(), this::getKey);
         if (duplicate != null) {
-            Log.importError(new ImportError.DuplicateItem(
+            Log.error(this, new ImportError.DuplicateItem(
                     this.conv.toRegion(duplicate.first()),
                     this.conv.toRegion(duplicate.duplicate()),
                     this.getKey(duplicate.first())
@@ -119,5 +123,10 @@ public class KarinaAnnotationVisitor {
         } else {
             return this.conv.escapeID(ctx.id());
         }
+    }
+
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
     }
 }

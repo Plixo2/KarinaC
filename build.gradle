@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'org.karina.lang'
-version = '0.5'
+version = '0.6'
 
 repositories {
     mavenCentral()
@@ -52,12 +52,9 @@ dependencies {
  */
 application {
     mainClass.set('org.karina.lang.compiler.Main')
-    applicationDefaultJvmArgs = ['-Dkarina.console=false']
+    applicationDefaultJvmArgs = ['-Dkarina.run=true']
 }
 
-run {
-    args = ['--run']
-}
 
 /**
  * 'gradle FAT-JAR'

@@ -22,7 +22,7 @@ public class GetArrayElementAttrib  {
 
         var left = attribExpr(arrayHint, ctx, expr.left()).expr();
         if (!(left.type() instanceof KType.ArrayType(KType elementType))) {
-            Log.attribError(new AttribError.NotAArray(left.region(), arrayHint));
+            Log.error(ctx, new AttribError.NotAArray(left.region(), arrayHint));
             throw new Log.KarinaException();
         }
 

@@ -27,7 +27,7 @@ public class ReturnAttrib  {
             returnType = KType.NONE;
 
             if (!ctx.returnType().isVoid()) {
-                Log.attribError(new AttribError.ControlFlow(expr.region(), "Invalid return statement"));
+                Log.error(ctx, new AttribError.ControlFlow(expr.region(), "Invalid return statement"));
                 throw new Log.KarinaException();
             }
         }

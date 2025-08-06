@@ -22,7 +22,7 @@ public class CreateObjectAttrib  {
 
 
         if (!(expr.createType() instanceof KType.ClassType classType)) {
-            Log.attribError(new AttribError.NotAClass(expr.region(), expr.createType()));
+            Log.error(ctx, new AttribError.NotAClass(expr.region(), expr.createType()));
             throw new Log.KarinaException();
         }
 
@@ -90,7 +90,7 @@ public class CreateObjectAttrib  {
             var foundParameter = openParameters
                     .stream().filter(ref -> ref.name().value().equals(field.name())).findFirst();
             if (foundParameter.isEmpty()) {
-                Log.attribError(new AttribError.MissingField(
+                Log.error(new AttribError.MissingField(
                         expr.region(),
                         field.name()
                 ));
@@ -111,7 +111,7 @@ public class CreateObjectAttrib  {
         }
         if (!openParameters.isEmpty()) {
             var toMany = openParameters.getFirst();
-            Log.attribError(new AttribError.UnknownField(toMany.name().region(), toMany.name().value()));
+            Log.error(new AttribError.UnknownField(toMany.name().region(), toMany.name().value()));
             throw new Log.KarinaException();
         }
 
@@ -177,7 +177,7 @@ public class CreateObjectAttrib  {
                 available.add(RegionOf.region(methodModel.region(), methodModel.parameters()));
             }
 
-            Log.attribError(new AttribError.MissingConstructor(
+            Log.error(ctx, new AttribError.MissingConstructor(
                     region,
                     classToInit.name(),
                     names,

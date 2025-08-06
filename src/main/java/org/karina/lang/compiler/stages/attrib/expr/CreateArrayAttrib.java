@@ -9,6 +9,7 @@ import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
@@ -28,23 +29,25 @@ public class CreateArrayAttrib  {
         }
 
         if (elementType.isVoid()) {
-            Log.attribError(new AttribError.NotSupportedType(expr.region(), elementType));
+            Log.error(ctx, new AttribError.NotSupportedType(expr.region(), elementType));
             throw new Log.KarinaException();
         }
 
 
-        var unMappedElements = new ArrayList<KExpr>();
+        List<KExpr> unmappedElements;
 
 
-        for (var element : expr.elements()) {
-            var newElement = attribExpr(elementType, ctx, element).expr();
-            unMappedElements.add(newElement);
+        try (var fork = ctx.intoContext().<KExpr>fork()){
+            for (var element : expr.elements()) {
+                fork.collect(subC -> attribExpr(elementType, ctx.withNewContext(subC), element).expr());
+            }
+            unmappedElements = fork.dispatch();
         }
 
         // check if we can convert every element to a common type
         var mappedElements = new ArrayList<KExpr>();
-        for (var unMappedElement : unMappedElements) {
-            var conversion = ctx.getConversion(unMappedElement.region(), elementType, unMappedElement, true, false);
+        for (var unmappedElement : unmappedElements) {
+            var conversion = ctx.getConversion(unmappedElement.region(), elementType, unmappedElement, true, false);
             if (conversion != null) {
                 mappedElements.add(conversion);
             } else {
@@ -55,11 +58,11 @@ public class CreateArrayAttrib  {
         KType currentType = elementType;
 
         // if we can't convert every element to a common type, we need to find a common super type
-        if (mappedElements.size() != unMappedElements.size()) {
+        if (mappedElements.size() != unmappedElements.size()) {
             mappedElements.clear();
 
-            for (var unMappedElement : unMappedElements) {
-                var superType = ctx.checking().superType(unMappedElement.region(), currentType, unMappedElement.type());
+            for (var unMappedElement : unmappedElements) {
+                var superType = ctx.checking().superType(ctx, unMappedElement.region(), currentType, unMappedElement.type());
                 if (superType == null) {
                     //dont report error right away, we still can use root for primitive conversion
                     currentType = KType.ROOT;
@@ -70,12 +73,19 @@ public class CreateArrayAttrib  {
             }
 
             // ... and then convert every element to that type, otherwise fail
-            for (var unMappedElement : unMappedElements) {
+            for (var unMappedElement : unmappedElements) {
                 var conversion = ctx.makeAssignment(unMappedElement.region(), currentType, unMappedElement);
                 mappedElements.add(conversion);
             }
 
         }
+
+        //should not happen, but just in case check again for void type
+        if (elementType.isVoid()) {
+            Log.error(ctx, new AttribError.NotSupportedType(expr.region(), elementType));
+            throw new Log.KarinaException();
+        }
+
 
         return of(ctx, new KExpr.CreateArray(
                 expr.region(),

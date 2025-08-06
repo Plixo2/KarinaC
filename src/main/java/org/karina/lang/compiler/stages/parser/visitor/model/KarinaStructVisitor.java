@@ -16,22 +16,23 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.*;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KarinaStructVisitor {
+public class KarinaStructVisitor implements IntoContext {
     private final RegionContext context;
-    private final KarinaUnitVisitor base;
+    private final KarinaUnitVisitor visitor;
 
-    public KarinaStructVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
-        this.base = base;
+    public KarinaStructVisitor(KarinaUnitVisitor visitor, RegionContext regionContext) {
+        this.visitor = visitor;
         this.context = regionContext;
     }
 
     public KClassModel visit(
-            @Nullable KClassModel owningClass,
+            KClassModel owningClass,
             ObjectPath owningPath,
             ImmutableList<KAnnotation> annotations,
             KarinaParser.StructContext ctx,
@@ -55,7 +56,7 @@ public class KarinaStructVisitor {
             } else if (superAnnotation.superType() instanceof KType.ClassType superType) {
                 superClass = superType;
             } else {
-                Log.temp(superAnnotation.region(), "Invalid super fieldType");
+                Log.temp(this, superAnnotation.region(), "Invalid super fieldType");
                 throw new Log.KarinaException();
             }
         }
@@ -67,22 +68,23 @@ public class KarinaStructVisitor {
 
         for (var implCtx : ctx.implementation()) {
             //pointer have to be validated in the import stage
-            var structType = this.base.typeVisitor.visitStructType(implCtx.structType());
+            var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
             var clsType = new KType.ClassType(classPointer, structType.generics());
             interfaces.add(clsType);
 
             for (var functionContext : implCtx.function()) {
-                methods.add(this.base.methodVisitor.visit(
+                methods.add(this.visitor.methodVisitor.visit(
                         currentClass, ImmutableList.of(),
                         functionContext
                 ));
             }
         }
 
-        boolean containsConstructor = false;
+        var containsConstructor = false;
+        var containsToString = false;
         for (var functionContext : ctx.function()) {
-            var methodModel = this.base.methodVisitor.visit(
+            var methodModel = this.visitor.methodVisitor.visit(
                     currentClass,
                     ImmutableList.of(),
                     functionContext
@@ -91,6 +93,10 @@ public class KarinaStructVisitor {
 
             if (methodModel.name().equals("<init>")) {
                 containsConstructor = true;
+            } else if (methodModel.name().equals("toString")) {
+                if (methodModel.parameters().isEmpty()) {
+                    containsToString = true;
+                }
             }
         }
 
@@ -100,22 +106,53 @@ public class KarinaStructVisitor {
             fields.add(this.visitField(fieldContext, currentClass));
         }
 
+        var constNames = new ArrayList<String>();
+        var constValues = new ArrayList<KExpr>();
+        for (var constContext : ctx.const_()) {
+            var visitExpression = this.visitor.exprVisitor.visitExpression(constContext.expression());
+            var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
+            constNames.add(constModel.name());
+            constValues.add(visitExpression);
+            fields.add(constModel);
+        }
 
+
+        var fieldsList = fields.build();
+
+        var memberFields = fieldsList.stream().filter(ref -> !Modifier.isStatic(ref.modifiers())).toList();
         if (!containsConstructor) {
-            var constructor = createDefaultConstructor(region, currentClass, fields.build(), Modifier.PUBLIC, superClass);
+            var constructor = createDefaultConstructor(region, currentClass, memberFields, Modifier.PUBLIC, superClass);
             methods.add(constructor);
+        }
+        if (!containsToString) {
+            var toStringMethod = createToStringMethod(region, name, currentClass, memberFields);
+            methods.add(toStringMethod);
+        }
+
+        if (!constNames.isEmpty()) {
+            var clinit = KarinaUnitVisitor.createStaticConstructor(
+                    this,
+                    region,
+                    currentClass,
+                    constNames,
+                    constValues
+            );
+            methods.add(clinit);
         }
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
-            generics = ImmutableList.copyOf(this.base.visitGenericHintDefinition(ctx.genericHintDefinition()));
+            generics = ImmutableList.copyOf(this.visitor.visitGenericHintDefinition(ctx.genericHintDefinition()));
         }
 
         var imports = ImmutableList.<KImport>of();
 
         var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
-
+        var host = owningClass.pointer();
+        if (owningClass.nestHost() != null) {
+            host = owningClass.nestHost();
+        }
 
         var newModel = new KClassModel(
                 name,
@@ -123,9 +160,10 @@ public class KarinaStructVisitor {
                 mods,
                 superClass,
                 owningClass,
+                host,
                 interfaces.build(),
                 List.of(),
-                fields.build(),
+                fieldsList,
                 methods.build(),
                 generics,
                 imports,
@@ -136,7 +174,7 @@ public class KarinaStructVisitor {
                 region,
                 null
         );
-        modelBuilder.addClass(newModel);
+        modelBuilder.addClass(this, newModel);
 
         return newModel;
     }
@@ -145,7 +183,7 @@ public class KarinaStructVisitor {
 
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
-        var type = this.base.typeVisitor.visitType(ctx.type());
+        var type = this.visitor.typeVisitor.visitType(ctx.type());
         int mods;
         if (ctx.MUT() != null) {
             mods = 0;
@@ -154,8 +192,7 @@ public class KarinaStructVisitor {
         }
         mods |= Modifier.PUBLIC;
 
-        return new KFieldModel(name, type, mods, region, owningClass);
-
+        return new KFieldModel(name, type, mods, region, owningClass, null);
     }
 
     public static KMethodModel createDefaultConstructor(
@@ -172,13 +209,12 @@ public class KarinaStructVisitor {
         var signature = new Signature(paramTypes, KType.NONE);
         var generics = ImmutableList.<Generic>of();
 
-        //TODO fill super call with parameters,
         var expressions = new ArrayList<KExpr>();
 
         var superLiteral = new KExpr.SpecialCall(
                 region,
                 new InvocationType.SpecialInvoke(
-                        "<init>",
+                        name,
                         superClass
                 )
         );
@@ -199,7 +235,6 @@ public class KarinaStructVisitor {
 
 
 
-
         var expression = new KExpr.Block(region, expressions, null, false);
 
         return new KMethodModel(
@@ -215,22 +250,80 @@ public class KarinaStructVisitor {
                 List.of()
         );
     }
+    public static KMethodModel createToStringMethod(
+            Region region,
+            String className,
+            ClassPointer classPointer,
+            List<KFieldModel> fields
+    ) {
+
+
+        var components = new ArrayList<StringComponent>();
+
+        components.add(new StringComponent.StringLiteralComponent(
+                className + "{"
+        ));
+
+
+        for (var i = 0; i < fields.size(); i++) {
+            var field = fields.get(i);
+            var isFirst = i == 0;
+
+            var namePrefix = isFirst ? "" : ", ";
+            var name = field.name();
+
+            components.add(new StringComponent.StringLiteralComponent(
+                    namePrefix + name + "="
+            ));
+            var self = new KExpr.Self(region, null);
+            var fieldName = RegionOf.region(region, name);
+            var getField = new KExpr.GetMember(region, self, fieldName, false, null);
+
+            components.add(new StringComponent.ExpressionComponent(
+                    region,
+                    getField
+            ));
+        }
+
+
+        components.add(new StringComponent.StringLiteralComponent(
+                "}"
+        ));
+
+        var expression = new KExpr.StringInterpolation(
+                region,
+                ImmutableList.copyOf(components)
+        );
+
+        return new KMethodModel(
+                "toString",
+                Modifier.PUBLIC | Opcodes.ACC_SYNTHETIC,
+                Signature.emptyArgs(KType.STRING),
+                ImmutableList.of(),
+                ImmutableList.of(),
+                expression,
+                ImmutableList.of(),
+                region,
+                classPointer,
+                List.of()
+        );
+    }
 
     private @Nullable SuperAnnotation processAnnotations(ImmutableList<KAnnotation> annotations) {
         KAnnotation superAnnotation = null;
         for (var annotation : annotations) {
             if (annotation.name().equals("Super")) {
                 if (superAnnotation != null) {
-                    Log.temp(annotation.region(), "Duplicate 'Super' annotation");
+                    Log.temp(this, annotation.region(), "Duplicate 'Super' annotation");
                     throw new Log.KarinaException();
                 }
                 superAnnotation = annotation;
             } else {
-                Log.warn(annotation.region(), "Unexpected annotation: " + annotation.name());
+                Log.warn(this, annotation.region(), "Unexpected annotation: " + annotation.name());
             }
         }
         if (superAnnotation != null) {
-            return SuperAnnotation.fromAnnotation(superAnnotation.value());
+            return SuperAnnotation.fromAnnotation(this.intoContext(), superAnnotation.value());
         } else {
             return null;
         }
@@ -238,4 +331,9 @@ public class KarinaStructVisitor {
     }
 
 
+
+    @Override
+    public Context intoContext() {
+        return this.visitor.context();
+    }
 }

@@ -35,6 +35,13 @@ public class BranchAttrib  {
             condition = ctx.makeAssignment(condition.region(), boolType, condition);
             trueBranchPattern = null;
         } else {
+            if (!InstanceOfAttrib.isReferenceType(ctx, condition.region(), condition.type())) {
+                Log.error(ctx, new AttribError.NotSupportedType(
+                        condition.region(),
+                        condition.type()
+                ));
+                throw new Log.KarinaException();
+            }
             var result = evalBranchPattern(ctx, expr.branchPattern(), condition.type());
             thenContext = result.thenContext();
             trueBranchPattern = result.attribPattern();
@@ -60,7 +67,7 @@ public class BranchAttrib  {
                 elsePattern = null;
             } else {
                 if (trueBranchPattern == null) {
-                    Log.temp(elseArm.elsePattern().region(), "Branch pattern required for else branch, this should be checked before");
+                    Log.temp(ctx, elseArm.elsePattern().region(), "Branch pattern required for else branch, this should be checked before");
                     throw new Log.KarinaException();
                 }
 
@@ -87,8 +94,8 @@ public class BranchAttrib  {
                     var isSealedAbstract = Modifier.isAbstract(classModel.modifiers());
 
                     var region = expr.condition().region();
-                    if (ctx.checking().canAssign(region, trueBranchPattern.type() , condition.type(), true)) {
-                        Log.warn(region, "Condition is always true");
+                    if (ctx.checking().canAssign(ctx, region, trueBranchPattern.type() , condition.type(), true)) {
+                        Log.warn(ctx, region, "Condition is always true");
                     }
 
                     //TODO check for sealed, non sealed, what can be available as the, what not, etc
@@ -177,6 +184,7 @@ public class BranchAttrib  {
                     yieldSymbol = getSymbolFromType(then.type());
                 } else {
                     var yieldingType = elseContext.checking().superType(
+                            ctx.intoContext(),
                             then.region(),
                             then.type(),
                             elseExpr.type()
@@ -238,18 +246,18 @@ public class BranchAttrib  {
                     }
                     isType = new KType.ClassType(classType.pointer(), newGenerics);
                     //for inference only
-                    var _ = ctx.checking().canAssign(cast.region(), inferHint, isType, true);
+                    var _ = ctx.checking().canAssign(ctx, cast.region(), inferHint, isType, true);
                     //if not inferred, resolve to base case
                     for (var i = 0; i < classModel.generics().size(); i++) {
                         var generic = classModel.generics().get(i);
                         var type = (KType.Resolvable) newGenerics.get(i);
                         if (!type.isResolved()) {
                             //TODO Types.eraseGeneric might lead to recursive types
-                            type.tryResolve(cast.region(), Types.eraseGeneric(generic));
+                            type.tryResolve(ctx, cast.region(), Types.eraseGeneric(generic));
                         }
                     }
                 } else {
-                    Log.attribError(new AttribError.NotAClass(cast.region(), isType));
+                    Log.error(ctx, new AttribError.NotAClass(cast.region(), isType));
                     throw new Log.KarinaException();
                 }
 
@@ -273,7 +281,7 @@ public class BranchAttrib  {
             }
             case BranchPattern.Destruct destruct -> {
                 // TODO implement
-                Log.temp(destruct.region(), "Destruct not implemented");
+                Log.temp(ctx, destruct.region(), "Destruct not implemented");
                 throw new Log.KarinaException();
             }
             case BranchPattern.JustType justType -> {

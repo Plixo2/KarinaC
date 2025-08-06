@@ -21,10 +21,9 @@ import java.util.List;
  * In every stage of the compiler, a new {@link Model} is created along with new classes, methods, and fields.
  *
  * <p>
- * A Pointer persists across different stages of the compiler and should be always valid.
+ * A Pointer persists across different stages of the compiler and should <b>always</b> be valid.
  */
 public interface Model {
-
 
     @Nullable ClassPointer getClassPointer(Region region, ObjectPath objectPath);
 

@@ -1,12 +1,14 @@
 package org.karina.lang.compiler.utils;
 
 import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.NotNull;
 
 
 @Getter
 @Accessors(fluent = true)
+@ToString
 public class Variable {
     private final @NotNull Region region;
     private final @NotNull String name;
@@ -34,6 +36,7 @@ public class Variable {
         this.isSynthetic = isSynthetic;
     }
 
+    //TODO remove mutable state
     //used for capturing
     private int usageCount = 0;
 
@@ -45,10 +48,4 @@ public class Variable {
         return this.usageCount;
     }
 
-    @Override
-    public String toString() {
-        return "Variable{" + "region=" + region + ", name='" + name + '\'' + ", type=" + type +
-                ", mutable=" + mutable + ", parameter=" + parameter + ", isSynthetic=" +
-                isSynthetic + ", usageCount=" + usageCount + '}';
-    }
 }

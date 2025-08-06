@@ -18,15 +18,13 @@ public class Expressions {
             }
             case KExpr.Binary binary -> {
                 if (binary.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return binary.symbol().type();
             }
             case KExpr.Block block -> {
                 if (block.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return block.symbol();
             }
@@ -35,8 +33,7 @@ public class Expressions {
             }
             case KExpr.Branch branch -> {
                 if (branch.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return branch.symbol().type();
             }
@@ -45,22 +42,19 @@ public class Expressions {
             }
             case KExpr.Call call -> {
                 if (call.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return call.symbol().returnType();
             }
             case KExpr.Cast cast -> {
                 if (cast.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return cast.symbol().type();
             }
             case KExpr.Closure closure -> {
                 if (closure.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return closure.symbol().type();
             }
@@ -69,29 +63,25 @@ public class Expressions {
             }
             case KExpr.CreateArray createArray -> {
                 if (createArray.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return createArray.symbol();
             }
             case KExpr.CreateObject createObject -> {
-                Log.temp(expr.region(), "CreateObject should be replaced with a call to the constructor");
-                throw new Log.KarinaException();
+                throw new IllegalStateException("Symbol is null");
             }
             case KExpr.For aFor -> {
                 return KType.NONE;
             }
             case KExpr.GetArrayElement getArrayElement -> {
                 if (getArrayElement.elementType() == null) {
-                    Log.temp(expr.region(), "Element type is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return getArrayElement.elementType();
             }
             case KExpr.GetMember getMember -> {
                 if (getMember.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return getMember.symbol().type();
             }
@@ -100,19 +90,16 @@ public class Expressions {
             }
             case KExpr.Literal literal -> {
                 if (literal.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return literal.symbol().type();
             }
             case KExpr.Match match -> {
-                Log.temp(expr.region(), "Match not implemented");
-                throw new Log.KarinaException();
+                throw new IllegalStateException("Symbol is null");
             }
             case KExpr.Number number -> {
                 if (number.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return number.symbol().type();
             }
@@ -121,8 +108,7 @@ public class Expressions {
             }
             case KExpr.Self self -> {
                 if (self.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return self.symbol().type();
             }
@@ -135,15 +121,13 @@ public class Expressions {
             }
             case KExpr.Unwrap unwrap -> {
                 if (unwrap.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    return null;
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return unwrap.symbol().unpackedType();
             }
             case KExpr.Unary unary -> {
                 if (unary.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    return null;
+                    throw new IllegalStateException("Symbol is null");
                 }
                 return unary.symbol().type();
             }
@@ -178,8 +162,7 @@ public class Expressions {
             }
             case KExpr.Branch branch -> {
                 if (branch.symbol() == null) {
-                    Log.temp(expr.region(), "Symbol is null");
-                    throw new Log.KarinaException();
+                    throw new IllegalStateException("Symbol is null");
                 }
                 yield branch.symbol() instanceof BranchYieldSymbol.Returns;
             }

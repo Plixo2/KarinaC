@@ -19,12 +19,6 @@ public final class ObjectPath {
     public ObjectPath(String... elements) {
         this.elements = Arrays.copyOf(elements, elements.length);
         this.hashCode1 = hashCode(elements);
-
-        for (var element : this.elements) {
-            if (element.contains("$")) {
-               // Log.warn(Arrays.toString(this.elements), "Path contains $ character: " + element);
-            }
-        }
     }
 
     public ObjectPath(List<String> list) {
@@ -112,8 +106,6 @@ public final class ObjectPath {
         return new ObjectPath(str.split("/"));
     }
 
-
-
     @Override
     public boolean equals(Object object) {
         if (object == this) {
@@ -152,6 +144,7 @@ public final class ObjectPath {
     public Iterator<String> iterator() {
         return Arrays.stream(this.elements).iterator();
     }
+
     public List<String> asList() {
         return List.of(this.elements);
     }

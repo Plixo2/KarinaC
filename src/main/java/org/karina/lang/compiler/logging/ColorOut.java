@@ -10,13 +10,13 @@ public class ColorOut {
         this.sb = new StringBuilder();
     }
 
-    public static ColorOut begin() {
+    private static ColorOut begin() {
         return new ColorOut();
     }
 
-    public static ColorOut begin(String string) {
-        return begin().append(string);
-    }
+//    public static ColorOut begin(String string) {
+//        return begin().append(string);
+//    }
 
     public static ColorOut begin(LogColor color) {
         return begin().color(color);
