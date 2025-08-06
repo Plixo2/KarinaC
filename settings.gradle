@@ -1,2 +1,3 @@
 rootProject.name = 'karina'
 
+include 'compiler', 'cli', 'stdlib'

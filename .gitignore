@@ -1,12 +1,5 @@
 .gradle
-build/
 !gradle/wrapper/gradle-wrapper.jar
-resources/flight.txt
-resources/howToCode.md
-resources/*.txt
-resources/*.class
-/resources/src_local/*.krna
-/src/main/resources/java_base/
 
 
 ### IntelliJ IDEA ###
@@ -47,3 +40,18 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+## Custom files and directories ##
+resources/howToCode.md
+resources/*.txt
+resources/*.class
+/resources/src_local/*.krna
+/compiler/src/main/resources/java_base/
+
+/cli/build/generated/
+/cli/build/classes/
+/cli/build/tmp/
+/cli/build/libs/jar/karina-cli.jar
+/compiler/build/
+/stdlib/build/
+
+/cli/build/libs/temp/

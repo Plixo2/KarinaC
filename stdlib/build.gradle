@@ -1,0 +1,11 @@
+
+jar {
+
+    destinationDirectory = file("${projectDir}/../compiler/src/main/resources")
+    archiveFileName = 'karina_base.jar'
+    doLast {
+        println "Built karina.lang JAR: ${archiveFileName.get()}"
+        println "Location: ${destinationDirectory.get()}/${archiveFileName.get()}"
+    }
+
+}

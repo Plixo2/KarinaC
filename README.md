@@ -86,7 +86,7 @@ You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
 
 The compiler is a standard Gradle project, so you can use it with any IDE that supports Gradle.
 
-You can run the compiler via the Gradle task `run` or run the [Main Class](src/main/java/org/karina/lang/compiler/Main.java) directly.
+You can run the compiler via the Gradle task `run` or run the [Main Class](compiler/src/main/java/org/karina/lang/compiler/Main.java) directly.
 
 The `--run` command-line argument can be used to run the program after compilation.
 
@@ -170,7 +170,7 @@ Useful for debugging the compiler.
 
 ### Customize Logging
 You can set custom log types in
-[here](src/main/java/org/karina/lang/compiler/logging/Log.java#L45).
+[here](compiler/src/main/java/org/karina/lang/compiler/logging/Log.java#L45).
 
 Adding log types will enable logging for specific parts of the compiler.
 You can gain detailed insights into the inner workings of the compiler
@@ -195,10 +195,10 @@ This will write the bytecode of the `main.class` file to `main.txt`, where it ca
 
 ## Rebuild the standard library
 
-You can rebuild the [standard library](src/main/java/karina/lang/) with the
+You can rebuild the [standard library](compiler/src/main/java/karina/lang/) with the
 Gradle task `KARINA-BASE`.
 
-This will create a new  `karina_base.jar` file, located in [`src/main/resources`](src/main/resources)
+This will create a new  `karina_base.jar` file, located in [`src/main/resources`](compiler/src/main/resources)
 
 Delete the `base.bin.gz` file in the `resources` folder to force a rebuild of the binary format when in use.
 
@@ -213,31 +213,31 @@ Delete the `base.bin.gz` file in the `resources` folder to force a rebuild of th
 
 - Read the source code into memory
 - Load the precompiled JAR files (java.core and the karina.base) into a ClassModel 
-- [Parser Stage](src/main/java/org/karina/lang/compiler/stages/parser/ParseProcessor.java)
+- [Parser Stage](compiler/src/main/java/org/karina/lang/compiler/stages/parser/ParseProcessor.java)
   - Parse the loaded files into tokens, then into an AST via Antlr
   - Convert the Antlr AST into a ClassModel and IR
-- [Import Stage](src/main/java/org/karina/lang/compiler/stages/imports/ImportProcessor.java)
+- [Import Stage](compiler/src/main/java/org/karina/lang/compiler/stages/imports/ImportProcessor.java)
   - Resolve all types via imports
-- [Attribution Stage](src/main/java/org/karina/lang/compiler/stages/attrib/AttributionProcessor.java)
+- [Attribution Stage](compiler/src/main/java/org/karina/lang/compiler/stages/attrib/AttributionProcessor.java)
   - Expression validation and type inference
-- [Lower Stage](src/main/java/org/karina/lang/compiler/stages/lower/LoweringProcessor.java)
+- [Lower Stage](compiler/src/main/java/org/karina/lang/compiler/stages/lower/LoweringProcessor.java)
   - Construct new classes, bridge methods, rewrite loops, etc
-- [Generate Stage](src/main/java/org/karina/lang/compiler/stages/generate/GenerationProcessor.java)
+- [Generate Stage](compiler/src/main/java/org/karina/lang/compiler/stages/generate/GenerationProcessor.java)
   - Generate bytecode
 - And then finally write the bytecode to disk
 
 #### Important classes:
-- [Main Class](src/main/java/org/karina/lang/compiler/Main.java)
-- [Compiler Class](src/main/java/org/karina/lang/compiler/KarinaCompiler.java)
-- [KExpr Class](src/main/java/org/karina/lang/compiler/utils/KExpr.java)
-- [KType Class](src/main/java/org/karina/lang/compiler/utils/KType.java)
+- [Main Class](compiler/src/main/java/org/karina/lang/compiler/Main.java)
+- [Compiler Class](compiler/src/main/java/org/karina/lang/compiler/KarinaCompiler.java)
+- [KExpr Class](compiler/src/main/java/org/karina/lang/compiler/utils/KExpr.java)
+- [KType Class](compiler/src/main/java/org/karina/lang/compiler/utils/KType.java)
 
 #### Important Packages
-- [jvm_loading](src/main/java/org/karina/lang/compiler/jvm_loading)
+- [jvm_loading](compiler/src/main/java/org/karina/lang/compiler/jvm_loading)
   - Responsible for loading precompiled classes
-- [model_api](src/main/java/org/karina/lang/compiler/model_api)
+- [model_api](compiler/src/main/java/org/karina/lang/compiler/model_api)
   - The API for the ClassModel. Represents all loaded classes and their fields, methods, etc
-- [stages](src/main/java/org/karina/lang/compiler/stages)
+- [stages](compiler/src/main/java/org/karina/lang/compiler/stages)
   - All stages of the compiler.
 
 </details>

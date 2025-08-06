@@ -1,0 +1,17 @@
+plugins {
+    id 'application'
+    id 'java'
+}
+
+
+application {
+    mainClass.set('org.karina.lang.compiler.Main')
+    applicationDefaultJvmArgs = ['-Dkarina.run=true']
+}
+
+tasks.register('buildCache', JavaExec) {
+    group = 'application'
+    description = 'Build the java library cache'
+    mainClass.set('org.karina.lang.compiler.jvm_loading.loading.ModelLoader')
+    classpath = sourceSets.main.runtimeClasspath
+}

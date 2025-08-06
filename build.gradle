@@ -1,162 +1,169 @@
 plugins {
     id 'java'
-    id 'application'
 }
 
-group = 'org.karina.lang'
-version = '0.6'
+subprojects  {
+    apply plugin: 'java-library'
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    //nullable annotations
-    compileOnly 'org.jetbrains:annotations:23.0.0'
-
-    //Json
-    implementation 'com.google.code.gson:gson:2.11.0'
-
-    //Antlr grammar
-    implementation group: 'org.antlr', name: 'antlr4-runtime', version: '4.13.2'
-
-    //lombok annotations
-    compileOnly 'org.projectlombok:lombok:1.18.36'
-    annotationProcessor 'org.projectlombok:lombok:1.18.36'
-
-    //guava
-    implementation "com.google.guava:guava:33.4.0-jre"
-
-    //asm
-    implementation 'org.ow2.asm:asm:9.7'
-    implementation 'org.ow2.asm:asm-commons:9.7'
-    implementation 'org.ow2.asm:asm-util:9.7'
-    implementation 'org.ow2.asm:asm-tree:9.7'
-
-    //lsp
-    implementation group: 'org.eclipse.lsp4j', name: 'org.eclipse.lsp4j', version: '0.23.1'
-
-    //string escaping
-    implementation 'org.apache.commons:commons-text:1.13.0'
-
-    //tests
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.11.4'
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.11.4'
-
-}
-
-/**
- * 'gradle run'
- * <p>
- * Start the compiler for compiling the example program with the command:
- */
-application {
-    mainClass.set('org.karina.lang.compiler.Main')
-    applicationDefaultJvmArgs = ['-Dkarina.run=true']
-}
-
-
-/**
- * 'gradle FAT-JAR'
- * <p>
- * Creates a jar with all dependencies included.
- */
-tasks.register('FAT-JAR', Jar) {
-    manifest {
-        attributes 'Main-Class': 'org.karina.lang.compiler.Main'
+    java {
+        modularity.inferModulePath = true
     }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
 
-    with jar
-}
+    group = 'org.karina'
+    version = '0.6'
 
-/**
- * 'gradle LSP'
- * <p>
- * Creates the LSP jar with all dependencies.
- */
-tasks.register('LSP', Jar) {
-    manifest {
-        attributes 'Main-Class': 'org.karina.lang.lsp.Main'
+    repositories {
+        mavenCentral()
     }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
 
-    with jar
+    dependencies {
+        //nullable annotations
+        compileOnly 'org.jetbrains:annotations:23.0.0'
 
-    archiveFileName = 'karina-lsp.jar'
-}
+        //Json
+        implementation 'com.google.code.gson:gson:2.11.0'
 
+        //Antlr grammar
+        implementation group: 'org.antlr', name: 'antlr4-runtime', version: '4.13.2'
 
-/**
- * 'gradle KARINA-BASE'
- * <p>
- * Compiles only the karina standard library classes in 'karina/lang/'
- * Output is a jar file in the resources directory.
- */
-tasks.register('KARINA-BASE', Jar) {
+        //lombok annotations
+        compileOnly 'org.projectlombok:lombok:1.18.36'
+        annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
-    archiveBaseName = 'karina-lang'
+        //guava
+        implementation "com.google.guava:guava:33.4.0-jre"
 
-    from sourceSets.main.output
-    include 'karina/lang/**'
+        //asm
+        implementation 'org.ow2.asm:asm:9.7'
+        implementation 'org.ow2.asm:asm-commons:9.7'
+        implementation 'org.ow2.asm:asm-util:9.7'
+        implementation 'org.ow2.asm:asm-tree:9.7'
 
-    destinationDirectory = file("${projectDir}/src/main/resources")
-    archiveFileName = 'karina_base.jar'
+        //lsp
+        implementation group: 'org.eclipse.lsp4j', name: 'org.eclipse.lsp4j', version: '0.23.1'
 
-    doLast {
-        println "Built karina.lang JAR: ${archiveFileName.get()}"
-        println "Location: ${destinationDirectory.get()}/${archiveFileName.get()}"
+        //string escaping
+        implementation 'org.apache.commons:commons-text:1.13.0'
+
+        //tests
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.11.4'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.11.4'
+
     }
 }
 
+///**
+// * 'gradle run'
+// * <p>
+// * Start the compiler for compiling the example program with the command:
+// */
+//application {
+//    mainClass.set('org.karina.lang.compiler.Main')
+//    applicationDefaultJvmArgs = ['-Dkarina.run=true']
+//}
 
-
-/**
- * 'gradle CLI'
- * <p>
- * Creates a native image of the compiler.
- * puts in the 'jar' directory inside the build directory.
- */
-tasks.register('CLI', Jar) {
-    manifest {
-        attributes 'Main-Class': 'org.karina.lang.cli.Main'
-    }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-
-    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
-
-    with jar
-
-    archiveFileName = 'jar/karina-cli.jar'
-}
-
-
-/**
- * 'gradle test'
- */
-test {
-    useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
-}
-
-/**
- * Enable preview features for everything
- */
-tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs += '--enable-preview'
-}
-
-tasks.withType(JavaExec).configureEach {
-    jvmArgs += "--enable-preview"
-}
-
-tasks.withType(Test).configureEach {
-    jvmArgs += '--enable-preview'
-}
+//
+///**
+// * 'gradle FAT-JAR'
+// * <p>
+// * Creates a jar with all dependencies included.
+// */
+//tasks.register('FAT-JAR', Jar) {
+//    manifest {
+//        attributes 'Main-Class': 'org.karina.lang.compiler.Main'
+//    }
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+//    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
+//
+//    with jar
+//}
+//
+///**
+// * 'gradle LSP'
+// * <p>
+// * Creates the LSP jar with all dependencies.
+// */
+//tasks.register('LSP', Jar) {
+//    manifest {
+//        attributes 'Main-Class': 'org.karina.lang.lsp.Main'
+//    }
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+//    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
+//
+//    with jar
+//
+//    archiveFileName = 'karina-lsp.jar'
+//}
+//
+//
+///**
+// * 'gradle KARINA-BASE'
+// * <p>
+// * Compiles only the karina standard library classes in 'karina/lang/'
+// * Output is a jar file in the resources directory.
+// */
+//tasks.register('KARINA-BASE', Jar) {
+//
+//    archiveBaseName = 'karina-lang'
+//
+//    from sourceSets.main.output
+//    include 'karina/lang/**'
+//
+//    destinationDirectory = file("${projectDir}/src/main/resources")
+//    archiveFileName = 'karina_base.jar'
+//
+//    doLast {
+//        println "Built karina.lang JAR: ${archiveFileName.get()}"
+//        println "Location: ${destinationDirectory.get()}/${archiveFileName.get()}"
+//    }
+//}
+//
+//
+//
+///**
+// * 'gradle CLI'
+// * <p>
+// * Creates a native image of the compiler.
+// * puts in the 'jar' directory inside the build directory.
+// */
+//tasks.register('CLI', Jar) {
+//    manifest {
+//        attributes 'Main-Class': 'org.karina.lang.cli.Main'
+//    }
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+//
+//    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
+//
+//    with jar
+//
+//    archiveFileName = 'jar/karina-cli.jar'
+//}
+//
+//
+///**
+// * 'gradle test'
+// */
+//test {
+//    useJUnitPlatform()
+//    testLogging {
+//        events "passed", "skipped", "failed"
+//    }
+//}
+//
+///**
+// * Enable preview features for everything
+// */
+//tasks.withType(JavaCompile).configureEach {
+//    options.compilerArgs += '--enable-preview'
+//}
+//
+//tasks.withType(JavaExec).configureEach {
+//    jvmArgs += "--enable-preview"
+//}
+//
+//tasks.withType(Test).configureEach {
+//    jvmArgs += '--enable-preview'
+//}
