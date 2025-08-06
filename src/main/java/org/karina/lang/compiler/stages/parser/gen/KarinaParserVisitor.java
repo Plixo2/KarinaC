@@ -83,11 +83,23 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitBounds(KarinaParser.BoundsContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KarinaParser#bound}.
+	 * Visit a parse tree produced by {@link KarinaParser#implBounds}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitBound(KarinaParser.BoundContext ctx);
+	T visitImplBounds(KarinaParser.ImplBoundsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#extendsBounds}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExtendsBounds(KarinaParser.ExtendsBoundsContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#boundList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBoundList(KarinaParser.BoundListContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#field}.
 	 * @param ctx the parse tree

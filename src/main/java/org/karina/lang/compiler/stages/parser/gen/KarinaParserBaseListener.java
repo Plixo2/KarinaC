@@ -161,13 +161,37 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBound(KarinaParser.BoundContext ctx) { }
+	@Override public void enterImplBounds(KarinaParser.ImplBoundsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBound(KarinaParser.BoundContext ctx) { }
+	@Override public void exitImplBounds(KarinaParser.ImplBoundsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterExtendsBounds(KarinaParser.ExtendsBoundsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitExtendsBounds(KarinaParser.ExtendsBoundsContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBoundList(KarinaParser.BoundListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBoundList(KarinaParser.BoundListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

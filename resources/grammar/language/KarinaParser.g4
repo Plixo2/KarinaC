@@ -16,12 +16,20 @@ const: 'static' id ':' 'mut'? type '=' expression;
 //TODO implement boundWhere
 struct: 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;
 implementation: 'impl' structType ('{' function* '}')?;
-boundWhere : 'where' (('{' genericWithBounds '}') | genericWithBounds) ('{' function* '}');
+boundWhere : 'where' genericWithBounds ('{' function* '}');
 genericWithBounds: (genericWithBound (',' genericWithBound)*)?;
 
-genericWithBound: id bounds?;
-bounds: ':' (bound ('&' bound)*)?;
-bound: ('impl' structType | 'extend' structType);
+//genericWithBound: id bounds;
+//bounds: ':' (bound ('&' bound)*)?;
+//bound: ('impl' structType | 'extend' structType);
+
+
+genericWithBound: id ':' bounds;
+bounds: extendsBounds? implBounds?;
+implBounds: 'impl' boundList;
+extendsBounds: 'extends' structType;
+boundList: (structType ('+' structType)*)?;
+
 
 field: id ':' 'mut'? type;
 
