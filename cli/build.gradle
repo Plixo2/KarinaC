@@ -1,0 +1,21 @@
+
+dependencies {
+    implementation project(':compiler')
+}
+
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.karina.lang.cli.Main'
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
+
+    archiveFileName = 'jar/karina-cli.jar'
+}
