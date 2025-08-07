@@ -15,7 +15,7 @@ import java.net.URLClassLoader;
 import java.util.*;
 
 public class SingleTests {
-    private static final String TEST_DIR = "tests/files/";
+    private static final String TEST_DIR = "../tests/files/";
 
     @TestFactory
     List<DynamicTest> testValid() {

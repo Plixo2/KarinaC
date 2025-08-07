@@ -53,7 +53,7 @@ public class AutoRun {
         }
     }
 
-    private static ClassLoader karinaLibLoader() throws IOException {
+    public static ClassLoader karinaLibLoader() throws IOException {
         var resource = "/karina_base.jar";
         var url = AutoRun.class.getResource(resource);
         if (url != null) {

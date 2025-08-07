@@ -1,5 +1,6 @@
 package org.karina.lang.cli;
 
+import org.karina.lang.cli.commands.CompileProject;
 import org.karina.lang.compiler.ConsoleCompiler;
 
 import java.io.IOException;
@@ -34,10 +35,10 @@ public class Main {
                 }
             }
             case org.karina.lang.cli.CLIParser.PrimaryCommand.Compile compile -> {
-                org.karina.lang.cli.commands.CompileProject.compile(Path.of(compile.src()), false, compile.options());
+                CompileProject.compile(Path.of(compile.src()), false, compile.options());
             }
             case org.karina.lang.cli.CLIParser.PrimaryCommand.Run run -> {
-                org.karina.lang.cli.commands.CompileProject.compile(Path.of("."), true, run.options());
+                CompileProject.compile(Path.of("."), true, run.options());
             }
             case org.karina.lang.cli.CLIParser.PrimaryCommand.Unknown unknown -> {
                 printUnknownCommand(unknown.src());

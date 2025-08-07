@@ -5,6 +5,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.karina.lang.compiler.utils.AutoRun;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -18,8 +19,7 @@ import java.net.URLClassLoader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HelloWorldExampleTest {
-
-
+    public static final String RESOURCES_OUT_BUILD_JAR = "../resources/out/build.jar";
 
     @Test
     public void testMain() throws IOException {
@@ -44,16 +44,15 @@ public class HelloWorldExampleTest {
 
 
     @AfterAll
-    public static void runMain()
-            throws MalformedURLException, ClassNotFoundException, NoSuchMethodException,
+    public static void runMain() throws IOException, ClassNotFoundException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
 
 
         var clsLoader = new URLClassLoader(
                 new URL[] {
-                        new File(System.getProperty("karina.out", "resources/out/build.jar")).toURI().toURL()
+                        new File(System.getProperty("karina.out", RESOURCES_OUT_BUILD_JAR)).toURI().toURL()
                 },
-                Main.class.getClassLoader()
+                AutoRun.karinaLibLoader()
         );
         var classToLoad = Class.forName("main", true, clsLoader);
         var method = classToLoad.getDeclaredMethod("main", String[].class);

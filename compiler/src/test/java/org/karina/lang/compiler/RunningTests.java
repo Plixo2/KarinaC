@@ -19,38 +19,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class RunningTests {
-    private static final String TEST_DIR = "tests/running/";
+    private static final String TEST_DIR = "../tests/running/";
 
-    @Test
-    public void testMain() throws IOException {
-        System.setProperty("karina.run", "true");
-        KarinaCompiler.cache = null; // Clear the cache before running tests
-        System.setProperty("karina.binary", "false");
-        HelloWorldExampleTest.testLikeMain();
-        KarinaCompiler.cache = null;
-        System.setProperty("karina.binary", "true");
-        HelloWorldExampleTest.testLikeMain();
-    }
-
-
-    @AfterAll
-    public static void runMain()
-            throws MalformedURLException, ClassNotFoundException, NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException {
-
-        var clsLoader = new URLClassLoader(
-                new URL[] {
-                        new File(System.getProperty("karina.out", "resources/out/build.jar")).toURI().toURL()
-                },
-                Main.class.getClassLoader()
-        );
-        var classToLoad = Class.forName("main", true, clsLoader);
-        var method = classToLoad.getDeclaredMethod("main", String[].class);
-        var args = new Object[] {
-                new String[] {}
-        };
-        var ignored = method.invoke(null, args);
-    }
 
 
     @TestFactory

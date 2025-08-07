@@ -96,7 +96,7 @@ fn main(args: [string]) {
     expect(create().okOr("Hello"), "Error")
 
 
-    let pathA = files::getPath("LICENSE").expect("valid path")
+    let pathA = files::getPath("../LICENSE").expect("valid path")
     let content = files::loadFile(pathA).expect("file to load")
 
     pathA = files::getPath("DOES_NOT_EXIST").expect("valid path")
