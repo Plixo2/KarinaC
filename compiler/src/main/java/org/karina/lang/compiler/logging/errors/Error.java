@@ -1,22 +1,63 @@
 package org.karina.lang.compiler.logging.errors;
 
-import org.karina.lang.compiler.utils.Resource;
+import org.karina.lang.compiler.logging.ErrorInformation;
 import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.Resource;
 
 public sealed interface Error
-        permits AttribError, Error.BytecodeLoading, Error.InternalException, Error.InvalidState,
-        Error.ParseError, Error.SyntaxError, Error.TemporaryErrorRegion, Error.Warn, FileLoadError,
-        ImportError, LowerError {
+        permits Error.BytecodeLoading, Error.InternalException,
+        Error.SyntaxError, Error.Default, Error.Warn, FileLoadError,
+        AttribError, ImportError, LowerError {
 
-    record TemporaryErrorRegion(Region region, String message) implements Error {}
-    record Warn(String message) implements Error {}
-    record InternalException(Throwable exception) implements Error {}
+    void addInformation(ErrorInformation builder);
 
-    record SyntaxError(Region region, String msg) implements Error {}
+    record Default(Region region, String message) implements Error {
+        @Override
+        public void addInformation(ErrorInformation builder) {
+            builder.setTitle(this.message);
+            builder.setPrimarySource(this.region);
+        }
+    }
+    record Warn(String message) implements Error {
+        @Override
+        public void addInformation(ErrorInformation builder) {
+            builder.setTitle(this.message);
+        }
+    }
 
-    record BytecodeLoading(Resource resource, String location, String msg) implements Error {}
+    record InternalException(Throwable exception) implements Error {
+        @Override
+        public void addInformation(ErrorInformation builder) {
+            builder.setTitle("Internal Exception");
+            builder.append("oh no, please report this issue");
+            builder.append("");
+            if (this.exception.getMessage() == null) {
+                builder.append("<no message given>");
+            } else {
+                builder.append(this.exception.getMessage());
+            }
+            for (var stackTraceElement : this.exception.getStackTrace()) {
+                builder.append(stackTraceElement.toString());
+            }
+        }
+    }
+    record SyntaxError(Region region, String msg) implements Error {
 
-    record InvalidState(Region region, Class<?> aClass, String expectedState) implements Error {}
+        @Override
+        public void addInformation(ErrorInformation builder) {
+            builder.setTitle("Syntax Error");
+            builder.append(this.msg);
+            builder.setPrimarySource(this.region);
+        }
+    }
+    record BytecodeLoading(Resource resource, String location, String msg) implements Error {
+        @Override
+        public void addInformation(ErrorInformation builder) {
+            builder.setTitle("Bytecode Handling");
+            builder.append("File: ").append(this.resource.identifier());
+            builder.append("symbol: " + this.location);
+            builder.append(this.msg);
+        }
+    }
 
-    record ParseError(String msg) implements Error {}
 }

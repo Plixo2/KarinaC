@@ -1,14 +1,23 @@
 package org.karina.lang.compiler.logging.errors;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.utils.Resource;
+import org.karina.lang.compiler.logging.ErrorInformation;
 
 import java.io.File;
-import java.nio.file.Path;
 
 public sealed interface FileLoadError extends Error {
     @Nullable File file();
 
+    @Override
+    default void addInformation(ErrorInformation builder) {
+        builder.setTitle("File Handling");
+        var file = this.file();
+        if (file != null) {
+            var path = file.getAbsolutePath().replace("\\", "/");
+            builder.append("File: file:///").append(path);
+        }
+        builder.append("Type: ").append(this.errorMessage());
+    }
 
     record NotFound(File file) implements FileLoadError { }
 

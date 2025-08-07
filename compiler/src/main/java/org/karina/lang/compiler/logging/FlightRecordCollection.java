@@ -4,7 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.PrintStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRecord> {
     private List<FlightRecorder.SectionRecord> records = new ArrayList<>();
@@ -32,9 +34,9 @@ public class FlightRecordCollection implements Iterable<FlightRecorder.SectionRe
     }
 
     public static void printColored(FlightRecordCollection collection, boolean verbose, PrintStream stream) {
-        var name = "\u001B[37m";
-        var time = "\u001B[33m";
-        var end = "\u001B[0m";
+        var name = LogColor.GRAY;
+        var time = LogColor.YELLOW;
+        var end = LogColor.RESET;
 
         var colorFormatter = new FlightRecorder.ColorFormatter();
         colorFormatter.addCustomString("true", "\u001B[32mtrue\u001B[37m");

@@ -1,11 +1,11 @@
 package org.karina.lang.compiler.stages.generate;
 
-import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.Region;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.*;
@@ -137,14 +137,6 @@ public class GenerateItem {
         } catch(Exception e) {
             Log.internal(c, e);
             Log.temp(c, region, "Error while generating class " + classNode.name);
-
-//          TODO write to recorder or log
-
-//            PrintWriter pw = new PrintWriter(System.out);
-//
-//            TraceClassVisitor tracer = new TraceClassVisitor(pw);
-//            classNode.accept(tracer);
-
             throw new Log.KarinaException();
         }
         var b = cw.toByteArray();

@@ -4,12 +4,13 @@ import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.jvm_loading.binary.BinaryFormatLinker;
 import org.karina.lang.compiler.logging.*;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
-import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -179,7 +180,7 @@ public class ModelLoader {
 
             LogColor.YELLOW.out(System.out);
             DiagnosticCollection.print(warnings, true, System.out);
-            LogColor.NONE.out(System.out);
+            LogColor.RESET.out(System.out);
         }
 
         Log.end("rebuild-cache");

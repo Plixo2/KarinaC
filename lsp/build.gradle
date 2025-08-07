@@ -3,3 +3,14 @@ dependencies {
     implementation project(':compiler')
 }
 
+sourceSets {
+    main {
+        java {
+            exclude 'org/karina/lang/lsp_old/**'
+        }
+    }
+}
+
+jar {
+    exclude 'org/karina/lang/lsp_old/**'
+}

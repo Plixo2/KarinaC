@@ -1,18 +1,19 @@
 package org.karina.lang.compiler.logging;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 
-/**
- * Helper for finding suggestions for typos.
- */
+///
+/// Helper for finding suggestions for typos.
+///
 public final class DidYouMean {
 
     private DidYouMean() {}
 
-    /**
-     * Find the best suggestions for a target string from a set of available strings.
-     * @param limit the maximum number of suggestions to return
-     */
+    /// Find the best suggestions for a target string from a set of available strings.
+    /// @param limit the maximum number of suggestions to return
     public static List<String> suggestions(Set<String> available, String target, int limit) {
 
         return available
@@ -23,10 +24,8 @@ public final class DidYouMean {
     }
 
 
-    /**
-     * Calculate the Levenshtein distance between two strings.
-     * Source: <a href="https://github.com/eugenp/tutorials/tree/master/algorithms-modules/algorithms-miscellaneous-9/src/main/java/com/baeldung/algorithms/editdistance">github.com</a>
-     */
+    /// Calculate the Levenshtein distance between two strings.
+    /// Source: <a href="https://github.com/eugenp/tutorials/tree/master/algorithms-modules/algorithms-miscellaneous-9/src/main/java/com/baeldung/algorithms/editdistance">github.com</a>
     private static int calculate(String x, String y) {
         int[][] dp = new int[x.length() + 1][y.length() + 1];
 

@@ -153,7 +153,7 @@ public class ConsoleCompiler {
 
         LogColor.YELLOW.out(System.out);
         DiagnosticCollection.print(warnings, true, System.out);
-        LogColor.NONE.out(System.out);
+        LogColor.RESET.out(System.out);
     }
 
     /**

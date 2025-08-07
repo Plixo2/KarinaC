@@ -1,12 +1,90 @@
 package org.karina.lang.compiler.logging.errors;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.logging.DidYouMean;
+import org.karina.lang.compiler.logging.ErrorInformation;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.Set;
 
 public sealed interface ImportError extends Error {
+
+    @Override
+    default void addInformation(ErrorInformation builder) {
+        switch (this) {
+            case ImportError.NoClassFound(var region, var path) -> {
+                builder.setTitle("No class found");
+                var target = path.mkString("::");
+                builder.append("No Class found for path '").append(target).append("'");
+                builder.setPrimarySource(region);
+            }
+            case ImportError.UnknownImportType(var region, var name, var available) -> {
+                builder.setTitle("Unknown type");
+                builder.append("Unknown type '").append(name).append("'");
+                var suggestions = DidYouMean.suggestions(available, name, 5);
+
+                if (!suggestions.isEmpty()) {
+                    var quoted = suggestions.stream().map(x -> "'" + x + "'").toList();
+                    builder.append("Did you mean: ").append(quoted);
+                }
+                builder.setPrimarySource(region);
+            }
+            case ImportError.GenericCountMismatch(var region, var name, var expected, var found) -> {
+                builder.setTitle("Generic count mismatch");
+                builder.append("Generic count mismatch for '").append(name).append("'");
+                builder.append("Expected ").append(expected).append(" but found ").append(found);
+                builder.setPrimarySource(region);
+            }
+            case ImportError.DuplicateItem(var first, var second, var item) -> {
+                builder.setTitle("Duplicate item");
+                builder.append("Duplicate item '").append(item).append("'");
+                builder.setPrimarySource(second);
+                builder.addSecondarySource(first, "First defined here: ");
+            }
+            case ImportError.DuplicateItemWithMessage(var first, var second, var item, var message) -> {
+                builder.setTitle("Duplicate item");
+                builder.append("Duplicate item '").append(item).append("'");
+                builder.append(message);
+                builder.setPrimarySource(second);
+                builder.addSecondarySource(first, "Defined here: ");
+            }
+            case ImportError.NoItemFound(var region, var item, var cls) -> {
+                builder.setTitle("No item found");
+                builder.append("No item '").append(item).append("' found in class '")
+                       .append(cls.mkString(".")).append("'");
+                builder.setPrimarySource(region);
+            }
+            case ImportError.InnerClassImport(Region region, ObjectPath cls) -> {
+                builder.setTitle("Inner class import");
+                builder.append("Inner class '").append(cls.mkString(".")).append("' cannot be imported directly");
+                builder.setPrimarySource(region);
+            }
+            case ImportError.InvalidAlias(Region region, String givenAlias, String foundClassName) -> {
+                builder.setTitle("Invalid alias");
+                builder.append("Cannot alias class '").append(foundClassName)
+                       .append("' as '").append(givenAlias).append("'");
+                builder.append("The alias must contain the class name '").append(foundClassName).append("'");
+
+                builder.setPrimarySource(region);
+            }
+            case ImportError.UnnecessaryAlias(Region region1, String givenAlias) -> {
+                builder.setTitle("Unnecessary alias");
+                builder.append("Unnecessary alias '").append(givenAlias).append("'");
+                builder.append("Cannot use an alias without conflicts");
+                builder.setPrimarySource(region1);
+            }
+
+            case ImportError.InvalidName(var region, var name, var msg) -> {
+                builder.setTitle("Invalid name");
+                builder.append("Invalid name '").append(name).append("'");
+                if (msg != null) {
+                    builder.append(msg);
+                }
+                builder.setPrimarySource(region);
+            }
+        }
+    }
 
     record NoClassFound(Region region, ObjectPath path) implements ImportError {}
 

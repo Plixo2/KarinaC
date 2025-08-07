@@ -3,21 +3,23 @@ package org.karina.lang.compiler;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.karina.lang.compiler.logging.DiagnosticCollection;
-import org.karina.lang.compiler.stages.generate.JarCompilation;
-import org.karina.lang.compiler.stages.writing.WritingProcessor;
-import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.logging.FlightRecordCollection;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
-import org.karina.lang.compiler.model_api.impl.ModelBuilder;
-import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.stages.generate.GenerationProcessor;
+import org.karina.lang.compiler.logging.DiagnosticCollection;
+import org.karina.lang.compiler.logging.FlightRecordCollection;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
+import org.karina.lang.compiler.stages.generate.GenerationProcessor;
+import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.stages.imports.ImportHelper;
 import org.karina.lang.compiler.stages.imports.ImportProcessor;
 import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.ParseProcessor;
+import org.karina.lang.compiler.stages.writing.WritingProcessor;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.FileTreeNode;
+import org.karina.lang.compiler.utils.KType;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -67,7 +69,7 @@ public class KarinaCompiler {
     /// @param files the file tree to compile
     /// @return the compiled jar
     ///
-    private JarCompilation run(Context c, FileTreeNode<TextSource> files) {
+    private JarCompilation run(Context c, FileTreeNode files) {
 
         // The 6 stages of the compiler:
         ParseProcessor parser = new ParseProcessor();
@@ -127,7 +129,7 @@ public class KarinaCompiler {
     /// @see #run
     /// @see #runInContext
     /// @return the compiled jar, or null if the compilation failed
-    public @Nullable JarCompilation compile(FileTreeNode<TextSource> files) {
+    public @Nullable JarCompilation compile(FileTreeNode files) {
 
         Log.begin("compilation");
         var result = runInContext(

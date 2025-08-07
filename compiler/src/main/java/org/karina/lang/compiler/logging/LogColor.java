@@ -15,14 +15,15 @@ public enum LogColor {
     PURPLE("\u001B[35m"),
     CYAN("\u001B[36m"),
     GRAY("\u001B[37m"),
-    WHITE(""),
-    NONE("\u001B[0m"),
+    WHITE("\u001B[0m"),
+    RESET("\u001B[0m"),
+    NONE(""),
 
     ;
     private final String colorCode;
 
     public String getColorCode() {
-        //TODO test for different systems
+        //TODO test this code for different platforms
         return this.colorCode;
     }
 

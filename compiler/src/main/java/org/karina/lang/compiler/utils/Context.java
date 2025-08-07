@@ -21,7 +21,7 @@ import java.util.function.Function;
 /// Local Context
 /// Context is always referred to as 'c' in the codebase
 ///
-/// The fork method is not thread-safe, so it should be used in a try-with-resources block.
+/// The fork method should be used in a try-with-resources block.
 /// The {@link Collector#collect} method on the {@link Collector} is thread-safe.
 ///
 /// ```
@@ -36,21 +36,17 @@ import java.util.function.Function;
 ///
 public class Context implements IntoContext {
 
-
-    ///
-    /// A non-thread-safe List of logs
+    /// A <b>non-thread-safe</b> List of logs
     /// Threading should be done with the  {@link #fork} method and {@link Collector} class
-    ///
     private final List<Log.LogWithTrace> errors = new ArrayList<>();
     private final List<Log.LogWithTrace> warning = new ArrayList<>();
 
     //Flight recorder for logging. Not safe for concurrent use.
     private static final FlightRecorder flightRecorder = new FlightRecorder();
 
-    private Context() {
+    private Context() {}
 
-    }
-
+    /// <b>not thread-safe</b>
     public void mergeUp(Context context) {
         this.errors.addAll(context.errors);
         this.warning.addAll(context.warning);

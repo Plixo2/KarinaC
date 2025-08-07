@@ -1,9 +1,11 @@
 package org.karina.lang.compiler.stages.parser;
 
-import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.impl.ModelBuilder;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.FileNode;
+import org.karina.lang.compiler.utils.FileTreeNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +16,7 @@ import java.util.List;
  */
 public class ParseProcessor {
 
-    public Model parseTree(Context c, FileTreeNode<TextSource> fileTree) {
+    public Model parseTree(Context c, FileTreeNode fileTree) {
         var flatFiles = getFiles(fileTree);
         ModelBuilder builder = new ModelBuilder();
 
@@ -23,12 +25,10 @@ public class ParseProcessor {
                 fork.collect(subC -> {
                     var start = System.currentTimeMillis();
                     var unitParser = new TextUnitParser(subC, file.content(), file.name(), file.path());
-                    // return null, and mutate thread-safe ModelBuilder
                     unitParser.visit(builder);
-
                     var end = System.currentTimeMillis();
                     Log.record("parse-" + file.name() + ": " + (end - start) + "ms");
-
+                    // return null, and mutate thread-safe ModelBuilder
                     return null;
                 });
             }
@@ -39,8 +39,8 @@ public class ParseProcessor {
 
 
 
-    private List<FileNode<TextSource>> getFiles(FileTreeNode<TextSource> fileTree) {
-        var files = new ArrayList<FileNode<TextSource>>(fileTree.leafs());
+    private List<FileNode> getFiles(FileTreeNode fileTree) {
+        var files = new ArrayList<FileNode>(fileTree.leafs());
         for (var child : fileTree.children()) {
             files.addAll(getFiles(child));
         }

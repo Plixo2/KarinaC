@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Predicate;
 
 public class FileLoader {
@@ -18,7 +17,7 @@ public class FileLoader {
     public static TextSource loadUTF8(String path) throws IOException {
         var file = new File(path);
         var lines = loadUTF8File(file);
-        return new TextSource(new FileResource(file), lines);
+        return new DefaultTextSource(new FileResource(file), lines);
     }
 
     public static String loadUTF8FiletoString(File file) throws IOException {
@@ -84,9 +83,7 @@ public class FileLoader {
         if (files == null) {
             throw new IOException("Can't list files");
         }
-        var tree = loadTreeFiles(files, objectPath, folderName, filePredicate);
-        return tree;
-
+        return loadTreeFiles(files, objectPath, folderName, filePredicate);
     }
 
     private static DefaultFileTree loadTreeFiles(
@@ -97,7 +94,7 @@ public class FileLoader {
     ) throws IOException {
 
         var children = new ArrayList<DefaultFileTree>();
-        var leafs = new ArrayList<FileNode<TextSource>>();
+        var leafs = new ArrayList<FileNode>();
         for (var subFile : files) {
             if (!subFile.exists()) {
                 throw new FileNotFoundException(
@@ -114,7 +111,7 @@ public class FileLoader {
                 children.add(child);
             } else if (subFile.isFile() && filePredicate.test(subFile.getName())) {
                 var lines = loadUTF8File(subFile);
-                var src = new TextSource(new FileResource(subFile), lines);
+                var src = new DefaultTextSource(new FileResource(subFile), lines);
                 leafs.add(new DefaultFileTree.DefaultFileNode(childPath, name, src));
             }
         }
@@ -125,13 +122,15 @@ public class FileLoader {
     //#endregion
 
     public static String getFileNameWithoutExtension(String filePath) {
+        if (filePath.isEmpty()) return "";
 
-        int lastSeparatorIndex = filePath.lastIndexOf('/');
+
+        int lastSeparatorIndex = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));;
         String fileName;
         if (lastSeparatorIndex == -1) {
             fileName = filePath;
         } else {
-            fileName = (filePath.substring(lastSeparatorIndex + 1));
+            fileName = filePath.substring(lastSeparatorIndex + 1);
         }
         int lastDotIndex = fileName.lastIndexOf('.');
         if (lastDotIndex == -1) {
@@ -143,15 +142,20 @@ public class FileLoader {
     }
 
     public static String getFileExtension(String filePath) {
+        if (filePath.isEmpty()) return "";
 
-        if (filePath.isEmpty()) {
-            return "";
-        }
-        int lastDotIndex = filePath.lastIndexOf('.');
-        if (lastDotIndex == -1) {
-            return "";
+        int lastSeparatorIndex = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));;
+        String fileName;
+        if (lastSeparatorIndex == -1) {
+            fileName = filePath;
         } else {
-            return filePath.substring(lastDotIndex + 1);
+            fileName = filePath.substring(lastSeparatorIndex + 1);
+        }
+        int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex == -1 || lastDotIndex == fileName.length() - 1) {
+            return fileName;
+        } else {
+            return fileName.substring(0, lastDotIndex);
         }
 
     }

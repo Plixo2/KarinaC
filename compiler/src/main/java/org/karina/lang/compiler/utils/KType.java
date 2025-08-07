@@ -2,12 +2,14 @@ package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm_loading.JavaResource;
-import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -15,12 +17,12 @@ import java.util.*;
  */
 public sealed interface KType {
 
-    Region KARINA_LIB = new TextSource(
+    Region KARINA_LIB = new DefaultTextSource(
             new JavaResource("karina standard library"),
             "<karina sdk>"
     ).emptyRegion();
 
-    Region JAVA_LIB = new TextSource(
+    Region JAVA_LIB = new DefaultTextSource(
             new JavaResource("java standard library"),
          "<java sdk>"
     ).emptyRegion();

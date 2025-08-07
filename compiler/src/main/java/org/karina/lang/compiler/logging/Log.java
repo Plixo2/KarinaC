@@ -1,40 +1,47 @@
 package org.karina.lang.compiler.logging;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.logging.errors.Error;
+import org.karina.lang.compiler.logging.errors.FileLoadError;
+import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
-import org.karina.lang.compiler.utils.TextSource;
-import org.karina.lang.compiler.logging.errors.*;
-import org.karina.lang.compiler.logging.errors.Error;
 import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.TextSource;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * Error logging system for the compiler.
- * Used to log every type of error that can occur during the compilation process.
- * The errors can be accessed later to generate a report.
- * <p>
- *
- * Remember to throw a {@link KarinaException} when an error is logged.
- * The {@link KarinaException} cannot contain any information about the error,
- * as the error information is stored in the log in the {@link Context}.
- * <p>
- *
- *
- *<pre>
- * {@code
- * // c is the context
- * Log.syntaxError(c, region, "Expected a number");
- * throw new Log.KarinaException();
- * }
- * </pre>
- *
- * Use {@link Context#fork} to collect multiple errors with a single try-with-resources block.
- * <p>
- *
- */
+///
+/// Error logging system for the compiler.
+/// Used to log every type of error that can occur during the compilation process.
+/// The errors can be accessed later to generate a report.
+///
+///
+/// Remember to throw a {@link KarinaException} when an error is logged.
+/// The {@link KarinaException} cannot contain any information about the error,
+/// as the error information is stored in the log in the {@link Context}.
+///
+///
+///
+///
+/// ```java
+/// // c is the context
+/// Log.syntaxError(c, region, "Expected a number");
+/// throw new Log.KarinaException();
+/// }
+/// ```
+///
+/// Use {@link Context#fork} to collect multiple errors with a single try-with-resources block.
+///
+///
+///
 public class Log {
+
+    //Flight recorder for logging. Not safe for concurrent use.
+    private static final FlightRecorder FLIGHT_RECORDER = new FlightRecorder();
+
 
     //TODO make recorder local to the context
     /**
@@ -47,7 +54,6 @@ public class Log {
     );
 
     private static final Set<LogTypes> LOG_PROPERTY;
-
 
     static {
         var property = System.getProperty("karina.logging", "none");
@@ -124,12 +130,6 @@ public class Log {
     }
 
 
-//    A thread-safe List of logs
-//    private static final List<LogWithTrace> ENTRIES = new CopyOnWriteArrayList<>();
-//    private static final List<LogWithTrace> WARNINGS = new CopyOnWriteArrayList<>();
-
-    //Flight recorder for logging. Not safe for concurrent use.
-    private static final FlightRecorder FLIGHT_RECORDER = new FlightRecorder();
 
 
     public static void begin(String name) {
@@ -216,7 +216,7 @@ public class Log {
 
 
     public static void warn(IntoContext c, Region region, String warning) {
-        addWarning(c, new Error.TemporaryErrorRegion(region, warning));
+        addWarning(c, new Error.Default(region, warning));
     }
 
     public static void warn(IntoContext c, Object... args) {
@@ -241,7 +241,7 @@ public class Log {
     }
 
     public static void temp(IntoContext c, Region region, String msg) {
-        addError(c, new Error.TemporaryErrorRegion(region, msg));
+        addError(c, new Error.Default(region, msg));
     }
 
     public static void internal(IntoContext c, Throwable e) {
@@ -276,20 +276,14 @@ public class Log {
 
         public String mkString(boolean addTrace) {
 
-            var builder = new StringBuilder();
-            var report = new LogFactory<ConsoleLogBuilder>();
-            var print = report.populate(this.entry, new ConsoleLogBuilder());
+            var information = new ConsoleErrorInformation();
+            this.entry.addInformation(information);
+
             if (addTrace && this.stack != null) {
-                print.appendStack(this.stack);
+                information.appendStack(this.stack);
             }
 
-            builder.append(print.name()).append("\n");
-            for (var line : print.lines()) {
-                builder.append("    ").append(line).append("\n");
-            }
-            builder.append("\n");
-
-            return builder.toString();
+            return information.readable();
 
         }
 

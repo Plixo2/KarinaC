@@ -56,3 +56,4 @@ resources/*.class
 
 /cli/build/libs/temp/
 /lsp/build/
+/lsp/src/main/java/org/karina/lang/lsp_old/

@@ -14,10 +14,6 @@ public class ColorOut {
         return new ColorOut();
     }
 
-//    public static ColorOut begin(String string) {
-//        return begin().append(string);
-//    }
-
     public static ColorOut begin(LogColor color) {
         return begin().color(color);
     }
@@ -29,7 +25,7 @@ public class ColorOut {
 
     public ColorOut color(LogColor color) {
         this.sb.append(color.getColorCode());
-        if (color != LogColor.NONE) {
+        if (color != LogColor.RESET) {
             this.hasColor = true;
         }
         return this;
@@ -38,7 +34,7 @@ public class ColorOut {
     public ColorOut resetColor() {
         if (this.hasColor) {
             this.hasColor = false;
-            this.sb.append(LogColor.NONE.getColorCode());
+            this.sb.append(LogColor.RESET.getColorCode());
         }
         return this;
     }
@@ -46,7 +42,7 @@ public class ColorOut {
 
     public String toString() {
         if (this.hasColor) {
-            return this.sb.toString() + LogColor.NONE.getColorCode();
+            return this.sb.toString() + LogColor.RESET.getColorCode();
         }
         return this.sb.toString();
     }

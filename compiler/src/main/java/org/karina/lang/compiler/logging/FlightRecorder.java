@@ -4,14 +4,19 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Simple FlightRecorder to measure the time taken by different sections of code
- * Use <code>Log.begin(..)</code> to start a section and <code>Log.end()</code> to end it.
- * A section also stores the stack trace of where it was started, so it can be used to debug
- */
+/// Simple FlightRecorder to measure the time taken by different sections of code.
+/// Use `Log.begin(x)` to start a section and `Log.end(x)` to end it.
+/// A section also stores the stack trace to debug where the section was started in code.
+///
+/// <b>Not thread-safe</b>
 public class FlightRecorder {
+    private static int STACK_TRACE_OFFSET = 3;
+
     SectionRecord topLevel = null;
     private SectionRecord currentSection = null;
 
@@ -33,9 +38,9 @@ public class FlightRecorder {
 
 
 
-    /*
-     * The name isn't necessary, but it can be used to check if the section is being closed correctly
-     */
+    ///
+    /// The name isn't necessary, but it can be used to check if the section is being closed correctly
+    ///
     public void end(String name) {
         if (this.currentSection == null) {
             return;
@@ -43,9 +48,10 @@ public class FlightRecorder {
         var current = this.currentSection;
         if (current.name.equals(name)) {
             current.endTimeNano = System.nanoTime();
-        } else {
-//            Log.warn("Ending section " + name + " but current section is " + current.name);
         }
+//        else {
+//            Log.warn("Ending section " + name + " but current section is " + current.name);
+//        }
 
         this.currentSection = current.parent;
 
@@ -91,19 +97,23 @@ public class FlightRecorder {
         }
 
         public String mkString(boolean verbose) {
-           return mkString(verbose, "", "", "", null);
+           return mkString(verbose, LogColor.NONE, LogColor.NONE, LogColor.NONE, null);
         }
 
 
-        public String mkString(boolean verbose, String nameFormat, String timeFormat, String escape, @Nullable AbstractFormatter colorFormatter) {
+        public String mkString(boolean verbose, LogColor nameColor, LogColor timeColor, LogColor escape, @Nullable AbstractFormatter colorFormatter) {
+            var nameColorStr = nameColor.getColorCode();
+            var timeColorStr = timeColor.getColorCode();
+            var escapeStr = escape.getColorCode();
+
             var indent = "|  ".repeat(this.depth);
             var endTime = this.endTimeNano;
             var duration = (endTime - this.startTimeNano) / 1_000_000.0f;
 
-            var suffix = escape;
+            var suffix = escapeStr;
             if (this.stackTrace.length >= 4 && verbose) {
                 var stackTraceElement = this.stackTrace[3];
-                suffix = escape + " at " + getTrace(stackTraceElement);
+                suffix = escapeStr + " at " + getTrace(stackTraceElement);
             }
             var nameStr = this.name;
             if (colorFormatter != null) {
@@ -111,9 +121,9 @@ public class FlightRecorder {
             }
 
             if (endTime == 0 || !this.includeTime) {
-                return String.format("%s%s%s%s", nameFormat, indent, nameStr, suffix);
+                return String.format("%s%s%s%s", nameColorStr, indent, nameStr, suffix);
             } else {
-                return String.format("%s%s%s: %s%.2fms%s", nameFormat, indent, nameStr, timeFormat, duration , suffix);
+                return String.format("%s%s%s: %s%.2fms%s", nameColorStr, indent, nameStr, timeColorStr, duration , suffix);
             }
         }
     }

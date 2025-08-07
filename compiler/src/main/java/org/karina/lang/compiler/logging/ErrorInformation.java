@@ -1,15 +1,24 @@
 package org.karina.lang.compiler.logging;
 
+import org.jetbrains.annotations.Contract;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.TextSource;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public interface LogBuilder {
-    LogBuilder setTitle(String title);
+public interface ErrorInformation {
+
+    @Contract(mutates = "this")
+    void setTitle(String title);
+
+    @Contract(mutates = "this")
     void setPrimarySource(Region region);
+
+    @Contract(mutates = "this")
     void addSecondarySource(Region region, String... message);
+
+    @Contract(mutates = "this")
     StringBuilder append(String s);
 
     static List<String> getCodeOfRegion(Region region, boolean annotate) {
