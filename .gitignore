@@ -55,3 +55,4 @@ resources/*.class
 /stdlib/build/
 
 /cli/build/libs/temp/
+/lsp/build/
