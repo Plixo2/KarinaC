@@ -1,19 +1,12 @@
 package org.karina.lang.compiler;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.karina.lang.compiler.utils.DefaultFileTree;
 import org.karina.lang.compiler.utils.FileLoader;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
