@@ -15,3 +15,7 @@ tasks.register('buildCache', JavaExec) {
     mainClass.set('org.karina.lang.compiler.jvm_loading.loading.ModelLoader')
     classpath = sourceSets.main.runtimeClasspath
 }
+
+test {
+    useJUnitPlatform()
+}
