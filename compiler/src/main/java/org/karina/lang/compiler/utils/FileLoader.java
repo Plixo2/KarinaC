@@ -155,7 +155,7 @@ public class FileLoader {
         if (lastDotIndex == -1 || lastDotIndex == fileName.length() - 1) {
             return fileName;
         } else {
-            return fileName.substring(0, lastDotIndex);
+            return fileName.substring(lastDotIndex + 1);
         }
 
     }
