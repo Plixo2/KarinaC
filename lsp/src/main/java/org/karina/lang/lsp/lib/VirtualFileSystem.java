@@ -1,0 +1,71 @@
+package org.karina.lang.lsp.lib;
+
+import com.google.errorprone.annotations.CheckReturnValue;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Objects;
+
+public interface VirtualFileSystem {
+
+
+    @CheckReturnValue
+    @Contract(mutates = "this")
+    @Nullable FileTransaction openFile(URI uri, String content, int version);
+
+
+    @CheckReturnValue
+    @Contract(mutates = "this")
+    @Nullable FileTransaction updateFile(URI uri, String content, int version);
+
+
+    @CheckReturnValue
+    @Contract(mutates = "this")
+    @Nullable FileTransaction closeFile(URI uri);
+
+
+    @CheckReturnValue
+    @Contract(mutates = "this")
+    @Nullable FileTransaction saveFile(URI uri);
+
+
+    @CheckReturnValue
+    @Contract(mutates = "this")
+    @Nullable FileTransaction deleteFile(URI uri);
+
+
+    @CheckReturnValue
+    @Contract(mutates = "this")
+    @Nullable FileTransaction reloadFromDisk(URI uri, String diskContent);
+
+
+
+    /// @return if the file exists and is open
+    @Contract(pure = true)
+    boolean isOpen(URI uri);
+
+    /// @return null if the file does not exist, otherwise the content of the file
+    @Contract(pure = true)
+    @Nullable String getContent(URI uri);
+
+    @Contract(pure = true)
+    @UnmodifiableView
+    List<VirtualFile> files();
+
+
+
+    static URI toUri(String uri) {
+        var uriObj = URI.create(uri);
+        if (!Objects.equals(uriObj.getScheme(), "file")) {
+            throw new IllegalArgumentException("URI scheme must be 'file': " + uri);
+        }
+        Path path = Paths.get(uriObj).toAbsolutePath().normalize();
+        return path.toUri();
+    }
+
+}

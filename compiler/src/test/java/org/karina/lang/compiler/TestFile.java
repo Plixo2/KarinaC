@@ -1,7 +1,7 @@
 package org.karina.lang.compiler;
 
-import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.logging.DiagnosticCollection;
+import org.karina.lang.compiler.utils.*;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -10,7 +10,7 @@ public class TestFile {
 
     private final String identifier;
 
-    FileTreeNode<TextSource> fileTree;
+    FileTreeNode fileTree;
 
     public TestFile(String name, TextSource source) {
         this.identifier = source.resource().identifier();
@@ -20,7 +20,7 @@ public class TestFile {
         this.fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
     }
 
-    public TestFile(String identifier, FileTreeNode<TextSource> fileTree) {
+    public TestFile(String identifier, FileTreeNode fileTree) {
         this.identifier = identifier;
         this.fileTree = fileTree;
     }
