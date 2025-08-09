@@ -105,7 +105,7 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
 
     @Override
     @Contract(pure = true)
-    public synchronized boolean isOpen(URI uri) {
+    public synchronized boolean isFileOpen(URI uri) {
         var file = this.files.get(uri);
         return file != null && file.isOpen();
     }

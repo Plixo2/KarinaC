@@ -28,11 +28,8 @@ public class ConsoleErrorInformation implements ErrorInformation {
 
     @Override
     @Contract(mutates = "this")
-    public void addSecondarySource(Region region, String... message) {
-        var builder = append("");
-        for (var s : message) {
-            builder.append(s);
-        }
+    public void addSecondarySource(Region region, String message) {
+        var builder = append(message);
         appendRegionFile(builder, region);
     }
 

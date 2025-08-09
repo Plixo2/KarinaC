@@ -47,7 +47,7 @@ public interface VirtualFileSystem {
 
     /// @return if the file exists and is open
     @Contract(pure = true)
-    boolean isOpen(URI uri);
+    boolean isFileOpen(URI uri);
 
     /// @return null if the file does not exist, otherwise the content of the file
     @Contract(pure = true)
@@ -59,6 +59,7 @@ public interface VirtualFileSystem {
 
 
 
+    /// @return normalized and absolute URI from a string representation.
     static URI toUri(String uri) {
         var uriObj = URI.create(uri);
         if (!Objects.equals(uriObj.getScheme(), "file")) {

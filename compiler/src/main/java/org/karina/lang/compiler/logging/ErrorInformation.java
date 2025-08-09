@@ -16,23 +16,23 @@ public interface ErrorInformation {
     void setPrimarySource(Region region);
 
     @Contract(mutates = "this")
-    void addSecondarySource(Region region, String... message);
+    void addSecondarySource(Region region, String message);
 
     @Contract(mutates = "this")
     StringBuilder append(String s);
 
     static List<String> getCodeOfRegion(Region region, boolean annotate) {
         region = region.reorder();
-        var builder = new ArrayList<StringBuilder>();
+        var builder = new ArrayList<String>();
         if (region.start().line() == region.end().line()) {
             addSingleLineImpl(region.source(), annotate, region.start().line(), region.start().column(), region.end().column(), builder);
         } else {
             addMultiLineImpl(region, annotate, builder);
         }
-        return stripLeadingUniform(builder.stream().map(StringBuilder::toString).toList());
+        return stripLeadingUniform(builder.stream().toList());
     }
 
-    private static void addMultiLineImpl(Region region, boolean annotate, List<StringBuilder> builder) {
+    private static void addMultiLineImpl(Region region, boolean annotate, List<String> builder) {
 
         var lines = region.source().content().lines().toList();
         if (lines.isEmpty()) {
@@ -50,15 +50,15 @@ public interface ErrorInformation {
         var startPad = " ".repeat(region.start().column());
         var startAnnotationPosition = "v";
         if (annotate) {
-            builder.add(new StringBuilder(startPad).append(startAnnotationPosition).append(" "));
+            builder.add(startPad + startAnnotationPosition + " ");
         }
         for (var i = startLine; i <= endLine; i++) {
-            builder.add(new StringBuilder(lines.get(i)));
+            builder.add(lines.get(i));
         }
         if (annotate) {
             var endPad = " ".repeat(Math.max(0, region.end().column() - 1));
             var endAnnotationPosition = "^";
-            builder.add(new StringBuilder(endPad).append(endAnnotationPosition));
+            builder.add(endPad + endAnnotationPosition);
         }
     }
 
@@ -68,7 +68,7 @@ public interface ErrorInformation {
             int line,
             int from,
             int to,
-            List<StringBuilder> builder)
+            List<String> builder)
     {
 
         var lines = source.content().lines().toList();
@@ -80,9 +80,9 @@ public interface ErrorInformation {
         var padLeft = " ".repeat(from);
         var annotationPosition = "v".repeat(Math.max(to - from, 1));
         if (annotate) {
-            builder.add(new StringBuilder(padLeft).append(annotationPosition).append(" "));
+            builder.add(padLeft + annotationPosition + " ");
         }
-        builder.add(new StringBuilder(lineContent));
+        builder.add(lineContent);
 
     }
 

@@ -25,6 +25,9 @@ public class Prelude {
 
         var classes = ImmutableList.<ClassPointer>builder();
         for (var entry : model.getBinaryClasses()) {
+            if (entry.outerClass() != null) {
+                continue;
+            }
             if (ClassPointer.shouldIncludeInPrelude(entry.path())) {
                 classes.add(entry.pointer());
             }

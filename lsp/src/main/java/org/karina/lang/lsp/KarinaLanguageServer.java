@@ -1,39 +1,41 @@
 package org.karina.lang.lsp;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.*;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.KarinaCompiler;
-import org.karina.lang.lsp.impl.DefaultRealFileSystem;
-import org.karina.lang.lsp.impl.DefaultVirtualFileSystem;
-import org.karina.lang.lsp.impl.DefaultVirtualFileTreeNode;
-import org.karina.lang.lsp.impl.FileTreePrinter;
-import org.karina.lang.lsp.lib.FileTransaction;
-import org.karina.lang.lsp.lib.RealFileSystem;
-import org.karina.lang.lsp.lib.VirtualFileSystem;
-import org.karina.lang.lsp.lib.VirtualFileTreeNode;
+import org.karina.lang.compiler.logging.DiagnosticCollection;
+import org.karina.lang.compiler.utils.FileLoader;
+import org.karina.lang.lsp.events.ClientEvent;
+import org.karina.lang.lsp.events.UpdateEvent;
+import org.karina.lang.lsp.events.EventService;
+import org.karina.lang.lsp.events.RequestEvent;
+import org.karina.lang.lsp.impl.*;
+import org.karina.lang.lsp.lib.*;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-public final class KarinaLanguageServer implements LanguageServer, LanguageClientAware {
-    public static final boolean USE_FILESYSTEM_EVENTS = false;
+public final class KarinaLanguageServer implements LanguageServer, LanguageClientAware,
+        EventService {
+    public static final boolean USE_FILESYSTEM_EVENTS = true;
 
     public final VirtualFileSystem vfs = new DefaultVirtualFileSystem();
     public final RealFileSystem rfs = new DefaultRealFileSystem();
     private VirtualFileTreeNode treeNode = DefaultVirtualFileTreeNode.root();
-    private @Nullable URI rootUri;
 
+    private @Nullable BuildConfig buildConfig;
+    private URI clientURI;
+
+    private final KDocumentService documentService = new KDocumentService(this);
+    private final KWorkspaceService workspaceService =  new KWorkspaceService(this);
 
     private LanguageClient theClient;
 
-    private KDocumentService documentService;
-    private KWorkspaceService workspaceService;
 
     private @Nullable ClientInfo clientInfo;
     private ClientCapabilities clientCapabilities;
@@ -62,14 +64,15 @@ public final class KarinaLanguageServer implements LanguageServer, LanguageClien
             return CompletableFuture.failedFuture(new IllegalStateException("No workspace capabilities found"));
         }
         var folders = params.getWorkspaceFolders();
+
         if (folders != null && !folders.isEmpty()) {
-            this.rootUri = VirtualFileSystem.toUri(folders.getFirst().getUri());
+            this.clientURI = VirtualFileSystem.toUri(folders.getFirst().getUri());
         } else if (params.getRootUri() != null) {
-            this.rootUri = VirtualFileSystem.toUri(params.getRootUri());
+            this.clientURI = VirtualFileSystem.toUri(params.getRootUri());
         } else if (params.getRootPath() != null) {
-            this.rootUri = VirtualFileSystem.toUri(params.getRootPath());
+            this.clientURI = VirtualFileSystem.toUri(params.getRootPath());
         } else {
-            this.rootUri = null;
+            return CompletableFuture.failedFuture(new IllegalStateException("No root found in initialize parameters"));
         }
 
 
@@ -94,8 +97,6 @@ public final class KarinaLanguageServer implements LanguageServer, LanguageClien
         capabilities.setWorkspace(workspaceCapabilities);
         //</editor-fold>
 
-        this.documentService = new KDocumentService(this);
-        this.workspaceService = new KWorkspaceService(this);
 
         return CompletableFuture.supplyAsync(() -> {
             InitializeResult result = new InitializeResult();
@@ -150,16 +151,53 @@ public final class KarinaLanguageServer implements LanguageServer, LanguageClien
                     "Hello " + this.clientInfo.getName() + " " + version
             );
         }
+
+        switch (JsonBuildConfig.fromJsonFile(this.clientURI, this)) {
+            case IOResult.Error<JsonBuildConfig>(var e) -> {
+                errorMessage(e.getMessage());
+                this.buildConfig = null;
+            }
+            case IOResult.Success<JsonBuildConfig> v -> {
+                this.buildConfig = v.value();
+            }
+        }
+        if (this.buildConfig != null) {
+            loadInitial(this.buildConfig.projectRootUri());
+        }
+
+
+    }
+    private void loadInitial(URI projectRootURI) {
+        var files = this.rfs.listAllFilesRecursively(
+                projectRootURI,
+                new FileLoader.FilePredicate("krna")
+        );
+        switch (files) {
+            case IOResult.Error<List<URI>>(var e) -> {
+                errorMessage(e.getMessage());
+            }
+            case IOResult.Success<List<URI>>(var fileList) -> {
+                for (var uri : fileList) {
+                    if (!this.vfs.isFileOpen(uri)) {
+                        var content = this.rfs.readFileFromDisk(uri).orMessageAndNull(this);
+                        if (content == null) {
+                            continue;
+                        }
+                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+        }
     }
 
 
     @Override
     public TextDocumentService getTextDocumentService() {
-        return Objects.requireNonNull(this.documentService, "Document service is not initialized");
+        return this.documentService;
     }
     @Override
     public WorkspaceService getWorkspaceService() {
-        return Objects.requireNonNull(this.workspaceService, "Workspace service is not initialized");
+        return this.workspaceService;
     }
 
 
@@ -198,35 +236,215 @@ public final class KarinaLanguageServer implements LanguageServer, LanguageClien
         var value = Objects.toString(object);
         var message = new MessageParams(MessageType.Log, value);
         this.theClient.logMessage(message);
-        this.theClient.publishDiagnostics(new PublishDiagnosticsParams());
     }
 
 
 
     public void handleTransaction(@Nullable FileTransaction transaction) {
-        if (transaction == null) {
+        if (transaction == null || this.buildConfig == null) {
             return;
         }
         var files = this.vfs.files();
+        var openFiles = files.stream().filter(VirtualFile::isOpen).toList();
+
 
         if (transaction.isObjectNew()) {
-            this.treeNode = DefaultVirtualFileTreeNode.builder().build(files);
+            this.treeNode = DefaultVirtualFileTreeNode.builder().build(files, this.buildConfig.projectRootUri());
         }
+
 
         var prettyTree = FileTreePrinter.prettyTree(this.treeNode);
 
 
-        logMessage("---transaction---");
-        logMessage(transaction);
-        logMessage("---files---");
-        for (var file : files) {
-            logMessage(file.uri());
+//        logMessage("---stuff---");
+//
+//        logMessage(this.buildConfig);
+//
+//        logMessage("---transaction---");
+//
+//        logMessage(transaction);
+//
+//        logMessage("---files---");
+//
+//        for (var file : files) {
+//            logMessage(file.uri()  + ": " + prev(file.content()));
+//        }
+//
+//        logMessage("---open files---");
+//
+//        for (var file : openFiles) {
+//            logMessage(file.uri());
+//        }
+
+//        logMessage("---tree---");
+//
+//        logMessage(prettyTree);
+//
+//        logMessage("---end---");
+
+        testCompile();
+
+    }
+    private String prev(String c) {
+        c = StringEscapeUtils.escapeJava(c);
+
+        if (c.length() > 8) {
+            return StringUtils.abbreviate(c, 8);
+        } else {
+            return c;
         }
-        logMessage("---tree---");
-        logMessage(prettyTree);
-        logMessage("---end---");
 
     }
 
+    private void testCompile() {
+        testClear();
 
+
+        var builder = KarinaCompiler.builder();
+        builder.outputConfig(null);
+        builder.useBinaryFormat(true);
+
+        var errors = new DiagnosticCollection();
+
+        builder.errorCollection(errors);
+        builder.flightRecordCollection(null);
+
+        var compiler = builder.build();
+        var result = compiler.compile(this.treeNode);
+
+        if (result == null) {
+            pushErrors(errors);
+        }
+
+    }
+
+    private void pushErrors(DiagnosticCollection logs) {
+        Map<VirtualFile, List<Diagnostic>> diagnostics = new HashMap<>();
+
+        for (var log : logs) {
+
+            var information = new CodeDiagnosticInformation();
+            log.entry().addInformation(information);
+
+            var diagnosticAndFile = CodeDiagnosticInformation.toDiagnosticAndFile(information);
+            if (diagnosticAndFile == null) {
+                continue;
+            }
+            diagnostics.computeIfAbsent(
+                    diagnosticAndFile.file(),
+                    _ -> new ArrayList<>()
+            ).add(diagnosticAndFile.diagnostic());
+
+        }
+
+        for (var value : diagnostics.entrySet()) {
+            var file = value.getKey();
+            var diagnosticsList = value.getValue();
+
+            if (diagnosticsList.isEmpty()) {
+                continue;
+            }
+
+            var publishDiagnosticsParams = new PublishDiagnosticsParams(
+                    file.uri().toString(),
+                    diagnosticsList
+            );
+
+            this.theClient.publishDiagnostics(publishDiagnosticsParams);
+        }
+
+    }
+
+    private void testClear() {
+        var files = this.vfs.files();
+        for (var file : files) {
+            this.theClient.publishDiagnostics(
+                    new PublishDiagnosticsParams(file.uri().toString(), List.of())
+            );
+        }
+    }
+
+
+    @Override
+    public void update(UpdateEvent update) {
+        switch (update) {
+            case UpdateEvent.OpenFile(URI uri, int version, String language, String text) -> {
+                this.handleTransaction(this.vfs.openFile(uri, text, version));
+            }
+            case UpdateEvent.ChangeFile(URI uri, String text, Range range, int version) -> {
+                if (this.vfs.isFileOpen(uri)) {
+                    // Only handles full text change
+                    this.handleTransaction(this.vfs.updateFile(uri, text, version));
+                }
+            }
+            case UpdateEvent.CloseFile(URI uri) -> {
+                this.handleTransaction(this.vfs.closeFile(uri));
+            }
+            case UpdateEvent.SaveFile(URI uri) -> {
+                this.handleTransaction(this.vfs.saveFile(uri));
+            }
+            case UpdateEvent.CreateWatchedFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    var content = this.rfs.readFileFromDisk(uri).orMessageAndNull(this);
+                    if (content != null) {
+                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+            case UpdateEvent.DeleteWatchedFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    this.handleTransaction(this.vfs.deleteFile(uri));
+                }
+            }
+            case UpdateEvent.CreateFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    var content = this.rfs.readFileFromDisk(uri).orMessageAndNull(this);
+                    if (content != null) {
+                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+            case UpdateEvent.DeleteFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    this.handleTransaction(this.vfs.deleteFile(uri));
+                }
+            }
+            case UpdateEvent.RenameFile(URI oldUri, URI newUri) -> {
+                if (!this.vfs.isFileOpen(oldUri)) {
+                    this.handleTransaction(this.vfs.deleteFile(oldUri));
+                    var content = this.rfs.readFileFromDisk(newUri).orMessageAndNull(this);
+                    if (content != null) {
+                       this.handleTransaction(this.vfs.reloadFromDisk(newUri, content));
+                    }
+                }
+            }
+
+        }
+    }
+
+    @Override
+    public <T> CompletableFuture<T> request(RequestEvent<T> request) {
+        switch (request) {
+            case RequestEvent.SemanticTokensRequest(URI params) -> {
+
+            }
+        }
+        throw new NullPointerException("");
+    }
+
+    @Override
+    public void send(ClientEvent clientEvent) {
+
+        switch (clientEvent) {
+            case ClientEvent.Log(String message, MessageType type) -> {
+                this.theClient.logMessage(new MessageParams(type, message));
+            }
+            case ClientEvent.Popup(String message, MessageType type) -> {
+                this.theClient.showMessage(new MessageParams(type, message));
+            }
+            case ClientEvent.RegisterCapability(Registration[] registration) -> {
+                this.theClient.registerCapability(new RegistrationParams(Arrays.asList(registration)));
+            }
+        }
+    }
 }

@@ -3,11 +3,13 @@ package org.karina.lang.lsp;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.WorkspaceService;
+import org.karina.lang.lsp.events.UpdateEvent;
+import org.karina.lang.lsp.events.EventService;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
 
 @RequiredArgsConstructor
 public final class KWorkspaceService implements WorkspaceService {
-    private final KarinaLanguageServer kls;
+    private final EventService eventService;
 
     @Override
     public void didChangeConfiguration(DidChangeConfigurationParams params) {
@@ -20,20 +22,16 @@ public final class KWorkspaceService implements WorkspaceService {
         }
         for (var changedFile : params.getChanges()) {
             var uri = VirtualFileSystem.toUri(changedFile.getUri());
-            if (this.kls.vfs.isOpen(uri)) {
-                continue;
-            }
 
             switch (changedFile.getType()) {
-                case Created, Changed -> {
-                    var content = this.kls.rfs.readFileFromDisk(uri).orMessageAndNull(this.kls);
-                    if (content == null) {
-                        continue;
-                    }
-                    this.kls.handleTransaction(this.kls.vfs.reloadFromDisk(uri, content));
+                case Changed -> {
+                    // should get handled by the client and send via textDocument/didChange
+                }
+                case Created -> {
+                    this.eventService.update(new UpdateEvent.CreateWatchedFile(uri));
                 }
                 case Deleted -> {
-                    this.kls.handleTransaction(this.kls.vfs.deleteFile(uri));
+                    this.eventService.update(new UpdateEvent.DeleteWatchedFile(uri));
                 }
             }
         }
@@ -45,13 +43,7 @@ public final class KWorkspaceService implements WorkspaceService {
         var uris = params.getFiles().stream().map(FileCreate::getUri).toList();
         for (var uriStr : uris) {
             var uri = VirtualFileSystem.toUri(uriStr);
-            if (!this.kls.vfs.isOpen(uri)) {
-                var content = this.kls.rfs.readFileFromDisk(uri).orMessageAndNull(this.kls);
-                if (content == null) {
-                    continue;
-                }
-                this.kls.handleTransaction(this.kls.vfs.reloadFromDisk(uri, content));
-            }
+            this.eventService.update(new UpdateEvent.CreateFile(uri));
         }
     }
     @Override
@@ -59,24 +51,16 @@ public final class KWorkspaceService implements WorkspaceService {
         var uris = params.getFiles().stream().map(FileDelete::getUri).toList();
         for (var uriStr : uris) {
             var uri = VirtualFileSystem.toUri(uriStr);
-            if (!this.kls.vfs.isOpen(uri)) {
-                this.kls.handleTransaction(this.kls.vfs.deleteFile(uri));
-            }
+            this.eventService.update(new UpdateEvent.DeleteFile(uri));
         }
     }
+
     @Override
     public void didRenameFiles(RenameFilesParams params) {
         for (var file : params.getFiles()) {
             var oldUri = VirtualFileSystem.toUri(file.getOldUri());
             var newUri = VirtualFileSystem.toUri(file.getNewUri());
-            if (!this.kls.vfs.isOpen(oldUri)) {
-                this.kls.handleTransaction(this.kls.vfs.deleteFile(oldUri));
-                var content = this.kls.rfs.readFileFromDisk(newUri).orMessageAndNull(this.kls);
-                if (content == null) {
-                    continue;
-                }
-                this.kls.handleTransaction(this.kls.vfs.reloadFromDisk(newUri, content));
-            }
+            this.eventService.update(new UpdateEvent.RenameFile(oldUri, newUri));
         }
 
     }

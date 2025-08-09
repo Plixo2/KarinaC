@@ -40,14 +40,14 @@ public sealed interface ImportError extends Error {
                 builder.setTitle("Duplicate item");
                 builder.append("Duplicate item '").append(item).append("'");
                 builder.setPrimarySource(second);
-                builder.addSecondarySource(first, "First defined here: ");
+                builder.addSecondarySource(first, "First defined here");
             }
             case ImportError.DuplicateItemWithMessage(var first, var second, var item, var message) -> {
                 builder.setTitle("Duplicate item");
                 builder.append("Duplicate item '").append(item).append("'");
                 builder.append(message);
                 builder.setPrimarySource(second);
-                builder.addSecondarySource(first, "Defined here: ");
+                builder.addSecondarySource(first, "Defined here");
             }
             case ImportError.NoItemFound(var region, var item, var cls) -> {
                 builder.setTitle("No item found");

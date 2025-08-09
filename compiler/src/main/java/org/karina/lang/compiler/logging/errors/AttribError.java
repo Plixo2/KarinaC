@@ -45,7 +45,7 @@ public sealed interface AttribError extends Error {
                 builder.setTitle("Invalid assignment");
                 builder.append("Can't reassign final symbol '").append(finalAssignment.name()).append("'");
                 builder.setPrimarySource(finalAssignment.region());
-                builder.addSecondarySource(finalAssignment.regionOfFinalObject(), "Defined here: ");
+                builder.addSecondarySource(finalAssignment.regionOfFinalObject(), "Defined here");
             }
             case AttribError.ScopeFinalityAssignment scopeFinalityAssignment -> {
                 builder.setTitle("Invalid assignment");
@@ -57,7 +57,7 @@ public sealed interface AttribError extends Error {
                 builder.setTitle("Duplicate variable");
                 builder.append("variable '").append(duplicateVariable.name()).append("' was already declared");
                 builder.setPrimarySource(duplicateVariable.second());
-                builder.addSecondarySource(duplicateVariable.first(), "Defined here: ");
+                builder.addSecondarySource(duplicateVariable.first(), "Defined here");
             }
             case AttribError.UnknownIdentifier(var region, var name, var available) -> {
                 builder.setTitle("Unknown identifier");
@@ -73,7 +73,7 @@ public sealed interface AttribError extends Error {
                 builder.setTitle("Unqualified self");
                 builder.append("Invalid use of 'self' in a static context");
                 builder.setPrimarySource(unqualifiedSelf.region());
-                builder.addSecondarySource(unqualifiedSelf.method(), "in method: ");
+                builder.addSecondarySource(unqualifiedSelf.method(), "in method");
             }
             case AttribError.NotAInterface notAInterface -> {
                 builder.setTitle("Not a interface");
@@ -96,7 +96,7 @@ public sealed interface AttribError extends Error {
                 }
                 for (var available : signatureMismatch.available()) {
                     var toStr = available.value().toString();
-                    builder.addSecondarySource(available.region(), toStr + " in: ");
+                    builder.addSecondarySource(available.region(), toStr);
                 }
                 builder.setPrimarySource(signatureMismatch.region());
             }
@@ -111,7 +111,7 @@ public sealed interface AttribError extends Error {
                 }
                 for (var available : missingConstructor.available()) {
                     var toStr = available.value().toString();
-                    builder.addSecondarySource(available.region(), toStr + " in: ");
+                    builder.addSecondarySource(available.region(), toStr);
                 }
                 builder.setPrimarySource(missingConstructor.region());
             }

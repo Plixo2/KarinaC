@@ -1,16 +1,21 @@
+java {
+    modularity.inferModulePath = false
+}
 
 dependencies {
     implementation project(':compiler')
-}
-
-sourceSets {
-    main {
-        java {
-            exclude 'org/karina/lang/lsp_old/**'
-        }
-    }
+    //lsp
+    implementation group: 'org.eclipse.lsp4j', name: 'org.eclipse.lsp4j', version: '0.23.1'
 }
 
 jar {
-    exclude 'org/karina/lang/lsp_old/**'
+    manifest {
+        attributes 'Main-Class': 'org.karina.lang.lsp.Main'
+    }
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/INDEX.LIST', 'META-INF/*.MF'
+
+    archiveFileName = 'karina-lsp.jar'
 }

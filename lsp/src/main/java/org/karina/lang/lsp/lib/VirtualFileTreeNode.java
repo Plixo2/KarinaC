@@ -13,7 +13,7 @@ public interface VirtualFileTreeNode extends FileTreeNode {
 
     ObjectPath path();
 
-    List<VirtualFileTreeNode> children();
+    List<? extends VirtualFileTreeNode> children();
 
     List<VirtualFileNode> leafs();
 
