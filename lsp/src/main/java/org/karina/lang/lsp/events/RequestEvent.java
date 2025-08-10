@@ -8,6 +8,6 @@ import java.net.URI;
 public sealed interface RequestEvent<R> {
 
     // ------------------ Text Document Semantic Token Request ------------------
-    record SemanticTokensRequest(URI params) implements RequestEvent<SemanticTokens> {};
+    record SemanticTokensRequest(URI uri) implements RequestEvent<SemanticTokens> {};
 
 }

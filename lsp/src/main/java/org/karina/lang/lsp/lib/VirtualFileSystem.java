@@ -1,6 +1,7 @@
 package org.karina.lang.lsp.lib;
 
 import com.google.errorprone.annotations.CheckReturnValue;
+import karina.lang.Option;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -16,32 +17,32 @@ public interface VirtualFileSystem {
 
     @CheckReturnValue
     @Contract(mutates = "this")
-    @Nullable FileTransaction openFile(URI uri, String content, int version);
+    Option<FileTransaction> openFile(URI uri, String content, int version);
 
 
     @CheckReturnValue
     @Contract(mutates = "this")
-    @Nullable FileTransaction updateFile(URI uri, String content, int version);
+    Option<FileTransaction> updateFile(URI uri, String content, int version);
 
 
     @CheckReturnValue
     @Contract(mutates = "this")
-    @Nullable FileTransaction closeFile(URI uri);
+    Option<FileTransaction> closeFile(URI uri);
 
 
     @CheckReturnValue
     @Contract(mutates = "this")
-    @Nullable FileTransaction saveFile(URI uri);
+    Option<FileTransaction> saveFile(URI uri);
 
 
     @CheckReturnValue
     @Contract(mutates = "this")
-    @Nullable FileTransaction deleteFile(URI uri);
+    Option<FileTransaction> deleteFile(URI uri);
 
 
     @CheckReturnValue
     @Contract(mutates = "this")
-    @Nullable FileTransaction reloadFromDisk(URI uri, String diskContent);
+    Option<FileTransaction> reloadFromDisk(URI uri, String diskContent);
 
 
 
@@ -51,7 +52,7 @@ public interface VirtualFileSystem {
 
     /// @return null if the file does not exist, otherwise the content of the file
     @Contract(pure = true)
-    @Nullable String getContent(URI uri);
+    Option<String> getContent(URI uri);
 
     @Contract(pure = true)
     @UnmodifiableView

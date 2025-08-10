@@ -1,6 +1,7 @@
 package org.karina.lang.lsp.impl;
 
 import com.google.errorprone.annotations.CheckReturnValue;
+import karina.lang.Option;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.lsp.lib.FileTransaction;
@@ -17,88 +18,92 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
     @Override
     @CheckReturnValue
     @Contract(mutates = "this")
-    public synchronized @Nullable FileTransaction openFile(URI uri, String content, int version) {
+    public synchronized Option<FileTransaction> openFile(URI uri, String content, int version) {
         var existing = this.files.get(uri);
         if (existing != null) {
             existing.open();
             if (existing.content().equals(content)) {
-                return null;
+                return Option.none();
             } else {
                 existing.updateContent(content, version);
-                return new FileTransaction.UpdateFile(existing, false);
+                return Option.some(new FileTransaction.UpdateFile(existing, false));
             }
         } else {
             var newFile = new VirtualFile(uri, content, version, true);
             this.files.put(uri, newFile);
-            return new FileTransaction.UpdateFile(newFile, true);
+            return Option.some(new FileTransaction.UpdateFile(newFile, true));
         }
     }
 
     @Override
     @CheckReturnValue
     @Contract(mutates = "this")
-    public synchronized @Nullable FileTransaction updateFile(URI uri, String content, int version) {
-        var file = this.files.get(uri);
-        if (file != null) {
-            file.updateContent(content, version);
-            return new FileTransaction.UpdateFile(file, false);
+    public synchronized Option<FileTransaction> updateFile(URI uri, String content, int version) {
+        var existing = this.files.get(uri);
+        if (existing != null) {
+            if (existing.content().equals(content)) {
+                return Option.none();
+            } else {
+                existing.updateContent(content, version);
+                return Option.some(new FileTransaction.UpdateFile(existing, false));
+            }
         }
         else {
             var newFile = new VirtualFile(uri, content, version, false);
             this.files.put(uri, newFile);
-            return new FileTransaction.UpdateFile(newFile, true);
+            return Option.some(new FileTransaction.UpdateFile(newFile, true));
         }
     }
 
     @Override
     @CheckReturnValue
     @Contract(mutates = "this")
-    public synchronized @Nullable FileTransaction closeFile(URI uri) {
+    public synchronized Option<FileTransaction> closeFile(URI uri) {
         var file = this.files.get(uri);
         if (file != null) {
             file.close();
         }
-        return null;
+        return Option.none();
     }
 
     @Override
     @CheckReturnValue
     @Contract(mutates = "this")
-    public synchronized @Nullable FileTransaction saveFile(URI uri) {
+    public synchronized Option<FileTransaction> saveFile(URI uri) {
         // do nothing
-        return null;
+        return Option.none();
     }
 
     @Override
     @CheckReturnValue
     @Contract(mutates = "this")
-    public synchronized @Nullable FileTransaction deleteFile(URI uri) {
+    public synchronized Option<FileTransaction> deleteFile(URI uri) {
         var prev = this.files.remove(uri);
-        if (prev != null) {
-            return new FileTransaction.RemovedFile(prev);
+        if (prev == null) {
+            return Option.none();
         }
-        return null;
+        return Option.some(new FileTransaction.RemovedFile(prev));
     }
 
     @Override
     @CheckReturnValue
     @Contract(mutates = "this")
-    public synchronized @Nullable FileTransaction reloadFromDisk(URI uri, String diskContent) {
+    public synchronized Option<FileTransaction> reloadFromDisk(URI uri, String diskContent) {
         var existing = this.files.get(uri);
         if (existing != null) {
             if (existing.isOpen()) {
-                return null;
+                return Option.none();
             }
             if (existing.content().equals(diskContent)) {
-                return null;
+                return Option.none();
             } else {
                 existing.updateContent(diskContent, 0);
-                return new FileTransaction.UpdateFile(existing, false);
+                return Option.some(new FileTransaction.UpdateFile(existing, false));
             }
         } else {
             var newFile = new VirtualFile(uri, diskContent, 0, false);
             this.files.put(uri, newFile);
-            return new FileTransaction.UpdateFile(newFile, true);
+            return Option.some(new FileTransaction.UpdateFile(newFile, true));
         }
     }
 
@@ -113,12 +118,9 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
     /// @return null if the file does not exist, otherwise the content of the file
     @Override
     @Contract(pure = true)
-    public synchronized @Nullable String getContent(URI uri) {
+    public synchronized Option<String> getContent(URI uri) {
         var file = this.files.get(uri);
-        if (file == null) {
-            return null;
-        }
-        return file.content();
+        return Option.fromNullable(file).map(VirtualFile::content);
     }
 
     @Override

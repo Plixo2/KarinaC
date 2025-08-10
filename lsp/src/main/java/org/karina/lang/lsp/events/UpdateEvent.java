@@ -1,12 +1,17 @@
 package org.karina.lang.lsp.events;
 
+
 import org.eclipse.lsp4j.Range;
+import org.karina.lang.lsp.lib.ClientConfiguration;
 
 import java.net.URI;
 
 /// Event from the client to the server.
 /// @see RequestEvent when the client expects a response.
 public sealed interface UpdateEvent {
+
+    // ------------------ Workspace Client Config Change ------------------
+    record UpdateClientConfig(ClientConfiguration level) implements UpdateEvent {};
 
     // ------------------ Workspace Watched File Events ------------------
     record CreateWatchedFile(URI uri) implements UpdateEvent {};

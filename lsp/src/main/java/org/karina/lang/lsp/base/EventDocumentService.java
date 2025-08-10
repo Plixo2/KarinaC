@@ -1,4 +1,4 @@
-package org.karina.lang.lsp;
+package org.karina.lang.lsp.base;
 
 
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 
 @RequiredArgsConstructor
-public final class KDocumentService implements TextDocumentService {
+public final class EventDocumentService implements TextDocumentService {
     private final EventService eventService;
 
     @Override
@@ -32,6 +32,8 @@ public final class KDocumentService implements TextDocumentService {
         }
     }
 
+
+
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
@@ -43,6 +45,7 @@ public final class KDocumentService implements TextDocumentService {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
         this.eventService.update(new UpdateEvent.SaveFile(uri));
     }
+
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
