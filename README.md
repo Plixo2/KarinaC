@@ -14,7 +14,7 @@
 <br>
 
 ![Test Status](https://github.com/Plixo2/KarinaC/actions/workflows/gradle.yml/badge.svg)
-![Java Version](https://img.shields.io/badge/Java-21+-orange)
+![Java Version](https://img.shields.io/badge/Java-23+-orange)
 ![Karina Version](https://img.shields.io/badge/Karina-v0.6-8A2BE2)
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=plixo.karinac)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/License-Apache--2.0%20%7C%20MIT-blue)](https://opensource.org/licenses/MIT)
@@ -35,11 +35,23 @@ frameworks seamlessly while enjoying a modern programming experience.**
 
 <br>
 
+- [**Documentation and Features**](#Documentation)
+- [**Installer and CLI**](#Installer-and-CLI)
+- [**Local development**](#Local-development)
+- [**Compiler architecture**](#Compiler-architecture)
+- [**Licenses**](#Licenses)
+
+
+## Documentation
+
+The official documentation is available at
+[karina-lang.org](https://karina-lang.org/guide/hello.html).
+
+
 ## Installer and CLI
 
-You need Java 21 or higher.
+You need Java 23 or higher.
 You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
-
 
 To install the Karina compiler, download and run the installer.
 After the installation, you can run the compiler from the command line:
@@ -61,20 +73,18 @@ karina run
 
 > Hello, World!
 
-### Documentation
-
-The official documentation is available at
-[karina-lang.org](https://karina-lang.org/guide/hello.html).
-
 
 <br>
-<br>
 
-## Getting Started with local development
+## Local development
 
-You need Java 21 or higher.
+- [Demo Karina Project](resources/src/)
+- [Compiler Code](compiler/)
+- [Standard Library Code](stdlib/)
+- [LSP Code](lsp/)
+
+You need Java 23 or higher.
 You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
-
 
 
 ```shell
@@ -82,33 +92,20 @@ You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
  cd KarinaC
 ```
 
-<details> <summary>IDE setup</summary>
-
 The compiler is a standard Gradle project, so you can use it with any IDE that supports Gradle.
 
-You can run the compiler via the Gradle task `run` or run the [Main Class](compiler/src/main/java/org/karina/lang/compiler/Main.java) directly.
-
-The `--run` command-line argument can be used to run the program after compilation.
-
-
-</details>
-
-<details>
-
-<summary>Manual setup</summary>
-
-Make sure your `JAVA_HOME` is set to the correct version.
+You can run the compiler via the Gradle task `compiler:run`:
 
 ```shell
- gradlew run
+ gradlew compiler:run
 ```
 
-</details>
+The project is configured to build the demo project in [`resources/src/`](resources/src) by default.
 
 
-The project is configured to build the demo project in [`resources/src/`](resources/src/) by default.
+> [!NOTE]
+> This project consists of multiple Gradle subprojects. Make sure to run the Gradle `jar` task's when updating the standard library or the compiler.
 
-## Development
 
 <details> <summary>Custom Environment</summary>
 
@@ -170,7 +167,7 @@ Useful for debugging the compiler.
 
 ### Customize Logging
 You can set custom log types in
-[here](compiler/src/main/java/org/karina/lang/compiler/logging/Log.java#L45).
+[here](compiler/src/main/java/org/karina/lang/compiler/logging/Log.java#L53).
 
 Adding log types will enable logging for specific parts of the compiler.
 You can gain detailed insights into the inner workings of the compiler
@@ -193,22 +190,29 @@ javap -c -v -p main.class > main.txt
 This will write the bytecode of the `main.class` file to `main.txt`, where it can be inspected.
 
 
-## Rebuild the standard library
+### Rebuild the standard library
 
-You can rebuild the [standard library](compiler/src/main/java/karina/lang/) with the
-Gradle task `KARINA-BASE`.
+You can rebuild the [standard library](stdlib/src/main/java/karina/lang/) with the
+Gradle task `stdlib:buildForCompiler`:
+
+```shell
+gradlew stdlib:buildForCompiler
+```
 
 This will create a new  `karina_base.jar` file, located in [`src/main/resources`](compiler/src/main/resources)
 
-Delete the `base.bin.gz` file in the `resources` folder to force a rebuild of the binary format when in use.
+After that run the task `compiler:buildCache`:
+```shell
+gradlew compiler:buildCache
+```
 
+This will rebuild the cache for the compiler, so it can use the new standard library.
 
-# Compiler architecture
+## Compiler architecture
 
 <details open>
 
 <summary>Internals</summary>
-
 
 
 - Read the source code into memory
@@ -243,6 +247,11 @@ Delete the `base.bin.gz` file in the `resources` folder to force a rebuild of th
 </details>
 
 
+## Licenses
+
+LSP4J is published under two licenses:
+- [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)
+- [MIT License](https://opensource.org/license/mit/)
 
 
 
