@@ -46,6 +46,7 @@ resources/*.txt
 resources/*.class
 /resources/src_local/*.krna
 /compiler/src/main/resources/java_base/
+/build/
 
 /cli/build/generated/
 /cli/build/classes/
@@ -57,3 +58,7 @@ resources/*.class
 /cli/build/libs/temp/
 /lsp/build/
 /lsp/src/main/java/org/karina/lang/lsp_old/
+/oldidea/
+/lsp/lsp/
+/resources/zTesting/
+
