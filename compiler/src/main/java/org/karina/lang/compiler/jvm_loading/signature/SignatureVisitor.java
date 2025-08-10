@@ -3,8 +3,8 @@ package org.karina.lang.compiler.jvm_loading.signature;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.jvm_loading.signature.gen.SignatureLexer;
 import org.karina.lang.compiler.jvm_loading.signature.gen.SignatureParser;
-import org.karina.lang.compiler.jvm_loading.signature.gen.SignatureParserLexer;
 import org.karina.lang.compiler.jvm_loading.signature.model.*;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KType;
@@ -23,7 +23,7 @@ public class SignatureVisitor {
 
     private static SignatureParser getParser(String signature) {
         var inputStream = CharStreams.fromString(signature);
-        var lexer = new SignatureParserLexer(inputStream);
+        var lexer = new SignatureLexer(inputStream);
         var tokenStream = new CommonTokenStream(lexer);
         return new SignatureParser(tokenStream);
     }

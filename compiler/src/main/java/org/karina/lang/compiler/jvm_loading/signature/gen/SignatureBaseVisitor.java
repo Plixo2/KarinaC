@@ -1,4 +1,4 @@
-// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/grammar/signature/Signature.g4 by ANTLR 4.13.2
+// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/compiler/grammar/signature/Signature.g4 by ANTLR 4.13.2
 package org.karina.lang.compiler.jvm_loading.signature.gen;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
