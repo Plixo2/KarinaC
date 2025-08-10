@@ -2,7 +2,7 @@ package karina.lang;
 
 
 /**
- * String interpolation utility class.
+ * String utility class for compiling interpolated strings.
  * Should be replaced with a more sophisticated implementation in the future.
  */
 public class StringInterpolation {

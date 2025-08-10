@@ -1,12 +1,13 @@
 package karina.lang;
 
 
+
 import java.lang.reflect.Array;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-//Build-in Option type, needed for ? unwrapping and ? type annotations
+//Build-in Option type, needed for '?' unwrapping and '?' type annotations
 public sealed interface Option<T> permits Option.Some, Option.None {
 
     record Some<T>(T value) implements Option<T> {
@@ -40,21 +41,21 @@ public sealed interface Option<T> permits Option.Some, Option.None {
 
     default <E> Result<T, E> okOr(E error) {
         return switch (this) {
-            case Option.Some<T> v -> Result.ok(v.value);
+            case Option.Some<T>(var v) -> Result.ok(v);
             case Option.None<T> n -> Result.err(error);
         };
     }
 
     default <E> Result<T, E> okOrGet(Supplier<E> error) {
         return switch (this) {
-            case Option.Some<T> v -> Result.ok(v.value);
+            case Option.Some<T>(var v) -> Result.ok(v);
             case Option.None<T> n -> Result.err(error.get());
         };
     }
 
     default T orElse(T other) {
         return switch (this) {
-            case Option.Some<T> v -> v.value;
+            case Option.Some<T>(var v) -> v;
             case Option.None<T> n -> other;
         };
     }
@@ -68,35 +69,35 @@ public sealed interface Option<T> permits Option.Some, Option.None {
 
     default T orElseGet(Supplier<T> supplier) {
         return switch (this) {
-            case Option.Some<T> v -> v.value;
+            case Option.Some<T>(var v) -> v;
             case Option.None<T> n -> supplier.get();
         };
     }
 
     default <V> Option<V> map(Function<T, V> function) {
         return switch (this) {
-            case Option.Some<T> v -> Option.some(function.apply(v.value));
+            case Option.Some<T>(var v) -> Option.some(function.apply(v));
             case Option.None<T> n -> Option.none();
         };
     }
 
     default <V> V mapOrElse(Function<T, V> mapFunction, V defaultValue) {
         return switch (this) {
-            case Option.Some<T> v -> mapFunction.apply(v.value);
+            case Option.Some<T>(var v) -> mapFunction.apply(v);
             case Option.None<T> n -> defaultValue;
         };
     }
 
     default <V> Option<V> flatMap(Function<T, Option<V>> function) {
         return switch (this) {
-            case Option.Some<T> v -> function.apply(v.value);
+            case Option.Some<T>(var v) -> function.apply(v);
             case Option.None<T> n -> Option.none();
         };
     }
 
     default <V> V flatMapOrElse(Function<T, V> function, V defaultValue) {
         return switch (this) {
-            case Option.Some<T> v -> function.apply(v.value);
+            case Option.Some<T>(var v) -> function.apply(v);
             case Option.None<T> n -> defaultValue;
         };
     }
@@ -104,7 +105,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
 
     default T nullable() {
         return switch (this) {
-            case Option.Some<T> v -> v.value;
+            case Option.Some<T>(var v) -> v;
             case Option.None<T> n -> null;
         };
     }
@@ -115,7 +116,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
 
     default T expect(String message) {
         return switch (this) {
-            case Option.Some<T> v -> v.value;
+            case Option.Some<T>(var v) -> v;
             case Option.None<T> v -> {
                 var includeMessage = message != null && !message.isEmpty();
                 String suffix;
@@ -151,6 +152,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         return new None<>();
     }
 
+    @SuppressWarnings("unchecked")
     static <T> Option<T>[] newArray(Class<T> ignoredCls, int size) {
         Option<T>[] array = (Option<T>[]) Array.newInstance(Option.class, size);
         for (int i = 0; i < size; i++) {
@@ -160,11 +162,7 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     }
 
     static <T> Option<T>[] newArray(int size) {
-        Option<T>[] array = (Option<T>[]) Array.newInstance(Option.class, size);
-        for (int i = 0; i < size; i++) {
-            array[i] = none();
-        }
-        return array;
+        return newArray(null, size);
     }
 
 }

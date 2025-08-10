@@ -14,6 +14,7 @@ public final class Values {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T[] newArray(Class<T> aClass, int size, IntFunction<T> initializer) {
         T[] array = (T[]) Array.newInstance(aClass, size);
         for (int i = 0; i < size; i++) {
