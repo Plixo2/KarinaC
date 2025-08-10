@@ -48,7 +48,7 @@ parameter: id ':' type;
 
 type: typeInner typePostFix?;
 
-typePostFix: '?';
+typePostFix: '?' typeInner?;
 
 typeInner: 'void'
     | 'int'

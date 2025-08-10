@@ -28,13 +28,27 @@ public class KarinaTypeVisitor implements IntoContext {
         var inner = visitInnerType(ctx.typeInner());
 
         if (ctx.typePostFix() != null) {
+            var otherInnerCtx = ctx.typePostFix().typeInner();
 
-            if (inner.isPrimitive() || inner.isVoid()) {
-                Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid optional type");
-                throw new Log.KarinaException();
+            if (otherInnerCtx != null) {
+                var otherInner = visitInnerType(otherInnerCtx);
+                if (inner.isPrimitive() || inner.isVoid()) {
+                    Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid ok result type");
+                    throw new Log.KarinaException();
+                } else if (otherInner.isPrimitive() || otherInner.isVoid()) {
+                    Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid ok result type");
+                    throw new Log.KarinaException();
+                }
+                //link to karina standard library result type
+                return KType.KARINA_RESULT(inner, otherInner);
+            } else {
+                if (inner.isPrimitive() || inner.isVoid()) {
+                    Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid optional type");
+                    throw new Log.KarinaException();
+                }
+                //link to karina standard library option type
+                return KType.KARINA_OPTION(inner);
             }
-            //link to karina standard library option type
-            return KType.KARINA_OPTION(inner);
         }
 
         return inner;

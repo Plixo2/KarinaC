@@ -1,4 +1,7 @@
 
+import java::io::IOException
+import java::nio::file::Files
+import java::nio::file::Path
 
 -> TODO string is from type object...
 
@@ -24,3 +27,11 @@ struct Test3 {
 
 }
 
+
+
+
+// fails when running:
+fn loadFile(path: string) -> string?IOException {
+    let abs_path = Path.of(path, []).toAbsolutePath()
+    Result::safeCallExpect(IOException, fn() impl String { bytes: Files.readAllBytes(abs_path) } )
+}
