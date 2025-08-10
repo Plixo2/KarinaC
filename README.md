@@ -249,11 +249,10 @@ This will rebuild the cache for the compiler, so it can use the new standard lib
 
 ## Licenses
 
-LSP4J is published under two licenses:
+Karina is published under two licenses:
 - [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)
 - [MIT License](https://opensource.org/license/mit/)
 
+SPDX-License-Identifier: `Apache-2.0` or `MIT`
 
-
-
-
+You may use this software under the terms of any license you choose.
