@@ -53,12 +53,14 @@ public class Log {
 
     );
 
-    private static final Set<LogTypes> LOG_PROPERTY;
+    private static Set<LogTypes> LOG_PROPERTY;
 
     static {
         var property = System.getProperty("karina.logging", "none");
-
-        LOG_PROPERTY = switch (property) {
+        updateLogLevel(property);
+    }
+    public static void updateLogLevel(String level) {
+        LOG_PROPERTY = switch (level) {
             case "none" -> Set.of();
             case "basic" -> Set.of(
                     LogTypes.METHOD_NAME,
@@ -85,12 +87,11 @@ public class Log {
             default -> {
                 throw new IllegalStateException(
                         "Invalid logging level: "
-                        + property
-                        + ". Valid options are: none, basic, verbose, verbose_jvm"
+                                + level
+                                + ". Valid options are: none, basic, verbose, verbose_jvm"
                 );
             }
         };
-
     }
 
     /**
@@ -191,11 +192,7 @@ public class Log {
         if (!type.isVisible()) {
             return;
         }
-        var literal =  name + ": " + String.join(" ", Arrays.stream(args).map(Log::objectToString).toList());
-        synchronized (FLIGHT_RECORDER) {
-            FLIGHT_RECORDER.begin(literal).includeTime = false;
-            FLIGHT_RECORDER.end(literal);
-        }
+        record(name, args);
     }
 
 

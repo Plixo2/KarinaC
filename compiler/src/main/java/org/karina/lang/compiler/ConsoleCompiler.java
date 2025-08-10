@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /// Compiler starting point printing messages to the console.
@@ -165,11 +166,18 @@ public class ConsoleCompiler {
         if (path == null) {
             return;
         }
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectories(path.getParent());
+                Files.createFile(path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         try (var filePrintStream = new PrintStream(new FileOutputStream(path.toFile()))){
             FlightRecordCollection.print(recordings, false, filePrintStream);
         } catch (FileNotFoundException e) {
-            // Just print to console, no need to crash or more verbose logging
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

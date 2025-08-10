@@ -41,8 +41,8 @@ public class Context implements IntoContext {
     private final List<Log.LogWithTrace> errors = new ArrayList<>();
     private final List<Log.LogWithTrace> warning = new ArrayList<>();
 
-    //Flight recorder for logging. Not safe for concurrent use.
-    private static final FlightRecorder flightRecorder = new FlightRecorder();
+//    Flight recorder for logging. Not safe for concurrent use.
+//    private static final FlightRecorder flightRecorder = new FlightRecorder();
 
     private Context() {}
 

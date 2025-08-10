@@ -26,12 +26,22 @@ public class Prelude {
         var classes = ImmutableList.<ClassPointer>builder();
         for (var entry : model.getBinaryClasses()) {
             if (entry.outerClass() != null) {
+                // only outermost classes
                 continue;
             }
-            if (ClassPointer.shouldIncludeInPrelude(entry.path())) {
+            var path = entry.path();
+            if (path.size() != 3) {
+                continue;
+            }
+
+            if (path.startsWith("java", "lang") || path.startsWith("karina", "lang")) {
                 classes.add(entry.pointer());
             }
         }
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_NONE_PATH));
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_SOME_PATH));
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_ERR_PATH));
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_OK_PATH));
 
         var fields = ImmutableList.<FieldPointer>builder();
 

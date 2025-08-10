@@ -43,7 +43,7 @@ public class KarinaStructVisitor implements IntoContext {
         var path = owningPath.append(name);
         //assume to be valid, as you can only get this, if the class is valid
         var currentClass = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC;
+        final var mods = Modifier.PUBLIC;
 
         var superClass = KType.ROOT;
 

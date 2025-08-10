@@ -44,13 +44,6 @@ public class ClassPointer {
     public static final ObjectPath RANGE_PATH = new ObjectPath("karina", "lang", "Range");
     public static final ObjectPath STRING_INTERPOLATION_PATH = new ObjectPath("karina", "lang", "StringInterpolation");
 
-    public static boolean shouldIncludeInPrelude(ObjectPath pointer) {
-        if (pointer.size() != 3) {
-            return false;
-        }
-        return pointer.startsWith("java", "lang") || pointer.startsWith("karina", "lang");
-    }
-
 
     /**
      * Path to a class

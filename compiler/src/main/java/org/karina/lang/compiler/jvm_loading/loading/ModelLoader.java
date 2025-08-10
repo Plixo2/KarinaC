@@ -49,12 +49,14 @@ public class ModelLoader {
             if (binFileExist()) {
                  return BinaryFormatLinker.readBinary(c, BIN_FILE);
             }
-            Log.record("Binary cache file '" + BIN_FILE + "' does not exist, falling back to resources.");
+            Log.record("Binary cache file '" + BIN_FILE + "'" +
+                    "does not exist (generate it with the buildCache gradle task), falling back to resources.");
             return modelFromResource(c, RESOURCE_LIBRARIES);
         } else {
             if (!binFileExist()) {
                 Log.fileError(c, new FileLoadError.BinaryFile(
-                        "Binary cache file '" + BIN_FILE + "' does not exist. "
+                        "Binary cache file '" + BIN_FILE + "' does not exist. " +
+                                "Generate it with the buildCache gradle task"
                 ));
                 throw new Log.KarinaException();
             }
