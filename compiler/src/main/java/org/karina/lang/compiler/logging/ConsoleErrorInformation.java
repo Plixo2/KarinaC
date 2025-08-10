@@ -29,7 +29,7 @@ public class ConsoleErrorInformation implements ErrorInformation {
     @Override
     @Contract(mutates = "this")
     public void addSecondarySource(Region region, String message) {
-        var builder = append(message);
+        var builder = append(" " +message);
         appendRegionFile(builder, region);
     }
 

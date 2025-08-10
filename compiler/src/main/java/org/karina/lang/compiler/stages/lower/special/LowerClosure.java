@@ -205,7 +205,7 @@ public class LowerClosure {
 
         var interfacesAsClasses = new ArrayList<KType.ClassType>();
         //TODO replace List.of(primary) with this.interfaces, but check for duplicates or should this be done in the attrib stage
-        for (var anInterface : List.of(primary)) {
+        for (var anInterface : this.interfaces) {
             if (anInterface instanceof KType.ClassType classType) {
                 interfacesAsClasses.add(classType);
             } else {
@@ -271,7 +271,10 @@ public class LowerClosure {
 
         var classType = classModel.getDefaultClassType();
         for (var interfaceAsClass : interfacesAsClasses) {
-            methods.add(createMethodModel(ctx, interfaceAsClass, classPointer, classType, classModel));
+            var newModel = createMethodModel(ctx, interfaceAsClass, classPointer, classType, classModel);
+            if (!LoweringItem.doesMethodWithSameSignatureExist(newModel, methods)) {
+                methods.add(newModel);
+            }
         }
         var constructor = createConstructor(classPointer, fields, Modifier.PUBLIC);
 
@@ -280,24 +283,41 @@ public class LowerClosure {
 
         methods.add(attribConstructor);
 
+        if (Log.LogTypes.LOWERING_BRIDGE_METHODS.isVisible()) {
+            Log.begin("Pre bridge");
+            for (var method : methods) {
+                Log.record(method.name(), method.signature());
+            }
+            Log.end("Pre bridge");
+        }
+
         Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
         methods.addAll(LoweringItem.createBridgeMethods(ctx.intoContext(), newModel, classModel));
         Log.endType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
 
-
-
+        if (Log.LogTypes.LOWERING_BRIDGE_METHODS.isVisible()) {
+            Log.begin("post bridge");
+            for (var method : methods) {
+                Log.record(method.name(), method.signature());
+            }
+            Log.end("post bridge");
+        }
 
         return classModel;
     }
 
 
-    private KMethodModel createMethodModel(LoweringContext ctx, KType.ClassType currentInterfaceToImplement, ClassPointer outer, KType.ClassType outerClassType, ClassModel outerClass) {
+    private KMethodModel createMethodModel(
+            LoweringContext ctx,
+            KType.ClassType currentInterfaceToImplement,
+            ClassPointer outer,
+            KType.ClassType outerClassType,
+            ClassModel outerClass
+    ) {
         var toImplement = ClosureHelper.getMethodToImplement(ctx.intoContext(), this.region, ctx.model(), currentInterfaceToImplement);
         var methodModel = ctx.model().getMethod(toImplement.originalMethodPointer());
 
         var name = toImplement.name();
-
-
 
 
         var parameters = ImmutableList.copyOf(toImplement.argumentTypes());
@@ -352,6 +372,8 @@ public class LowerClosure {
 
         return createdMethodModel;
     }
+
+
 
     private static @NotNull HashMap<Generic, KType> getGenericMapping(LoweringContext ctx, KType.ClassType type) {
         var classModel = ctx.model().getClass(type.pointer());

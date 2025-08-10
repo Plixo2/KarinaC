@@ -155,7 +155,7 @@ public class MethodHelper {
     }
 
 
-    public record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes, MethodToImplement implementing) {
+    public record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes, @Nullable MethodToImplement implementing) {
 
         private MethodToImplement project(Map<Generic, KType> mapping, MethodToImplement implementing) {
             var retProj = Types.projectGenerics(this.returnType, mapping);

@@ -137,7 +137,6 @@ public class LoweringItem {
 
     public static List<KMethodModel> createBridgeMethods(Context c, Model model, KClassModel classModel) {
 
-
         if (Modifier.isAbstract(classModel.modifiers())) {
             return List.of();
         }
@@ -160,6 +159,7 @@ public class LoweringItem {
         }
 
         var toImplement = MethodHelper.getMethodForBridgeConstruction(c, model, classType);
+        System.out.println("toImplement = " + toImplement);
         if (!toImplement.isEmpty()) {
             Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Implemented for "  + classModel.name() + ": " + toImplement);
             Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Size", toImplement.size());
@@ -171,10 +171,15 @@ public class LoweringItem {
                 var paramsErased = methodModel.signature().parametersErased();
                 var returnTypeErased = Types.erase(methodModel.signature().returnType());
 
-
                 var foundMethod =
                         isImplemented(methodToImplement.name(), paramsErased, returnTypeErased, classModel.methods());
                 if (foundMethod != null) {
+                    if (methodToImplement.implementing() == null) {
+                        Log.temp(c, methodModel.region(),
+                                "Internal error, missing information for implementing method " + methodToImplement.name()
+                        );
+                        throw new Log.KarinaException();
+                    }
                     if (!methodToImplement.implementing().originalMethodPointer().equals(foundMethod.pointer())) {
                         Log.temp(c, foundMethod.region(),
                                 "Cannot create bridge method, method " + foundMethod.name() +
@@ -195,7 +200,7 @@ public class LoweringItem {
                     Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Method " + methodModel.name() +
                             " does not exist with the same signature");
                     Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "to call",
-                            methodToImplement.implementing().originalMethodPointer()
+                            methodToImplement.implementing()
                     );
                 }
 
@@ -203,14 +208,14 @@ public class LoweringItem {
                         " -> " + returnTypeErased;
                 Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Constructing bridge method " + readable);
 
-                methods.add(createBridgeMethod(
-                        c,
-                        model,
-                        classModel,
-                        methodToImplement,
-                        paramsErased,
-                        returnTypeErased
-                ));
+                var bridgeMethod =
+                        createBridgeMethod(
+                                c, model, classModel, methodToImplement, paramsErased,
+                                returnTypeErased
+                        );
+                if (!doesMethodWithSameSignatureExist(bridgeMethod, methods)) {
+                    methods.add(bridgeMethod);
+                }
             }
             return methods;
 
@@ -219,6 +224,31 @@ public class LoweringItem {
         }
 
         return List.of();
+
+    }
+
+    public static boolean doesMethodWithSameSignatureExist(MethodModel methodModel, List<? extends MethodModel> existing) {
+
+        Log.beginType(Log.LogTypes.LOWERING, "Signature check");
+        var selfErased = methodModel.erasedParameters();
+        for (var existingMethodModel : existing) {
+            if (!existingMethodModel.name().equals(methodModel.name())) {
+                continue;
+            }
+            var erased = existingMethodModel.erasedParameters();
+            if (Types.signatureEquals(selfErased, erased)) {
+                var returnErased = Types.erase(existingMethodModel.signature().returnType());
+                var existingReturnErased = Types.erase(methodModel.signature().returnType());
+                if (Types.erasedEquals(returnErased, existingReturnErased)) {
+                    Log.recordType(Log.LogTypes.LOWERING, "new", selfErased, " -> ", returnErased);
+                    Log.recordType(Log.LogTypes.LOWERING, "old", erased, " -> ", existingReturnErased);
+                    Log.endType(Log.LogTypes.LOWERING, "Signature check", "Found method with same signature: " + existingMethodModel.name());
+                    return true;
+                }
+            }
+        }
+        Log.endType(Log.LogTypes.LOWERING, "Signature check", "No method with same signature found");
+        return false;
 
     }
 
@@ -232,7 +262,7 @@ public class LoweringItem {
     ) {
 
         if (implement.implementing() == null) {
-            Log.temp(c, currentClass.region(), "Internal error, missing information for implementing method");
+            Log.temp(c, currentClass.region(), "Internal error, missing information for implementing method " + implement.name());
             throw new Log.KarinaException();
         }
         var reference = model.getMethod(implement.implementing().originalMethodPointer());
