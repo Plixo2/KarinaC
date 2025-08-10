@@ -53,7 +53,7 @@ The official documentation is available at
 You need Java 23 or higher.
 You can use [SDKMAN!](https://sdkman.io/) to manage your Java versions.
 
-To install the Karina compiler, download and run the installer.
+To install the Karina compiler, [download](https://github.com/Plixo2/KarinaC/releases/latest) and run the installer.
 After the installation, you can run the compiler from the command line:
 
 ```shell
