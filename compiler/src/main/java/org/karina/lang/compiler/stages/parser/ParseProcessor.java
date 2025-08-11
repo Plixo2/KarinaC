@@ -17,7 +17,7 @@ import java.util.List;
 public class ParseProcessor {
 
     public Model parseTree(Context c, FileTreeNode fileTree) {
-        var flatFiles = getFiles(fileTree);
+        var flatFiles = FileTreeNode.flatten(fileTree);
         ModelBuilder builder = new ModelBuilder();
 
         try (var fork = c.fork()) {
@@ -38,14 +38,6 @@ public class ParseProcessor {
     }
 
 
-
-    private List<FileNode> getFiles(FileTreeNode fileTree) {
-        var files = new ArrayList<FileNode>(fileTree.leafs());
-        for (var child : fileTree.children()) {
-            files.addAll(getFiles(child));
-        }
-        return files;
-    }
 
 
 }

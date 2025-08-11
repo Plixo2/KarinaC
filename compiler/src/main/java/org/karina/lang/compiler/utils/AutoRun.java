@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.utils;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
 import org.karina.lang.compiler.logging.ColorOut;
 import org.karina.lang.compiler.logging.LogColor;
@@ -24,13 +25,35 @@ import java.util.stream.Collectors;
  */
 public class AutoRun {
 
-    public static void run(JarCompilation compilation) {
+    public static @Nullable Exception run(JarCompilation compilation) {
 
         var mainClass = compilation.manifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
         if (mainClass == null) {
+            return new RuntimeException("No main class found in the manifest");
+        }
+        try {
+            var karinaLib = karinaLibLoader();
+            var classLoader = new CompilationClassLoader(karinaLib, compilation);
+            var cls = classLoader.loadClass(mainClass);
+            var mainMethod = cls.getMethod("main", String[].class);
+            mainMethod.invoke(null, (Object) new String[]{});
+            return null;
+        } catch (Exception e) {
+            return e;
+        }
+    }
+
+    public static void runWithPrints(JarCompilation compilation, boolean colors) {
+
+        var mainClass = compilation.manifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
+        if (mainClass == null) {
+            if (colors) {
             ColorOut.begin(LogColor.RED)
                     .append("No main class found in the manifest")
                     .out(System.out);
+            } else {
+                System.out.println("No main class found in the manifest");
+            }
             return;
         }
         try {
@@ -40,16 +63,21 @@ public class AutoRun {
             var mainMethod = cls.getMethod("main", String[].class);
 
             System.out.println();
-            ColorOut.begin(LogColor.GRAY)
-                    .append("> Executing '")
-                    .append(mainClass)
-                    .append(".main()':")
-                    .out(System.out);
+            if (colors) {
+                ColorOut.begin(LogColor.GRAY)
+                        .append("> Executing '")
+                        .append(mainClass)
+                        .append(".main()':")
+                        .out(System.out);
+            } else {
+                System.out.println("> Executing '" + mainClass + ".main()': ");
+            }
 
             mainMethod.invoke(null, (Object) new String[]{});
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to run main method", e);
+            e.printStackTrace(System.out);
+            throw new RuntimeException("Failed to run main method: " + e);
         }
     }
 

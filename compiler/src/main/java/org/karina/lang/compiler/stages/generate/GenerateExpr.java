@@ -207,16 +207,7 @@ public class GenerateExpr implements Opcodes {
                     generate(next, ctx);
                     var type = next.type();
                     if (!type.isVoid() && (iterator.hasNext() || block.symbol().isVoid())) {
-                        var size = TypeEncoding.jvmSize(TypeEncoding.getType(type));
-                        if (size == 2) {;
-                            ctx.add(new InsnNode(POP2));
-                        } else if (size == 1) {
-                            ctx.add(new InsnNode(POP));
-                        } else {
-                            for (int i = 0; i < size; i++) {
-                                ctx.add(new InsnNode(POP));
-                            }
-                        }
+                        popValues(ctx, type);
                     }
                 }
             }
@@ -229,10 +220,19 @@ public class GenerateExpr implements Opcodes {
                     throw new Log.KarinaException();
                 }
 
+                assert branch.symbol() != null;
+                var removeValues = branch.symbol().type().isVoid();
+
                 generate(branch.condition(), ctx);
                 var falseTarget = new LabelNode();
                 ctx.add(new JumpInsnNode(IFEQ, falseTarget));
                 generate(branch.thenArm(), ctx);
+
+                var thenArmReturnType = branch.thenArm().type();
+                if (!thenArmReturnType.isVoid()) {
+                    popValues(ctx, thenArmReturnType);
+                }
+
                 var endTarget = new LabelNode();
                 if (branch.elseArm() != null) {
                     ctx.add(new JumpInsnNode(GOTO, endTarget));
@@ -246,6 +246,10 @@ public class GenerateExpr implements Opcodes {
                     }
 
                     generate(branch.elseArm().expr(), ctx);
+                    var elseArmReturnType = branch.elseArm().expr().type();
+                    if (!elseArmReturnType.isVoid()) {
+                        popValues(ctx, elseArmReturnType);
+                    }
                     ctx.add(endTarget);
                 }
 
@@ -629,17 +633,7 @@ public class GenerateExpr implements Opcodes {
                 //pop value when there is one
                 var yieldType = aWhile.body().type();
                 if (!yieldType.isVoid() && !aWhile.body().doesReturn()) {
-                    var type = TypeEncoding.getType(yieldType);
-                    var size = TypeEncoding.jvmSize(type);
-                    if (size == 2) {;
-                        ctx.add(new InsnNode(POP2));
-                    } else if (size == 1) {
-                        ctx.add(new InsnNode(POP));
-                    } else {
-                        for (int i = 0; i < size; i++) {
-                            ctx.add(new InsnNode(POP));
-                        }
-                    }
+                    popValues(ctx, yieldType);
                 }
 
                 ctx.add(new JumpInsnNode(GOTO, startOfLoop));
@@ -664,6 +658,19 @@ public class GenerateExpr implements Opcodes {
             }
         }
 
+    }
+
+    private static void popValues(GenerationContext ctx, KType type) {
+        var size = TypeEncoding.jvmSize(TypeEncoding.getType(type));
+        if (size == 2) {
+            ctx.add(new InsnNode(POP2));
+        } else if (size == 1) {
+            ctx.add(new InsnNode(POP));
+        } else {
+            for (int i = 0; i < size; i++) {
+                ctx.add(new InsnNode(POP));
+            }
+        }
     }
 
     private static void applyCorrectReturnType(GenerationContext ctx, MethodPointer originalPointer, KType returnType) {

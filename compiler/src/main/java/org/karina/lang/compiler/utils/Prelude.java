@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
@@ -52,6 +53,7 @@ public class Prelude {
         var rangePath = new ObjectPath("karina", "lang", "Range");
         putAllMethodsFromKarinaClass(c, model, rangePath, methods);
 
+        
 
         return new Prelude(classes.build(), fields.build(), methods.build());
     }

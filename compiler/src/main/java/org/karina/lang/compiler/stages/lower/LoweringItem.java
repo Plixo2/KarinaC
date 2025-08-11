@@ -159,7 +159,6 @@ public class LoweringItem {
         }
 
         var toImplement = MethodHelper.getMethodForBridgeConstruction(c, model, classType);
-        System.out.println("toImplement = " + toImplement);
         if (!toImplement.isEmpty()) {
             Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Implemented for "  + classModel.name() + ": " + toImplement);
             Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Size", toImplement.size());

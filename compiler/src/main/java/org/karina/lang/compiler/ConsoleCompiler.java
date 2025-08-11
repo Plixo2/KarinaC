@@ -59,7 +59,7 @@ public class ConsoleCompiler {
             onSuccess(outputFile, warnings, endTime - startTime);
 
             if (config.run()) {
-                AutoRun.run(compilation);
+                AutoRun.runWithPrints(compilation, true);
             }
 
             return true;
