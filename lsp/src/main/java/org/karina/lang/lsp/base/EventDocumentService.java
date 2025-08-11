@@ -4,11 +4,13 @@ package org.karina.lang.lsp.base;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.TextDocumentService;
+import org.karina.lang.lsp.events.ClientEvent;
 import org.karina.lang.lsp.events.UpdateEvent;
 import org.karina.lang.lsp.events.EventService;
 import org.karina.lang.lsp.events.RequestEvent;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -33,7 +35,6 @@ public final class EventDocumentService implements TextDocumentService {
     }
 
 
-
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
@@ -53,5 +54,9 @@ public final class EventDocumentService implements TextDocumentService {
         return this.eventService.request(new RequestEvent.SemanticTokensRequest(uri));
     }
 
-
+    @Override
+    public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams params) {
+        var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
+        return this.eventService.request(new RequestEvent.RequestCodeLens(uri));
+    }
 }

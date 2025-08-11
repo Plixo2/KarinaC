@@ -1,5 +1,6 @@
 package org.karina.lang.lsp.events;
 
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Registration;
 
@@ -12,6 +13,6 @@ public sealed interface ClientEvent {
     record Popup(String message, MessageType type) implements ClientEvent {}
 
     record RegisterCapability(Registration... registration) implements ClientEvent {}
-    record PublishDiagnostic(URI uri, List<org.eclipse.lsp4j.Diagnostic> diagnostics) implements ClientEvent {}
+    record PublishDiagnostic(URI uri, List<Diagnostic> diagnostics) implements ClientEvent {}
 
 }

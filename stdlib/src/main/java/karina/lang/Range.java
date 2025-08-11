@@ -10,6 +10,10 @@ public record Range(int start, int end, int step) implements Iterable<Integer> {
         return new Range(this.end, this.start, -this.step);
     }
 
+    public static Range range(int end) {
+        return new Range(0, end, 1);
+    }
+
     public static Range range(int start, int end) {
         return new Range(start, end, 1);
     }

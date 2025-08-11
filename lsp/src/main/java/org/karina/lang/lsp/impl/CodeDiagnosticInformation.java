@@ -25,7 +25,7 @@ public class CodeDiagnosticInformation implements ErrorInformation {
     @Override
     @Contract(mutates = "this")
     public void setTitle(String title) {
-//        append(title);
+        append(title);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class CodeDiagnosticInformation implements ErrorInformation {
     @Override
     @Contract(mutates = "this")
     public void addSecondarySource(Region region, String message) {
-        related.add(new RegionOf<>(region, message));
+        this.related.add(new RegionOf<>(region, message));
     }
 
     @Override
@@ -48,7 +48,7 @@ public class CodeDiagnosticInformation implements ErrorInformation {
         return builder;
     }
 
-    private String getMessageString() {
+    public String getMessageString() {
         var builder = new StringBuilder();
         for (var line : this.lines) {
             builder.append(line).append("\n");
@@ -69,6 +69,9 @@ public class CodeDiagnosticInformation implements ErrorInformation {
         var diagnostic = new Diagnostic();
         diagnostic.setRange(regionToLSPRange(information.region));
         diagnostic.setMessage(information.getMessageString());
+        if (diagnostic.getMessage().isEmpty()) {
+            diagnostic.setMessage("Unknown error");
+        }
         diagnostic.setSource("karina");
         diagnostic.setSeverity(DiagnosticSeverity.Error);
 
@@ -130,9 +133,16 @@ public class CodeDiagnosticInformation implements ErrorInformation {
 
     private static Range regionToLSPRange(Region region) {
         var ordered = region.reorder();
+        int offset = 0;
+        var isSame = ordered.start().line() == ordered.start().column()
+                && ordered.end().line() == ordered.end().column();
+        if (isSame) {
+            offset = 1;
+        }
+
         return new Range(
                 new Position(ordered.start().line(), ordered.start().column()),
-                new Position(ordered.end().line(), ordered.end().column())
+                new Position(ordered.end().line(), ordered.end().column() + offset)
         );
     }
 }

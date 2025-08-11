@@ -8,12 +8,15 @@ import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.WorkspaceService;
 import org.karina.lang.lsp.KarinaLSP;
+import org.karina.lang.lsp.events.ClientEvent;
 import org.karina.lang.lsp.events.UpdateEvent;
 import org.karina.lang.lsp.events.EventService;
 import org.karina.lang.lsp.lib.ClientConfiguration;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 public final class EventWorkspaceService implements WorkspaceService {
@@ -89,5 +92,13 @@ public final class EventWorkspaceService implements WorkspaceService {
             this.eventService.update(new UpdateEvent.RenameFile(oldUri, newUri));
         }
 
+    }
+
+    @Override
+    public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
+        var command = params.getCommand();
+        var args = Option.fromNullable(params.getArguments()).orElse(List.of());
+        this.eventService.update(new UpdateEvent.ExecuteCommand(command, args));
+        return CompletableFuture.completedFuture(null);
     }
 }

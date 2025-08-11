@@ -1,6 +1,7 @@
 package org.karina.lang.lsp.base;
 
 import karina.lang.Option;
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.*;
@@ -9,6 +10,8 @@ import org.karina.lang.lsp.events.ClientEvent;
 import org.karina.lang.lsp.events.EventService;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +36,8 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
     @Override
     public void connect(LanguageClient client) {
         this.client = client;
+
+        System.setOut(createPrintStream());
     }
     @Override
     public void setTrace(SetTraceParams params) {
@@ -127,9 +132,9 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
         var processObj = new Process();
         processObj.server = this;
         processObj.token = token;
-
+        this.processes.put(token, processObj);
         var startParams = new WorkDoneProgressCreateParams(Either.forLeft(token));
-        processObj.future = this.client.createProgress(startParams).thenRun(() -> {
+        processObj.future = this.client.createProgress(startParams).thenRunAsync(() -> {
             var progressBegin = new WorkDoneProgressBegin();
             progressBegin.setTitle(title);
             progressBegin.setCancellable(true);
@@ -142,7 +147,11 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
             try {
                 message = process.apply(processObj.new Progress());
             } catch (Exception e) {
-                message = e.getMessage();
+                message = e.toString();
+                send(new ClientEvent.Log(
+                        message,
+                        MessageType.Error
+                ));
             }
 
             var end = new WorkDoneProgressEnd();
@@ -152,8 +161,41 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
 
             this.processes.remove(token);
         });
-        this.processes.put(token, processObj);
+
 
         return processObj;
     }
+
+    private PrintStream createPrintStream() {
+        return new PrintStream(new OutputStream() {
+            private final StringBuilder buffer = new StringBuilder();
+
+            @Override
+            public void write(int b) {
+                if (b == '\n') {
+                    flushBuffer();
+                } else {
+                    this.buffer.append((char) b);
+                }
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) {
+                for (int i = 0; i < len; i++) {
+                    write(b[off + i]);
+                }
+            }
+
+            @Override
+            public void flush() {
+                flushBuffer();
+            }
+
+            private void flushBuffer() {
+                EventLanguageServer.this.client.logMessage(new MessageParams(MessageType.Log, this.buffer.toString()));
+                this.buffer.setLength(0);
+            }
+        });
+    }
+
 }

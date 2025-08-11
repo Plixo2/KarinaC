@@ -7,11 +7,13 @@ import karina.lang.Option;
 import karina.lang.Result;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
+@ToString
 public class ClientConfiguration {
     private static final Gson GSON = new Gson();
 

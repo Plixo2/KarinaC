@@ -4,6 +4,7 @@ import org.karina.lang.compiler.utils.FileNode;
 import org.karina.lang.compiler.utils.FileTreeNode;
 import org.karina.lang.compiler.utils.ObjectPath;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface VirtualFileTreeNode extends FileTreeNode {
@@ -20,5 +21,14 @@ public interface VirtualFileTreeNode extends FileTreeNode {
     record VirtualFileNode(
             ObjectPath path, String name, VirtualFile content
     ) implements FileNode { }
+
+
+    static List<VirtualFileNode> flatten(VirtualFileTreeNode fileTree) {
+        var files = new ArrayList<>(fileTree.leafs());
+        for (var child : fileTree.children()) {
+            files.addAll(flatten(child));
+        }
+        return files;
+    }
 
 }

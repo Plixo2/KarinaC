@@ -133,6 +133,23 @@ public final class Console {
         };
     }
 
+    public static void assertTrue(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
+        }
+    }
+
+    public static void assertTrue(boolean condition, Option<String> message) {
+        assertTrue(condition, message.orElse("Assertion failed"));
+    }
+
+    public static void assertEquals(Object expected, Object actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError(" Expected: " + toString(expected) + ", but was: " + toString(actual));
+        }
+    }
+
+
     //from Arrays.deepToString
     private static String toDeepString(Object[] objects) {
         int bufLen = 20 * objects.length;

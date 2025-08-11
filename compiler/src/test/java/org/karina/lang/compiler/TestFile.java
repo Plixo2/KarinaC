@@ -51,7 +51,7 @@ public class TestFile {
                 throw new AssertionError("Expected success for '" + this.identifier + "'");
             }
             if (run) {
-                AutoRun.run(compilation);
+                AutoRun.runWithPrints(compilation, true);
             }
         } else {
             if (compilation != null) {

@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.utils.FileLoader;
+import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.lsp.base.EventClientService;
 import org.karina.lang.lsp.base.Process;
 import org.karina.lang.lsp.events.ClientEvent;
@@ -21,8 +21,10 @@ import org.karina.lang.lsp.test_compiler.OneShotCompiler;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 public final class KarinaLSP implements EventService {
@@ -104,7 +106,8 @@ public final class KarinaLSP implements EventService {
         if (configFromJson.asError() instanceof Option.Some(var e)) {
             errorMessage(e.getMessage());
         }
-        if (this.buildConfig instanceof Option.Some(var config)) {
+        if (configFromJson instanceof Result.Ok(var config)) {
+            this.buildConfig = Option.some(config);
             loadInitial(config.projectRootUri());
         }
 
@@ -166,12 +169,12 @@ public final class KarinaLSP implements EventService {
         var files = this.vfs.files();
         if (fileTransaction.isObjectNew()) {
             this.treeNode = DefaultVirtualFileTreeNode.builder().build(files, config.projectRootUri());
+            var prettyTree = FileTreePrinter.prettyTree(this.treeNode);
+            logMessage(prettyTree);
         }
 
-        var prettyTree = FileTreePrinter.prettyTree(this.treeNode);
-        logMessage(prettyTree);
 
-        this.oneShotCompiler.compile(this.treeNode, files,
+        this.oneShotCompiler.build(this.treeNode, files,
                 this.clientConfiguration.logLevel().orElse(ClientConfiguration.LoggingLevel.NONE)
         );
 
@@ -238,7 +241,28 @@ public final class KarinaLSP implements EventService {
                 }
             }
             case UpdateEvent.UpdateClientConfig updateClientConfig -> {
-                this.clientConfiguration = updateClientConfig.level();
+                this.clientConfiguration = updateClientConfig.configuration();
+            }
+            case UpdateEvent.ExecuteCommand(String command, List<Object> args) -> {
+                if (command.equals("karina.run")) {
+                    if (args.isEmpty()) {
+                        warningMessage("No URI provided for command: " + command);
+                        return;
+                    }
+                    if (args.size() > 1) {
+                        warningMessage("Too many arguments for command: " + command);
+                    }
+
+                    var uriStr = Objects.toString(args.getFirst());
+                    if (uriStr.startsWith("\"") && uriStr.endsWith("\"")) {
+                        uriStr = uriStr.substring(1, uriStr.length() - 1);
+                    }
+                    var uri = VirtualFileSystem.toUri(uriStr);
+                    var files = this.vfs.files();
+                    this.oneShotCompiler.run(this.treeNode, files, uri);
+                } else {
+                    warningMessage("Unknown command: " + command);
+                }
             }
         }
     }
@@ -255,9 +279,28 @@ public final class KarinaLSP implements EventService {
                     var end = System.currentTimeMillis();
                     logMessage("Semantic tokens in " + (end - start) + "ms");
                 } else {
-                    errorMessage("No content found for URI: " + uri);
+                    warningMessage("No content found for URI: " + uri);
                 }
                 return CompletableFuture.completedFuture((T) result);
+
+            }
+            case RequestEvent.RequestCodeLens(URI uri) -> {
+                if (this.oneShotCompiler.findMain(this.treeNode, uri) instanceof Option.Some(var mainMethod)) {
+                    var codeLens = new CodeLens();
+                    var start = mainMethod.region().start();
+                    codeLens.setRange(new Range(
+                            new Position(start.line(), start.column()),
+                            new Position(start.line(), start.column())
+                    ));
+                    codeLens.setCommand(new Command(
+                            "Run",
+                            "karina.run",
+                            List.of(uri.toString())
+                    ));
+                    return CompletableFuture.completedFuture((T) List.of(codeLens));
+                } else {
+                    return CompletableFuture.completedFuture((T) List.of());
+                }
 
             }
         }

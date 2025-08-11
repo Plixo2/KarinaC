@@ -5,13 +5,17 @@ import org.eclipse.lsp4j.Range;
 import org.karina.lang.lsp.lib.ClientConfiguration;
 
 import java.net.URI;
+import java.util.List;
 
 /// Event from the client to the server.
 /// @see RequestEvent when the client expects a response.
 public sealed interface UpdateEvent {
 
+    // ------------------ Workspace Command Event ------------------
+    record ExecuteCommand(String command, List<Object> arguments) implements UpdateEvent {};
+
     // ------------------ Workspace Client Config Change ------------------
-    record UpdateClientConfig(ClientConfiguration level) implements UpdateEvent {};
+    record UpdateClientConfig(ClientConfiguration configuration) implements UpdateEvent {};
 
     // ------------------ Workspace Watched File Events ------------------
     record CreateWatchedFile(URI uri) implements UpdateEvent {};

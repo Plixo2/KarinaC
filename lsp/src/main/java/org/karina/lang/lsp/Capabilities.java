@@ -40,6 +40,16 @@ public class Capabilities {
         capabilities.setWorkspace(workspaceCapabilities);
         //</editor-fold>
 
+        var codeLensOptions = new CodeLensOptions();
+        codeLensOptions.setResolveProvider(false);
+        capabilities.setCodeLensProvider(codeLensOptions);
+
+//        var execCmdOptions = new ExecuteCommandOptions();
+//        execCmdOptions.setCommands(List.of("karina.run"));
+//        execCmdOptions.setWorkDoneProgress(false);
+//        capabilities.setExecuteCommandProvider(execCmdOptions);
+
+
         return capabilities;
     }
 }
