@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.karina.lang.compiler.utils.DefaultFileTree;
 import org.karina.lang.compiler.utils.FileLoader;
+import org.karina.lang.compiler.utils.TextSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +55,42 @@ public class RunningTests {
     }
 
 
+    @TestFactory
+    List<DynamicTest> testSingleRuns() throws IOException {
+        var files = loadFiles(TEST_DIR + "files/");
+        if (files.isEmpty()) {
+            throw new AssertionError("No test projects found in directory: " + TEST_DIR);
+        }
 
+        return files.stream().map(ref -> {
+            var name = ref.resource().identifier();
+            return DynamicTest.dynamicTest(
+                    name, () -> {
+                        var toTest = new TestFile("main", ref);
+                        toTest.run();
+                    }
+            );
+        }).toList();
+    }
+
+
+    private static List<TextSource> loadFiles(String testDir) throws IOException {
+        var files = new ArrayList<TextSource>();
+
+        var directory = new File(testDir);
+        if (!directory.exists() || !directory.isDirectory()) {
+            throw new AssertionError("Project directory does not exist: " + testDir);
+        }
+
+        for (var file : Objects.requireNonNull(directory.listFiles())) {
+            if (file.isDirectory()) {
+                throw new AssertionError("Expected directories, but found a file: " + file.getAbsolutePath());
+            } else {
+                files.add(FileLoader.loadUTF8(file.toPath().toString()));
+            }
+        }
+
+        return files;
+    }
 
 }

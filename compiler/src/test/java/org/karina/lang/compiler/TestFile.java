@@ -15,9 +15,8 @@ public class TestFile {
     public TestFile(String name, TextSource source) {
         this.identifier = source.resource().identifier();
 
-        var basePath = new ObjectPath("src");
-        var node = new DefaultFileTree.DefaultFileNode(basePath.append(name), name, source);
-        this.fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
+        var node = new DefaultFileTree.DefaultFileNode(new ObjectPath(name), name, source);
+        this.fileTree = new DefaultFileTree(null, "src", List.of(), List.of(node));
     }
 
     public TestFile(String identifier, FileTreeNode fileTree) {
