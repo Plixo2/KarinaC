@@ -1,11 +1,6 @@
 package org.karina.lang.compiler.stages.lower.special;
 
-import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
-import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.stages.lower.LowerExpr;
 import org.karina.lang.compiler.stages.lower.LoweringContext;

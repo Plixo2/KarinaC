@@ -46,20 +46,20 @@ public class KarinaEnumVisitor implements IntoContext {
 
         var methods = ImmutableList.<KMethodModel>builder();
         for (var functionContext : ctx.function()) {
-            methods.add(this.visitor.methodVisitor.visit(currentClassPointer, ImmutableList.of(), functionContext));
+            methods.add(this.visitor.methodVisitor.visit(currentClassPointer, ImmutableList.of(), functionContext, false));
         }
 
         for (var implCtx : ctx.implementation()) {
             //pointer have to be validated in the import stage
             var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
-            var clsType = new KType.ClassType(classPointer, structType.generics());
+            var clsType = classPointer.implement(structType.generics());
             interfaces.add(clsType);
 
             for (var functionContext : implCtx.function()) {
                 methods.add(this.visitor.methodVisitor.visit(
                         currentClassPointer, ImmutableList.of(),
-                        functionContext
+                        functionContext, true
                 ));
             }
         }
@@ -168,7 +168,7 @@ public class KarinaEnumVisitor implements IntoContext {
         var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
         var mappedGenerics = generics.stream().map(ref -> (KType) new KType.GenericLink(ref)).toList();
-        var enumInterfaceClassType = new KType.ClassType(enumInterfacePointer, mappedGenerics);
+        var enumInterfaceClassType =enumInterfacePointer.implement(mappedGenerics);
         var interfaces = ImmutableList.of(enumInterfaceClassType);
 
         var host = enumClass.pointer();

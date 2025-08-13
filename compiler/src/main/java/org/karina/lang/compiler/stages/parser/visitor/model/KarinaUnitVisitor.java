@@ -79,7 +79,7 @@ public class KarinaUnitVisitor {
                 }
                 var kAnnotations = annotationsInner.build();
 
-                var method = this.methodVisitor.visit(currentClass, kAnnotations, itemContext.function());
+                var method = this.methodVisitor.visit(currentClass, kAnnotations, itemContext.function(), false);
                 methods.add(method);
             }
         }

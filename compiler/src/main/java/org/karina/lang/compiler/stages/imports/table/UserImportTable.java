@@ -157,7 +157,7 @@ public record UserImportTable(
         }
         //</editor-fold>
 
-        return new KType.ClassType(classPointer, newGenerics);
+        return classPointer.implement(newGenerics);
 
     }
 

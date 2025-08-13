@@ -1,6 +1,5 @@
 package org.karina.lang.compiler.logging.errors;
 
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.DidYouMean;
 import org.karina.lang.compiler.logging.ErrorInformation;
 import org.karina.lang.compiler.utils.BinaryOperator;
@@ -144,10 +143,12 @@ public sealed interface AttribError extends Error {
                     builder.append("Available Methods: ").append(quoted);
                 }
 
-                if (unknownMember.protectedPointer() != null) {
-                    builder.append("A member of the name '").append(unknownMember.name())
-                           .append("' exists, but is not accessible here: ");
-                    builder.append(unknownMember.protectedPointer());
+                if (!unknownMember.protectedMembers().isEmpty()) {
+                    builder.append("members of the name '").append(unknownMember.name())
+                           .append("' exists, but are not accessible here: ");
+                }
+                for (var protectedMember : unknownMember.protectedMembers()) {
+                    builder.addSecondarySource(protectedMember.region(), protectedMember.value());
                 }
 
                 builder.setPrimarySource(unknownMember.region());
@@ -198,7 +199,7 @@ public sealed interface AttribError extends Error {
 
     record InvalidNarrowingCast(Region region) implements AttribError {}
 
-    record UnknownMember(Region region, String of, String name, Set<String> availableMethods, Set<String> availableFields, @Nullable String protectedPointer) implements AttribError {}
+    record UnknownMember(Region region, String of, String name, Set<String> availableMethods, Set<String> availableFields, List<RegionOf<String>> protectedMembers) implements AttribError {}
 
     record DuplicateInterface(Region region, KType.ClassType interfaceType) implements AttribError {}
 

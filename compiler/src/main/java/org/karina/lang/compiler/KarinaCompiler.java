@@ -8,7 +8,9 @@ import org.karina.lang.compiler.logging.DiagnosticCollection;
 import org.karina.lang.compiler.logging.FlightRecordCollection;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.impl.JKModel;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
+import org.karina.lang.compiler.model_api.impl.table.LinearLookup;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
 import org.karina.lang.compiler.stages.generate.GenerationProcessor;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
@@ -70,6 +72,8 @@ public class KarinaCompiler {
     /// @return the compiled jar
     ///
     private JarCompilation run(Context c, FileTreeNode files) {
+
+
 
         // The 6 stages of the compiler:
         ParseProcessor parser = new ParseProcessor();

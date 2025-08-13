@@ -143,7 +143,7 @@ public record AttributionContext(
         if (rightType instanceof KType.Resolvable resolvable && !resolvable.isResolved() && !resolvable.canUsePrimitives()) {
             var unboxFrom = BOX_MAPPING.get(primitive);
             if (unboxFrom != null) {
-                var toType = new KType.ClassType(unboxFrom.pointer, List.of());
+                var toType = unboxFrom.pointer.implement(List.of());
                 //we just say, that the type is now a Boxed version, and let the makeAssignment handle the rest
                 resolvable.tryResolve(this.c, checkingRegion, toType);
 
@@ -219,7 +219,7 @@ public record AttributionContext(
                 return null;
             }
 
-            var classTypeToConvert = new KType.ClassType(boxed.pointer, List.of());
+            var classTypeToConvert = boxed.pointer.implement(List.of());
             var call = createBoxingCall(right, classTypeToConvert, primitive, debug);
 
             //it should be resolvable, even tho currently, this should not happen
@@ -247,7 +247,7 @@ public record AttributionContext(
             if (boxing == null) {
                 return null;
             }
-            var type = new KType.ClassType(boxing.pointer, List.of());
+            var type = boxing.pointer.implement(List.of());
             var call = createBoxingCall(right, type, primitive, debug);
 
             //check again

@@ -35,19 +35,14 @@ public class Types {
                 for (var ignored : classType.generics()) {
                     generics.add(KType.ROOT);
                 }
-                yield new KType.ClassType(classType.pointer(), generics);
+
+                yield classType.pointer().implement(generics);
             }
             case KType.FunctionType functionType -> {
 
                 if (!functionType.interfaces().isEmpty()) {
                     yield functionType.interfaces().getFirst();
                 } else {
-//                    List<KType> arguments = new ArrayList<>();
-//                    for (var ignored : functionType.arguments()) {
-//                        arguments.add(KType.ROOT);
-//                    }
-//                    KType returnType = KType.ROOT;
-//                    yield new KType.FunctionType(arguments, returnType, java.util.List.of());
                     yield KType.ROOT;
                 }
             }
@@ -164,7 +159,7 @@ public class Types {
 
     public static KType erasedClass(ClassModel classModel) {
         var generics = classModel.generics().stream().map(Types::eraseGeneric).toList();
-        return new KType.ClassType(classModel.pointer(), generics);
+        return classModel.pointer().implement(generics);
     }
 
     record TypeDependency(KType type, int level) { }
@@ -178,6 +173,68 @@ public class Types {
         return -1;
     }
 
+    public static boolean hasIdentity(KType type) {
+        type = type.unpack();
+        return switch (type) {
+            case KType.ArrayType _,
+                 KType.ClassType _,
+                 KType.FunctionType _,
+                 KType.GenericLink _ -> true;
+
+            case KType.Resolvable resolvable -> !resolvable.canUsePrimitives() && !resolvable.isVoid();
+//            case KType.Resolvable resolvable -> true;
+
+            case KType.PrimitiveType _,
+                 KType.UnprocessedType _,
+                 KType.VoidType _ -> false;
+        };
+    }
+
+    public static boolean isTypeAccessible(ProtectionChecking protection, ClassModel referenceSite, KType type) {
+        type = type.unpack();
+        return switch (type) {
+            case KType.ArrayType arrayType -> {
+                yield isTypeAccessible(protection, referenceSite, arrayType.elementType());
+            }
+            case KType.ClassType classType -> {
+                if (!protection.isClassAccessible(referenceSite, classType.pointer())) {
+                    yield false;
+                }
+                for (var generic : classType.generics()) {
+                    if (!isTypeAccessible(protection, referenceSite, generic)) {
+                        yield false;
+                    }
+                }
+                yield true;
+            }
+            case KType.FunctionType functionType -> {
+                for (var argument : functionType.arguments()) {
+                    if (!isTypeAccessible(protection, referenceSite, argument)) {
+                        yield false;
+                    }
+                }
+                if (!isTypeAccessible(protection, referenceSite, functionType.returnType())) {
+                    yield false;
+                }
+                for (var impl : functionType.interfaces()) {
+                    if (!isTypeAccessible(protection, referenceSite, impl)) {
+                        yield false;
+                    }
+                }
+                yield true;
+            }
+            case KType.GenericLink genericLink ->
+                // should not be invalid in the first place
+                    true;
+            case KType.PrimitiveType primitiveType -> true;
+            case KType.Resolvable resolvable -> true;
+            case KType.VoidType voidType -> true;
+            case KType.UnprocessedType unprocessedType -> {
+                // Unprocessed types should not exist by now
+                throw new IllegalStateException("Unprocessed type " + unprocessedType + " should not exist");
+            }
+        };
+    }
 
     /**
      * <p>
@@ -199,7 +256,7 @@ public class Types {
                     var newType = projectGenerics(generic, generics);
                     newGenerics.add(newType);
                 }
-                yield new KType.ClassType(path, newGenerics);
+                yield path.implement(newGenerics);
             }
             case KType.FunctionType functionType -> {
                 var returnType = projectGenerics(functionType.returnType(), generics) ;

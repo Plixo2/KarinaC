@@ -170,7 +170,7 @@ public class ClosureHelper {
         for (var arg : expr.args()) {
             var type = arg.type();
             if (type == null) {
-                type = new KType.Resolvable();
+                type = new KType.Resolvable(false, false);
             }
             var variable = new Variable(
                     arg.region(),
@@ -618,11 +618,11 @@ public class ClosureHelper {
         //</editor-fold>
 
         private static boolean isObject(KType type) {
-            return BinaryAttrib.hasIdentity(type);
+            return Types.hasIdentity(type);
         }
 
         private static KType.ClassType mkClassType(ObjectPath path, List<KType> generics) {
-            return new KType.ClassType(ClassPointer.of(KType.JAVA_LIB, path), generics);
+            return ClassPointer.of(KType.JAVA_LIB, path).implement(generics);
         }
 
     }

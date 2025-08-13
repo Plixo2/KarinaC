@@ -7,7 +7,7 @@ import org.karina.lang.compiler.utils.Resource;
 public sealed interface Error
         permits Error.BytecodeLoading, Error.InternalException,
         Error.SyntaxError, Error.Default, Error.Warn, FileLoadError,
-        AttribError, ImportError, LowerError {
+        AttribError, ImportError, LowerError, GenerateError {
 
     void addInformation(ErrorInformation builder);
 
@@ -31,7 +31,7 @@ public sealed interface Error
             builder.setTitle("Internal Exception");
             builder.append("oh no, please report this issue");
             builder.append("");
-            if (this.exception.getMessage() == null) {
+            if (this.exception.getMessage() == null || this.exception.getMessage().isEmpty()) {
                 builder.append("<no message given>");
             } else {
                 builder.append(this.exception.getMessage());

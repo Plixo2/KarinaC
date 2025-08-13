@@ -1,6 +1,8 @@
 package org.karina.lang.compiler.utils;
 
 
+import java.util.List;
+
 /**
  * Represents a region of a text in a given source file.
  * @param source The source file

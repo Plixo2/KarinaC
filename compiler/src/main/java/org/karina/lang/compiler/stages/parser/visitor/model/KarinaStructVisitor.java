@@ -52,7 +52,7 @@ public class KarinaStructVisitor implements IntoContext {
             if (superAnnotation.superType() instanceof KType.UnprocessedType superType) {
                 var superPath = superType.name().value();
                 var superClassPointer = ClassPointer.of(region, superPath);
-                superClass = new KType.ClassType(superClassPointer, superType.generics());
+                superClass = superClassPointer.implement(superType.generics());
             } else if (superAnnotation.superType() instanceof KType.ClassType superType) {
                 superClass = superType;
             } else {
@@ -70,13 +70,14 @@ public class KarinaStructVisitor implements IntoContext {
             //pointer have to be validated in the import stage
             var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
-            var clsType = new KType.ClassType(classPointer, structType.generics());
+            var clsType = classPointer.implement(structType.generics());
             interfaces.add(clsType);
 
             for (var functionContext : implCtx.function()) {
                 methods.add(this.visitor.methodVisitor.visit(
                         currentClass, ImmutableList.of(),
-                        functionContext
+                        functionContext,
+                        true
                 ));
             }
         }
@@ -87,7 +88,7 @@ public class KarinaStructVisitor implements IntoContext {
             var methodModel = this.visitor.methodVisitor.visit(
                     currentClass,
                     ImmutableList.of(),
-                    functionContext
+                    functionContext, false
             );
             methods.add(methodModel);
 

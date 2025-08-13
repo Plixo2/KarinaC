@@ -22,12 +22,14 @@ public class KarinaMethodVisitor implements IntoContext {
         this.context = regionContext;
     }
 
-    public KMethodModel visit(ClassPointer owningClass,  ImmutableList<KAnnotation> annotations, KarinaParser.FunctionContext function) {
+    public KMethodModel visit(ClassPointer owningClass,  ImmutableList<KAnnotation> annotations, KarinaParser.FunctionContext function, boolean asPublic) {
         String name;
+        var isPublic = function.PUB() != null || asPublic;
         if (function.id() != null) {
             name = this.context.escapeID(function.id());
         } else {
             name = "<init>";
+            isPublic = true;
         }
 
         var region = this.context.toRegion(function);
@@ -51,7 +53,12 @@ public class KarinaMethodVisitor implements IntoContext {
             expr = null;
         }
         var isAbstract = expr == null;
-        var mods = Modifier.PUBLIC | (isStatic ? Modifier.STATIC : 0) | (isAbstract ? Modifier.ABSTRACT : 0);
+        if (isAbstract) {
+            isPublic = true;
+        }
+
+        var mods = (isPublic ? Modifier.PUBLIC : Modifier.PRIVATE) | (isStatic ? Modifier.STATIC : 0) | (isAbstract ? Modifier.ABSTRACT : 0);
+
 
         return new KMethodModel(
                 name,

@@ -12,7 +12,7 @@ import org.karina.lang.compiler.utils.KType;
 public sealed interface BinOperatorSymbol {
     Region region();
     KType type();
-//    BinaryOperator operator();
+
     sealed interface ObjectEquals extends BinOperatorSymbol {
         record Equal(Region region) implements ObjectEquals {}
         record NotEqual(Region region) implements ObjectEquals {}
@@ -33,15 +33,6 @@ public sealed interface BinOperatorSymbol {
                      LESS_THAN_OR_EQUAL, LESS_THAN, GREATER_THAN, GREATER_THAN_OR_EQUAL -> null;
             };
         }
-//
-//        default BinaryOperator operator() {
-//            return switch (this) {
-//                case Equal _ -> BinaryOperator.EQUAL;
-//                case NotEqual _ -> BinaryOperator.NOT_EQUAL;
-//                case StrictEqual _ -> BinaryOperator.STRICT_EQUAL;
-//                case StrictNotEqual _ -> BinaryOperator.STRICT_NOT_EQUAL;
-//            };
-//        }
     }
 
     sealed interface FloatOP extends BinOperatorSymbol {
@@ -93,22 +84,6 @@ public sealed interface BinOperatorSymbol {
             };
         }
 
-//        default BinaryOperator operator() {
-//            return switch (this) {
-//                case Add ignored -> BinaryOperator.ADD;
-//                case Subtract ignored -> BinaryOperator.SUBTRACT;
-//                case Multiply ignored -> BinaryOperator.MULTIPLY;
-//                case Divide ignored -> BinaryOperator.DIVIDE;
-//                case Modulus ignored -> BinaryOperator.MODULUS;
-//                case Equal ignored -> BinaryOperator.EQUAL;
-//                case NotEqual ignored -> BinaryOperator.NOT_EQUAL;
-//                case LessThan ignored -> BinaryOperator.LESS_THAN;
-//                case LessThanOrEqual ignored -> BinaryOperator.LESS_THAN_OR_EQUAL;
-//                case GreaterThan ignored -> BinaryOperator.GREATER_THAN;
-//                case GreaterThanOrEqual ignored -> BinaryOperator.GREATER_THAN_OR_EQUAL;
-//            };
-//        }
-
     }
 
     sealed interface DoubleOP extends BinOperatorSymbol {
@@ -158,23 +133,6 @@ public sealed interface BinOperatorSymbol {
                 case STRICT_EQUAL, STRICT_NOT_EQUAL, CONCAT, AND, OR -> null;
             };
         }
-
-//        default BinaryOperator operator() {
-//            return switch (this) {
-//                case Add ignored -> BinaryOperator.ADD;
-//                case Subtract ignored -> BinaryOperator.SUBTRACT;
-//                case Multiply ignored -> BinaryOperator.MULTIPLY;
-//                case Divide ignored -> BinaryOperator.DIVIDE;
-//                case Modulus ignored -> BinaryOperator.MODULUS;
-//                case Equal ignored -> BinaryOperator.EQUAL;
-//                case NotEqual ignored -> BinaryOperator.NOT_EQUAL;
-//                case LessThan ignored -> BinaryOperator.LESS_THAN;
-//                case LessThanOrEqual ignored -> BinaryOperator.LESS_THAN_OR_EQUAL;
-//                case GreaterThan ignored -> BinaryOperator.GREATER_THAN;
-//                case GreaterThanOrEqual ignored -> BinaryOperator.GREATER_THAN_OR_EQUAL;
-//            };
-//        }
-
     }
 
     sealed interface LongOP extends BinOperatorSymbol {
@@ -224,23 +182,6 @@ public sealed interface BinOperatorSymbol {
                 case STRICT_EQUAL, STRICT_NOT_EQUAL, CONCAT, AND, OR -> null;
             };
         }
-
-//        default BinaryOperator operator() {
-//            return switch (this) {
-//                case Add ignored -> BinaryOperator.ADD;
-//                case Subtract ignored -> BinaryOperator.SUBTRACT;
-//                case Multiply ignored -> BinaryOperator.MULTIPLY;
-//                case Divide ignored -> BinaryOperator.DIVIDE;
-//                case Modulus ignored -> BinaryOperator.MODULUS;
-//                case Equal ignored -> BinaryOperator.EQUAL;
-//                case NotEqual ignored -> BinaryOperator.NOT_EQUAL;
-//                case LessThan ignored -> BinaryOperator.LESS_THAN;
-//                case LessThanOrEqual ignored -> BinaryOperator.LESS_THAN_OR_EQUAL;
-//                case GreaterThan ignored -> BinaryOperator.GREATER_THAN;
-//                case GreaterThanOrEqual ignored -> BinaryOperator.GREATER_THAN_OR_EQUAL;
-//            };
-//        }
-
     }
 
     sealed interface IntOP extends BinOperatorSymbol {
@@ -291,22 +232,6 @@ public sealed interface BinOperatorSymbol {
                 case STRICT_NOT_EQUAL, STRICT_EQUAL, CONCAT, AND, OR -> null;
             };
         }
-//
-//        default BinaryOperator operator() {
-//            return switch (this) {
-//                case Add ignored -> BinaryOperator.ADD;
-//                case Subtract ignored -> BinaryOperator.SUBTRACT;
-//                case Multiply ignored -> BinaryOperator.MULTIPLY;
-//                case Divide ignored -> BinaryOperator.DIVIDE;
-//                case Modulus ignored -> BinaryOperator.MODULUS;
-//                case Equal ignored -> BinaryOperator.EQUAL;
-//                case NotEqual ignored -> BinaryOperator.NOT_EQUAL;
-//                case LessThan ignored -> BinaryOperator.LESS_THAN;
-//                case LessThanOrEqual ignored -> BinaryOperator.LESS_THAN_OR_EQUAL;
-//                case GreaterThan ignored -> BinaryOperator.GREATER_THAN;
-//                case GreaterThanOrEqual ignored -> BinaryOperator.GREATER_THAN_OR_EQUAL;
-//            };
-//        }
 
     }
 
@@ -330,15 +255,6 @@ public sealed interface BinOperatorSymbol {
                 default -> null;
             };
         }
-
-//        default BinaryOperator operator() {
-//            return switch (this) {
-//                case Equal ignored -> BinaryOperator.EQUAL;
-//                case NotEqual ignored -> BinaryOperator.NOT_EQUAL;
-//                case And ignored -> BinaryOperator.AND;
-//                case Or ignored -> BinaryOperator.OR;
-//            };
-//        }
     }
 
 }

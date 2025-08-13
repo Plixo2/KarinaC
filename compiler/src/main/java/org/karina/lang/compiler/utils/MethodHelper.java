@@ -74,7 +74,7 @@ public class MethodHelper {
         var currentDefined = new ArrayList<MethodToImplement>();
 
         for (var method : currentClassModel.methods()) {
-            if (Modifier.isStatic(method.modifiers())) {
+            if (Modifier.isStatic(method.modifiers()) || !Modifier.isPublic(method.modifiers())) {
                 continue;
             }
 

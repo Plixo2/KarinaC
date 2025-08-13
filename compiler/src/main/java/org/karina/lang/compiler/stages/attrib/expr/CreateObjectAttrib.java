@@ -41,87 +41,6 @@ public class CreateObjectAttrib  {
 
         return of(ctx, callAttrib);
 
-
-/*        var classModel = ctx.model().getClass(pointer);
-
-        var annotatedGenerics = !generics.isEmpty();
-
-        //generate the new generics for the implementation
-        List<KType> newGenerics;
-        if (annotatedGenerics) {
-            //We don't have to test for the length of the generics,
-            // this should already be checked in the import stage
-            newGenerics = generics;
-        } else {
-            var genericCount = classModel.generics().size();
-            newGenerics = new ArrayList<>(genericCount);
-            for (var ignored = 0; ignored < genericCount; ignored++) {
-                newGenerics.add(new KType.PrimitiveType.Resolvable());
-            }
-        }
-
-        if (newGenerics.size() != classModel.generics().size()) {
-            Log.temp(expr.region(), "Generics count mismatch, this is a bug");
-            throw new Log.KarinaException();
-        }
-        //We map all generics here to the new implementation to replace fields in the struct.
-        //The previous step should have already ensured that the size of generics is the same.
-        Map<Generic, KType> mapped = new HashMap<>();
-        for (var i = 0; i < newGenerics.size(); i++) {
-            var generic = classModel.generics().get(i);
-            var type = newGenerics.get(i);
-            mapped.put(generic, type);
-        }
-
-        //The new fieldType with all the generics replaced
-        var newType = new KType.ClassType(
-                pointer,
-                newGenerics
-        );
-
-        //check all Parameters,
-        //check if all names are correct,
-        //and also check the fieldType with the replaced Type (implemented Generics)
-        var newParameters = new ArrayList<NamedExpression>();
-
-        var openParameters = new ArrayList<>(expr.parameters());
-        for (var field : classModel.fields()) {
-            var fieldType = Types.projectGenerics(field.type(), mapped);
-            var foundParameter = openParameters
-                    .stream().filter(ref -> ref.name().value().equals(field.name())).findFirst();
-            if (foundParameter.isEmpty()) {
-                Log.error(new AttribError.MissingField(
-                        expr.region(),
-                        field.name()
-                ));
-                throw new Log.KarinaException();
-            } else {
-                var parameter = foundParameter.get();
-                openParameters.remove(parameter);
-                var attribField = attribExpr(fieldType, ctx, parameter.expr()).expr();
-                attribField = ctx.makeAssignment(parameter.name().region(), fieldType, attribField);
-
-                newParameters.add(new NamedExpression(
-                        parameter.region(),
-                        parameter.name(),
-                        attribField,
-                        field.type()
-                ));
-            }
-        }
-        if (!openParameters.isEmpty()) {
-            var toMany = openParameters.getFirst();
-            Log.error(new AttribError.UnknownField(toMany.name().region(), toMany.name().value()));
-            throw new Log.KarinaException();
-        }
-
-        return of(ctx, new KExpr.CreateObject(
-                expr.region(),
-                newType,
-                newParameters,
-                newType
-        ));*/
-
     }
 
     private static KType.ClassType createSafeClassType(AttributionContext ctx, KType.ClassType classType) {
@@ -140,10 +59,7 @@ public class CreateObjectAttrib  {
             }
         }
 
-        return new KType.ClassType(
-                classType.pointer(),
-                newGenerics
-        );
+        return classType.pointer().implement(newGenerics);
 
     }
 
@@ -160,7 +76,7 @@ public class CreateObjectAttrib  {
             var methodModel = ctx.model().getMethod(ref);
             var modifiers = methodModel.modifiers();
             return !Modifier.isStatic(modifiers)
-                    && ctx.protection().canReference(ctx.owningClass(), ref.classPointer(), modifiers);
+                    && ctx.protection().isMethodAccessible(ctx.model().getClass(ctx.owningClass()), ref);
         });
 
         var names = params.stream().map(ref -> ref.name().value()).toList();

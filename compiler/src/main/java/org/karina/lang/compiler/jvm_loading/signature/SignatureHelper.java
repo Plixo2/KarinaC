@@ -49,7 +49,7 @@ public class SignatureHelper {
             var generic = toType(c, region, symbolName, outer, generics, typeArgument);
             genericsArgs.add(generic);
         }
-        return new KType.ClassType(signature.classPointer(), genericsArgs);
+        return signature.classPointer().implement(genericsArgs);
     }
 
     public static KType toType(

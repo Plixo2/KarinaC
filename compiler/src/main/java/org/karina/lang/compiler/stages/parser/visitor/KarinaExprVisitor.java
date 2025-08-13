@@ -91,14 +91,11 @@ public class KarinaExprVisitor implements IntoContext {
         var thenBlock = visitBlock(ctx.block());
         BranchPattern branchPattern = null;
         if (condition instanceof KExpr.IsInstanceOf(Region instanceRegion, KExpr left, KType isType)) {
-            if (isType.isVoid() || isType.isPrimitive()) {
-                Log.error(this, new AttribError.NotSupportedType(instanceRegion, isType));
-                throw new Log.KarinaException();
-            }
             if (ctx.id() != null) {
                 condition = left;
                 branchPattern = new BranchPattern.Cast(
-                        instanceRegion, isType,
+                        instanceRegion,
+                        isType,
                         this.conv.region(ctx.id()),
                         null
                 );
@@ -122,11 +119,6 @@ public class KarinaExprVisitor implements IntoContext {
             if (shortPattern != null) {
                 var regionShortPattern = this.conv.toRegion(shortPattern);
                 var isType = this.typeVisitor.visitType(shortPattern.type());
-                if (isType.isVoid() || isType.isPrimitive()) {
-                    var regionInner = this.conv.toRegion(shortPattern.type());
-                    Log.error(this, new AttribError.NotSupportedType(regionInner, isType));
-                    throw new Log.KarinaException();
-                }
                 if (shortPattern.id() != null) {
                     elseBranchPattern = new BranchPattern.Cast(
                             regionShortPattern,
@@ -277,8 +269,8 @@ public class KarinaExprVisitor implements IntoContext {
         if (ctx.additiveExpression() != null) {
             Region position;
             BinaryOperator operator;
-            if (ctx.CHAR_PLIS() != null) {
-                position = this.conv.toRegion(ctx.CHAR_PLIS());
+            if (ctx.CHAR_PLUS() != null) {
+                position = this.conv.toRegion(ctx.CHAR_PLUS());
                 operator = BinaryOperator.ADD;
             } else if (ctx.CHAR_MINUS() != null) {
                 position = this.conv.toRegion(ctx.CHAR_MINUS());

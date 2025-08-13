@@ -13,6 +13,7 @@ module compiler {
     requires org.objectweb.asm.tree;
     requires java.desktop;
     requires java.sql;
+    requires org.objectweb.asm.util;
 
 
     exports org.karina.lang.compiler;

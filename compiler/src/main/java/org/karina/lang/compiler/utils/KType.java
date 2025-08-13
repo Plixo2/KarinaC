@@ -37,126 +37,62 @@ public sealed interface KType {
     PrimitiveType SHORT = new PrimitiveType(KPrimitive.SHORT);
     PrimitiveType BOOL = new PrimitiveType(KPrimitive.BOOL);
 
-    ClassType ROOT = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.ROOT_PATH),
-            List.of()
-    );
+    ClassType ROOT = ClassPointer.of(JAVA_LIB, ClassPointer.ROOT_PATH).implement(List.of());
 
-    ClassType STRING = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.STRING_PATH),
-            List.of()
-    );
+    ClassType STRING = ClassPointer.of(JAVA_LIB, ClassPointer.STRING_PATH).implement(List.of());
 
-    ClassType NUMBER = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.NUMBER_PATH),
-            List.of()
-    );
+    ClassType NUMBER = ClassPointer.of(JAVA_LIB, ClassPointer.NUMBER_PATH).implement(List.of());
 
-    ClassType DOUBLE_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.DOUBLE_PATH),
-            List.of()
-    );
+    ClassType DOUBLE_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.DOUBLE_PATH).implement(List.of());
 
-    ClassType FLOAT_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.FLOAT_PATH),
-            List.of()
-    );
+    ClassType FLOAT_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.FLOAT_PATH).implement(List.of());
 
-    ClassType LONG_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.LONG_PATH),
-            List.of()
-    );
+    ClassType LONG_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.LONG_PATH).implement(List.of());
 
-    ClassType INTEGER_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.INTEGER_PATH),
-            List.of()
-    );
+    ClassType INTEGER_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.INTEGER_PATH).implement(List.of());
 
-    ClassType BOOLEAN_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.BOOLEAN_PATH),
-            List.of()
-    );
+    ClassType BOOLEAN_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.BOOLEAN_PATH).implement(List.of());
 
-    ClassType CHARACTER_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.CHARACTER_PATH),
-            List.of()
-    );
+    ClassType CHARACTER_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.CHARACTER_PATH).implement(List.of());
 
-    ClassType THROWABLE = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH),
-            List.of()
-    );
+    ClassType THROWABLE = ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH).implement(List.of());
 
-    ClassType MATCH_EXCEPTION = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.MATCH_EXCEPTION_PATH),
-            List.of()
-    );
+    ClassType MATCH_EXCEPTION = ClassPointer.of(JAVA_LIB, ClassPointer.MATCH_EXCEPTION_PATH).implement(List.of());
 
-    ClassType KARINA_RANGE = new ClassType(
-            ClassPointer.of(KARINA_LIB, ClassPointer.RANGE_PATH),
-            List.of()
-    );
 
-    ClassType STRING_INTERPOLATION = new ClassType(
-            ClassPointer.of(KARINA_LIB, ClassPointer.STRING_INTERPOLATION_PATH),
-            List.of()
-    );
+
+    ClassType KARINA_RANGE = ClassPointer.of(KARINA_LIB, ClassPointer.RANGE_PATH).implement(List.of());
+
+    ClassType STRING_INTERPOLATION = ClassPointer.of(KARINA_LIB, ClassPointer.STRING_INTERPOLATION_PATH).implement(List.of());
 
     static ClassType ITERABLE(KType iter_type) {
-        return new ClassType(
-                ClassPointer.of(JAVA_LIB, ClassPointer.ITERABLE_PATH),
-                List.of(iter_type)
-        );
+        return ClassPointer.of(JAVA_LIB, ClassPointer.ITERABLE_PATH).implement(List.of(iter_type));
     }
 
     static ClassType ITERATOR(KType iter_type) {
-        return new ClassType(
-                ClassPointer.of(JAVA_LIB, ClassPointer.ITERATOR_PATH),
-                List.of(iter_type)
-        );
+        return ClassPointer.of(JAVA_LIB, ClassPointer.ITERATOR_PATH).implement(List.of(iter_type));
     }
 
     static ClassType CLASS_TYPE(KType clsType) {
-        return new ClassType(
-                ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE_PATH),
-                List.of(clsType)
-        );
+        return ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE_PATH).implement(List.of(clsType));
     }
     static ClassType KARINA_OPTION(KType inner) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_PATH),
-                List.of(inner)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_PATH).implement(List.of(inner));
     }
     static ClassType KARINA_OPTION_SOME(KType inner) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_SOME_PATH),
-                List.of(inner)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_SOME_PATH).implement(List.of(inner));
     }
     static ClassType KARINA_OPTION_NONE(KType inner) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_NONE_PATH),
-                List.of(inner)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_NONE_PATH).implement(List.of(inner));
     }
     static ClassType KARINA_RESULT(KType ok, KType err) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_PATH),
-                List.of(ok, err)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_PATH).implement(List.of(ok, err));
     }
     static ClassType KARINA_RESULT_OK(KType ok, KType err) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_OK_PATH),
-                List.of(ok, err)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_OK_PATH).implement(List.of(ok, err));
     }
     static ClassType KARINA_RESULT_ERR(KType ok, KType err) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_ERR_PATH),
-                List.of(ok, err)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_ERR_PATH).implement(List.of(ok, err));
     }
 
 
@@ -214,8 +150,9 @@ public sealed interface KType {
 
     default KType unpack() {
         if (this instanceof Resolvable resolvable) {
-            if (resolvable.get() != null) {
-                return resolvable.get().unpack();
+            var resolved = resolvable.get();
+            if (resolved != null) {
+                return resolved.unpack();
             }
         }
         return this;
@@ -407,6 +344,10 @@ public sealed interface KType {
             return this.canUsePrimitives;
         }
 
+        public boolean canUseVoid() {
+            return this.canUseVoid;
+        }
+
         private @Nullable KType resolved = null;
 
         public boolean isResolved() {
@@ -415,6 +356,12 @@ public sealed interface KType {
 
         public @Nullable KType get() {
             return this.resolved;
+        }
+
+        public void collapseToObject() {
+            if (!isResolved()) {
+                this.resolved = KType.ROOT;
+            }
         }
 
         /**

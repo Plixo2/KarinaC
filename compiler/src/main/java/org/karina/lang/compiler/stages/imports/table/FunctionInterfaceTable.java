@@ -31,7 +31,7 @@ public record FunctionInterfaceTable(Context c, Model model) implements ImportTa
                                         .stream()
                                         .map(ref -> importType(region, ref, flags))
                                         .toList();
-                yield new KType.ClassType(classType.pointer(), generics);
+                yield  classType.pointer().implement(generics);
             }
             case KType.UnprocessedType unprocessedType -> {
                 Log.temp(this, region, "Unprocessed type: " + unprocessedType.name() + " after importing, this should not happen.");

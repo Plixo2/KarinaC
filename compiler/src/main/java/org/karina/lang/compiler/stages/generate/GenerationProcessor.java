@@ -27,6 +27,7 @@ public class GenerationProcessor {
                 fork.collect(subC -> {
                     Log.beginType(Log.LogTypes.GENERATION_CLASS, "Class " + kClassModel.path());
                     var out = GenerateItem.compileClass(subC, model, kClassModel, CLASS_VERSION);
+                    Log.recordType(Log.LogTypes.GENERATION_CLASS, "Generated", kClassModel.path(), "to", out.path());
                     Log.endType(Log.LogTypes.GENERATION_CLASS, "Class " + kClassModel.path());
                     return out;
                 });

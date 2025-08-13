@@ -47,7 +47,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
         for (var implCtx : ctx.interfaceExtension()) {
             var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
-            var clsType = new KType.ClassType(classPointer, structType.generics());
+            var clsType = classPointer.implement(structType.generics());
             interfaces.add(clsType);
         }
 
@@ -55,7 +55,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
         for (var functionContext : ctx.function()) {
             var method = this.visitor.methodVisitor.visit(
                     currentClass, ImmutableList.of(),
-                    functionContext
+                    functionContext, false
             );
             methods.add(method);
 

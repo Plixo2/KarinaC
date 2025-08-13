@@ -2,9 +2,11 @@ package org.karina.lang.compiler.model_api.pointer;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -85,5 +87,12 @@ public class ClassPointer {
 
     public static ClassPointer of(Region region, ObjectPath path) {
         return new ClassPointer(region, path);
+    }
+
+    public KType.ClassType implement(List<KType> generics) {
+        return new KType.ClassType(
+                this,
+                generics
+        );
     }
 }

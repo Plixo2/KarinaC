@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableMap;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.Region;
@@ -25,6 +27,9 @@ public class GenerationContext implements IntoContext {
     private final Map<Variable, Integer> variables = new HashMap<>();
     private final List<LocalVariableNode> localVariables;
     private final Context c;
+    @Accessors(fluent = true)
+    private final Model model;
+
 
     private int variablesCount = 0;
     @Setter
@@ -41,7 +46,7 @@ public class GenerationContext implements IntoContext {
         if (!this.variables.containsKey(variable)) {
             this.variables.put(variable, this.variablesCount);
             var type = variable.type();
-            this.variablesCount += TypeEncoding.jvmSize(TypeEncoding.getType(type));
+            this.variablesCount += TypeEncoding.jvmSize(type);
         }
     }
 

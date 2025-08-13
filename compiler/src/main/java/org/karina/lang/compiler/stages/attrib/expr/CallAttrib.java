@@ -131,7 +131,7 @@ public class CallAttrib  {
         collection = collection.filter(ref -> {
             var modifiers = ctx.model().getMethod(ref).modifiers();
             return !Modifier.isStatic(modifiers) &&
-                    ctx.protection().canReference(ctx.owningClass(), ref.classPointer(), modifiers);
+                    ctx.protection().isMethodAccessible(ctx.model().getClass(ctx.owningClass()), ref);
         });
 
         Log.beginType(Log.LogTypes.CALLS, "filtered pointers");

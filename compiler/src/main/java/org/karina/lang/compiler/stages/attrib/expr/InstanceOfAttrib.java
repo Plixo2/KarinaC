@@ -8,6 +8,7 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.Types;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -20,7 +21,7 @@ public class InstanceOfAttrib  {
         var leftAttrib = attribExpr(null, ctx, expr.left()).expr();
         var inner = attribInner(ctx, expr.region(), expr.isType());
 
-        if (!isReferenceType(ctx, leftAttrib.region(), leftAttrib.type())) {
+        if (!Types.hasIdentity(leftAttrib.type())) {
             Log.error(ctx, new AttribError.NotSupportedType(
                     leftAttrib.region(),
                     leftAttrib.type()
@@ -46,7 +47,7 @@ public class InstanceOfAttrib  {
             for (var i = 0; i < classModel.generics().size(); i++) {
                 newGenerics.add(KType.ROOT);
             }
-            isTypeAttrib = new KType.ClassType(classType.pointer(), newGenerics);
+            isTypeAttrib = classType.pointer().implement(newGenerics);
         } else {
             Log.error(ctx, new AttribError.NotAClass(
                     region,
@@ -57,12 +58,6 @@ public class InstanceOfAttrib  {
 
         return isTypeAttrib;
     }
-
-
-    public static boolean isReferenceType(AttributionContext ctx, Region region, KType type) {
-        return ctx.checking().canAssign(ctx, region, KType.ROOT, type, true);
-    }
-
 
 
 }

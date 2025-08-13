@@ -3,6 +3,7 @@ package org.karina.lang.compiler.logging;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.errors.Error;
 import org.karina.lang.compiler.logging.errors.FileLoadError;
+import org.karina.lang.compiler.logging.errors.GenerateError;
 import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
@@ -192,7 +193,11 @@ public class Log {
         if (!type.isVisible()) {
             return;
         }
-        record(name, args);
+        var literal =  name + ": " + String.join(" ", Arrays.stream(args).map(Log::objectToString).toList());
+        synchronized (FLIGHT_RECORDER) {
+            FLIGHT_RECORDER.begin(literal).includeTime = false;
+            FLIGHT_RECORDER.end(literal);
+        }
     }
 
 
@@ -247,6 +252,11 @@ public class Log {
 
     public static void bytecode(IntoContext c, TextSource resource, String name, String msg) {
         addError(c, new Error.BytecodeLoading(resource.resource(), name, msg));
+    }
+
+
+    public static void generate(IntoContext c, GenerateError error) {
+        addError(c, error);
     }
 
     public static void bytecode(IntoContext c, Region region, String name, String msg) {

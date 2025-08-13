@@ -5,14 +5,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.utils.BinaryOperator;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.utils.symbols.BinOperatorSymbol;
-import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.compiler.utils.RegionOf;
 
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
@@ -89,8 +85,9 @@ public class BinaryAttrib {
             case DOUBLE -> BinOperatorSymbol.DoubleOP.fromOperator(operator);
             case LONG -> BinOperatorSymbol.LongOP.fromOperator(operator);
             case CHAR, SHORT, BYTE -> {
-                Log.temp(ctx, operator.region(), "Binary for " + primitive + " not yet implemented");
-                throw new Log.KarinaException();
+                yield BinOperatorSymbol.IntOP.fromOperator(operator);
+//                Log.temp(ctx, operator.region(), "Binary for " + primitive + " not yet implemented");
+//                throw new Log.KarinaException();
             }
         };
         return new BinResult(left, right, op);
@@ -105,7 +102,7 @@ public class BinaryAttrib {
             KExpr right
     ) {
 
-        if (!hasIdentity(left.type()) || !hasIdentity(right.type())) {
+        if (!Types.hasIdentity(left.type()) || !Types.hasIdentity(right.type())) {
             return null;
         }
 
@@ -125,19 +122,6 @@ public class BinaryAttrib {
         return new BinResult(left, right, op);
     }
 
-    public static boolean hasIdentity(KType type) {
-        return switch (type.unpack()) {
-            case KType.ArrayType _,
-                 KType.ClassType _,
-                 KType.FunctionType _,
-                 KType.Resolvable _,
-                 KType.GenericLink _ -> true;
-
-            case KType.PrimitiveType _,
-                 KType.UnprocessedType _,
-                 KType.VoidType _ -> false;
-        };
-    }
 
 
     private record BinResult(KExpr left, KExpr right, BinOperatorSymbol op) {}

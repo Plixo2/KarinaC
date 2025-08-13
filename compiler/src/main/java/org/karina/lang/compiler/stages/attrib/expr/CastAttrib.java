@@ -45,12 +45,12 @@ public class CastAttrib  {
                 toType = to;
                 var leftType = left.type();
 
-                if (to instanceof KType.ClassType classType) {
+                if (to instanceof KType.ClassType classType && leftType instanceof KType.ClassType leftClassType) {
                     if (!ctx.checking().canAssign(ctx, expr.region(), classType, leftType, true)) {
                         Log.error(ctx, new AttribError.InvalidNarrowingCast(expr.region()));
                         throw new Log.KarinaException();
                     }
-                    symbol = new CastSymbol.UpCast(leftType, classType);
+                    symbol = new CastSymbol.UpCast(leftClassType, classType);
                 } else {
                     symbol = numericCast(ctx, expr.region(), leftType, toType, castTo);
                 }

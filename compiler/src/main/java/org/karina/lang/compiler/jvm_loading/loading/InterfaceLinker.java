@@ -65,7 +65,7 @@ public class InterfaceLinker {
             var interFacePointer = TypeDecoding.internalNameToPointer(region, anInterface);
             Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, " with interface: " + interFacePointer);
 
-            interfaceBuilder.add(new KType.ClassType(interFacePointer, List.of()));
+            interfaceBuilder.add(interFacePointer.implement(List.of()));
         }
         var interfaces = interfaceBuilder.build();
 
@@ -85,7 +85,7 @@ public class InterfaceLinker {
             interfaces = builder.interfaces();
         } else if (node.superName != null) {
             var superPointer = TypeDecoding.internalNameToPointer(region, node.superName);
-            superType = new KType.ClassType(superPointer, List.of());
+            superType = superPointer.implement(List.of());
         } else if (!node.name.equals("java/lang/Object")) {
             Log.bytecode(c, region, node.name, "No super class found");
             throw new Log.KarinaException();

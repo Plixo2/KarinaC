@@ -181,7 +181,8 @@ public class ClassInStream {
                 for (int i = 0; i < genericCount; i++) {
                     genericsArray[i] = readType(source, generics);
                 }
-                yield new KType.ClassType(classPointer, List.of(genericsArray));
+                assert classPointer != null;
+                yield classPointer.implement(List.of(genericsArray));
             }
             case 4 -> {
                 var returnType = readType(source, generics);
@@ -232,7 +233,8 @@ public class ClassInStream {
         for (int i = 0; i < genericCount; i++) {
             genericsArray[i] = readType(source, generics);
         }
-        return new KType.ClassType(classPointer, List.of(genericsArray));
+        assert classPointer != null;
+        return classPointer.implement(List.of(genericsArray));
     }
 
     public int[] readIntList() throws IOException {

@@ -4,6 +4,7 @@ package org.karina.lang.compiler.stages.generate;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
@@ -32,20 +33,38 @@ public class CustomClassWriter extends ClassWriter {
 
     @Override
     protected String getCommonSuperClass(final String type1, final String type2) {
-        var pathA = ObjectPath.fromJavaPath(type1);
-        var pathB = ObjectPath.fromJavaPath(type2);
+        var pathA = fromJavaPath(type1);
+        var pathB = fromJavaPath(type2);
 
         var pointerA = this.model.getClassPointer(this.region, pathA);
         var pointerB = this.model.getClassPointer(this.region, pathB);
         if (pointerA == null) {
-            Log.warn(this.c, this.region, "Cannot find class while emitting bytecode" + type1);
+            Log.warn(this.c, this.region, "Cannot find class while emitting bytecode " + type1 + " " + pathA);
             return "java/lang/Object";
         }
         if (pointerB == null) {
-            Log.warn(this.c, this.region, "Cannot find class while emitting bytecode" + type2);
+            Log.warn(this.c, this.region, "Cannot find class while emitting bytecode " + type2 + " " + pathB);
             return "java/lang/Object";
         }
         return getCommonSuperClass(pointerA, pointerB).path().mkString("/");
+    }
+
+    private static final Pattern DOLLAR_SPLIT = Pattern.compile("\\$(?!\\d)");
+    private static ObjectPath fromJavaPath(String type) {
+        List<String> parts = new ArrayList<>();
+
+        String[] slashParts = type.split("/");
+
+        for (String slashPart : slashParts) {
+            // split by $ (only when not followed by a digit)
+            String[] dollarParts = DOLLAR_SPLIT.split(slashPart);
+            for (String dp : dollarParts) {
+                if (!dp.isEmpty()) {
+                    parts.add(dp);
+                }
+            }
+        }
+        return new ObjectPath(parts);
     }
 
     private ClassPointer getCommonSuperClass(ClassPointer pointerA, ClassPointer pointerB) {

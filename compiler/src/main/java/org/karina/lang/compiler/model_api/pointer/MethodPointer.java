@@ -21,21 +21,21 @@ public class MethodPointer {
     ClassPointer classPointer;
     String name;
     List<KType> erasedParameters;
-    KType returnType;
+    KType erasedReturnType;
 
-    private MethodPointer(Region region, ClassPointer classPointer, String name ,List<KType> erasedParameters, KType returnType) {
+    private MethodPointer(Region region, ClassPointer classPointer, String name ,List<KType> erasedParameters, KType erasedReturnType) {
         this.region = region;
         this.classPointer = classPointer;
         this.name = name;
         this.erasedParameters = erasedParameters;
-        this.returnType = returnType;
+        this.erasedReturnType = erasedReturnType;
     }
 
     @Override
     public String toString() {
         return "MethodPointer{" + "region=" + this.region + ", classPointer=" + this.classPointer +
                 ", name='" + this.name + '\'' + ", erasedParameters=" + this.erasedParameters +
-                ", returnType=" + this.returnType + '}';
+                ", returnType=" + this.erasedReturnType + '}';
     }
 
     public static MethodPointer of(Region region, ClassPointer classPointer, String name, Signature signature) {
@@ -44,7 +44,7 @@ public class MethodPointer {
 
 
     public static MethodPointer of(Region region, ClassPointer classPointer, String name, List<KType> erasedParameters, KType returnType) {
-        return new MethodPointer(region, classPointer, name, erasedParameters, returnType);
+        return new MethodPointer(region, classPointer, name, erasedParameters, Types.erase(returnType));
     }
 
     @Override
@@ -55,13 +55,13 @@ public class MethodPointer {
         return Objects.equals(this.classPointer, pointer.classPointer) &&
                 Objects.equals(this.name, pointer.name) &&
                 Types.signatureEquals(this.erasedParameters, pointer.erasedParameters) &&
-                Objects.equals(this.returnType, pointer.returnType);
+                Objects.equals(this.erasedReturnType, pointer.erasedReturnType);
     }
 
 
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.classPointer, this.name, this.erasedParameters, this.returnType);
+        return Objects.hash(this.classPointer, this.name, this.erasedParameters, this.erasedReturnType);
     }
 }

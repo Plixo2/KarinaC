@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
@@ -28,6 +29,8 @@ public class GetMemberAttrib  {
 
         var left = attribExpr(null, ctx, expr.left()).expr();
 
+        var owningClass = ctx.model().getClass(ctx.owningClass());
+
         var name = expr.name().value();
         var staticFunc = attribStaticFunctionReference(expr.region(), ctx, left, name, expr.isNextACall());
         if (staticFunc != null) {
@@ -52,7 +55,7 @@ public class GetMemberAttrib  {
         var classModel = ctx.model().getClass(classType.pointer());
 
         var methods = new ArrayList<UpstreamMethodPointer>();
-        putMethodCollectionDeep(ctx, ctx.owningClass(), ctx.protection(), ctx.model(), classType, name, methods, new HashSet<>(), true);
+        putMethodCollectionDeep(ctx, owningClass, ctx.model(), classType, name, methods, new HashSet<>(), true);
         for (var method : methods) {
             Log.recordType(Log.LogTypes.CALLS, "available pointer", method);
         }
@@ -110,19 +113,19 @@ public class GetMemberAttrib  {
             if (name.equals("size")) {
                 var symbol = new MemberSymbol.ArrayLength(region);
                 return of(ctx, new KExpr.GetMember(region, left, RegionOf.region(region, name), false, symbol));
-            } else if (name.equals("class")){
+            } else if (name.equals("class")) {
                 var classType = KType.CLASS_TYPE(arrayType);
                 var symbol = new LiteralSymbol.StaticClassReference(region, classType.pointer(), arrayType, true);
                 var newLiteral = new KExpr.Literal(region, name, symbol);
                 return of(ctx, newLiteral);
-            }else {
+            } else {
                 Log.error(ctx, new AttribError.UnknownMember(
                         region,
                         arrayType.toString(),
                         name,
                         Set.of(),
-                        Set.of("size"),
-                        null
+                        Set.of("size", "class"),
+                        List.of()
                 ));
                 throw new Log.KarinaException();
             }
@@ -151,21 +154,18 @@ public class GetMemberAttrib  {
             } else if (implicitGetClass) {
                 return null;
             }
+            var owningClass = ctx.model().getClass(ctx.owningClass());
 
             //TODO search in super types for fields and functions
             var classModel = ctx.model().getClass(classPointer);
             var collection = classModel.getMethodCollectionShallow(name).filter(ref -> {
                 var modifiers = ctx.model().getMethod(ref).modifiers();
-                return Modifier.isStatic(modifiers) && ctx.protection()
-                                                          .canReference(
-                                                                  ctx.owningClass(),
-                                                                  ref.classPointer(), modifiers
-                                                          );
+                return Modifier.isStatic(modifiers) && ctx.protection().isMethodAccessible(owningClass, ref);
             });
             var modelField = classModel.getField(name, ref -> {
                         var modifiers = ref.modifiers();
                         return Modifier.isStatic(modifiers)
-                                && ctx.protection() .canReference(ctx.owningClass(), ref.classPointer(), modifiers);
+                                && ctx.protection().isFieldAccessible(owningClass, ref);
             });
             //order of priority, if we want a function or a field
             if (functionPriority) {
@@ -209,8 +209,7 @@ public class GetMemberAttrib  {
             ClassPointer classPointer,
             String name
     ) {
-
-        var referenceSite = ctx.owningClass();
+        var owningClass = ctx.model().getClass(ctx.owningClass());
         var classModel = ctx.model().getClass(classPointer);
 
         for (var fieldModel : classModel.fields()) {
@@ -221,7 +220,7 @@ public class GetMemberAttrib  {
             if (!fieldModel.name().equals(name)) {
                 continue;
             }
-            if (!ctx.protection().canReference(referenceSite, fieldModel.classPointer(), modifiers)) {
+            if (!ctx.protection().isFieldAccessible(owningClass, fieldModel)) {
                 continue;
             }
             return fieldModel.pointer();
@@ -237,8 +236,7 @@ public class GetMemberAttrib  {
 
     private static void putMethodCollectionDeep(
             AttributionContext ctx,
-            @Nullable ClassPointer referenceSite,
-            @Nullable ProtectionChecking protectionChecking,
+            ClassModel owningClass,
             Model model,
             KType.ClassType classType,
             @Nullable String name,
@@ -266,11 +264,9 @@ public class GetMemberAttrib  {
                     continue;
                 }
             }
-            if (protectionChecking != null && referenceSite != null) {
-                if (!protectionChecking.canReference(referenceSite, method.classPointer(), modifiers)) {
-                    Log.recordType(Log.LogTypes.MEMBER, "Cannot access ", method.pointer());
-                    continue;
-                }
+            if (!ctx.protection().isMethodAccessible(owningClass, method)) {
+                Log.recordType(Log.LogTypes.MEMBER, "Cannot access ", method.pointer());
+                continue;
             }
             for (var pointer : collection) {
                 var signature = pointer.pointer().erasedParameters();
@@ -289,12 +285,12 @@ public class GetMemberAttrib  {
         //check for super classes and interfaces
         var superType = Types.getSuperType(ctx, model, classType);
         if (superType != null) {
-            putMethodCollectionDeep(ctx, referenceSite, protectionChecking, model, superType, name, collection, visited, false);
+            putMethodCollectionDeep(ctx, owningClass, model, superType, name, collection, visited, false);
         }
 
         var interfaces = Types.getInterfaces(ctx, model, classType);
         for (var interfaceType : interfaces) {
-            putMethodCollectionDeep(ctx, referenceSite, protectionChecking, model, interfaceType, name, collection, visited, false);
+            putMethodCollectionDeep(ctx, owningClass, model, interfaceType, name, collection, visited, false);
         }
         for (var upstreamMethodPointer : collection) {
             Log.recordType(Log.LogTypes.MEMBER, "found overall", upstreamMethodPointer.mappedUpstreamType());
@@ -315,22 +311,22 @@ public class GetMemberAttrib  {
     ) {
         var classModel = ctx.model().getClass(classType);
 
-        String nonAccessibleStr = null;
+        var related = new ArrayList<RegionOf<String>>();
 
         var methodNames = new HashSet<String>();
         var nonAccessibleMethods = new HashSet<MethodModel>();
         putAllMethods(ctx, classType, new HashSet<>(), methodNames, name, nonAccessibleMethods, staticOnly);
-        if (!nonAccessibleMethods.isEmpty()) {
-            var method = nonAccessibleMethods.iterator().next();
-            nonAccessibleStr = Modifier.toString(method.modifiers()) + " fn " + method.name();
+        for (var method : nonAccessibleMethods) {
+            var toString = Modifier.toString(method.modifiers()) + " fn " + method.name();
+            related.add(new RegionOf<>(method.region(), toString));
         }
 
         var fieldNames = new HashSet<String>();
         var nonAccessibleFields = new HashSet<FieldModel>();
         putAllFields(ctx, classType, fieldNames, name, nonAccessibleFields, staticOnly);
-        if (!nonAccessibleFields.isEmpty() && nonAccessibleStr == null) {
-            var field = nonAccessibleFields.iterator().next();
-            nonAccessibleStr = Modifier.toString(field.modifiers()) + field.name() + ": " + field.type();
+        for (var field : nonAccessibleFields) {
+            var toString = Modifier.toString(field.modifiers()) + " " + field.name() + ": " + field.type();
+            related.add(new RegionOf<>(field.region(), toString));
         }
 
         Log.error(ctx, new AttribError.UnknownMember(
@@ -339,7 +335,7 @@ public class GetMemberAttrib  {
                 name,
                 methodNames,
                 fieldNames,
-                nonAccessibleStr
+                related
         ));
 
     }
@@ -353,7 +349,7 @@ public class GetMemberAttrib  {
             boolean staticOnly
     ) {
 
-        var referenceSite = ctx.owningClass();
+        var owningClass = ctx.model().getClass(ctx.owningClass());
         var classModel = ctx.model().getClass(classPointer);
 
         for (var fieldModel : classModel.fields()) {
@@ -362,7 +358,7 @@ public class GetMemberAttrib  {
                 continue;
             }
 
-            if (!ctx.protection().canReference(referenceSite, fieldModel.classPointer(), modifiers)) {
+            if (!ctx.protection().isFieldAccessible(owningClass, fieldModel)) {
                 if (fieldModel.name().equals(name)) {
                     nonAccessible.add(fieldModel);
                 }
@@ -395,7 +391,7 @@ public class GetMemberAttrib  {
             return;
         }
 
-        var referenceSite = ctx.owningClass();
+        var owningClass = ctx.model().getClass(ctx.owningClass());
         var classModel = ctx.model().getClass(classPointer);
 
 
@@ -405,7 +401,7 @@ public class GetMemberAttrib  {
                 continue;
             }
 
-            if (!ctx.protection().canReference(referenceSite, method.classPointer(), modifiers)) {
+            if (!ctx.protection().isMethodAccessible(owningClass, method)) {
                 if (method.name().equals(name)) {
                     nonAccessible.add(method);
                 }

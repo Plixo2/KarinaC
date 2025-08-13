@@ -57,12 +57,13 @@ public class AutoRun {
             return;
         }
         try {
+            System.out.println();
+
             var karinaLib = karinaLibLoader();
             var classLoader = new CompilationClassLoader(karinaLib, compilation);
             var cls = classLoader.loadClass(mainClass);
             var mainMethod = cls.getMethod("main", String[].class);
 
-            System.out.println();
             if (colors) {
                 ColorOut.begin(LogColor.GRAY)
                         .append("> Executing '")
