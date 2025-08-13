@@ -237,9 +237,14 @@ public class KarinaUnitVisitor {
         var region = this.conv.toRegion(ctx);
         var name = this.conv.escapeID(ctx.id());
         var type = this.typeVisitor.visitType(ctx.type());
-        int mods = Modifier.STATIC | Modifier.PUBLIC;
+        int mods = Modifier.STATIC;
         if (ctx.MUT() == null) {
             mods |= Modifier.FINAL;
+        }
+        if (ctx.PUB() != null) {
+            mods |= Modifier.PUBLIC;
+        } else {
+            mods |= Modifier.PRIVATE; //default is private
         }
 
         Object defaultValue = null;

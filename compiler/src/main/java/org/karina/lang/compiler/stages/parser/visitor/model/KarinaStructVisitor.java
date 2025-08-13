@@ -43,7 +43,7 @@ public class KarinaStructVisitor implements IntoContext {
         var path = owningPath.append(name);
         //assume to be valid, as you can only get this, if the class is valid
         var currentClass = ClassPointer.of(region, path);
-        final var mods = Modifier.PUBLIC;
+        final int mods = ctx.PUB() != null ? Modifier.PUBLIC : 0;
 
         var superClass = KType.ROOT;
 
@@ -104,7 +104,7 @@ public class KarinaStructVisitor implements IntoContext {
         var fields = ImmutableList.<KFieldModel>builder();
 
         for (var fieldContext : ctx.field()) {
-            fields.add(this.visitField(fieldContext, currentClass));
+            fields.add(this.visitField(fieldContext, currentClass, ctx.PUB() != null));
         }
 
         var constNames = new ArrayList<String>();
@@ -116,20 +116,6 @@ public class KarinaStructVisitor implements IntoContext {
             constValues.add(visitExpression);
             fields.add(constModel);
         }
-
-
-        var fieldsList = fields.build();
-
-        var memberFields = fieldsList.stream().filter(ref -> !Modifier.isStatic(ref.modifiers())).toList();
-        if (!containsConstructor) {
-            var constructor = createDefaultConstructor(region, currentClass, memberFields, Modifier.PUBLIC, superClass);
-            methods.add(constructor);
-        }
-        if (!containsToString) {
-            var toStringMethod = createToStringMethod(region, name, currentClass, memberFields);
-            methods.add(toStringMethod);
-        }
-
         if (!constNames.isEmpty()) {
             var clinit = KarinaUnitVisitor.createStaticConstructor(
                     this,
@@ -140,6 +126,20 @@ public class KarinaStructVisitor implements IntoContext {
             );
             methods.add(clinit);
         }
+
+        var fieldsList = fields.build();
+
+        var memberFields = fieldsList.stream().filter(ref -> !Modifier.isStatic(ref.modifiers())).toList();
+        if (!containsConstructor) {
+            var constructor = createDefaultConstructor(region, currentClass, memberFields, mods, superClass);
+            methods.add(constructor);
+        }
+        if (!containsToString) {
+            var toStringMethod = createToStringMethod(region, name, currentClass, memberFields);
+            methods.add(toStringMethod);
+        }
+
+
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
@@ -180,7 +180,7 @@ public class KarinaStructVisitor implements IntoContext {
         return newModel;
     }
 
-    private KFieldModel visitField(KarinaParser.FieldContext ctx, ClassPointer owningClass) {
+    private KFieldModel visitField(KarinaParser.FieldContext ctx, ClassPointer owningClass, boolean asPublic) {
 
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
@@ -191,7 +191,11 @@ public class KarinaStructVisitor implements IntoContext {
         } else {
             mods = Modifier.FINAL;
         }
-        mods |= Modifier.PUBLIC;
+        if (asPublic) {
+            mods |= Modifier.PUBLIC;
+        } else {
+            // otherwise 'default;
+        }
 
         return new KFieldModel(name, type, mods, region, owningClass, null);
     }

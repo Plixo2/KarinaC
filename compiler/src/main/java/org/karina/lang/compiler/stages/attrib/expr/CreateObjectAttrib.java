@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
@@ -23,6 +24,19 @@ public class CreateObjectAttrib  {
 
         if (!(expr.createType() instanceof KType.ClassType classType)) {
             Log.error(ctx, new AttribError.NotAClass(expr.region(), expr.createType()));
+            throw new Log.KarinaException();
+        }
+
+        var owningClass = ctx.model().getClass(ctx.owningClass());
+        var referenceClass = ctx.model().getClass(classType.pointer());
+
+        if (!Types.isTypeAccessible(ctx.protection(), owningClass, classType)) {
+            Log.error(ctx, new ImportError.AccessViolation(
+                    expr.region(),
+                    referenceClass.name(),
+                    RegionOf.region(referenceClass.region(), classType.pointer()),
+                    classType
+            ));
             throw new Log.KarinaException();
         }
 

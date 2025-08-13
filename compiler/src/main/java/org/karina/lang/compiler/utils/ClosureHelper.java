@@ -46,17 +46,7 @@ public class ClosureHelper {
                 Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i, mappedParam, "from", type);
                 return false;
             }
-//            if (!ctx.checking().canAssign(ctx, region, mappedParam, type, true)) {
-//                Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i,mappedParam, "from", type);
-//                return false;
-//            }
         }
-
-        //TODO what equals or canAssign method should be used here?
-
-//        var returnMatch = ctx.checking().canAssign(ctx, region, returnType, methodReturnType, true);
-//        Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);
-//        return returnMatch;
 
         var returnMatch = returnType.equals(methodReturnType);
         Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);

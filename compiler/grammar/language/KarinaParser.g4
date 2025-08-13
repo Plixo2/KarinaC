@@ -11,10 +11,10 @@ item: annotation* (function | struct | enum | interface | const);
 
 function: 'pub'? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
-const: 'static' id ':' 'mut'? type '=' expression;
+const: 'pub'? 'static' id ':' 'mut'? type '=' expression;
 
 //TODO implement boundWhere
-struct: 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;
+struct: 'pub'? 'struct' id genericHintDefinition? ('{' const* field* function* implementation* boundWhere* '}')?;
 implementation: 'impl' structType ('{' function* '}')?;
 boundWhere : 'where' genericWithBounds ('{' function* '}');
 genericWithBounds: (genericWithBound (',' genericWithBound)*)?;
@@ -34,10 +34,10 @@ boundList: (structType ('+' structType)*)?;
 field: id ':' 'mut'? type;
 
 //implementation and boundWhere are not yet implemented
-enum: 'enum' id genericHintDefinition? '{' enumMember* function* implementation* boundWhere* '}';
+enum: 'pub'? 'enum' id genericHintDefinition? '{' const* enumMember* function* implementation* boundWhere* '}';
 enumMember: id ('(' parameterList ')')?;
 
-interface : 'interface' id genericHintDefinition? ('{' function* interfaceExtension* '}')?;
+interface : 'pub'? 'interface' id genericHintDefinition? ('{' const* function* interfaceExtension* boundWhere* '}')?;
 interfaceExtension: 'impl' structType;
 
 selfParameterList: ((parameter | 'self') (',' parameter)*)?;

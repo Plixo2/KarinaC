@@ -3,9 +3,11 @@ package org.karina.lang.compiler.logging.errors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.logging.DidYouMean;
 import org.karina.lang.compiler.logging.ErrorInformation;
+import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
+import org.karina.lang.compiler.utils.RegionOf;
 
 import java.util.Set;
 
@@ -88,11 +90,14 @@ public sealed interface ImportError extends Error {
                 builder.setTitle("Access violation");
                 builder.append("Access violation for class '").append(accessViolation.className);
                 builder.append("Type: ").append(accessViolation.type.toString());
+                if (accessViolation.typeRegion != null) {
+                    builder.addSecondarySource(accessViolation.typeRegion.region(), accessViolation.typeRegion.value().path().mkString("::"));
+                }
                 builder.setPrimarySource(accessViolation.region);
             }
         }
     }
-    record AccessViolation(Region region, String className, KType type) implements ImportError {}
+    record AccessViolation(Region region, String className, @Nullable RegionOf<ClassPointer> typeRegion, KType type) implements ImportError {}
 
     record NoClassFound(Region region, ObjectPath path) implements ImportError {}
 

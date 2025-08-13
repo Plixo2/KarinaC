@@ -153,14 +153,14 @@ public class PostImportValidator {
                 throw new Log.KarinaException();
             }
             for (var permittedSubclass : classModel.permittedSubclasses()) {
-                validateAccess(c, protection, classModel, classModel.region(), permittedSubclass);
+                validateAccess(c, protection, model, classModel, classModel.region(), permittedSubclass);
             }
         }
 
 
         var superClassModel = model.getClass(superClass.pointer());
 
-        validateAccess(c, protection, classModel, classModel.region(), superClass);
+        validateAccess(c, protection, model, classModel, classModel.region(), superClass.pointer());
 
         if (Modifier.isFinal(superClassModel.modifiers())) {
             Log.syntaxError(c, classModel.region(), "Cannot extend final class " + superClassModel.name());
@@ -190,8 +190,8 @@ public class PostImportValidator {
 
         for (var anInterface : classModel.interfaces()) {
             var interfaceModel = model.getClass(anInterface.pointer());
-            //TODO temporary fix
-            validateAccess(c, protection, classModel, classModel.region(), superClass);
+
+            validateAccess(c, protection, model, classModel, classModel.region(), anInterface.pointer());
 
             if (!Modifier.isInterface(interfaceModel.modifiers()) || Modifier.isFinal(interfaceModel.modifiers())) {
                 Log.syntaxError(c, classModel.region(), "Cannot implement non-interface class " + interfaceModel.name());
@@ -386,6 +386,7 @@ public class PostImportValidator {
             Log.error(c, new ImportError.AccessViolation(
                     region,
                     classModel.name(),
+                    null,
                     type
             ));
             throw new Log.KarinaException();
@@ -395,6 +396,7 @@ public class PostImportValidator {
     private static void validateAccess(
             Context c,
             ProtectionChecking protection,
+            Model model,
             ClassModel classModel,
             Region region,
             ClassPointer classPointer
@@ -404,6 +406,7 @@ public class PostImportValidator {
             Log.error(c, new ImportError.AccessViolation(
                     region,
                     classModel.name(),
+                    RegionOf.region(model.getClass(classPointer).region(), classPointer),
                     classPointer.implement(List.of())
             ));
             throw new Log.KarinaException();

@@ -44,9 +44,10 @@ public class GenerateItem {
         classNode.signature = GenerateSignature.getClassSignature(classModel);
 
 
-        classNode.permittedSubclasses = classModel.permittedSubclasses().stream().map(ref -> {
-            return TypeEncoding.toJVMPath(model, ref);
-        }).toList();
+        classNode.permittedSubclasses = classModel.permittedSubclasses()
+                              .stream()
+                              .map(ref -> TypeEncoding.toJVMPath(model, ref))
+                              .toList();
 
         classNode.nestMembers = classModel.nestMembers().stream().map(ref -> {
             return TypeEncoding.toJVMPath(model, ref);

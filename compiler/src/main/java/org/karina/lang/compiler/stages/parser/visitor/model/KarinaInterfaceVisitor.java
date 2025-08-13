@@ -38,7 +38,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT;
+        final var mods = (ctx.PUB() != null ? Modifier.PUBLIC : 0) | Modifier.INTERFACE | Modifier.ABSTRACT;
 
         KType.ClassType superClass = KType.ROOT;
 
@@ -65,7 +65,27 @@ public class KarinaInterfaceVisitor implements IntoContext {
             }
         }
 
-        var fields = ImmutableList.<KFieldModel>of();
+        var fields = ImmutableList.<KFieldModel>builder();
+
+        var constNames = new ArrayList<String>();
+        var constValues = new ArrayList<KExpr>();
+        for (var constContext : ctx.const_()) {
+            var visitExpression = this.visitor.exprVisitor.visitExpression(constContext.expression());
+            var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
+            constNames.add(constModel.name());
+            constValues.add(visitExpression);
+            fields.add(constModel);
+        }
+        if (!constNames.isEmpty()) {
+            var clinit = KarinaUnitVisitor.createStaticConstructor(
+                    this,
+                    region,
+                    currentClass,
+                    constNames,
+                    constValues
+            );
+            methods.add(clinit);
+        }
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
@@ -90,7 +110,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
                 host,
                 interfaces.build(),
                 List.of(),
-                fields,
+                fields.build(),
                 methods.build(),
                 generics,
                 imports,
