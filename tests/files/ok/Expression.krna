@@ -44,7 +44,7 @@ fn create<T>(value: T) -> int {
         "HELLO"
     }
 
-    let f = fn(add) {
+    let f = fn(add: Integer) {
         '$helloWord$add'
     }
 
@@ -141,7 +141,7 @@ struct O<T> {
 }
 
 interface FunctionInterface {
-    fn make(self, x: Integer) -> string
+    pub fn make(self, x: Integer) -> string
 }
 
 enum Option<T> {

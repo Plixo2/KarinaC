@@ -1,5 +1,5 @@
 
-fn main(args: [string]) {
+pub fn main(args: [string]) {
     println("Hello, World!")
     //example::printHelloWorld()
 }

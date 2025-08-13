@@ -29,9 +29,3 @@ struct Test3 {
 
 
 
-
-// fails when running:
-fn loadFile(path: string) -> string?IOException {
-    let abs_path = Path.of(path, []).toAbsolutePath()
-    Result::safeCallExpect(IOException, fn() impl String { bytes: Files.readAllBytes(abs_path) } )
-}

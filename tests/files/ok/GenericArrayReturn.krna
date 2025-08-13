@@ -1,5 +1,5 @@
 
 
 interface S<T> {
-    fn f<T>(self) -> [T]
+    pub fn f<T>(self) -> [T]
 }

@@ -53,7 +53,7 @@ struct Test<W> {
 }
 
 interface TestInterface<T, B> {
-    fn test(self, b: B) -> T
+    pub fn test(self, b: B) -> T
 }
 
 
@@ -68,7 +68,7 @@ struct Test2 {
 
 
 interface TestInterface2<B> {
-    fn make(self) -> B
+    pub fn make(self) -> B
 }
 
 

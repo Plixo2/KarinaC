@@ -1,6 +1,6 @@
 
 fn main(args: [string]) {
-    let with_separator = fn(add) {
+    let with_separator = fn(add: Object) {
         'Hello$add'
     }
     print(with_separator(','))

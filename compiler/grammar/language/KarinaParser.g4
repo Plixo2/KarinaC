@@ -9,7 +9,7 @@ commaWordChain: id (',' id)*;
 
 item: annotation* (function | struct | enum | interface | const);
 
-function: 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
+function: 'pub'? 'fn' id? genericHintDefinition? '(' selfParameterList ')' ('->' type)? ('=' expression | block)?;
 
 const: 'static' id ':' 'mut'? type '=' expression;
 
@@ -156,4 +156,4 @@ escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
 | STRUCT | TRAIT | IMPL | LET
 | SELF | STRING | JSON | BOOL | WHERE
-| CONST | MUT | ANY;
+| CONST | MUT | ANY | MACRO;

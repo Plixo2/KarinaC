@@ -26,7 +26,7 @@
       "patterns": [
         {
           "name": "keyword.control.karina",
-          "match": "(?<!\\\\)\\b(fn|mut|is|any|in|as|null|import|extends|static|throw|extend|match|override|native|true|false|virtual|break|return|yield|struct|trait|impl|enum|class|let|if|else|while|for|super|interface|const|self|continue|where)\\b"
+          "match": "(?<!\\\\)\\b(fn|macro|pub|mut|is|any|in|as|null|import|extends|static|throw|extend|match|override|native|true|false|virtual|break|return|yield|struct|trait|impl|enum|class|let|if|else|while|for|super|interface|const|self|continue|where)\\b"
         }
       ]
     },

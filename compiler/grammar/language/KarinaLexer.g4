@@ -25,6 +25,7 @@ STRUCT: 'struct';
 STATIC: 'static';
 THROW: 'throw';
 TRAIT: 'trait';
+MACRO: 'macro';
 IMPL: 'impl';
 ENUM: 'enum';
 CLASS: 'class';
@@ -35,6 +36,8 @@ ELSE: 'else';
 WHILE: 'while';
 FOR: 'for';
 SUPER: 'super';
+PUBLIC: 'public';
+PUB: 'pub';
 WHERE: 'where';
 INTERFACE: 'interface';
 SELF: 'self';
@@ -64,7 +67,7 @@ AND_AND :'&&';
 OR_OR :'||';
 
 
-CHAR_PLIS:'+';
+CHAR_PLUS:'+';
 CHAR_MINUS:'-';
 CHAR_STAR:'*';
 CHAR_R_SLASH:'/';

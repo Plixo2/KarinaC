@@ -1,0 +1,17 @@
+
+import java::lang::String valueOf
+import karina::lang::Result { safeCall }
+import karina::lang::Result { Ok, Err }
+import java::util::function::Supplier
+import java::lang::System out
+import karina::lang::Option
+import karina::lang::Option { Some, None }
+import java::util::ArrayList
+import java::util::List
+import java::util::Arrays
+
+import java::util::regex::Pattern
+
+pub fn main(args: [string]) {
+
+}
