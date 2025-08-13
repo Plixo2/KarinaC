@@ -312,6 +312,11 @@ public final class KarinaLSP implements EventService {
     }
 
     @Override
+    public void sendTerminal(String message) {
+        this.theClient.sendTerminal(message);
+    }
+
+    @Override
     public Process createProgress(String title, Process.ThrowingFunction<Process.Progress, String> process) {
         return this.theClient.createProgress(title, process);
     }

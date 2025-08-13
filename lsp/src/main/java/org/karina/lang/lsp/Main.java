@@ -2,6 +2,7 @@ package org.karina.lang.lsp;
 
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.karina.lang.lsp.base.EventLanguageServer;
+import org.karina.lang.lsp.base.LanguageClientExtension;
 
 
 ///
@@ -11,9 +12,13 @@ public class Main {
 
 
     public static void main(String[] args) {
-
         var server = new EventLanguageServer(new KarinaLSP());
-        var launcher = LSPLauncher.createServerLauncher(server, System.in, System.out);
+        var launcher = new LSPLauncher.Builder<LanguageClientExtension>()
+                .setLocalService(server)
+                .setRemoteInterface(LanguageClientExtension.class)
+                .setInput(System.in)
+                .setOutput(System.out)
+                .create();
         server.connect(launcher.getRemoteProxy());
         try {
             launcher.startListening().get();

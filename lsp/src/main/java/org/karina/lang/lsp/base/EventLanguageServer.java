@@ -3,6 +3,7 @@ package org.karina.lang.lsp.base;
 import karina.lang.Option;
 import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.jsonrpc.Endpoint;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.*;
 import org.karina.lang.lsp.Capabilities;
@@ -16,7 +17,6 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 public class EventLanguageServer implements LanguageServer, LanguageClientAware, EventClientService {
     private final EventService eventService;
@@ -31,11 +31,15 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
 
     Map<String, Process> processes = new ConcurrentHashMap<>();
 
-    LanguageClient client;
+    LanguageClientExtension client;
     private InitializeParams initParams;
     @Override
     public void connect(LanguageClient client) {
-        this.client = client;
+        if (client instanceof LanguageClientExtension clientExtension) {
+            this.client = clientExtension;
+        } else {
+            throw new IllegalArgumentException("Client must implement LanguageClientExtension");
+        }
 
         System.setOut(createPrintStream());
     }
@@ -94,6 +98,7 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
         return this.workspaceService;
     }
 
+
     @Override
     public synchronized void cancelProgress(WorkDoneProgressCancelParams params) {
         var token = params.getToken().getLeft();
@@ -123,6 +128,11 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
                 this.client.publishDiagnostics(new PublishDiagnosticsParams(uri.toString(), diagnostics));
             }
         }
+    }
+
+    @Override
+    public void sendTerminal(String message) {
+        this.client.sendToTerminal(message);
     }
 
 
@@ -192,7 +202,7 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
             }
 
             private void flushBuffer() {
-                EventLanguageServer.this.client.logMessage(new MessageParams(MessageType.Log, this.buffer.toString()));
+                EventLanguageServer.this.sendTerminal(this.buffer.toString());
                 this.buffer.setLength(0);
             }
         });
