@@ -845,6 +845,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterDotPostFix(KarinaParser.DotPostFixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDotPostFix(KarinaParser.DotPostFixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterSuperCall(KarinaParser.SuperCallContext ctx) { }
 	/**
 	 * {@inheritDoc}

@@ -1,18 +1,13 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.attrib.expr.BinaryAttrib;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.DoubleBinaryOperator;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntUnaryOperator;
 
 public class ClosureHelper {
 

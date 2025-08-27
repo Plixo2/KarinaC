@@ -9,7 +9,6 @@ import java.util.List;
 
 public interface VirtualFileTreeNode extends FileTreeNode {
 
-
     String name();
 
     ObjectPath path();

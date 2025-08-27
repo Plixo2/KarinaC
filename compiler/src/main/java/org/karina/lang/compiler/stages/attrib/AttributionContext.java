@@ -2,8 +2,8 @@ package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.Signature;
@@ -57,7 +57,7 @@ public record AttributionContext(
 
     public AttributionContext addVariable(Variable variable) {
         if (variable.name().equals("_")) {
-            Log.warn(this.c, "Variable name '_' is reserved for ignored variables, this should not happen");
+            Log.warn(this.c, variable.region(), "Variable name '_' is reserved for ignored variables, this should not happen");
         }
         if (this.variables.contains(variable.name())) {
             var existingVariable = Objects.requireNonNull(this.variables.get(variable.name()));

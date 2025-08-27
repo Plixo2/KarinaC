@@ -2,12 +2,12 @@ package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.utils.symbols.BranchYieldSymbol;
 import org.karina.lang.compiler.utils.BranchPattern;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.ElsePart;
@@ -183,13 +183,19 @@ public class BranchAttrib  {
                 } else if (elseReturns) {
                     yieldSymbol = getSymbolFromType(then.type());
                 } else {
-                    var yieldingType = elseContext.checking().superType(
-                            ctx.intoContext(),
-                            then.region(),
-                            then.type(),
-                            elseExpr.type()
-                    );
-                    yieldSymbol = getSymbolFromType(yieldingType);
+                    if (hint != null && elseContext.checking().canAssign(ctx, expr.region(), hint, then.type(), true)
+                            && elseContext.checking().canAssign(ctx, expr.region(), hint, elseExpr.type(), true)
+                    ) {
+                        yieldSymbol = getSymbolFromType(hint);
+                    } else {
+                        var yieldingType = elseContext.checking().superType(
+                                ctx.intoContext(),
+                                then.region(),
+                                then.type(),
+                                elseExpr.type()
+                        );
+                        yieldSymbol = getSymbolFromType(yieldingType);
+                    }
                 }
             }
 

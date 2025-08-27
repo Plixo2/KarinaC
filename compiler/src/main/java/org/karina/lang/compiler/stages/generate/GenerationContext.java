@@ -6,12 +6,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.Variable;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.objectweb.asm.tree.*;
 
 import java.util.HashMap;

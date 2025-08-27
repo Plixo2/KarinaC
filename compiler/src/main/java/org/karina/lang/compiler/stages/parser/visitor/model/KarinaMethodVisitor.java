@@ -2,8 +2,8 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
@@ -29,7 +29,6 @@ public class KarinaMethodVisitor implements IntoContext {
             name = this.context.escapeID(function.id());
         } else {
             name = "<init>";
-            isPublic = true;
         }
 
         var region = this.context.toRegion(function);
@@ -58,7 +57,6 @@ public class KarinaMethodVisitor implements IntoContext {
         }
 
         var mods = (isPublic ? Modifier.PUBLIC : Modifier.PRIVATE) | (isStatic ? Modifier.STATIC : 0) | (isAbstract ? Modifier.ABSTRACT : 0);
-
 
         return new KMethodModel(
                 name,

@@ -1,13 +1,12 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
@@ -38,6 +37,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
+        // interfaces cannot be private
         final var mods = (ctx.PUB() != null ? Modifier.PUBLIC : 0) | Modifier.INTERFACE | Modifier.ABSTRACT;
 
         KType.ClassType superClass = KType.ROOT;

@@ -1,14 +1,10 @@
 package org.karina.lang.compiler.stages.parser;
 
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.utils.Context;
-import org.karina.lang.compiler.utils.FileNode;
 import org.karina.lang.compiler.utils.FileTreeNode;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
@@ -24,8 +20,7 @@ public class ParseProcessor {
             for (var file : flatFiles) {
                 fork.collect(subC -> {
                     var start = System.currentTimeMillis();
-                    var unitParser = new TextUnitParser(subC, file.content(), file.name(), file.path());
-                    unitParser.visit(builder);
+                    TextUnitParser.parseItems(subC, file.content(), file.name(), file.path(), builder);
                     var end = System.currentTimeMillis();
                     Log.record("parse-" + file.name() + ": " + (end - start) + "ms");
                     // return null, and mutate thread-safe ModelBuilder

@@ -26,6 +26,7 @@ module compiler {
     exports org.karina.lang.compiler.stages.attrib.expr;
     exports org.karina.lang.compiler.stages.imports;
     exports org.karina.lang.compiler.stages.imports.table;
+    exports org.karina.lang.compiler.stages.generate;
     exports org.karina.lang.compiler.stages.parser;
     exports org.karina.lang.compiler.stages.parser.error;
     exports org.karina.lang.compiler.stages.parser.gen;
@@ -40,8 +41,8 @@ module compiler {
     exports org.karina.lang.compiler.jvm_loading.binary;
     exports org.karina.lang.compiler.jvm_loading.binary.in;
     exports org.karina.lang.compiler.jvm_loading.binary.out;
-    exports org.karina.lang.compiler.logging;
-    exports org.karina.lang.compiler.logging.errors;
+    exports org.karina.lang.compiler.utils.logging;
+    exports org.karina.lang.compiler.utils.logging.errors;
     exports org.karina.lang.compiler.model_api;
     exports org.karina.lang.compiler.model_api.pointer;
     exports org.karina.lang.compiler.model_api.impl.karina;

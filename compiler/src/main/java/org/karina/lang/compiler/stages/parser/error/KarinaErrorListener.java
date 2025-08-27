@@ -5,7 +5,7 @@ import lombok.experimental.Accessors;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.Region;
@@ -17,17 +17,11 @@ import java.util.BitSet;
  * Parser and Lexer error listener.
  */
 public class KarinaErrorListener implements ANTLRErrorListener {
-    @Getter
-    @Accessors(fluent = true)
-    private boolean hadError = false;
     private final TextSource source;
     private final Context c;
 
-    private final boolean throwErrors;
-
-    public KarinaErrorListener(Context c, TextSource source, boolean throwErrors) {
+    public KarinaErrorListener(Context c, TextSource source) {
         this.source = source;
-        this.throwErrors = throwErrors;
         this.c = c;
     }
 
@@ -38,7 +32,8 @@ public class KarinaErrorListener implements ANTLRErrorListener {
             Object offendingSymbol,
             int line,
             int charPositionInLine,
-            String msg, RecognitionException e
+            String msg,
+            RecognitionException e
     ) {
 
         var region = new Region(
@@ -46,35 +41,32 @@ public class KarinaErrorListener implements ANTLRErrorListener {
             new Region.Position(line - 1, charPositionInLine),
             new Region.Position(line - 1, charPositionInLine + 1)
         );
-        this.hadError = true;
 
-        if (KarinaRecoveringStrategy.isRecoverableError(recognizer, e)) {
-            if (offendingSymbol instanceof CommonToken token && recognizer.getInputStream() instanceof TokenStream tokenStream) {
-                var previous = tokenStream.get(token.getTokenIndex() - 1);
-                if (previous != null && previous.getType() == KarinaLexer.CHAR_DOT) {
-                    var previousLine = previous.getLine();
-                    var previousCharPositionInLine = previous.getCharPositionInLine();
-                    region = new Region(
-                            this.source,
-                            new Region.Position(previousLine - 1, previousCharPositionInLine),
-                            new Region.Position(previousLine - 1, previousCharPositionInLine + 1)
-                    );
-                }
-            }
+//        if (KarinaRecoveringStrategy.isRecoverableError(recognizer, e)) {
+//            if (offendingSymbol instanceof CommonToken token && recognizer.getInputStream() instanceof TokenStream tokenStream) {
+//                var previous = tokenStream.get(token.getTokenIndex() - 1);
+//                if (previous != null && previous.getType() == KarinaLexer.CHAR_DOT) {
+//                    var previousLine = previous.getLine();
+//                    var previousCharPositionInLine = previous.getCharPositionInLine();
+//                    region = new Region(
+//                            this.source,
+//                            new Region.Position(previousLine - 1, previousCharPositionInLine),
+//                            new Region.Position(previousLine - 1, previousCharPositionInLine + 1)
+//                    );
+//                }
+//            }
+//
+//            Log.warn(this.c, region, "Missing Field, replaced with " + KarinaRecoveringStrategy.MISSING_FIELD);
+//            return;
+//        }
 
-            Log.warn(this.c, region, "Missing Field, replaced with " + KarinaRecoveringStrategy.MISSING_FIELD);
-            return;
+
+        var name = "?";
+        if (e != null) {
+            name = e.getClass().getSimpleName();
         }
-
-
-        if (this.throwErrors) {
-            var name = "?";
-            if (e != null) {
-                name = e.getClass().getSimpleName();
-            }
-            Log.syntaxError(this.c, region, name + " -> " + msg);
-            throw new Log.KarinaException();
-        }
+        Log.syntaxError(this.c, region, name + " -> " + msg);
+        throw new Log.KarinaException();
 
     }
 

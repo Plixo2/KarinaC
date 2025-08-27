@@ -3,12 +3,12 @@ package org.karina.lang.lsp.base;
 
 import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
-import org.karina.lang.lsp.events.ClientEvent;
-import org.karina.lang.lsp.events.UpdateEvent;
-import org.karina.lang.lsp.events.EventService;
-import org.karina.lang.lsp.events.RequestEvent;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
+import org.karina.lang.lsp.lib.events.EventService;
+import org.karina.lang.lsp.lib.events.RequestEvent;
+import org.karina.lang.lsp.lib.events.UpdateEvent;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -51,12 +51,32 @@ public final class EventDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
-        return this.eventService.request(new RequestEvent.SemanticTokensRequest(uri));
+        return this.eventService.request(new RequestEvent.RequestSemanticTokens(uri));
     }
 
     @Override
     public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams params) {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
         return this.eventService.request(new RequestEvent.RequestCodeLens(uri));
+    }
+
+
+    @Override
+    public CompletableFuture<List<Either<SymbolInformation, DocumentSymbol>>> documentSymbol(
+            DocumentSymbolParams params
+    ) {
+        var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
+        return this.eventService.request(new RequestEvent.RequestDocumentSymbols(uri)).thenApply(symbols ->
+                symbols.stream().map(Either::<SymbolInformation, DocumentSymbol>forRight).toList()
+        );
+    }
+
+    @Override
+    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(
+            CompletionParams position
+    ) {
+        var pos = position.getPosition();
+        var uri = VirtualFileSystem.toUri(position.getTextDocument().getUri());
+        return this.eventService.request(new RequestEvent.RequestCompletions(uri, pos)).thenApply(Either::forLeft);
     }
 }

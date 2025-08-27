@@ -1,12 +1,11 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public record TypeChecking(Model model) {
 
@@ -56,6 +55,14 @@ public record TypeChecking(Model model) {
         if (!(a instanceof KType.ClassType aClass) || !(b instanceof KType.ClassType bClass)) {
             return null;
         }
+
+        for (var A : allSuperTypes(c, aClass)) {
+            Log.recordType(Log.LogTypes.BRANCH, "Branch common check",  A.pointer().path().mkString());
+        }
+        for (var B : allSuperTypes(c, bClass)) {
+            Log.recordType(Log.LogTypes.BRANCH, "Branch common check",  B.pointer().path().mkString());
+        }
+
         var interfacesA = new ArrayList<KType.ClassType>();
         var interfacesB = new ArrayList<KType.ClassType>();
 
@@ -96,6 +103,30 @@ public record TypeChecking(Model model) {
         Log.recordType(Log.LogTypes.BRANCH, "Interfaces of B: ", interfacesB);
         return KType.ROOT;
 
+    }
+
+    private Set<KType.ClassType> allSuperTypes(Context c, KType.ClassType t) {
+        Set<ObjectPath> outSet = new LinkedHashSet<>();
+        Set<KType.ClassType> out = new LinkedHashSet<>();
+        Deque<KType.ClassType> dq = new ArrayDeque<>();
+        dq.add(t);
+        while (!dq.isEmpty()) {
+            var cur = dq.removeFirst();
+
+            var wasAdded = outSet.add(cur.pointer().path());
+            if (wasAdded) {
+                out.add(cur);
+            } else {
+                continue;
+            }
+
+            var superType = Types.getSuperType(c, this.model, cur);
+            if (superType != null) {
+                dq.addLast(superType);
+            }
+            Types.getInterfaces(c, this.model, cur).forEach(dq::addLast);
+        }
+        return out;
     }
 
     //TODO ensure in the import stage, that no common interface are present with different generics
@@ -344,7 +375,11 @@ public record TypeChecking(Model model) {
                 return true;
             }
         }
-        return false;
+        var superClass = Types.getSuperType(c, this.model, right);
+        if (superClass == null) {
+            return false;
+        }
+        return doesImplementInterface(c, checkingRegion, interfaceModel, superClass, mutable);
     }
 
 

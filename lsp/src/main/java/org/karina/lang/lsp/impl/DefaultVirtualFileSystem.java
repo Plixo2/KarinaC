@@ -3,7 +3,6 @@ package org.karina.lang.lsp.impl;
 import com.google.errorprone.annotations.CheckReturnValue;
 import karina.lang.Option;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
 import org.karina.lang.lsp.lib.FileTransaction;
 import org.karina.lang.lsp.lib.VirtualFile;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
@@ -29,7 +28,7 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
                 return Option.some(new FileTransaction.UpdateFile(existing, false));
             }
         } else {
-            var newFile = new VirtualFile(uri, content, version, true);
+            var newFile = new DefaultVirtualFile(uri, content, version, true);
             this.files.put(uri, newFile);
             return Option.some(new FileTransaction.UpdateFile(newFile, true));
         }
@@ -49,7 +48,7 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
             }
         }
         else {
-            var newFile = new VirtualFile(uri, content, version, false);
+            var newFile = new DefaultVirtualFile(uri, content, version, false);
             this.files.put(uri, newFile);
             return Option.some(new FileTransaction.UpdateFile(newFile, true));
         }
@@ -101,7 +100,7 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
                 return Option.some(new FileTransaction.UpdateFile(existing, false));
             }
         } else {
-            var newFile = new VirtualFile(uri, diskContent, 0, false);
+            var newFile = new DefaultVirtualFile(uri, diskContent, 0, false);
             this.files.put(uri, newFile);
             return Option.some(new FileTransaction.UpdateFile(newFile, true));
         }

@@ -40,12 +40,41 @@ public class Capabilities {
         capabilities.setWorkspace(workspaceCapabilities);
         //</editor-fold>
 
+        var symbolOptions = new DocumentSymbolOptions();
+        capabilities.setDocumentSymbolProvider(symbolOptions);
+
         var codeLensOptions = new CodeLensOptions();
         codeLensOptions.setResolveProvider(false);
         capabilities.setCodeLensProvider(codeLensOptions);
 
+        var completionProvider = new CompletionOptions();
+        completionProvider.setResolveProvider(false);
+        completionProvider.setTriggerCharacters(List.of("."));
+        completionProvider.setAllCommitCharacters(List.of(
+                ".",
+                "(",
+                ",",
+                " ",
+                ":",
+                "<",
+                "[",
+                "{",
+                "=",
+                "+",
+                "-",
+                "*",
+                "%",
+                "|",
+                "&",
+                "?",
+                "/",
+                "\"",
+                "'"
+        ));
+        capabilities.setCompletionProvider(completionProvider);
+
 //        var execCmdOptions = new ExecuteCommandOptions();
-//        execCmdOptions.setCommands(List.of("karina.run"));
+//        execCmdOptions.setCommands(List.of("karina.run.file"));
 //        execCmdOptions.setWorkDoneProgress(false);
 //        capabilities.setExecuteCommandProvider(execCmdOptions);
 

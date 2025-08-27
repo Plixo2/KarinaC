@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.FieldSignatureBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.MethodSignatureBuilder;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.jvm_loading.TypeDecoding;
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.impl.jvm.JFieldModel;
@@ -100,22 +100,7 @@ public class InterfaceLinker {
                 permittedSubclasses.add(interfacePointer);
             }
         }
-//        if (node.outerClass == null) {
-//            if (outerClassModel != null) {
-//                 TODO why does this happen?
-//                Log.temp(c, region, "Outer class model is not null but node.outerClass is null for " + node.name + " (" + outerClassModel.name() + ")");
-//                throw new Log.KarinaException();
-//            }
-//        } else {
-//            if (outerClassModel == null) {
-//                Log.temp(c, region, "Outer class model is null but node.outerClass is not null for " + node.name);
-//                throw new Log.KarinaException();
-//            }
-//            if (!TypeDecoding.internalNameToPointer(region, node.outerClass).path().equals(outerClassModel.path())) {
-//                Log.temp(c, region, "Outer class model path does not match node.outerClass for " + node.name);
-//                throw new Log.KarinaException();
-//            }
-//        }
+
         var nestHost = node.nestHostClass == null ? null : TypeDecoding.internalNameToPointer(region, node.nestHostClass);
 
         var version = node.version;

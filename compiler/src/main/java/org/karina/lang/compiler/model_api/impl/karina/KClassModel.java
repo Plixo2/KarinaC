@@ -19,6 +19,7 @@ import org.karina.lang.compiler.utils.KType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 //TODO add outerMethod and outerMethodDescriptor
 @RequiredArgsConstructor
@@ -121,6 +122,10 @@ public class KClassModel implements ClassModel {
     @Override
     public ImmutableList<ClassPointer> nestMembers() {
         return ImmutableList.copyOf(this.nestMembers);
+    }
+
+    public ArrayList<ClassPointer> nestMembersMutable() {
+        return this.nestMembers;
     }
 
 

@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.utils;
 
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.symbols.BranchYieldSymbol;
 
 /**

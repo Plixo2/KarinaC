@@ -2,7 +2,7 @@ package org.karina.lang.compiler.utils;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 
 import java.util.*;
 import java.util.regex.Pattern;

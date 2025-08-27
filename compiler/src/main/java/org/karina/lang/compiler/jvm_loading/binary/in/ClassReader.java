@@ -131,9 +131,7 @@ public class ClassReader {
                 source,
                 region
         );
-        synchronized (builder) {
-            builder.addClass(c, model);
-        }
+        builder.addClass(c, model);
         if (outerClassPtr != null) {
             ttyl.add(m -> {
                 var classModel = m.getClass(outerClassPtr);

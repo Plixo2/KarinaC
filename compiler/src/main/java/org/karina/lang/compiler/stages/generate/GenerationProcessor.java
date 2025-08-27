@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.generate;
 
 import org.karina.lang.compiler.KarinaCompiler;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
 import org.objectweb.asm.Opcodes;

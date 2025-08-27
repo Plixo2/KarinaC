@@ -6,8 +6,8 @@ import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.*;
 
@@ -52,9 +52,13 @@ public class AttributionItem {
                 classModel.symbolTable()
         );
 
-        for (var kClassModel : classModel.innerClasses()) {
-            var inner = attribClass(c, model, classModelNew, kClassModel, modelBuilder);
-            innerToFill.add(inner);
+        try (var fork = c.<KClassModel>fork()){
+            for (var kClassModel : classModel.innerClasses()) {
+                fork.collect(subC -> {
+                    return attribClass(subC, model, classModelNew, kClassModel, modelBuilder);
+                });
+            }
+            innerToFill.addAll(fork.dispatchParallel());
         }
 
         if (classModelNew.symbolTable() == null) {
@@ -89,7 +93,7 @@ public class AttributionItem {
         Variable self = null;
         if (!Modifier.isStatic(methodModel.modifiers())) {
             var classType = classModel.getDefaultClassType();
-            self = new Variable(classModel.region(), "<self>", classType, false, true);
+            self = new Variable(classModel.region(), "self", classType, false, true);
         }
         var returnType = methodModel.signature().returnType();
 

@@ -10,12 +10,17 @@ import java.util.function.Predicate;
 
 public interface RealFileSystem {
 
-    Result<String, IOException> readFileFromDisk(URI uri);
-    boolean exists(URI uri);
-    boolean isDirectory(URI uri);
-
     /// @return a list of absolute and normalized URIs
     @UnmodifiableView
     Result<List<URI>, IOException> listAllFilesRecursively(URI uri, Predicate<String> filter);
+
+
+    Result<String, IOException> readFileFromDisk(URI uri);
+
+
+    boolean exists(URI uri);
+
+
+    boolean isDirectory(URI uri);
 
 }

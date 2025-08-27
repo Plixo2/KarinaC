@@ -134,18 +134,6 @@ public class TypeEncoding {
         }
     }
 
-
-    private static String padLeft(String str, int length, String pad) {
-
-        if (str.length() >= length) {
-            return str;
-        }
-
-        var append = length - str.length();
-        return pad.repeat(append) + str;
-    }
-
-
     //if double or long, return 2, else return 1
     public static int jvmSize(KType type) {
         type = type.unpack();

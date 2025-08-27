@@ -1,6 +1,5 @@
 package org.karina.lang.lsp.base;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import karina.lang.Option;
 import karina.lang.Result;
@@ -8,11 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.WorkspaceService;
 import org.karina.lang.lsp.KarinaLSP;
-import org.karina.lang.lsp.events.ClientEvent;
-import org.karina.lang.lsp.events.UpdateEvent;
-import org.karina.lang.lsp.events.EventService;
-import org.karina.lang.lsp.lib.ClientConfiguration;
+import org.karina.lang.lsp.impl.ClientConfiguration;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
+import org.karina.lang.lsp.lib.events.EventService;
+import org.karina.lang.lsp.lib.events.UpdateEvent;
 
 import java.io.IOException;
 import java.util.List;

@@ -19,12 +19,12 @@ import java.util.List;
 
 public class KarinaEnumVisitor implements IntoContext {
 
-    private final RegionContext context;
+    private final RegionContext conv;
     private final KarinaUnitVisitor visitor;
 
     public KarinaEnumVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
         this.visitor = base;
-        this.context = regionContext;
+        this.conv = regionContext;
     }
 
     public KClassModel visit(
@@ -34,10 +34,12 @@ public class KarinaEnumVisitor implements IntoContext {
             KarinaParser.EnumContext ctx,
             ModelBuilder modelBuilder
     ) {
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClassPointer = ClassPointer.of(region, path);
+
+        // interfaces cannot be private
         final var mods = (ctx.PUB() != null ? Modifier.PUBLIC : 0) | Modifier.INTERFACE | Modifier.ABSTRACT;
 
         KType.ClassType superClass = KType.ROOT;
@@ -119,7 +121,7 @@ public class KarinaEnumVisitor implements IntoContext {
                 permittedSubClassesToFill,
                 nestMembersToFill,
                 annotations,
-                this.context.source(),
+                this.conv.source(),
                 region,
                 null
         );
@@ -143,8 +145,8 @@ public class KarinaEnumVisitor implements IntoContext {
             ModelBuilder modelBuilder,
             boolean asPublic
     ) {
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
 
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
@@ -214,7 +216,7 @@ public class KarinaEnumVisitor implements IntoContext {
                 permittedSubClasses,
                 nestMembers,
                 annotations,
-                this.context.source(),
+                this.conv.source(),
                 region,
                 null
         );
@@ -225,7 +227,7 @@ public class KarinaEnumVisitor implements IntoContext {
     }
 
     // TODO generate function for common fields
-    private KMethodModel createGetterMethod(FieldModel fieldModel) {
+    public static KMethodModel createGetterMethod(FieldModel fieldModel) {
         var region = fieldModel.region();
         var expr = new KExpr.GetMember(
                 region,
@@ -242,7 +244,8 @@ public class KarinaEnumVisitor implements IntoContext {
                 ImmutableList.of(),
                 ImmutableList.of(),
                 expr,
-                ImmutableList.of(), region,
+                ImmutableList.of(),
+                region,
                 fieldModel.classPointer(),
                 List.of()
         );
@@ -250,8 +253,8 @@ public class KarinaEnumVisitor implements IntoContext {
 
     private KFieldModel enumField(KarinaParser.ParameterContext ctx, ClassPointer owningClass) {
 
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
         var type = this.visitor.typeVisitor.visitType(ctx.type());
         var mods = Modifier.PRIVATE | Modifier.FINAL;
         return new KFieldModel(name, type, mods, region, owningClass, null);

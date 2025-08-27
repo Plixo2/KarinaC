@@ -1,15 +1,18 @@
 package org.karina.lang.lsp.base;
 
 import karina.lang.Option;
-import org.apache.commons.text.StringEscapeUtils;
+import karina.lang.ThrowableFunction;
 import org.eclipse.lsp4j.*;
-import org.eclipse.lsp4j.jsonrpc.Endpoint;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.*;
 import org.karina.lang.lsp.Capabilities;
-import org.karina.lang.lsp.events.ClientEvent;
-import org.karina.lang.lsp.events.EventService;
+import org.karina.lang.lsp.lib.LanguageClientExtension;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
+import org.karina.lang.lsp.lib.events.ClientEvent;
+import org.karina.lang.lsp.lib.events.EventClientService;
+import org.karina.lang.lsp.lib.events.EventService;
+import org.karina.lang.lsp.lib.process.JobProgress;
+import org.karina.lang.lsp.lib.process.Job;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -18,7 +21,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class EventLanguageServer implements LanguageServer, LanguageClientAware, EventClientService {
+public class EventLanguageServer implements LanguageServer, LanguageClientAware,
+        EventClientService {
     private final EventService eventService;
     private final EventDocumentService documentService;
     private final EventWorkspaceService workspaceService;
@@ -29,7 +33,7 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
         this.workspaceService =  new EventWorkspaceService(this.eventService);
     }
 
-    Map<String, Process> processes = new ConcurrentHashMap<>();
+    Map<String, Job> processes = new ConcurrentHashMap<>();
 
     LanguageClientExtension client;
     private InitializeParams initParams;
@@ -135,45 +139,52 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
         this.client.sendToTerminal(message);
     }
 
+    @Override
+    public void clearTerminal() {
+        this.client.clearTerminal();
+    }
 
     @Override
-    public synchronized Process createProgress(String title, Process.ThrowingFunction<Process.Progress, String> process) {
-        var token = UUID.randomUUID().toString();
-        var processObj = new Process();
-        processObj.server = this;
-        processObj.token = token;
-        this.processes.put(token, processObj);
-        var startParams = new WorkDoneProgressCreateParams(Either.forLeft(token));
-        processObj.future = this.client.createProgress(startParams).thenRunAsync(() -> {
-            var progressBegin = new WorkDoneProgressBegin();
-            progressBegin.setTitle(title);
-            progressBegin.setCancellable(true);
-            progressBegin.setPercentage(0);
-            var progressParams =
-                    new ProgressParams(Either.forLeft(token), Either.forLeft(progressBegin));
-            this.client.notifyProgress(progressParams);
+    public Job createJob(String title, ThrowableFunction<JobProgress, String, Exception> process) {
 
-            String message;
-            try {
-                message = process.apply(processObj.new Progress());
-            } catch (Exception e) {
-                message = e.toString();
-                send(new ClientEvent.Log(
-                        message,
-                        MessageType.Error
-                ));
-            }
+        synchronized (this) {
 
-            var end = new WorkDoneProgressEnd();
-            end.setMessage(message);
-            var endParams = new ProgressParams(Either.forLeft(token), Either.forLeft(end));
-            this.client.notifyProgress(endParams);
+            var token = UUID.randomUUID().toString();
+            var processObj = new DefaultProcess();
+            processObj.server = this;
+            processObj.token = token;
+            this.processes.put(token, processObj);
+            var startParams = new WorkDoneProgressCreateParams(Either.forLeft(token));
+            processObj.future = this.client.createProgress(startParams).thenRunAsync(() -> {
+                var progressBegin = new WorkDoneProgressBegin();
+                progressBegin.setTitle(title);
+                progressBegin.setCancellable(true);
+                progressBegin.setPercentage(0);
+                var progressParams =
+                        new ProgressParams(Either.forLeft(token), Either.forLeft(progressBegin));
+                this.client.notifyProgress(progressParams);
 
-            this.processes.remove(token);
-        });
+                String message;
+                try {
+                    message = process.apply(processObj.new DefaultWorkProgress());
+                } catch (Exception e) {
+                    message = e.toString();
+                    send(new ClientEvent.Log(
+                            message,
+                            MessageType.Error
+                    ));
+                }
 
+                var end = new WorkDoneProgressEnd();
+                end.setMessage(message);
+                var endParams = new ProgressParams(Either.forLeft(token), Either.forLeft(end));
+                this.client.notifyProgress(endParams);
 
-        return processObj;
+                this.processes.remove(token);
+            });
+            return processObj;
+        }
+
     }
 
     private PrintStream createPrintStream() {
@@ -186,6 +197,10 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
                     flushBuffer();
                 } else {
                     this.buffer.append((char) b);
+                    if (this.buffer.length() > 100000) {
+                        this.buffer.setLength(0);
+                        EventLanguageServer.this.sendTerminal("buffer too long, truncated\n");
+                    }
                 }
             }
 
@@ -202,8 +217,13 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
             }
 
             private void flushBuffer() {
-                EventLanguageServer.this.sendTerminal(this.buffer.toString());
-                this.buffer.setLength(0);
+                if (this.buffer.length() > 100000) {
+                    this.buffer.setLength(0);
+                    EventLanguageServer.this.sendTerminal("buffer too long, truncated\n");
+                } else {
+                    EventLanguageServer.this.sendTerminal(this.buffer.toString());
+                    this.buffer.setLength(0);
+                }
             }
         });
     }

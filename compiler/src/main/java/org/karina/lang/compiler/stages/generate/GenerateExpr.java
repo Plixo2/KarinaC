@@ -1,8 +1,7 @@
 package org.karina.lang.compiler.stages.generate;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.karina.lang.compiler.jvm_loading.TypeDecoding;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.symbols.*;
@@ -24,6 +23,9 @@ public class GenerateExpr implements Opcodes {
             ctx.add(label);
             ctx.add(new LineNumberNode(currentLine, label));
             ctx.setLastLineNumber(currentLine);
+        }
+        if (Log.LogTypes.GENERATION_EXPR.isVisible()) {
+            Log.begin(expr.getClass().getName());
         }
 
         switch (expr) {
@@ -446,6 +448,15 @@ public class GenerateExpr implements Opcodes {
                                 name,
                                 fieldType
                         ));
+                        var fieldModel = ctx.model().getField(fieldSymbol.pointer());
+                        var erase = Types.erase(fieldModel.type());
+                        if (!erase.isPrimitive()) {
+                            var original = TypeEncoding.getInternalName(ctx.model(), erase);
+                            var type = TypeEncoding.getInternalName(ctx.model(), fieldSymbol.type());
+                            if (!original.equals(type)) {
+                                ctx.add(new TypeInsnNode(CHECKCAST, type));
+                            }
+                        }
                     }
                     case MemberSymbol.VirtualFunctionSymbol virtualFunctionSymbol -> {
                         Log.temp(ctx, expr.region(), "Cannot be expressed");
@@ -577,12 +588,11 @@ public class GenerateExpr implements Opcodes {
                 ctx.add(start);
                 LabelNode end = new LabelNode();
 
-
-
+                var signature = GenerateSignature.fieldSignature(ctx.model(), symbol.type());
                 LocalVariableNode localVariableNode = new LocalVariableNode(
                         symbol.name(),
                         type,
-                        null,
+                        signature,
                         start,
                         end,
                         target
@@ -599,6 +609,8 @@ public class GenerateExpr implements Opcodes {
                 ctx.add(startOfLoop);
                 generate(aWhile.condition(), ctx);
                 ctx.add(new JumpInsnNode(IFEQ, endOfLoop));
+                var breakTarget = ctx.getBreakTarget();
+                var continueTarget = ctx.getContinueTarget();
                 ctx.setBreakTarget(endOfLoop);
                 ctx.setContinueTarget(startOfLoop);
 
@@ -609,6 +621,9 @@ public class GenerateExpr implements Opcodes {
                 if (!yieldType.isVoid() && !aWhile.body().doesReturn()) {
                     popValues(ctx, yieldType);
                 }
+
+                ctx.setBreakTarget(breakTarget);
+                ctx.setContinueTarget(continueTarget);
 
                 ctx.add(new JumpInsnNode(GOTO, startOfLoop));
                 ctx.add(endOfLoop);
@@ -632,6 +647,9 @@ public class GenerateExpr implements Opcodes {
             }
         }
 
+        if (Log.LogTypes.GENERATION_EXPR.isVisible()) {
+            Log.end(expr.getClass().getName());
+        }
     }
 
     private static void popValues(GenerationContext ctx, KType type) {
@@ -794,7 +812,7 @@ public class GenerateExpr implements Opcodes {
             int modulus,
             int compare
     ) {
-        private static BinaryOperatorSet DOUBLE = new BinaryOperatorSet(
+        private static final BinaryOperatorSet DOUBLE = new BinaryOperatorSet(
                 DADD,
                 DSUB,
                 DMUL,
@@ -802,7 +820,7 @@ public class GenerateExpr implements Opcodes {
                 DREM,
                 DCMPL
         );
-        private static BinaryOperatorSet FLOAT = new BinaryOperatorSet(
+        private static final BinaryOperatorSet FLOAT = new BinaryOperatorSet(
                 FADD,
                 FSUB,
                 FMUL,
@@ -811,7 +829,7 @@ public class GenerateExpr implements Opcodes {
                 FCMPL
         );
 
-        private static BinaryOperatorSet LONG = new BinaryOperatorSet(
+        private static final BinaryOperatorSet LONG = new BinaryOperatorSet(
                 LADD,
                 LSUB,
                 LMUL,

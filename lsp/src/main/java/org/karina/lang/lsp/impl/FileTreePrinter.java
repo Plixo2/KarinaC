@@ -11,15 +11,11 @@ public class FileTreePrinter {
         return bob.toString();
     }
 
+
+
     private static void print(VirtualFileTreeNode node, StringBuilder buffer, String prefix, String childrenPrefix) {
 
-//        buffer.append(prefix);
-//        buffer.append(node.name().isEmpty() ? "<root>" : node.name());
-//        buffer.append('\n');
-
-        StringBuilder collapsedName =
-                new StringBuilder(node.name().isEmpty() ? "<root>" : node.name());
-
+        var collapsedName = new StringBuilder(node.name().isEmpty() ? "<root>" : node.name());
         while (node.leafs().isEmpty() && node.children().size() == 1) {
             node = node.children().getFirst();
             collapsedName.append("/").append(node.name());

@@ -6,7 +6,7 @@ import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.jvm_loading.signature.model.TypeArgument;
 import org.karina.lang.compiler.jvm_loading.signature.model.TypeParameter;
 import org.karina.lang.compiler.jvm_loading.signature.model.TypeSignature;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Generic;

@@ -9,7 +9,7 @@ import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.model_api.impl.table.ClassLookup;
 import org.karina.lang.compiler.model_api.impl.table.LinearLookup;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.Signature;
@@ -63,7 +63,7 @@ public class LoweringItem {
                 classModel.generics(),
                 classModel.imports(),
                 classModel.permittedSubclasses(),
-                new ArrayList<>(classModel.nestMembers()),
+                classModel.nestMembersMutable(),
                 classModel.annotations(),
                 classModel.resource(),
                 classModel.region(),
@@ -83,7 +83,7 @@ public class LoweringItem {
                 Log.temp(c, method.region(), "Invalid method");
                 throw new Log.KarinaException();
             }
-            var lowerMethod = lowerMethod(c, model, classModelNew, kMethodModel, syntheticCounter, newClasses);
+            var lowerMethod = lowerMethod(c, model, classModelNew, kMethodModel, syntheticCounter, newClasses, List.of());
             methodsToFill.add(lowerMethod);
         }
         Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
@@ -96,10 +96,21 @@ public class LoweringItem {
 
         builder.addClass(c, classModelNew);
         Log.endType(Log.LogTypes.LOWERING, logName);
+
+
+
         return classModelNew;
     }
 
-    private static KMethodModel lowerMethod(Context c, Model model, KClassModel classModel, KMethodModel methodModel, MutableInt synCounter, ClassLookup newClasses) {
+    public static KMethodModel lowerMethod(
+            Context c,
+            Model model,
+            KClassModel classModel,
+            KMethodModel methodModel,
+            MutableInt synCounter,
+            ClassLookup newClasses,
+            List<LoweringContext.ClosureReplacement> replacements
+    ) {
 
         var ctx = new LoweringContext(
                 newClasses,
@@ -110,7 +121,7 @@ public class LoweringItem {
                 methodModel,
                 classModel,
                 classModel,
-                List.of()
+                replacements
         );
 
         var expression = methodModel.expression();
@@ -275,7 +286,7 @@ public class LoweringItem {
         Variable self;
         variables.add(self = new Variable(
                 reference.region(),
-                "<self>", classType, false, true
+                "self", classType, false, true
         ));
 
         for (var i = 0; i < reference.parameters().size(); i++) {

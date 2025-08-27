@@ -3,13 +3,12 @@ package org.karina.lang.compiler.stages.parser.visitor;
 import com.google.common.collect.ImmutableList;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.text.StringEscapeUtils;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -369,13 +368,25 @@ public class KarinaExprVisitor implements IntoContext {
 
         var region = this.conv.toRegion(ctx);
         var regionMerged = region.merge(prev.region());
-        if (ctx.id() != null) {
-            var name = this.conv.region(ctx.id());
-            return new KExpr.GetMember(regionMerged, prev, name, false, null);
-        } else if (ctx.CLASS() != null) {
-            var nameRegion = this.conv.toRegion(ctx.CLASS());
-            var name = RegionOf.region(nameRegion, "class");
-            return new KExpr.GetMember(regionMerged, prev, name, false, null);
+        if (ctx.dotPostFix() != null) {
+            var dotNotation = ctx.dotPostFix();
+            if (dotNotation.id() != null) {
+                var name = this.conv.region(dotNotation.id());
+                return new KExpr.GetMember(regionMerged, prev, name, false, null);
+            } else if (dotNotation.CLASS() != null) {
+                var nameRegion = this.conv.toRegion(dotNotation.CLASS());
+                var name = RegionOf.region(nameRegion, "class");
+                return new KExpr.GetMember(regionMerged, prev, name, false, null);
+            } else {
+                if (this.intoContext().infos().allowMissingFields()) {
+                    // put '<unknown>' to generate report later
+                    var name = RegionOf.region(region, "<unknown>");
+                    return new KExpr.GetMember(regionMerged, prev, name, false, null);
+                } else {
+                    Log.syntaxError(this, region, "Missing field or method");
+                    throw new Log.KarinaException();
+                }
+            }
         } else if (ctx.CHAR_QUESTION() != null) {
             return new KExpr.Unwrap(regionMerged, prev, null);
         } else if (ctx.expressionList() != null) {

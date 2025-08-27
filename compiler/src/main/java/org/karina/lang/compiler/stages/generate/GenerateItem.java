@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.generate;
 
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.GenerateError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.GenerateError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
@@ -22,13 +22,14 @@ public class GenerateItem {
 
     public static JarCompilation.JarOutput compileClass(Context c, Model model, KClassModel classModel, int classVersion) {
 
-        var classNode = new ClassNode();
+        var classNode = new CustomClassWriter.TracingClassNode(c);
 
         for (var method : classModel.methods()) {
             var name = "Method " + method.name();
             Log.beginType(Log.LogTypes.GENERATION, name);
             if (method instanceof KMethodModel kMethodModel) {
-                classNode.methods.add(compileMethod(c, model, kMethodModel));
+                var node = compileMethod(c, model, kMethodModel);
+                classNode.methodMap.put(kMethodModel, node);
             }
             Log.endType(Log.LogTypes.GENERATION, name);
         }
@@ -41,7 +42,7 @@ public class GenerateItem {
             Log.endType(Log.LogTypes.GENERATION, "Field " + field.name());
         }
 
-        classNode.signature = GenerateSignature.getClassSignature(classModel);
+        classNode.signature = GenerateSignature.getClassSignature(model, classModel);
 
 
         classNode.permittedSubclasses = classModel.permittedSubclasses()
@@ -49,9 +50,7 @@ public class GenerateItem {
                               .map(ref -> TypeEncoding.toJVMPath(model, ref))
                               .toList();
 
-        classNode.nestMembers = classModel.nestMembers().stream().map(ref -> {
-            return TypeEncoding.toJVMPath(model, ref);
-        }).toList();
+        classNode.nestMembers = classModel.nestMembers().stream().map(ref -> TypeEncoding.toJVMPath(model, ref)).toList();
 
 
         var outerClass = classModel.outerClass();
@@ -77,12 +76,14 @@ public class GenerateItem {
         var superClass = classModel.superClass();
         assert superClass != null;
         classNode.superName = TypeEncoding.toJVMPath(model, superClass.pointer());
+
+
         return getJarOutput(c, model, classModel.region(), classNode);
     }
 
     private static FieldNode compileField(Model model, KFieldModel fieldModel) {
         var descriptor = TypeEncoding.getDescriptor(model, fieldModel.type());
-        var signature = GenerateSignature.fieldSignature(fieldModel.type());
+        var signature = GenerateSignature.fieldSignature(model, fieldModel.type());
 
         return new FieldNode(
                 fieldModel.modifiers(),
@@ -105,11 +106,14 @@ public class GenerateItem {
         }
         methodNode.desc = TypeEncoding.getDesc(model, methodModel.signature());
 
-        methodNode.signature = GenerateSignature.methodSignature(methodModel);
+        methodNode.signature = GenerateSignature.methodSignature(model, methodModel);
 
+        var expression = methodModel.expression();
 
         var instructions = new InsnList();
         methodNode.localVariables = new ArrayList<>();
+
+
         var context = new GenerationContext(
                 -1,
                 instructions,
@@ -121,16 +125,33 @@ public class GenerateItem {
                 null
         );
 
+
+        var methodStart = new LabelNode();
+        var methodEnd = new LabelNode();
+
         for (var paramVariable : methodModel.getParamVariables()) {
             context.putVariable(paramVariable);
+
+            if (expression != null) {
+                var index = context.getVariableIndex(methodModel.region(), paramVariable);
+                var localVariableNode = new LocalVariableNode(
+                        paramVariable.name(),
+                        TypeEncoding.getDescriptor(model, paramVariable.type()),
+                        GenerateSignature.fieldSignature(model, paramVariable.type()),
+                        methodStart,
+                        methodEnd,
+                        index
+                );
+                context.getLocalVariables().add(localVariableNode);
+            }
         }
 
 
-        var expression = methodModel.expression();
         if (expression != null) {
+            context.add(methodStart);
             GenerateExpr.generate(expression, context);
+            context.add(methodEnd);
         }
-
 
         methodNode.instructions = instructions;
 
@@ -142,13 +163,16 @@ public class GenerateItem {
         try {
             classNode.accept(cw);
         } catch(Exception e) {
+            if (e instanceof Log.KarinaException) {
+                throw e;
+            }
             Log.internal(c, e);
 
             try (var boas = new ByteArrayOutputStream()) {
                 PrintWriter pw = new PrintWriter(boas);
                 TraceClassVisitor tracer = new TraceClassVisitor(pw);
                 classNode.accept(tracer);
-                Log.generate(c, new GenerateError.NotValidAnymore(region, classNode.name, boas.toString()));
+                Log.generate(c, new GenerateError.GenerateClass(region, classNode.name, boas.toString()));
             } catch (IOException ex) {
                 Log.temp(c, region, "Error while generating error report " + ex);
             }

@@ -4,9 +4,11 @@ package org.karina.lang.compiler.stages.parser;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.utils.Region;
@@ -20,19 +22,36 @@ import org.karina.lang.compiler.utils.RegionOf;
 @RequiredArgsConstructor
 public class RegionContext {
     private final TextSource source;
-    private final TokenStream stream;
 
-    public Region toRegion(ParseTree ctx) {
-        return toRegion(ctx.getSourceInterval());
+    public Region toRegion(TerminalNode ctx) {
+        var token = ctx.getSymbol();
+        var fromLine = token.getLine() - 1;
+        var fromColumn = token.getCharPositionInLine();
+        var toLine = token.getLine() - 1;
+        var toColumn = token.getCharPositionInLine() + token.getText().length();
+        return new Region(
+                this.source,
+                new Region.Position(fromLine, fromColumn),
+                new Region.Position(toLine, toColumn)
+        );
     }
 
-    public <T> RegionOf<T> region(T t, Interval interval) {
-        return RegionOf.region(toRegion(interval), t);
+    public Region toRegion(ParserRuleContext ctx) {
+        var fromLine = ctx.start.getLine() - 1;
+        var fromColumn = ctx.start.getCharPositionInLine();
+        var toLine = ctx.stop.getLine() - 1;
+        var toColumn = ctx.stop.getCharPositionInLine() + ctx.stop.getText().length();
+        return new Region(
+                this.source,
+                new Region.Position(fromLine, fromColumn),
+                new Region.Position(toLine, toColumn)
+        );
     }
-
 
     public RegionOf<String> region(KarinaParser.IdContext n) {
-        return region(escapeID(n), n.getSourceInterval());
+        var content = escapeID(n);
+        var region = toRegion(n);
+        return RegionOf.region(region, content);
     }
 
     public String escapeID(KarinaParser.IdContext context) {
@@ -48,32 +67,5 @@ public class RegionContext {
     }
 
 
-
-    public Region toRegion(Interval interval) {
-        var invalid = new Region(
-                this.source,
-                new Region.Position(-1, 0),
-                new Region.Position(-1, 0)
-        );
-        if (interval.a < 0 || interval.b < 0 || interval.a > interval.b) {
-            return invalid;
-        }
-        try {
-            var fromToken = this.stream.get(interval.a);
-            var fromLine = fromToken.getLine() - 1;
-            var fromColumn = fromToken.getCharPositionInLine();
-            var toToken = this.stream.get(interval.b);
-            var toLine = toToken.getLine() - 1;
-            var toColumn = toToken.getCharPositionInLine() + toToken.getText().length();
-            return new Region(
-                    this.source,
-                    new Region.Position(fromLine, fromColumn),
-                    new Region.Position(toLine, toColumn)
-            );
-        } catch (IndexOutOfBoundsException e) {
-            return invalid;
-        }
-
-    }
 
 }

@@ -2,8 +2,8 @@ package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm_loading.JavaResource;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 

@@ -9,8 +9,8 @@ import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
@@ -377,7 +377,6 @@ public class CallAttrib  {
             var mappedParameters = unmappedParameters.stream().map(ref ->
                     Types.projectGenerics(ref, mappedCopy)
             ).toList();
-
 
             var canAssign = true;
             var i = 0;

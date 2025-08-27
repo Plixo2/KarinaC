@@ -425,6 +425,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArray(KarinaParser.ArrayContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link KarinaParser#dotPostFix}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDotPostFix(KarinaParser.DotPostFixContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link KarinaParser#superCall}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

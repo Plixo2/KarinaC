@@ -31,13 +31,13 @@ extendsBounds: 'extends' structType;
 boundList: (structType ('+' structType)*)?;
 
 
-field: id ':' 'mut'? type;
+field: 'pub'? 'mut'? id ':' type;
 
 //implementation and boundWhere are not yet implemented
 enum: 'pub'? 'enum' id genericHintDefinition? '{' const* enumMember* function* implementation* boundWhere* '}';
 enumMember: id ('(' parameterList ')')?;
 
-interface : 'pub'? 'interface' id genericHintDefinition? ('{' const* function* interfaceExtension* boundWhere* '}')?;
+interface : 'pub'? 'interface' id genericHintDefinition? ('{' const* function* interfaceExtension* '}')?;
 interfaceExtension: 'impl' structType;
 
 selfParameterList: ((parameter | 'self') (',' parameter)*)?;
@@ -131,9 +131,11 @@ additiveExpression: multiplicativeExpression (('+' | '-' | '&') additiveExpressi
 multiplicativeExpression: unaryExpression (('*' | '/' | '%') multiplicativeExpression)?;
 unaryExpression: ('-' | '!')? factor;
 factor: object postFix* (('=' exprWithBlock) | isInstanceOf)?;
-postFix: '.' (id | 'class') | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type | '?' ;
+postFix: dotPostFix | genericHint? '(' expressionList ')' | '[' exprWithBlock ']' | 'as' type | '?' ;
 object: '(' exprWithBlock ')' | NUMBER | id ('::' id)* (genericHint? '{' initList '}')? | STRING_LITERAL | CHAR_LITERAL | 'self' | superCall | 'true' | 'false' | array;
 array: ('<' type '>')? '[' expressionList ']';
+
+dotPostFix: '.' (id | 'class')?;
 
 superCall: 'super' '<' structType  '>' ('.' id)?;
 // where a ?? b
@@ -156,4 +158,4 @@ escaped: FN | IS | IN | AS | EXTEND
 | MATCH | OVERRIDE | VIRTUAL | YIELD
 | STRUCT | TRAIT | IMPL | LET
 | SELF | STRING | JSON | BOOL | WHERE
-| CONST | MUT | ANY | MACRO;
+| CONST | MUT | ANY | MACRO | PUB;

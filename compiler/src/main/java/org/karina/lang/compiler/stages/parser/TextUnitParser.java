@@ -13,28 +13,23 @@ import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.ObjectPath;
 
 public class TextUnitParser {
-    private final KarinaParser karinaParser;
-    private final KarinaUnitVisitor visitor;
 
-    public TextUnitParser(Context c, TextSource source, String name, ObjectPath path) {
-        var errorListener = new KarinaErrorListener(c, source, true);
+
+    public static void parseItems(Context c, TextSource source, String name, ObjectPath path, ModelBuilder builder) {
+        var errorListener = new KarinaErrorListener(c, source);
         var inputStream = CharStreams.fromString(source.content());
         var karinaLexer = new KarinaLexer(inputStream);
         karinaLexer.removeErrorListeners();
         karinaLexer.addErrorListener(errorListener);
         var tokenStream = new CommonTokenStream(karinaLexer);
-        this.karinaParser = new KarinaParser(tokenStream);
-        this.karinaParser.setErrorHandler(new KarinaRecoveringStrategy(c, source));
-        this.karinaParser.removeErrorListeners();
-        this.karinaParser.addErrorListener(errorListener);
+        var karinaParser = new KarinaParser(tokenStream);
+        karinaParser.setErrorHandler(new KarinaRecoveringStrategy(c, source));
+        karinaParser.removeErrorListeners();
+        karinaParser.addErrorListener(errorListener);
 
-
-        var regionConverter = new RegionContext(source, tokenStream);
-        this.visitor = new KarinaUnitVisitor(c, regionConverter, name, path);
-    }
-
-    public void visit(ModelBuilder builder) {
-        this.visitor.visit(this.karinaParser.unit(), builder);
+        var regionConverter = new RegionContext(source);
+        var visitor = new KarinaUnitVisitor(c, regionConverter, name, path);
+        visitor.visit(karinaParser.unit(), builder);
     }
 
 }

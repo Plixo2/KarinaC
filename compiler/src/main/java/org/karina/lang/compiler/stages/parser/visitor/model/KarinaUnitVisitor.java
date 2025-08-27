@@ -2,13 +2,13 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
@@ -215,7 +215,8 @@ public class KarinaUnitVisitor {
     public RegionOf<ObjectPath> visitDotWordChain(KarinaParser.DotWordChainContext ctx) {
 
         var elements = ctx.id().stream().map(this.conv::escapeID).toList();
-        return this.conv.region(new ObjectPath(elements), ctx.getSourceInterval());
+        var region = this.conv.toRegion(ctx);
+        return RegionOf.region(region, new ObjectPath(elements));
 
     }
 
@@ -244,7 +245,7 @@ public class KarinaUnitVisitor {
         if (ctx.PUB() != null) {
             mods |= Modifier.PUBLIC;
         } else {
-            mods |= Modifier.PRIVATE; //default is private
+            mods |= Modifier.PRIVATE;
         }
 
         Object defaultValue = null;
@@ -296,10 +297,10 @@ public class KarinaUnitVisitor {
             var name = staticFieldsNames.get(i);
             var value = staticFieldsValues.get(i);
 
-            var self = new KExpr.StaticPath(region, owningClass.path(), owningClass);
-            var fieldName = RegionOf.region(region, name);
-            var lhs = new KExpr.GetMember(region, self, fieldName, false, null);
-            var assign = new KExpr.Assignment(region, lhs, value, null);
+            var self = new KExpr.StaticPath(value.region(), owningClass.path(), owningClass);
+            var fieldName = RegionOf.region(value.region(), name);
+            var lhs = new KExpr.GetMember(value.region(), self, fieldName, false, null);
+            var assign = new KExpr.Assignment(value.region(), lhs, value, null);
             assignments.add(assign);
         }
 
@@ -336,4 +337,7 @@ public class KarinaUnitVisitor {
     public Context context() {
         return this.c;
     }
+
+
+
 }

@@ -1,6 +1,8 @@
 package org.karina.lang.compiler;
 
 
+import org.karina.lang.compiler.stages.generate.CustomClassWriter;
+
 import java.io.*;
 
 ///

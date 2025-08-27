@@ -6,19 +6,21 @@ import org.karina.lang.compiler.model_api.impl.MutableModel;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.stages.lower.LowerExpr;
 import org.karina.lang.compiler.stages.lower.LoweringContext;
 import org.karina.lang.compiler.stages.lower.LoweringItem;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.stages.attrib.AttributionItem;
+import org.karina.lang.compiler.utils.symbols.AssignmentSymbol;
 import org.karina.lang.compiler.utils.symbols.CallSymbol;
 import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 import org.karina.lang.compiler.utils.*;
+import org.karina.lang.compiler.utils.symbols.MemberSymbol;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
@@ -186,6 +188,7 @@ public class LowerClosure {
     }
 
 
+
     private ClassModel createClassModel(LoweringContext ctx) {
         var primary = this.interfaces.getFirst();
         var objectPath = ctx.definitionClass().path();
@@ -204,7 +207,7 @@ public class LowerClosure {
         }
 
         var interfacesAsClasses = new ArrayList<KType.ClassType>();
-        //TODO replace List.of(primary) with this.interfaces, but check for duplicates or should this be done in the attrib stage
+        //TODO only generate one and create bridge methods for the rest
         for (var anInterface : this.interfaces) {
             if (anInterface instanceof KType.ClassType classType) {
                 interfacesAsClasses.add(classType);
@@ -229,12 +232,15 @@ public class LowerClosure {
         }
 
         var host = ctx.definitionClass();
-        if (host.nestHost() != null) {
+        while (host.nestHost() != null) {
             host = ctx.model().getClass(host.nestHost());
         }
         //TODO remove mutable state
         if (host instanceof KClassModel kClassModel) {
             kClassModel.updateNestMembers(List.of(classPointer));
+        } else {
+            Log.temp(ctx, this.region, "Closure host is a java class model, this should not happen");
+            throw new Log.KarinaException();
         }
 
         var methods = new ArrayList<KMethodModel>();
@@ -271,17 +277,29 @@ public class LowerClosure {
 
         var classType = classModel.getDefaultClassType();
         for (var interfaceAsClass : interfacesAsClasses) {
-            var newModel = createMethodModel(ctx, interfaceAsClass, classPointer, classType, classModel);
-            if (!LoweringItem.doesMethodWithSameSignatureExist(newModel, methods)) {
-                methods.add(newModel);
+            var newModelClassModel = createMethodModel(ctx, interfaceAsClass, classPointer, classType);
+            var self = newModelClassModel.getParamVariables().getFirst();
+            lowerMethod(ctx, classType, classModel, self, newModelClassModel, interfaceAsClass);
+            if (!LoweringItem.doesMethodWithSameSignatureExist(newModelClassModel, methods)) {
+                methods.add(newModelClassModel);
             }
         }
-        var constructor = createConstructor(classPointer, fields, Modifier.PUBLIC);
+        var constructor = createConstructor(classPointer, classType, fields, Modifier.PUBLIC);
+//        var constructorSelf = constructor.getParamVariables().getFirst();
+//        lowerMethod(ctx, classType, classModel, constructorSelf, constructor);
 
         var newModel = new MutableModel(ctx.model(), ctx.intoContext(), ctx.newClasses());
-        var attribConstructor = AttributionItem.attribMethod(ctx.intoContext(), newModel, classModel, StaticImportTable.EMPTY, constructor);
+        try {
+//            var attribConstructor = AttributionItem.attribMethod(ctx.intoContext(), newModel, classModel, StaticImportTable.EMPTY, constructor);
+//        var lowered = LoweringItem.lowerMethod(ctx.c(), newModel, classModel, attribConstructor, ctx.syntheticCounter(), ctx.newClasses(), ctx.toReplace());
+//        methods.add(lowered);
+//            methods.add(attribConstructor);
+            methods.add(constructor);
+        } catch(Log.KarinaException e) {
+            Log.internal(ctx, new IllegalStateException("Failed to attribute constructor for closure class " + classModel.name()));
+            throw e;
+        }
 
-        methods.add(attribConstructor);
 
         if (Log.LogTypes.LOWERING_BRIDGE_METHODS.isVisible()) {
             Log.begin("Pre bridge");
@@ -311,50 +329,53 @@ public class LowerClosure {
             LoweringContext ctx,
             KType.ClassType currentInterfaceToImplement,
             ClassPointer outer,
-            KType.ClassType outerClassType,
-            ClassModel outerClass
+            KType.ClassType classType
     ) {
         var toImplement = ClosureHelper.getMethodToImplement(ctx.intoContext(), this.region, ctx.model(), currentInterfaceToImplement);
         var methodModel = ctx.model().getMethod(toImplement.originalMethodPointer());
 
         var name = toImplement.name();
 
-
         var parameters = ImmutableList.copyOf(toImplement.argumentTypes());
         var signature = new Signature(parameters, toImplement.returnType());
 
         // with generics, we implement for one type only TODO what???
-        var self = new Variable(this.region, "<self>", outerClassType, false, true);
+        var self = new Variable(this.region, "self", classType, false, true);
 
         var variables = new ArrayList<Variable>();
         variables.add(self);
         variables.addAll(this.argumentVariable);
 
         //TODO map correct generics
-        var createdMethodModel = new KMethodModel(
+        return new KMethodModel(
                 name,
                 Modifier.PUBLIC,
                 signature,
                 ImmutableList.copyOf(this.names),
                 methodModel.generics(),
-                null,
+                this.body,
                 ImmutableList.of(),
                 this.region,
                 outer,
                 variables
         );
 
+    }
 
-        var replacement = new LoweringContext.ClosureReplacement(
-                outerClassType,
-                self,
-                List.copyOf(this.captures)
-        );
+    private void lowerMethod(
+            LoweringContext ctx,
+            KType.ClassType classType,
+            ClassModel outerClass,
+            Variable self,
+            KMethodModel createdMethodModel,
+            KType.ClassType forInterface
+    ) {
+        var replacement = new LoweringContext.ClosureReplacement(classType, self, List.copyOf(this.captures));
 
         var currentReplacement = new ArrayList<>(ctx.toReplace());
         currentReplacement.add(replacement);
 
-        var newCtx =  new LoweringContext(
+        var newCtx = new LoweringContext(
                 ctx.newClasses(),
                 ctx.syntheticCounter(),
                 ctx.model(),
@@ -365,14 +386,42 @@ public class LowerClosure {
                 outerClass,
                 currentReplacement
         );
+        var expression = createdMethodModel.expression();
+        assert expression != null;
 
+        if (Log.LogTypes.LOWERING_REPLACEMENT_VARIABLES.isVisible()) {
+            var name = "Lowering to " +  outerClass.name() + "." + createdMethodModel.name();
+            Log.begin(name);
+            Log.record("Interface", forInterface);
+            Log.record("Owner", ctx.owningClass().name());
+            Log.begin("existing replacements");
+            for (var closureReplacement : ctx.toReplace()) {
+                Log.begin(closureReplacement.closure.toString());
+                Log.record("self", closureReplacement.selfReference, "->", closureReplacement.selfReference.hashCode());
+                for (var variable : closureReplacement.toReplace) {
+                    Log.record("capture", variable, "->", variable.hashCode());
+                }
+                Log.end(closureReplacement.closure.toString());
+            }
+            Log.end("existing replacements");
 
-        var bodyExpr = LowerExpr.lower(newCtx, this.body);
-        createdMethodModel.setExpression(bodyExpr);
+            Log.begin("new replacement");
+            Log.record(replacement.closure.toString());
+            Log.record("self", replacement.selfReference, "->", replacement.selfReference.hashCode());
+            for (var variable : replacement.toReplace) {
+                Log.record("capture", variable, "->", variable.hashCode());
+            }
+            Log.end("new replacement");
 
-        return createdMethodModel;
+            var bodyExpr = LowerExpr.lower(newCtx, expression);
+            Log.end(name);
+
+            createdMethodModel.setExpression(bodyExpr);
+        } else {
+            var bodyExpr = LowerExpr.lower(newCtx, expression);
+            createdMethodModel.setExpression(bodyExpr);
+        }
     }
-
 
 
     private static @NotNull HashMap<Generic, KType> getGenericMapping(LoweringContext ctx, KType.ClassType type) {
@@ -387,16 +436,18 @@ public class LowerClosure {
     }
 
 
-    //TODO attribute this
     public KMethodModel createConstructor(
             ClassPointer classPointer,
+            KType.ClassType classType,
             List<KFieldModel> fields,
             int mods
     ) {
-        var name = "<init>";
+        var selfVar = new Variable(this.region, "self", classType, false, true);
 
         var paramTypes = ImmutableList.copyOf(fields.stream().map(KFieldModel::type).toList());
         var paramNames = ImmutableList.copyOf(fields.stream().map(KFieldModel::name).toList());
+
+
         var signature = new Signature(paramTypes, KType.NONE);
         var generics = ImmutableList.<Generic>of();
 
@@ -409,25 +460,68 @@ public class LowerClosure {
                         KType.ROOT
                 )
         );
-        var superCall = new KExpr.Call(this.region, superLiteral, List.of(), List.of(), null);
+        MethodPointer objectSuperMethodPointer = MethodPointer.of(
+                this.region,
+                KType.ROOT.pointer(),
+                "<init>",
+                new Signature(ImmutableList.of(), KType.NONE)
+        );
+        var superCall = new KExpr.Call(
+                this.region,
+                superLiteral,
+                List.of(),
+                List.of(),
+                new CallSymbol.CallSuper(
+                        objectSuperMethodPointer,
+                        ImmutableList.of(),
+                        KType.NONE,
+                        superLiteral.invocationType()
+                )
+        );
         expressions.add(superCall);
 
+        var paramVariables = new ArrayList<Variable>();
+        paramVariables.add(selfVar);
         for (var field : fields) {
-            var self = new KExpr.Self(this.region, null);
+            var paramVariable = new Variable(
+                    this.region,
+                    field.name(),
+                    field.type(),
+                    false,
+                    true
+            );
+            paramVariables.add(paramVariable);
+            var literalSymbol = new LiteralSymbol.VariableReference(
+                    this.region,
+                    paramVariable
+            );
+            var memberSymbol = new MemberSymbol.FieldSymbol(
+                    field.pointer(),
+                    field.type(),
+                    classType
+            );
+
+            var self = new KExpr.Self(this.region, selfVar);
+            var assignSymbol = new AssignmentSymbol.Field(
+                    self,
+                    field.pointer(),
+                    field.type(),
+                    classType
+            );
+
             var fieldName = RegionOf.region(this.region, field.name());
-            var rhs = new KExpr.Literal(this.region, field.name(), null);
-            var lhs = new KExpr.GetMember(this.region, self, fieldName, false, null);
-            var assign = new KExpr.Assignment(this.region, lhs, rhs, null);
+            var rhs = new KExpr.Literal(this.region, field.name(), literalSymbol);
+            var lhs = new KExpr.GetMember(this.region, self, fieldName, false, memberSymbol);
+            var assign = new KExpr.Assignment(this.region, lhs, rhs, assignSymbol);
             expressions.add(assign);
         }
 
+        expressions.add(new KExpr.Return(this.region, null, KType.NONE));
 
-
-
-        var expression = new KExpr.Block(this.region, expressions, null, false);
+        var expression = new KExpr.Block(this.region, expressions, KType.NONE, false);
 
         return new KMethodModel(
-                name,
+                "<init>",
                 mods,
                 signature,
                 paramNames,
@@ -436,14 +530,12 @@ public class LowerClosure {
                 ImmutableList.of(),
                 this.region,
                 classPointer,
-                List.of()
+                paramVariables
         );
     }
 
     private KExpr createInstance(LoweringContext ctx) {
         var classModel = createClassModel(ctx);
-
-
 
 
         var classType = classModel.getDefaultClassType();
@@ -462,19 +554,24 @@ public class LowerClosure {
                 classType,
                 superLiteral.invocationType()
         );
-        var args = getArgs();
+        var args = getArgs(ctx);
         return new KExpr.Call(this.region, superLiteral, List.of(), args, symbol);
     }
 
-    private List<KExpr> getArgs() {
+    private List<KExpr> getArgs(LoweringContext ctx) {
         var exprs = new ArrayList<KExpr>();
         for (var capture : this.captures) {
             var symbol = new LiteralSymbol.VariableReference(
                     this.region,
                     capture
             );
-            var literal = new KExpr.Literal(this.region, capture.name(), symbol);
-            exprs.add(literal);
+            var lowered = ctx.lowerVariableReference(this.region, capture);
+            if (lowered != null) {
+                exprs.add(lowered);
+            } else {
+                var literal = new KExpr.Literal(this.region, capture.name(), symbol);
+                exprs.add(literal);
+            }
         }
         return exprs;
     }

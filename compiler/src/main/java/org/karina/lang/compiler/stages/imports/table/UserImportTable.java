@@ -3,9 +3,9 @@ package org.karina.lang.compiler.stages.imports.table;
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
@@ -363,19 +363,31 @@ public record UserImportTable(
      */
     public void logUnknownPointerError(Region region, ObjectPath path) {
         var available = availableTypeNames();
-        Log.error(this.c, new ImportError.UnknownImportType(region, path.mkString("::"), available));
+        var availablePaths = availableTypePaths();
+        Log.error(this.c, new ImportError.UnknownImportType(region, path.mkString("::"), available, availablePaths));
     }
 
     private Set<String> availableTypeNames() {
         var keys = new HashSet<>(this.classes.keySet());
-        for (var objectPath : this.model.getBinaryClasses()) {
-            keys.add(objectPath.path().mkString("::"));
-        }
-        for (var objectPath : this.model.getUserClasses()) {
-            keys.add(objectPath.path().mkString("::"));
-        }
+//        for (var objectPath : this.model.getBinaryClasses()) {
+//            keys.add(objectPath.path().mkString("::"));
+//        }
+//        for (var objectPath : this.model.getUserClasses()) {
+//            keys.add(objectPath.path().mkString("::"));
+//        }
 
         keys.addAll(this.generics.keySet());
+        return keys;
+    }
+
+    private Set<ObjectPath> availableTypePaths() {
+        var keys = new HashSet<ObjectPath>();
+        for (var objectPath : this.model.getBinaryClasses()) {
+            keys.add(objectPath.path());
+        }
+        for (var objectPath : this.model.getUserClasses()) {
+            keys.add(objectPath.path());
+        }
         return keys;
     }
 

@@ -24,7 +24,6 @@ public record Range(int start, int end, int step) implements Iterable<Integer> {
 
     @Override
     public Iterator<Integer> iterator() {
-
         if (this.step > 0) {
             return new ForwardIterator(this.start, this.end, this.step);
         } else if (this.step < 0) {

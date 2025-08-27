@@ -2,7 +2,7 @@ package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
@@ -157,10 +157,6 @@ public class Types {
         }
     }
 
-    public static KType erasedClass(ClassModel classModel) {
-        var generics = classModel.generics().stream().map(Types::eraseGeneric).toList();
-        return classModel.pointer().implement(generics);
-    }
 
     record TypeDependency(KType type, int level) { }
 
@@ -171,6 +167,11 @@ public class Types {
             }
         }
         return -1;
+    }
+
+    public static KType erasedClass(ClassModel classModel) {
+        var generics = classModel.generics().stream().map(Types::eraseGeneric).toList();
+        return classModel.pointer().implement(generics);
     }
 
     public static boolean hasIdentity(KType type) {

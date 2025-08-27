@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
@@ -27,7 +27,6 @@ public class PostImportValidator {
 
     public static void validateTree(Context c, Model model) {
         Log.begin("validate");
-
 
         try(var validateFork = c.fork()) {
             var userClasses = model.getUserClasses();
@@ -71,10 +70,6 @@ public class PostImportValidator {
                 Log.temp(c, classModel.region(), "Interface must be abstract");
                 throw new Log.KarinaException();
             }
-            if (!classModel.fields().isEmpty()) {
-                Log.temp(c, classModel.region(), "Interface cannot have fields");
-                throw new Log.KarinaException();
-            }
         } else {
             validateConstructor(c, classModel);
 
@@ -95,6 +90,18 @@ public class PostImportValidator {
                 throw new Log.KarinaException();
             }
             validateAccess(c, protection, classModel, field.region(), field.type());
+
+            if (Modifier.isInterface(classModel.modifiers())) {
+                if (!Modifier.isStatic(field.modifiers())) {
+                    Log.syntaxError(c, field.region(), "Non-static fields in interfaces are not allowed");
+                    throw new Log.KarinaException();
+                }
+                if (!Modifier.isFinal(field.modifiers())) {
+                    Log.syntaxError(c, field.region(), "Non-final fields in interfaces are not allowed");
+                    throw new Log.KarinaException();
+                }
+            }
+
         }
 
         validateFields(c, classModel.fields());

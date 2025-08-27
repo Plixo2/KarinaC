@@ -1,10 +1,10 @@
 package org.karina.lang.compiler;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.ColorOut;
-import org.karina.lang.compiler.logging.DiagnosticCollection;
-import org.karina.lang.compiler.logging.FlightRecordCollection;
-import org.karina.lang.compiler.logging.LogColor;
+import org.karina.lang.compiler.utils.logging.Colored;
+import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
+import org.karina.lang.compiler.utils.logging.FlightRecordCollection;
+import org.karina.lang.compiler.utils.logging.ConsoleColor;
 import org.karina.lang.compiler.utils.AutoRun;
 import org.karina.lang.compiler.utils.DefaultFileTree;
 import org.karina.lang.compiler.utils.FileLoader;
@@ -35,7 +35,7 @@ public class ConsoleCompiler {
                                      .errorCollection(errors)
                                      .warningCollection(warnings)
                                      .flightRecordCollection(recordings)
-                                     .useBinaryFormat(config.useBinaryFormat())
+                                     .binaryFormat(config.useBinaryFormat())
                                      .build();
 
         var sourceDirectory = config.source();
@@ -59,7 +59,11 @@ public class ConsoleCompiler {
             onSuccess(outputFile, warnings, endTime - startTime);
 
             if (config.run()) {
-                AutoRun.runWithPrints(compilation, true);
+                var result = AutoRun.runWithPrints(compilation, true, new String[]{});
+                if (result != null) {
+                    // just print errors to the console
+                    result.cause().printStackTrace(System.out);
+                }
             }
 
             return true;
@@ -81,24 +85,24 @@ public class ConsoleCompiler {
                    |_|\\_\\ \\__,_| |_|   |_| |_||_| \\__,_|
                 """;
 
-        ColorOut.begin(LogColor.BLUE)
-                .append(welcome_small)
-                .out(System.out);
+        Colored.begin(ConsoleColor.BLUE)
+               .append(welcome_small)
+               .println(System.out);
     }
 
 
     private static void printStartMessage(DefaultFileTree fileTree, Path sourceDirectory) {
         var fileCount = fileTree.leafCount();
         var fileCountString = fileCount == 1 ? "file" : "files";
-        ColorOut.begin(LogColor.GRAY)
-                .append("Compiling '")
-                .append(sourceDirectory.toString().replace("\\", "/"))
-                .append("' (")
-                .append(fileCount)
-                .append(" ")
-                .append(fileCountString)
-                .append(")")
-                .out(System.out);
+        Colored.begin(ConsoleColor.GRAY)
+               .append("Compiling '")
+               .append(sourceDirectory.toString().replace("\\", "/"))
+               .append("' (")
+               .append(fileCount)
+               .append(" ")
+               .append(fileCountString)
+               .append(")")
+               .println(System.out);
     }
 
 
@@ -106,21 +110,21 @@ public class ConsoleCompiler {
         var javaVersion = System.getProperty("java.version", "<unknown java version>");
         var vmName = System.getProperty("java.vm.name", "<unknown vm name>");
 
-        ColorOut.begin(LogColor.GRAY)
-                .append("Karina: ")
-                .append(KarinaCompiler.VERSION)
-                .out(System.out);
+        Colored.begin(ConsoleColor.GRAY)
+               .append("Karina: ")
+               .append(KarinaCompiler.VERSION)
+               .println(System.out);
 
-        ColorOut.begin(LogColor.GRAY)
-                .append("Java: ")
-                .append(vmName)
-                .append(" ")
-                .append(javaVersion)
-                .out(System.out);
+        Colored.begin(ConsoleColor.GRAY)
+               .append("Java: ")
+               .append(vmName)
+               .append(" ")
+               .append(javaVersion)
+               .println(System.out);
     }
 
     private static void onError(DiagnosticCollection warnings, DiagnosticCollection errors) {
-        ColorOut.begin(LogColor.RED).append("Build failed").out(System.out);
+        Colored.begin(ConsoleColor.RED).append("Build failed").println(System.out);
         System.out.println();
         System.out.flush();
 
@@ -135,26 +139,26 @@ public class ConsoleCompiler {
             var file = absolutePath.getFileName();
             var path = absolutePath.getParent().toString().replace("\\", "/");
 
-            ColorOut.begin(LogColor.GRAY)
-                    .append("Created '")
-                    .append(file)
-                    .append("'")
-                    .append(" in ")
-                    .append("file:///")
-                    .append(path)
-                    .out(System.out);
+            Colored.begin(ConsoleColor.GRAY)
+                   .append("Created '")
+                   .append(file)
+                   .append("'")
+                   .append(" in ")
+                   .append("file:///")
+                   .append(path)
+                   .println(System.out);
         }
 
-        ColorOut.begin(LogColor.GRAY)
-                .append("Finished in ")
-                .append(deltaTime)
-                .append("ms")
-                .out(System.out);
+        Colored.begin(ConsoleColor.GRAY)
+               .append("Finished in ")
+               .append(deltaTime)
+               .append("ms")
+               .println(System.out);
 
 
-        LogColor.YELLOW.out(System.out);
+        ConsoleColor.YELLOW.out(System.out);
         DiagnosticCollection.print(warnings, true, System.out);
-        LogColor.RESET.out(System.out);
+        ConsoleColor.RESET.out(System.out);
     }
 
     /**

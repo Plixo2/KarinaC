@@ -4,6 +4,7 @@ package karina.lang;
 
 import java.lang.reflect.Array;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -102,6 +103,18 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         };
     }
 
+    default void ifSome(Consumer<T> consumer) {
+        if (this instanceof Some<T>(T value)) {
+            consumer.accept(value);
+        }
+    }
+
+    default void ifNone(Runnable runnable) {
+        if (this instanceof None<T>) {
+            runnable.run();
+        }
+    }
+
 
     default T nullable() {
         return switch (this) {
@@ -110,23 +123,52 @@ public sealed interface Option<T> permits Option.Some, Option.None {
         };
     }
 
-    default T expect(Option<String> message) {
-        return expect(message.orElse(""));
-    }
 
-    default T expect(String message) {
+    /// @throws UnwrapException if the Option is None
+    default T expect(Throwable throwable) throws UnwrapException {
         return switch (this) {
             case Option.Some<T>(var v) -> v;
-            case Option.None<T> v -> {
-                var includeMessage = message != null && !message.isEmpty();
+            case Option.None<T> n -> {
+                throw new UnwrapException(
+                        "Could not unwrap Option",
+                        throwable
+                );
+            }
+        };
+    }
+
+    /// @throws UnwrapException if the Option is None
+    default T expect(String message) throws UnwrapException {
+        return switch (this) {
+            case Option.Some<T>(var v) -> v;
+            case Option.None<T> n -> {
                 String suffix;
-                if (includeMessage) {
+                if (!message.isEmpty()) {
                     suffix = ": " + message;
                 } else {
                     suffix = "";
                 }
-                throw new RuntimeException(
+                throw new UnwrapException(
                         "Could not unwrap Option" + suffix
+                );
+            }
+        };
+    }
+
+    /// @throws UnwrapException if the Option is None
+    default T expect(String message, Throwable throwable) throws UnwrapException {
+        return switch (this) {
+            case Option.Some<T>(var v) -> v;
+            case Option.None<T> n -> {
+                String suffix;
+                if (!message.isEmpty()) {
+                    suffix = ": " + message;
+                } else {
+                    suffix = "";
+                }
+                throw new UnwrapException(
+                        "Could not unwrap Option" + suffix,
+                        throwable
                 );
             }
         };

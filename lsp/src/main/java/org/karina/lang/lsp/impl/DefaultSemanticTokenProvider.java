@@ -3,7 +3,6 @@ package org.karina.lang.lsp.impl;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.TerminalNode;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
@@ -119,8 +118,26 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
         private void addToken(@Nullable KarinaParser.IdContext id, int type) {
             addToken(id, type, 0);
         }
+        private void addColored(@Nullable KarinaParser.IdContext id, int defaultType) {
+            if (id == null) {
+                return;
+            }
+            var text = id.getText();
+            if (text == null) {
+                return;
+            }
+            if (isUppercase(text) && text.length() > 1) {
+                addToken(id, PROPERTY, MOD_READONLY);
+            } else if (startsWithUppercase(text)) {
+                addToken(id, CLASS);
+            } else {
+                addToken(id, defaultType);
+            }
 
-
+        }
+        private void addColored(@Nullable KarinaParser.IdContext id) {
+            addColored(id, FUNCTION);
+        }
 
         @Override
         public Object visitStruct(KarinaParser.StructContext ctx) {
@@ -132,7 +149,7 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
         public Object visitImport_(KarinaParser.Import_Context ctx) {
             var idContext = ctx.id();
             if (idContext != null) {
-                addToken(idContext, PROPERTY);
+                addToken(idContext, PROPERTY, MOD_READONLY);
             }
 
             var dotWordChainContext = ctx.dotWordChain();
@@ -150,7 +167,7 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
                 var ids = commaWordChain.id();
                 if (ids != null) {
                     for (var id : ids) {
-                        addToken(id, PROPERTY);
+                        addColored(id);
                     }
                 }
             }
@@ -177,9 +194,9 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
         @Override
         public Object visitField(KarinaParser.FieldContext ctx) {
             if (ctx.MUT() != null) {
-                addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
+                addToken(ctx.id(), PROPERTY, MOD_DECLARATION);
             } else {
-                addToken(ctx.id(), VARIABLE, MOD_DECLARATION | MOD_READONLY);
+                addToken(ctx.id(), PROPERTY, MOD_DECLARATION | MOD_READONLY);
             }
 
             return super.visitField(ctx);
@@ -274,6 +291,66 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
         }
 
         @Override
+        public Object visitFactor(KarinaParser.FactorContext ctx) {
+            var postFixContexts = ctx.postFix();
+
+
+            if ((postFixContexts == null || postFixContexts.isEmpty()) || postFixContexts.getFirst() != null && postFixContexts.getFirst().CHAR_L_PAREN() == null) {
+                var object = ctx.object();
+                if (object != null && object.CHAR_L_BRACE() == null) {
+                    var ids = object.id();
+                    if (ids != null && !ids.isEmpty()) {
+                        var lastId = ids.getLast();
+                        addColored(lastId, VARIABLE);
+                    }
+                }
+            }
+
+            if (postFixContexts != null) {
+                for (var i = 0; i < postFixContexts.size(); i++) {
+                    var postFixContext = postFixContexts.get(i);
+                    if (postFixContext == null) {
+                        continue;
+                    }
+                    if (i == 0 && postFixContext.CHAR_L_PAREN() != null) {
+                        var object = ctx.object();
+                        if (object != null) {
+                            var ids = object.id();
+                            if (ids != null) {
+                                if (!ids.isEmpty()) {
+                                    var last = ids.getLast();
+                                    addToken(last, FUNCTION);
+                                }
+                            }
+                        }
+                    }
+                    var hasNext = i < postFixContexts.size() - 1;
+                    var dotPostFix = postFixContext.dotPostFix();
+                    if (dotPostFix == null) {
+                        continue;
+                    }
+                    var id = dotPostFix.id();
+                    if (id == null) {
+                        continue;
+                    }
+                    if (hasNext) {
+                        var nextPostFix = postFixContexts.get(i + 1);
+                        if (nextPostFix != null && nextPostFix.CHAR_L_PAREN() != null) {
+                            addToken(id, METHOD);
+                        } else {
+                            addToken(id, PROPERTY, MOD_READONLY);
+                        }
+                    } else {
+                        addToken(id, PROPERTY, MOD_READONLY);
+                    }
+                }
+            }
+
+
+            return super.visitFactor(ctx);
+        }
+
+        @Override
         public Object visitOptTypeName(KarinaParser.OptTypeNameContext ctx) {
             addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
             return super.visitOptTypeName(ctx);
@@ -293,16 +370,9 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
                     if (size >= 1) {
                         var endOffset = 1;
 
-                        if (ids.size() >= 2) {
-                            var secondToLast = ids.get(size - 2);
-                            if (secondToLast != null && startsWithUppercase(secondToLast.getText())) {
-                                addToken(secondToLast, CLASS);
-                                endOffset = 2;
-                            }
-                        }
-
-                        for (int i = 0; i < size - endOffset; i++) {
-                            addToken(ids.get(i), NAMESPACE);
+                        for (var i = 0; i < ids.size()-1; i++) {
+                            var id = ids.get(i);
+                            addColored(id, NAMESPACE);
                         }
                     }
                 }
@@ -314,9 +384,13 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
             return s != null && !s.isEmpty() && Character.isUpperCase(s.charAt(0));
         }
 
+        private boolean isUppercase(String s) {
+            return s != null && !s.isEmpty() && s.equals(s.toUpperCase());
+        }
+
         @Override
         public Object visitMemberInit(KarinaParser.MemberInitContext ctx) {
-            addToken(ctx.id(), PROPERTY);
+            addToken(ctx.id(), PROPERTY, MOD_READONLY);
             return super.visitMemberInit(ctx);
         }
     }

@@ -2,29 +2,27 @@ package org.karina.lang.lsp;
 
 import karina.lang.Option;
 import karina.lang.Result;
+import karina.lang.ThrowableFunction;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.utils.FileLoader;
-import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.lsp.base.EventClientService;
-import org.karina.lang.lsp.base.Process;
-import org.karina.lang.lsp.events.ClientEvent;
-import org.karina.lang.lsp.events.UpdateEvent;
-import org.karina.lang.lsp.events.EventService;
-import org.karina.lang.lsp.events.RequestEvent;
+import org.karina.lang.compiler.utils.FileTreeNode;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.lsp.lib.events.*;
 import org.karina.lang.lsp.impl.*;
 import org.karina.lang.lsp.lib.*;
+import org.karina.lang.lsp.lib.process.JobProgress;
+import org.karina.lang.lsp.lib.process.Job;
+import org.karina.lang.lsp.test_compiler.CompiledHelper;
 import org.karina.lang.lsp.test_compiler.OneShotCompiler;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 public final class KarinaLSP implements EventService {
@@ -35,8 +33,10 @@ public final class KarinaLSP implements EventService {
     public final RealFileSystem rfs = new DefaultRealFileSystem();
     private VirtualFileTreeNode treeNode = DefaultVirtualFileTreeNode.root();
 
-    private SemanticTokenProvider semanticTokenProvider = new DefaultSemanticTokenProvider();
-    private OneShotCompiler oneShotCompiler = new OneShotCompiler(this);
+    private final SemanticTokenProvider  semanticTokenProvider  = new DefaultSemanticTokenProvider();
+    private final OneShotCompiler        oneShotCompiler        = new OneShotCompiler(this);
+    private final DocumentSymbolProvider documentSymbolProvider = new DefaultDocumentSymbolProvider();
+    private final CompletionProvider     completionProvider     = new DefaultCompletionProvider(this);
 
     private Option<BuildConfig> buildConfig = Option.none();
 
@@ -177,13 +177,6 @@ public final class KarinaLSP implements EventService {
         this.oneShotCompiler.build(this.treeNode, files,
                 this.clientConfiguration.logLevel().orElse(ClientConfiguration.LoggingLevel.NONE)
         );
-
-//        var start = System.currentTimeMillis();
-//
-//
-//        var end = System.currentTimeMillis();
-//        logMessage("Transaction handled in " + (end - start) + "ms");
-
     }
 
 
@@ -244,7 +237,7 @@ public final class KarinaLSP implements EventService {
                 this.clientConfiguration = updateClientConfig.configuration();
             }
             case UpdateEvent.ExecuteCommand(String command, List<Object> args) -> {
-                if (command.equals("karina.run")) {
+                if (command.equals("karina.run.file")) {
                     if (args.isEmpty()) {
                         warningMessage("No URI provided for command: " + command);
                         return;
@@ -260,6 +253,22 @@ public final class KarinaLSP implements EventService {
                     var uri = VirtualFileSystem.toUri(uriStr);
                     var files = this.vfs.files();
                     this.oneShotCompiler.run(this.treeNode, files, uri);
+                } else if (command.equals("karina.run")) {
+                    if (args.isEmpty()) {
+                        warningMessage("No main provided for command: " + command);
+                        return;
+                    }
+                    if (args.size() > 1) {
+                        warningMessage("Too many arguments for command: " + command);
+                    }
+
+                    var uriStr = Objects.toString(args.getFirst());
+                    if (uriStr.startsWith("\"") && uriStr.endsWith("\"")) {
+                        uriStr = uriStr.substring(1, uriStr.length() - 1);
+                    }
+                    var path = ObjectPath.fromString(uriStr, "::");
+                    var files = this.vfs.files();
+                    this.oneShotCompiler.run(this.treeNode, files, path);
                 } else {
                     warningMessage("Unknown command: " + command);
                 }
@@ -270,22 +279,23 @@ public final class KarinaLSP implements EventService {
     @Override
     public <T> CompletableFuture<T> request(RequestEvent<T> request) {
         switch (request) {
-            case RequestEvent.SemanticTokensRequest(URI uri) -> {
-                SemanticTokens result = new SemanticTokens();
+            case RequestEvent.RequestSemanticTokens(URI uri) -> {
                 if (this.vfs.getContent(uri) instanceof Option.Some(var content)) {
-                    var start = System.currentTimeMillis();
-                    var tokens = this.semanticTokenProvider.getTokens(content);
-                    result.setData(tokens);
-                    var end = System.currentTimeMillis();
-                    logMessage("Semantic tokens in " + (end - start) + "ms");
+                    return CompletableFuture.supplyAsync(() -> {
+                        var start = System.currentTimeMillis();
+                        var tokens = this.semanticTokenProvider.getTokens(content);
+                        var end = System.currentTimeMillis();
+                        logMessage("Semantic tokens in " + (end - start) + "ms");
+                        return (T) new SemanticTokens(tokens);
+                    });
                 } else {
                     warningMessage("No content found for URI: " + uri);
+                    return CompletableFuture.completedFuture((T) new SemanticTokens());
                 }
-                return CompletableFuture.completedFuture((T) result);
-
             }
             case RequestEvent.RequestCodeLens(URI uri) -> {
-                if (this.oneShotCompiler.findMain(this.treeNode, uri) instanceof Option.Some(var mainMethod)) {
+                var atLeastImported = this.oneShotCompiler.lastestCompiledModel().importedModel;
+                if (CompiledHelper.findMain(atLeastImported, this.treeNode, uri, this) instanceof Option.Some(var mainMethod)) {
                     var codeLens = new CodeLens();
                     var start = mainMethod.region().start();
                     codeLens.setRange(new Range(
@@ -294,7 +304,7 @@ public final class KarinaLSP implements EventService {
                     ));
                     codeLens.setCommand(new Command(
                             "Run",
-                            "karina.run",
+                            "karina.run.file",
                             List.of(uri.toString())
                     ));
                     return CompletableFuture.completedFuture((T) List.of(codeLens));
@@ -302,6 +312,29 @@ public final class KarinaLSP implements EventService {
                     return CompletableFuture.completedFuture((T) List.of());
                 }
 
+            }
+            case RequestEvent.RequestDocumentSymbols(URI uri) -> {
+                if (this.vfs.getContent(uri) instanceof Option.Some(var content)) {
+                    return CompletableFuture.supplyAsync(() -> {
+                        var start = System.currentTimeMillis();
+                        var symbols = this.documentSymbolProvider.getSymbols(content);
+                        var end = System.currentTimeMillis();
+                        logMessage("Document symbols in " + (end - start) + "ms");
+                        return (T) symbols;
+                    });
+                } else {
+                    warningMessage("No content found for URI: " + uri);
+                    return CompletableFuture.completedFuture((T) List.of());
+                }
+            }
+            case RequestEvent.RequestCompletions(URI uri, Position pos) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var items =this.completionProvider.getItems(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri, pos
+                    );
+                    return (T) items;
+                });
             }
         }
     }
@@ -317,8 +350,13 @@ public final class KarinaLSP implements EventService {
     }
 
     @Override
-    public Process createProgress(String title, Process.ThrowingFunction<Process.Progress, String> process) {
-        return this.theClient.createProgress(title, process);
+    public void clearTerminal() {
+        this.theClient.clearTerminal();
+    }
+
+    @Override
+    public Job createJob(String title, ThrowableFunction<JobProgress, String, Exception> process) {
+        return this.theClient.createJob(title, process);
     }
 
 }

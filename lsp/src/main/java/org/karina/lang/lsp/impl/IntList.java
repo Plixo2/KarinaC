@@ -3,8 +3,6 @@ package org.karina.lang.lsp.impl;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import java.util.Arrays;
-
 public final class IntList {
 
     private int[] data;

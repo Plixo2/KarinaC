@@ -6,5 +6,4 @@ public interface SemanticTokenProvider {
 
     List<Integer> getTokens(String content);
 
-
 }

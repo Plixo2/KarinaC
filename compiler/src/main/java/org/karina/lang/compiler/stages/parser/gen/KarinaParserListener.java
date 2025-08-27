@@ -698,6 +698,16 @@ public interface KarinaParserListener extends ParseTreeListener {
 	 */
 	void exitArray(KarinaParser.ArrayContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link KarinaParser#dotPostFix}.
+	 * @param ctx the parse tree
+	 */
+	void enterDotPostFix(KarinaParser.DotPostFixContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link KarinaParser#dotPostFix}.
+	 * @param ctx the parse tree
+	 */
+	void exitDotPostFix(KarinaParser.DotPostFixContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link KarinaParser#superCall}.
 	 * @param ctx the parse tree
 	 */

@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.stages.imports.table.ImportTable;
 import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;

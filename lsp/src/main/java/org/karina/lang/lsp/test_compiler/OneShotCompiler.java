@@ -1,15 +1,16 @@
 package org.karina.lang.lsp.test_compiler;
 
 import karina.lang.Option;
-import karina.lang.Result;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.MessageType;
-import org.karina.lang.compiler.KarinaCompiler;
+import org.jetbrains.annotations.Contract;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
-import org.karina.lang.compiler.logging.DiagnosticCollection;
-import org.karina.lang.compiler.logging.FlightRecordCollection;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
+import org.karina.lang.compiler.utils.logging.FlightRecordCollection;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
@@ -20,13 +21,14 @@ import org.karina.lang.compiler.stages.imports.ImportProcessor;
 import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.ParseProcessor;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.lsp.base.Process;
-import org.karina.lang.lsp.events.ClientEvent;
-import org.karina.lang.lsp.events.EventService;
-import org.karina.lang.lsp.impl.CodeDiagnosticInformation;
-import org.karina.lang.lsp.lib.ClientConfiguration;
+import org.karina.lang.lsp.impl.CodeDiagnosticInformationBuilder;
+import org.karina.lang.lsp.impl.ClientConfiguration;
 import org.karina.lang.lsp.lib.VirtualFile;
 import org.karina.lang.lsp.lib.VirtualFileTreeNode;
+import org.karina.lang.lsp.lib.events.ClientEvent;
+import org.karina.lang.lsp.lib.events.EventService;
+import org.karina.lang.lsp.lib.process.JobProgress;
+import org.karina.lang.lsp.lib.process.Job;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,86 +36,106 @@ import java.io.PrintStream;
 import java.lang.reflect.Modifier;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 public class OneShotCompiler {
     private final EventService service;
 
-    public static Option<Model> cache = Option.none();
+    public static final Option<Model> cache = Option.none();
 
-    private Option<Model> lastestCompiledModel = Option.none();
+    @Getter
+    @Accessors(fluent = true)
+    private CompiledModelIndex lastestCompiledModel = new CompiledModelIndex();
 
-    private Option<Process> currentProcess = Option.none();
+    private Option<Job> currentProcess = Option.none();
 
     public void run(VirtualFileTreeNode treeNode, List<VirtualFile> files, URI mainFile) {
-        if (!(getObjectPathOfURI(treeNode, mainFile) instanceof Option.Some(var mainPath))) {
+        if (!(CompiledHelper.getObjectPathOfURI(treeNode, mainFile) instanceof Option.Some(var mainPath))) {
             this.service.send(new ClientEvent.Log("Main file not found: " + mainFile, MessageType.Warning));
             return;
         }
+        run(treeNode, files, mainPath);
+    }
 
+    public void run(VirtualFileTreeNode treeNode, List<VirtualFile> files, ObjectPath mainPath) {
+        this.service.clearTerminal();
         this.service.send(new ClientEvent.Log("Running " + mainPath.mkString("::"), MessageType.Log));
         var runSettings = Option.some(new RunSettings(mainPath));
-        compile(treeNode, files, ClientConfiguration.LoggingLevel.NONE, runSettings);
-
+        startCompileTask(treeNode, files, ClientConfiguration.LoggingLevel.NONE, runSettings);
     }
 
     public void build(FileTreeNode treeNode, List<VirtualFile> files, ClientConfiguration.LoggingLevel loggingLevel) {
-        compile(treeNode, files, loggingLevel, Option.none());
+        startCompileTask(treeNode, files, loggingLevel, Option.none());
     }
 
-    private void compile(
+    private void startCompileTask(
             FileTreeNode treeNode,
             List<VirtualFile> files,
             ClientConfiguration.LoggingLevel loggingLevel,
             Option<RunSettings> runSettings
     ) {
-        for (var file : files) {
-            this.service.send(new ClientEvent.PublishDiagnostic(file.uri(), List.of()));
-        }
+        CompiledHelper.clearErrors(files, this.service);
         var treeCopy = FileTreeNode.copyTree(treeNode);
 
         if (this.currentProcess instanceof Option.Some(var prevProcess)) {
             prevProcess.cancel();
         }
 
-        this.currentProcess = Option.some(this.service.createProgress(
+        this.currentProcess = Option.some(this.service.createJob(
                 "Compilation", progress -> {
                     var start = System.currentTimeMillis();
-                    compileAsync(treeCopy, progress, loggingLevel, runSettings);
+                    compileNonBlocking(treeCopy, progress, loggingLevel, runSettings);
                     var end = System.currentTimeMillis();
                     this.service.send(
                             new ClientEvent.Log(
-                                    "Compilation took " + (end - start) + "ms", MessageType.Log));
+                                    "Compilation took " + (end - start) + "ms", MessageType.Log)
+                    );
                     return "done";
                 }
         ));
 
     }
 
-    private void compileAsync(
+    private void compileNonBlocking(
             FileTreeNode treeCopy,
-            Process.Progress progress,
+            JobProgress workProgress,
             ClientConfiguration.LoggingLevel loggingLevel,
             Option<RunSettings> runSettings
     ) throws IOException {
 
-        progress.notify("compiling files", 10);
+        workProgress.notify("compiling files", 10);
 
         var errors = new DiagnosticCollection();
         var flight = new FlightRecordCollection();
 
-        var latestModel = KarinaCompiler.runInContext(
+        var config = Context.ContextHandling.of(
+                false,
+                true,
+                true
+        );
+        config = config.enableMissingMembersSupport();
+
+        var toFill = new CompiledMutableModelIndex();
+        var latestModel = Context.run(
+                config,
                 errors,
                 null,
                 flight,
-                (c) -> run(c, treeCopy, runSettings)
+                (c) -> runCompilationSteps(c, treeCopy, runSettings, toFill)
         );
         synchronized (this) {
-            this.lastestCompiledModel = Option.fromNullable(latestModel).or(this.lastestCompiledModel);
+            this.lastestCompiledModel = new CompiledModelIndex(
+                    toFill.userModel,
+                    toFill.languageModel,
+                    toFill.importedModel,
+                    toFill.attributedModel,
+                    toFill.loweredModel
+            );
         }
 
-        Log.updateLogLevel(loggingLevel.internalLogName());
-        progress.notify("publishing errors", 80);
+//        Log.updateLogLevel(loggingLevel.internalLogName());
+        workProgress.notify("publishing errors", 80);
 
         if (latestModel == null) {
             if (errors.getTraces().isEmpty()) {
@@ -121,13 +143,11 @@ public class OneShotCompiler {
                         "Compilation failed, but no errors were reported.",
                         MessageType.Warning
                 ));
-            } else {
-//                send("Compilation failed with " + errors.getTraces().size() + " errors.");
             }
-            pushErrors(errors);
+            CompiledHelper.pushErrors(errors, this.service);
         }
 
-        progress.notify("sending flight record", 90);
+        workProgress.notify("sending flight record", 90);
 
         if (loggingLevel != ClientConfiguration.LoggingLevel.NONE) {
             try (var baos = new ByteArrayOutputStream(); var filePrintStream = new PrintStream(baos)) {
@@ -140,118 +160,19 @@ public class OneShotCompiler {
         }
 
 
-
     }
 
-    private void pushErrors(DiagnosticCollection logs) {
-        Map<VirtualFile, List<Diagnostic>> diagnostics = new HashMap<>();
 
-        for (var log : logs) {
-            var information = new CodeDiagnosticInformation();
-            log.entry().addInformation(information);
-
-            var diagnosticAndFile = CodeDiagnosticInformation.toDiagnosticAndFile(information);
-            if (diagnosticAndFile == null) {
-                send("Could not convert diagnostic: " + information.getMessageString());
-                continue;
-            }
-//            send(
-//                    diagnosticAndFile.diagnostic().getRange(),
-//                    diagnosticAndFile.diagnostic().getMessage()
-//            );
-
-            var diagnosticList =
-                    diagnostics.computeIfAbsent(diagnosticAndFile.file(), _ -> new ArrayList<>());
-            diagnosticList.add(diagnosticAndFile.diagnostic());
-        }
-
-        for (var value : diagnostics.entrySet()) {
-            var file = value.getKey();
-            var diagnosticsList = value.getValue();
-
-            if (diagnosticsList.isEmpty()) {
-                continue;
-            }
-//            send("Publishing " + diagnosticsList.size() + " diagnostics for " + file.uri());
-            this.service.send(new ClientEvent.PublishDiagnostic(file.uri(), diagnosticsList));
-        }
-    }
-
-    private void send(Object... obj) {
-        var message = String.join(", ", Arrays.stream(obj)
-                .map(Object::toString)
-                .toList());
-        this.service.send(new ClientEvent.Log(message, MessageType.Log));
-    }
-
-    private Option<ObjectPath> getObjectPathOfURI(VirtualFileTreeNode treeNode, URI uri) {
-        var nodes = VirtualFileTreeNode.flatten(treeNode);
-
-        for (var node : nodes) {
-            if (node.content().uri().equals(uri)) {
-                return Option.some(node.path());
-            }
-        }
-        return Option.none();
-    }
-
-    public Option<MethodModel> findMain(VirtualFileTreeNode treeNode, URI uri) {
-        if (!(lastestCompiledModel() instanceof Option.Some(var model))) {
-            this.service.send(new ClientEvent.Log(
-                    "no model: " + uri,
-                    MessageType.Info
-            ));
-            return Option.none();
-        }
-        if (!(getObjectPathOfURI(treeNode, uri) instanceof Option.Some(var mainPath))) {
-            this.service.send(new ClientEvent.Log(
-                    "No path" + uri,
-                    MessageType.Log
-            ));
-            return Option.none();
-        }
-
-        var classPointer = model.getClassPointer(KType.KARINA_LIB, mainPath);
-        if (classPointer == null) {
-            this.service.send(new ClientEvent.Log(
-                    "No class: " + mainPath,
-                    MessageType.Log
-            ));
-            return Option.none();
-        }
-
-        var currentClassModel = model.getClass(classPointer);
-
-        for (var method : currentClassModel.methods()) {
-            if (!Modifier.isStatic(method.modifiers()) || !Modifier.isPublic(method.modifiers())) {
-                continue;
-            }
-            if (!method.name().equals("main")) {
-                continue;
-            }
-            if (method.erasedParameters().size() != 1) {
-                continue;
-            }
-            if (!method.signature().returnType().isVoid()) {
-                continue;
-            }
-            var firstParam = method.erasedParameters().getFirst();
-            if (!Types.erasedEquals(new KType.ArrayType(KType.STRING), firstParam)) {
-                continue;
-            }
-            return Option.some(method);
-        }
-        return Option.none();
-    }
 
     ///
     /// Compiles the given files.
     /// @param files the file tree to compile
     /// @return the compiled jar
     ///
-    private Model run(Context c, FileTreeNode files, Option<RunSettings> runSettings) {
+    @Contract(mutates = "param4")
+    private Model runCompilationSteps(Context c, FileTreeNode files, Option<RunSettings> runSettings, CompiledMutableModelIndex toFill) {
 
-        // The 6 stages of the compiler:
+
         ParseProcessor parser = new ParseProcessor();
         ImportProcessor importProcessor = new ImportProcessor();
         AttributionProcessor attributionProcessor = new AttributionProcessor();
@@ -262,57 +183,84 @@ public class OneShotCompiler {
         ImportHelper.logFullModel(bytecodeClasses);
         KType.validateBuildIns(c, bytecodeClasses);
 
-
-        Log.begin("parsing");
         var userModel = parser.parseTree(c, files);
-        Log.end("parsing", "with " + userModel.getClassCount() + " classes");
-
-        Log.begin("merging");
+        toFill.userModel = Option.some(userModel);
         var languageModel = ModelBuilder.merge(c, userModel, bytecodeClasses);
-        Log.end("merging", "with " + languageModel.getClassCount() + " classes");
-
-        Log.begin("importing");
+        toFill.languageModel = Option.some(languageModel);
         var importedTree = importProcessor.importTree(c, languageModel);
-        Log.end("importing", "with " + importedTree.getClassCount() + " classes");
-
-        Log.begin("attribution");
+        toFill.importedModel = Option.some(importedTree);
         var attributedTree = attributionProcessor.attribTree(c, importedTree);
-        Log.end("attribution", "with " + attributedTree.getClassCount() + " classes");
-
-        Log.begin("lowering");
+        toFill.attributedModel = Option.some(attributedTree);
         var loweredTree = lowering.lowerTree(c, attributedTree);
-        Log.end("lowering", "with " + loweredTree.getClassCount() + " classes");
+        toFill.loweredModel = Option.some(loweredTree);
 
         if (runSettings instanceof Option.Some(var settings)) {
             GenerationProcessor backend = new GenerationProcessor();
 
-            Log.begin("generation");
             var compiled = backend.compileTree(c, loweredTree, settings.main.mkString("."));
-            Log.end("generation");
 
-            var error = Result.safeCall(() -> {
-                AutoRun.runWithPrints(compiled, false);
-               return null;
-            }).asError();
-            if (error instanceof Option.Some(var e)) {
-                this.service.send(new ClientEvent.Log(
-                        "Error while running the compiled code: " + e.getMessage(),
-                        MessageType.Error
-                ));
-            }
+            var jobName = "Executing '" + settings.main.mkString("::") + "'";
+            this.service.createJob(jobName, progress -> {
+                        progress.notify(10);
+
+                        return switch (AutoRun.runWithPrints(compiled, false, new String[]{})) {
+                            case null -> "done";
+                            case AutoRun.MainInvocationResult.MainError(var e) -> {
+                                progress.notify(100);
+                                e.printStackTrace(System.out);
+                                yield "done with error: " + e.getMessage();
+                            }
+                            case AutoRun.MainInvocationResult.OtherError(var other) -> {
+                                progress.notify(100);
+                                var message = "Error while running the compiled code: " + other;
+                                this.service.send(new ClientEvent.Log(message, MessageType.Error));
+                                this.service.send(new ClientEvent.Popup(message, MessageType.Error));
+                                yield message;
+                            }
+                        };
+            });
         }
 
         return loweredTree;
     }
 
-    public Option<Model> lastestCompiledModel() {
-        synchronized (this) {
-            return Option.fromNullable(this.lastestCompiledModel.orElse(null));
-        }
-    }
 
 
     private record RunSettings(
             ObjectPath main
     ) {}
+
+    private static class CompiledMutableModelIndex {
+        private Option<Model> userModel = Option.none();
+        private Option<Model> languageModel = Option.none();
+        private Option<Model> importedModel = Option.none();
+        private Option<Model> attributedModel = Option.none();
+        private Option<Model> loweredModel = Option.none();
+    }
+
+    public static class CompiledModelIndex {
+        private CompiledModelIndex(
+                Option<Model> userModel,
+                Option<Model> languageModel,
+                Option<Model> importedModel,
+                Option<Model> attributedModel,
+                Option<Model> loweredModel
+        ) {
+            this.userModel = userModel;
+            this.languageModel = languageModel;
+            this.importedModel = importedModel;
+            this.attributedModel = attributedModel;
+            this.loweredModel = loweredModel;
+        }
+
+        private CompiledModelIndex() {
+            this(Option.none(), Option.none(), Option.none(), Option.none(), Option.none());
+        }
+
+        public final Option<Model> userModel;
+        public final Option<Model> languageModel; // when existing, userModel also exists
+        public final Option<Model> importedModel; // when existing, userModel and languageModel also exists
+        public final Option<Model> attributedModel; // when existing, userModel, languageModel and importedModel also exist
+        public final Option<Model> loweredModel; // when existing, userModel, languageModel and importedModel also exist
+    }
 }

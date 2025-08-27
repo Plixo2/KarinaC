@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.lower;
 
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.LowerError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.LowerError;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.stages.lower.special.*;
 import org.karina.lang.compiler.utils.KExpr;
@@ -16,7 +16,11 @@ public class LowerExpr {
 
 
     public static KExpr lower(LoweringContext ctx, KExpr expr) {
-        return Objects.requireNonNull(switch (expr) {
+        if (Log.LogTypes.LOWERING_EXPRESSION.isVisible()) {
+            var logName = expr.getClass().getName();
+            Log.begin(logName);
+        }
+        var object = Objects.requireNonNull(switch (expr) {
             case KExpr.Assignment assignment -> lowerAssignment(ctx, assignment);
             case KExpr.Binary binary -> lowerBinary(ctx, binary);
             case KExpr.Block block -> lowerBlock(ctx, block);
@@ -64,6 +68,11 @@ public class LowerExpr {
             }
 
         });
+        if (Log.LogTypes.LOWERING_EXPRESSION.isVisible()) {
+            var logName = expr.getClass().getName();
+            Log.end(logName);
+        }
+        return object;
     }
 
     ///
@@ -121,7 +130,29 @@ public class LowerExpr {
     /// Signature:
     ///     `Self(Region region, @Nullable @Symbol Variable symbol)`
     private static KExpr lowerSelf(LoweringContext context, KExpr.Self self) {
-        return context.lowerSelf(self);
+        if (self.symbol() == null) {
+            Log.temp(context, self.region(), "Self reference is null");
+            throw new Log.KarinaException();
+        }
+        var newRef = context.lowerVariableReference(self.region(), self.symbol());
+        if (newRef != null) {
+            Log.recordType(
+                    Log.LogTypes.LOWERING_REPLACED_VARIABLES,
+                    "(ok) Variable ",
+                    ";self;",
+                    " replaced ",
+                    "from", self.symbol().hashCode()
+            );
+            return newRef;
+        }
+        Log.recordType(
+                Log.LogTypes.LOWERING_REPLACED_VARIABLES,
+                "Variable",
+                ";self;",
+                "not-replaced",
+                "from", self.symbol().hashCode()
+        );
+        return self;
     }
 
     ///
@@ -237,12 +268,24 @@ public class LowerExpr {
             }
             case LiteralSymbol.VariableReference variableReference -> {
                 //ok
-                var mapped = context.lowerVariableReference(variableReference);
+                var mapped = context.lowerVariableReference(variableReference.region(), variableReference.variable());
                 if (mapped != null) {
-                    Log.recordType(Log.LogTypes.LOWERING, "(ok) Variable ", variableReference.variable().name(), " replaced");
+                    Log.recordType(
+                            Log.LogTypes.LOWERING_REPLACED_VARIABLES,
+                            "(ok) Variable ",
+                            variableReference.variable().name(),
+                            " replaced",
+                            "from", variableReference.variable()
+                    );
                     return mapped;
                 }
-                Log.recordType(Log.LogTypes.LOWERING, "Variable ", variableReference.variable().name(), "not replaced");
+                Log.recordType(
+                        Log.LogTypes.LOWERING_REPLACED_VARIABLES,
+                        "Variable",
+                        variableReference.variable().name(),
+                        "not-replaced",
+                        "from", variableReference.variable()
+                );
             }
         }
         return new KExpr.Literal(region, name, symbol);
@@ -263,7 +306,7 @@ public class LowerExpr {
                             .map(arg -> lower(context, arg))
                             .toList();
 
-        assert symbol != null;
+        assert symbol != null : "Call symbol cannot be null, this should not happen " + expr;
         KExpr left;
         switch (symbol) {
             case CallSymbol.CallDynamic callDynamic -> {
@@ -301,7 +344,7 @@ public class LowerExpr {
                 left = expr.left(); //ignore
             }
             case CallSymbol.CallSuper callSuper -> {
-                left = expr.left(); //also ignore?
+                left = expr.left(); //ignore
             }
             case CallSymbol.CallVirtual callVirtual -> {
                 left = lower(context, expr.left());

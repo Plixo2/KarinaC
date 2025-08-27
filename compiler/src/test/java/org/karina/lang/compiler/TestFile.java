@@ -1,6 +1,6 @@
 package org.karina.lang.compiler;
 
-import org.karina.lang.compiler.logging.DiagnosticCollection;
+import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
 import org.karina.lang.compiler.utils.*;
 
 import java.nio.file.Path;
@@ -50,7 +50,10 @@ public class TestFile {
                 throw new AssertionError("Expected success for '" + this.identifier + "'");
             }
             if (run) {
-                AutoRun.runWithPrints(compilation, true);
+                var result = AutoRun.runWithPrints(compilation, true, new String[]{});
+                if (result != null) {
+                    throw new RuntimeException(result.cause());
+                }
             }
         } else {
             if (compilation != null) {
