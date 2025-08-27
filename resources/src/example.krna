@@ -19,7 +19,7 @@ fn printHelloWorld() {
 
 
 struct CustomObject {
-    val: mut string
+    mut val: string
 
     fn create() -> CustomObject {
         return CustomObject { val: "" }

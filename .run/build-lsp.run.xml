@@ -10,7 +10,7 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="jar" />
+          <option value="buildDependents" />
         </list>
       </option>
       <option name="vmOptions" />

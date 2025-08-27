@@ -13,5 +13,25 @@ import java::util::Arrays
 import java::util::regex::Pattern
 
 pub fn main(args: [string]) {
+    let a = InStruct { myField: 5 }
+    let b = a
+
+    //println(a.map())
+}
+
+struct Other {}
+struct ParseError {}
+
+struct InStruct {
+    myField: int
+
+    fn getRule(self) -> Option<Other>?ParseError {
+        Ok { _: None {}}
+    }
+
+    fn map(self) -> Option<List<Other>>?ParseError {
+       return self.getRule().map(fn(node) node.map(fn(a) List::of(a)))
+    }
+
 
 }

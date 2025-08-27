@@ -2,7 +2,7 @@
   <configuration default="false" name="LOCAL" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="org.karina.lang.compiler.Main" />
     <module name="karina.compiler.main" />
-    <option name="VM_PARAMETERS" value="-ea -Dkarina.source=&quot;resources/src_local/&quot; -Dkarina.logging=none -Dkarina.binary=true -Dkarina.console=true -Dkarina.run=true -Dkarina.flight=&quot;resources/flight.txt&quot;" />
+    <option name="VM_PARAMETERS" value="-ea -Dkarina.source=&quot;resources/src_local/&quot; -Dkarina.binary=true -Dkarina.console=true -Dkarina.run=true -Dkarina.flight=&quot;resources/flight.txt&quot;" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="org.karina.lang.compiler.*" />

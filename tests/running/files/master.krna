@@ -200,7 +200,7 @@ fn callAsInterface(dut: InterfaceTest<Integer>) {
 }
 
 struct InterfaceImpl {
-    value: mut int
+    mut value: int
 
     fn staticCall() -> int = 20
 
@@ -230,7 +230,7 @@ interface InterfaceTest<T> {
 }
 
 struct DefaultStruct {
-    value: mut int
+    mut value: int
 
     fn setValue(self, value: int) {
         self.value = value

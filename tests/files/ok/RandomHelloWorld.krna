@@ -14,7 +14,7 @@ fn main(args: [string]) {
 
 
 struct Test {
-    val: mut string
+    mut val: string
 
     fn create() -> Test {
         return Test { val: "" }

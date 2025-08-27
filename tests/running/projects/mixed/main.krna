@@ -396,7 +396,7 @@ fn identity2<T>() -> fn(T) -> T {
 //}
 
 struct ObjectSome {
-    \fn: mut string
+    mut \fn: string
 }
 
 fn curry_test() {
