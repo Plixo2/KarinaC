@@ -6,10 +6,12 @@ import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Position;
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
 import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
@@ -71,6 +73,7 @@ public class DefaultCompletionProvider implements CompletionProvider {
                     String name,
                     Set<MethodModel> availableMethods,
                     Set<FieldModel> availableFields,
+                    Set<ClassModel> availableClasses,
                     List<RegionOf<String>> protectedMembers,
                     List<RegionOf<String>> otherProtected
             )) {
@@ -84,22 +87,31 @@ public class DefaultCompletionProvider implements CompletionProvider {
                 if (region.start().line() != position.getLine()) {
                     continue;
                 }
-                this.eventService.send(new ClientEvent.Log("start " + region.start().column(), MessageType.Log));
-                this.eventService.send(new ClientEvent.Log("end " +position.getCharacter(), MessageType.Log));
-                this.eventService.send(new ClientEvent.Log("a " + (region.start().column() < position.getCharacter()), MessageType.Log));
-                this.eventService.send(new ClientEvent.Log("b " + (region.start().column() > position.getCharacter() + 3), MessageType.Log));
-                if (region.start().column() < position.getCharacter() - 2) {
+                if (region.end().column() < position.getCharacter() - 2) {
                     continue;
                 }
-                if (region.start().column() > position.getCharacter() + 3) {
+                if (region.end().column() > position.getCharacter() + 3) {
                     continue;
                 }
 
+                for (var classModel : availableClasses) {
+                    var item = new CompletionItem(classModel.name());
+                    item.setKind(CompletionItemKind.Class);
+                    var genericString = String.join(
+                            ", ",
+                            classModel.generics().stream().map(Generic::name).toList()
+                    );
+                    item.setDetail(classModel.name() + "<" + genericString + ">");
+                    item.setInsertText(classModel.name());
+                    item.setSortText(classModel.name());
+                    items.add(item);
+                }
                 for (var field : availableFields) {
-                    var item = new CompletionItem(field.name());
+                    var item = new CompletionItem(field.name() + ": " + field.type().toString());
                     item.setKind(CompletionItemKind.Field);
                     item.setDetail(field.name() + ": " + field.type().toString());
                     item.setInsertText(field.name());
+                    item.setSortText(field.name());
                     items.add(item);
                 }
                 for (var method : availableMethods) {
@@ -107,6 +119,7 @@ public class DefaultCompletionProvider implements CompletionProvider {
                     var item = new CompletionItem(signatureString);
                     item.setKind(CompletionItemKind.Method);
                     item.setDetail(Modifier.toString(method.modifiers()) + " fn " + signatureString);
+                    item.setSortText(method.name());
 
                     var args = String.join(", ", method.parameters());
                     item.setInsertText(method.name() + "(" + args + ")");

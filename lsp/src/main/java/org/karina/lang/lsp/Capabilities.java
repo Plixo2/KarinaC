@@ -43,6 +43,13 @@ public class Capabilities {
         var symbolOptions = new DocumentSymbolOptions();
         capabilities.setDocumentSymbolProvider(symbolOptions);
 
+        capabilities.setCodeActionProvider(true);
+
+        capabilities.setDefinitionProvider(true);
+        capabilities.setHoverProvider(true);
+        capabilities.setInlayHintProvider(true);
+
+
         var codeLensOptions = new CodeLensOptions();
         codeLensOptions.setResolveProvider(false);
         capabilities.setCodeLensProvider(codeLensOptions);

@@ -57,7 +57,9 @@ public class CodeDiagnosticInformationBuilder implements ErrorInformationBuilder
 
 
     public static @Nullable DiagnosticForFile toDiagnosticAndFile(
-            CodeDiagnosticInformationBuilder information) {
+            CodeDiagnosticInformationBuilder information,
+            DiagnosticSeverity severity
+    ) {
         if (information.region == null) {
             return null;
         }
@@ -73,7 +75,7 @@ public class CodeDiagnosticInformationBuilder implements ErrorInformationBuilder
             diagnostic.setMessage("Unknown error");
         }
         diagnostic.setSource("karina");
-        diagnostic.setSeverity(DiagnosticSeverity.Error);
+        diagnostic.setSeverity(severity);
 
         var relatedInfo = new ArrayList<DiagnosticRelatedInformation>();
         for (var related : information.related) {

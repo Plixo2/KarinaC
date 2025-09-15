@@ -243,10 +243,10 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
 
         @Override
         public Object visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
-            var ids = ctx.id();
+            var ids = ctx.genericWithBound();
             if (ids != null) {
                 for (var id : ids) {
-                    addToken(id, TYPE_PARAMETER);
+                    addToken(id.id(), TYPE_PARAMETER);
                 }
             }
 
@@ -298,9 +298,10 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
             if ((postFixContexts == null || postFixContexts.isEmpty()) || postFixContexts.getFirst() != null && postFixContexts.getFirst().CHAR_L_PAREN() == null) {
                 var object = ctx.object();
                 if (object != null && object.CHAR_L_BRACE() == null) {
-                    var ids = object.id();
+                    var ids = getPathElements(object);
                     if (ids != null && !ids.isEmpty()) {
                         var lastId = ids.getLast();
+                        //no call, has to be a variable
                         addColored(lastId, VARIABLE);
                     }
                 }
@@ -315,7 +316,7 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
                     if (i == 0 && postFixContext.CHAR_L_PAREN() != null) {
                         var object = ctx.object();
                         if (object != null) {
-                            var ids = object.id();
+                            var ids = getPathElements(object);
                             if (ids != null) {
                                 if (!ids.isEmpty()) {
                                     var last = ids.getLast();
@@ -350,6 +351,26 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
             return super.visitFactor(ctx);
         }
 
+        private @Nullable List<KarinaParser.IdContext> getPathElements(KarinaParser.ObjectContext ctx) {
+            var id = ctx.id();
+            if (id == null) {
+                return null;
+            }
+            var paths = ctx.pathPostFix();
+            if (paths == null || paths.isEmpty()) {
+                return List.of(id);
+            }
+            var result = new ArrayList<KarinaParser.IdContext>();
+            result.add(id);
+            for (var path : paths) {
+                var pathId = path.id();
+                if (pathId != null) {
+                    result.add(pathId);
+                }
+            }
+            return result;
+        }
+
         @Override
         public Object visitOptTypeName(KarinaParser.OptTypeNameContext ctx) {
             addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
@@ -359,7 +380,7 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
         @Override
         public Object visitObject(KarinaParser.ObjectContext ctx) {
 
-            var ids = ctx.id();
+            var ids = getPathElements(ctx);
             if (ids != null) {
                 if (ctx.CHAR_L_BRACE() != null) {
                     for (var id : ids) {
@@ -368,8 +389,6 @@ public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
                 } else {
                     var size = ids.size();
                     if (size >= 1) {
-                        var endOffset = 1;
-
                         for (var i = 0; i < ids.size()-1; i++) {
                             var id = ids.get(i);
                             addColored(id, NAMESPACE);

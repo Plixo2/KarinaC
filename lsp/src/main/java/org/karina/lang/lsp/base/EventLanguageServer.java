@@ -5,6 +5,7 @@ import karina.lang.ThrowableFunction;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.*;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.lsp.Capabilities;
 import org.karina.lang.lsp.lib.LanguageClientExtension;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
@@ -20,6 +21,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
 
 public class EventLanguageServer implements LanguageServer, LanguageClientAware,
         EventClientService {
@@ -107,12 +109,15 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
     public synchronized void cancelProgress(WorkDoneProgressCancelParams params) {
         var token = params.getToken().getLeft();
         if (token == null) {
+            send(new ClientEvent.Log("No token provided to cancel process", MessageType.Warning));
             return;
         }
         var process = this.processes.get(token);
         if (process != null) {
             // also removes the process from the map
             process.cancel();
+        } else {
+            send(new ClientEvent.Log("No process with token " + token + " found to cancel", MessageType.Warning));
         }
     }
 
@@ -146,13 +151,22 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
 
     @Override
     public Job createJob(String title, ThrowableFunction<JobProgress, String, Exception> process) {
+        return createJob(title, process, null);
+    }
 
+    @Override
+    public Job createJob(
+            String title, ThrowableFunction<JobProgress, String, Exception> process,
+            @Nullable BooleanSupplier onKill
+    ) {
         synchronized (this) {
 
             var token = UUID.randomUUID().toString();
             var processObj = new DefaultProcess();
             processObj.server = this;
             processObj.token = token;
+            processObj.title = title;
+            processObj.onKill = onKill;
             this.processes.put(token, processObj);
             var startParams = new WorkDoneProgressCreateParams(Either.forLeft(token));
             processObj.future = this.client.createProgress(startParams).thenRunAsync(() -> {
@@ -184,7 +198,6 @@ public class EventLanguageServer implements LanguageServer, LanguageClientAware,
             });
             return processObj;
         }
-
     }
 
     private PrintStream createPrintStream() {

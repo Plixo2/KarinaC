@@ -1,7 +1,11 @@
 package org.karina.lang.lsp.test_compiler;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import jdk.jshell.SourceCodeAnalysis;
 import karina.lang.Option;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.MessageType;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
@@ -9,6 +13,8 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
+import org.karina.lang.compiler.utils.logging.DidYouMean;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.lsp.impl.CodeDiagnosticInformationBuilder;
 import org.karina.lang.lsp.lib.VirtualFile;
 import org.karina.lang.lsp.lib.VirtualFileTreeNode;
@@ -17,10 +23,7 @@ import org.karina.lang.lsp.lib.events.EventService;
 
 import java.lang.reflect.Modifier;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class CompiledHelper {
 
@@ -30,22 +33,11 @@ public class CompiledHelper {
         }
     }
 
-    public static void pushErrors(DiagnosticCollection logs, EventService service) {
+    public static void pushErrors(DiagnosticCollection errors, DiagnosticCollection warnings, EventService service) {
         Map<VirtualFile, List<Diagnostic>> diagnostics = new HashMap<>();
 
-        for (var log : logs) {
-            var information = new CodeDiagnosticInformationBuilder();
-            log.entry().addInformation(information);
-
-            var diagnosticAndFile = CodeDiagnosticInformationBuilder.toDiagnosticAndFile(information);
-            if (diagnosticAndFile == null) {
-                service.send(new ClientEvent.Log("Could not convert diagnostic: " + information.getMessageString(), MessageType.Log));
-                continue;
-            }
-            var diagnosticList =
-                    diagnostics.computeIfAbsent(diagnosticAndFile.file(), _ -> new ArrayList<>());
-            diagnosticList.add(diagnosticAndFile.diagnostic());
-        }
+        addLogs(errors, service, diagnostics, DiagnosticSeverity.Error);
+        addLogs(warnings, service, diagnostics, DiagnosticSeverity.Information);
 
         for (var value : diagnostics.entrySet()) {
             var file = value.getKey();
@@ -58,6 +50,70 @@ public class CompiledHelper {
         }
     }
 
+    private static void addLogs(
+            DiagnosticCollection errors,
+            EventService service,
+            Map<VirtualFile, List<Diagnostic>> diagnostics,
+            DiagnosticSeverity severity
+    ) {
+        for (var log : errors) {
+            var information = new CodeDiagnosticInformationBuilder();
+            var error = log.entry();
+            error.addInformation(information);
+
+            var diagnosticAndFile = CodeDiagnosticInformationBuilder.toDiagnosticAndFile(information, severity);
+            if (diagnosticAndFile == null) {
+                service.send(new ClientEvent.Log("Could not convert diagnostic: " + information.getMessageString(), MessageType.Log));
+                continue;
+            }
+            var diagnostic = diagnosticAndFile.diagnostic();
+            if (error instanceof ImportError.UnknownImportType(_, String name, Set<String> names, Set<ObjectPath> paths)) {
+                var object = new JsonObject();
+                object.addProperty("URI", diagnosticAndFile.file().uri().toString());
+
+                var pathsToImport = new JsonArray();
+
+                for (var path : paths) {
+                    if (path.isEmpty()) {
+                        continue;
+                    }
+                    if (path.last().equals(name)) {
+                        pathsToImport.add(path.mkString("::"));
+                    }
+                }
+                if (!pathsToImport.isEmpty()) {
+                    object.add("possible_imports", pathsToImport);
+                }
+
+                if (!name.contains("::")) {
+                    var nameReplacements = new JsonArray();
+                    object.add("candidates", nameReplacements);
+                    var suggestions = DidYouMean.suggestions(names, name, 7);
+                    for (var available : suggestions) {
+                        nameReplacements.add(available);
+                    }
+                } else {
+                    var nameReplacements = new JsonArray();
+                    object.add("candidates", nameReplacements);
+
+                    var simpleNames = new HashSet<String>();
+                    for (var path : paths) {
+                        simpleNames.add(path.mkString("::"));
+                    }
+                    var suggestions = DidYouMean.suggestions(simpleNames, name, 7);
+                    for (var suggestion : suggestions) {
+                        nameReplacements.add(suggestion);
+                    }
+                }
+
+                diagnostic.setData(object);
+            }
+
+            var diagnosticList =
+                    diagnostics.computeIfAbsent(diagnosticAndFile.file(), _ -> new ArrayList<>());
+            diagnosticList.add(diagnostic);
+        }
+    }
 
 
     public static Option<ObjectPath> getObjectPathOfURI(VirtualFileTreeNode treeNode, URI uri) {

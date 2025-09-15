@@ -1,17 +1,18 @@
 package org.karina.lang.lsp.test_compiler;
 
 import karina.lang.Option;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
-import org.eclipse.lsp4j.Diagnostic;
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.lsp4j.MessageType;
 import org.jetbrains.annotations.Contract;
+import org.karina.lang.compiler.Config;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
+import org.karina.lang.compiler.stages.generate.JarCompilation;
+import org.karina.lang.compiler.stages.writing.WritingProcessor;
 import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
 import org.karina.lang.compiler.utils.logging.FlightRecordCollection;
-import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.stages.attrib.AttributionProcessor;
@@ -21,7 +22,8 @@ import org.karina.lang.compiler.stages.imports.ImportProcessor;
 import org.karina.lang.compiler.stages.lower.LoweringProcessor;
 import org.karina.lang.compiler.stages.parser.ParseProcessor;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.lsp.impl.CodeDiagnosticInformationBuilder;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.Logging;
 import org.karina.lang.lsp.impl.ClientConfiguration;
 import org.karina.lang.lsp.lib.VirtualFile;
 import org.karina.lang.lsp.lib.VirtualFileTreeNode;
@@ -31,18 +33,23 @@ import org.karina.lang.lsp.lib.process.JobProgress;
 import org.karina.lang.lsp.lib.process.Job;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Modifier;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @RequiredArgsConstructor
 public class OneShotCompiler {
     private final EventService service;
 
-    public static final Option<Model> cache = Option.none();
+    public static Option<Model> cache = Option.none();
 
     @Getter
     @Accessors(fluent = true)
@@ -81,17 +88,20 @@ public class OneShotCompiler {
         if (this.currentProcess instanceof Option.Some(var prevProcess)) {
             prevProcess.cancel();
         }
-
+        var killed = new AtomicBoolean(false);
         this.currentProcess = Option.some(this.service.createJob(
                 "Compilation", progress -> {
                     var start = System.currentTimeMillis();
-                    compileNonBlocking(treeCopy, progress, loggingLevel, runSettings);
+                    compileNonBlocking(treeCopy, progress, loggingLevel, runSettings, killed);
                     var end = System.currentTimeMillis();
                     this.service.send(
                             new ClientEvent.Log(
                                     "Compilation took " + (end - start) + "ms", MessageType.Log)
                     );
                     return "done";
+                }, () -> {
+                    killed.set(true);
+                    return true;
                 }
         ));
 
@@ -101,16 +111,18 @@ public class OneShotCompiler {
             FileTreeNode treeCopy,
             JobProgress workProgress,
             ClientConfiguration.LoggingLevel loggingLevel,
-            Option<RunSettings> runSettings
+            Option<RunSettings> runSettings,
+            AtomicBoolean killed
     ) throws IOException {
 
         workProgress.notify("compiling files", 10);
 
         var errors = new DiagnosticCollection();
+        var warnings = new DiagnosticCollection();
         var flight = new FlightRecordCollection();
 
         var config = Context.ContextHandling.of(
-                false,
+                true,
                 true,
                 true
         );
@@ -120,10 +132,14 @@ public class OneShotCompiler {
         var latestModel = Context.run(
                 config,
                 errors,
-                null,
+                warnings,
                 flight,
                 (c) -> runCompilationSteps(c, treeCopy, runSettings, toFill)
         );
+        if (killed.get()) {
+            this.service.send(new ClientEvent.Log("Compilation cancelled.", MessageType.Warning));
+            return;
+        }
         synchronized (this) {
             this.lastestCompiledModel = new CompiledModelIndex(
                     toFill.userModel,
@@ -133,8 +149,6 @@ public class OneShotCompiler {
                     toFill.loweredModel
             );
         }
-
-//        Log.updateLogLevel(loggingLevel.internalLogName());
         workProgress.notify("publishing errors", 80);
 
         if (latestModel == null) {
@@ -144,8 +158,12 @@ public class OneShotCompiler {
                         MessageType.Warning
                 ));
             }
-            CompiledHelper.pushErrors(errors, this.service);
         }
+        if (killed.get()) {
+            this.service.send(new ClientEvent.Log("Compilation cancelled.", MessageType.Warning));
+            return;
+        }
+        CompiledHelper.pushErrors(errors, warnings, this.service);
 
         workProgress.notify("sending flight record", 90);
 
@@ -179,46 +197,85 @@ public class OneShotCompiler {
         LoweringProcessor lowering = new LoweringProcessor();
 
         var bytecodeClasses = cache.orElseGet(() ->  ModelLoader.getJarModel(c, true));
+        cache = Option.some(bytecodeClasses);
 
         ImportHelper.logFullModel(bytecodeClasses);
         KType.validateBuildIns(c, bytecodeClasses);
 
-        var userModel = parser.parseTree(c, files);
+        Model userModel;
+        try (var _ = c.section(Logging.Parsing.class,"parsing")) {
+            userModel = parser.parseTree(c, files);
+            if (c.log(Logging.Parsing.class)) {
+                c.tag("number of files", files.leafCount());
+                c.tag("number of classes", userModel.getUserClasses().size());
+            }
+        }
         toFill.userModel = Option.some(userModel);
-        var languageModel = ModelBuilder.merge(c, userModel, bytecodeClasses);
+
+        Model languageModel;
+        try (var _ = c.section(Logging.Merging.class,"merging")) {
+            languageModel = ModelBuilder.merge(c, userModel, bytecodeClasses);
+        }
         toFill.languageModel = Option.some(languageModel);
-        var importedTree = importProcessor.importTree(c, languageModel);
+
+        Model importedTree;
+        try (var _ = c.section(Logging.Importing.class,"importing")) {
+            importedTree = importProcessor.importTree(c, languageModel);
+        }
         toFill.importedModel = Option.some(importedTree);
-        var attributedTree = attributionProcessor.attribTree(c, importedTree);
+
+        Model attributedTree;
+        try (var _ = c.section(Logging.Attribution.class,"attributing")) {
+            attributedTree = attributionProcessor.attribTree(c, importedTree);
+        }
         toFill.attributedModel = Option.some(attributedTree);
-        var loweredTree = lowering.lowerTree(c, attributedTree);
+
+        Model loweredTree;
+        try (var _ = c.section(Logging.Lowering.class,"lowering")) {
+            loweredTree = lowering.lowerTree(c, attributedTree);
+            var added = loweredTree.getUserClasses().size() - attributedTree.getUserClasses().size();
+            if (c.log(Logging.Lowering.class)) {
+                c.tag("number of generated classes", added);
+                c.tag("total number of classes", loweredTree.getUserClasses().size());
+                c.tag("number of classes in scope", loweredTree.getBinaryClasses().size() + loweredTree.getUserClasses().size());
+            }
+        }
         toFill.loweredModel = Option.some(loweredTree);
 
         if (runSettings instanceof Option.Some(var settings)) {
             GenerationProcessor backend = new GenerationProcessor();
+            WritingProcessor writing = new WritingProcessor();
 
-            var compiled = backend.compileTree(c, loweredTree, settings.main.mkString("."));
+            JarCompilation compiled;
+            try (var _ = c.section(Logging.Generation.class,"generation")) {
+                compiled = backend.compileTree(c, loweredTree, settings.main.mkString("."));
+            }
 
-            var jobName = "Executing '" + settings.main.mkString("::") + "'";
-            this.service.createJob(jobName, progress -> {
-                        progress.notify(10);
+            try (var _ = c.section(Logging.Writing.class,"writing")) {
+                var out = Path.of("build/");
+                var config = new Config.OutputConfig() {
 
-                        return switch (AutoRun.runWithPrints(compiled, false, new String[]{})) {
-                            case null -> "done";
-                            case AutoRun.MainInvocationResult.MainError(var e) -> {
-                                progress.notify(100);
-                                e.printStackTrace(System.out);
-                                yield "done with error: " + e.getMessage();
-                            }
-                            case AutoRun.MainInvocationResult.OtherError(var other) -> {
-                                progress.notify(100);
-                                var message = "Error while running the compiled code: " + other;
-                                this.service.send(new ClientEvent.Log(message, MessageType.Error));
-                                this.service.send(new ClientEvent.Popup(message, MessageType.Error));
-                                yield message;
-                            }
-                        };
-            });
+                    @Override
+                    public Path outputFile() {
+                        return out.resolve("out/build.jar");
+                    }
+
+                    @Override
+                    public boolean emitClassFiles() {
+                        return true;
+                    }
+                };
+
+                writing.writeCompilation(c, compiled, config);
+                try {
+                    putKarinaLib(out);
+                    putScript(out, WINDOWS_COMMAND, "run.bat");
+                    putScript(out, LINUX_COMMAND, "run");
+                } catch (IOException e) {
+                    Log.internal(c, e);
+                    throw new Log.KarinaException();
+                }
+            }
         }
 
         return loweredTree;
@@ -263,4 +320,51 @@ public class OneShotCompiler {
         public final Option<Model> attributedModel; // when existing, userModel, languageModel and importedModel also exist
         public final Option<Model> loweredModel; // when existing, userModel, languageModel and importedModel also exist
     }
+
+
+
+
+    public static final String WINDOWS_COMMAND =
+            """
+            @echo off
+            pushd "%~dp0"
+            java -cp "out/build.jar;libs/karina.base.jar" main
+            popd
+            """;
+
+    public static final String LINUX_COMMAND =
+            """
+            #!/bin/bash
+            
+            pushd "$(dirname "$0")" > /dev/null
+            java -cp "out/build.jar:libs/karina.base.jar" main
+            popd > /dev/null
+            """;
+
+    public static void putScript(Path buildDir, String content, String file) throws IOException {
+        var script = buildDir.resolve(file);
+
+        Files.write(script, content.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+    }
+
+    public static void putKarinaLib(Path buildDir) throws IOException {
+        var jarDest = buildDir.resolve("libs/karina.base.jar");
+
+        Path destinationDir = jarDest.getParent();
+        if (!Files.exists(destinationDir)) {
+            Files.createDirectories(destinationDir);
+        }
+
+        try (var resourceStream = OneShotCompiler.class.getResourceAsStream("/karina.base.jar")) {
+            if (resourceStream == null) {
+                System.out.println("Could not find karina.base.jar");
+                return;
+            }
+
+            try (var outputStream = new FileOutputStream(jarDest.toFile())){
+                outputStream.write(resourceStream.readAllBytes());
+            }
+        }
+    }
+
 }

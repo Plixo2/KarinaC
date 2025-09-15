@@ -497,11 +497,11 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         if (ctx == null) {
             return "";
         }
-        var ids = ctx.id();
-        if (ids == null || ids.isEmpty()) {
+        var bounds = ctx.genericWithBound();
+        if (bounds == null || bounds.isEmpty()) {
             return "";
         }
-        var names = ids.stream().map(DefaultDocumentSymbolProvider::escapeID).filter(Objects::nonNull).toList();
+        var names = bounds.stream().map(ref -> escapeID(ref.id())).filter(Objects::nonNull).toList();
         return "<" + String.join(", ", names) + ">";
     }
 

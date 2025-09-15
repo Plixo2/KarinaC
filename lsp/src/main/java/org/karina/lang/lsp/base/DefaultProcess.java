@@ -3,18 +3,20 @@ package org.karina.lang.lsp.base;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.eclipse.lsp4j.ProgressParams;
-import org.eclipse.lsp4j.WorkDoneProgressEnd;
-import org.eclipse.lsp4j.WorkDoneProgressReport;
+import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.lsp.lib.events.ClientEvent;
 import org.karina.lang.lsp.lib.process.JobProgress;
 import org.karina.lang.lsp.lib.process.Job;
 
 import java.util.concurrent.Future;
+import java.util.function.BooleanSupplier;
 
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public final class DefaultProcess implements Job {
+    public @Nullable BooleanSupplier onKill;
+    public String title;
     String token;
     EventLanguageServer server;
     Future<Void> future;
@@ -23,14 +25,36 @@ public final class DefaultProcess implements Job {
 
     @Override
     public void cancel() {
-        this.future.cancel(true);
-        if (this.server.processes.containsKey(this.token)) {
-            this.server.processes.remove(this.token);
+//        this.server.send(new ClientEvent.Log("terminating process '" + this.title + "'", MessageType.Warning));
+        if (this.onKill != null) {
+            var killed = this.onKill.getAsBoolean();
+            if (killed) {
+//                this.server.send(new ClientEvent.Popup("terminated process '" + this.title + "'", MessageType.Warning));
+                this.future.cancel(true);
+//                this.server.send(new ClientEvent.Log("terminated process really '" + this.title + "'", MessageType.Warning));
+                if (this.server.processes.containsKey(this.token)) {
+                    this.server.processes.remove(this.token);
+                    var end = new WorkDoneProgressEnd();
+                    end.setMessage("Cancelled");
+                    var endParams = new ProgressParams(Either.forLeft(this.token), Either.forLeft(end));
+                    this.server.client.notifyProgress(endParams);
+                }
+            } else {
+                this.server.send(new ClientEvent.Popup("Could not terminate process '" + this.title + "'", MessageType.Error));
+                this.future.cancel(true);
+            }
+        } else {
+            this.future.cancel(true);
+//            this.server.send(new ClientEvent.Popup("terminated process '" + this.title + "'", MessageType.Warning));
+            if (this.server.processes.containsKey(this.token)) {
+                this.server.processes.remove(this.token);
 
-            var end = new WorkDoneProgressEnd();
-            end.setMessage("Cancelled");
-            var endParams = new ProgressParams(Either.forLeft(this.token), Either.forLeft(end));
-            this.server.client.notifyProgress(endParams);
+                var end = new WorkDoneProgressEnd();
+                end.setMessage("Cancelled");
+                var endParams = new ProgressParams(Either.forLeft(this.token), Either.forLeft(end));
+                this.server.client.notifyProgress(endParams);
+
+            }
         }
 
     }

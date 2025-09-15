@@ -1,5 +1,6 @@
 package org.karina.lang.lsp;
 
+import com.google.gson.JsonObject;
 import karina.lang.Option;
 import karina.lang.Result;
 import karina.lang.ThrowableFunction;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 
 @RequiredArgsConstructor
 public final class KarinaLSP implements EventService {
@@ -37,6 +39,10 @@ public final class KarinaLSP implements EventService {
     private final OneShotCompiler        oneShotCompiler        = new OneShotCompiler(this);
     private final DocumentSymbolProvider documentSymbolProvider = new DefaultDocumentSymbolProvider();
     private final CompletionProvider     completionProvider     = new DefaultCompletionProvider(this);
+    private final HoverProvider          hoverProvider          = new DefaultHoverProvider();
+    private final DefinitionProvider     definitionProvider     = new DefaultDefinitionProvider();
+    private final InlayHintProvider      inlayHintProvider      = new DefaultInlayHintProvider();
+
 
     private Option<BuildConfig> buildConfig = Option.none();
 
@@ -237,15 +243,23 @@ public final class KarinaLSP implements EventService {
                 this.clientConfiguration = updateClientConfig.configuration();
             }
             case UpdateEvent.ExecuteCommand(String command, List<Object> args) -> {
-                if (command.equals("karina.run.file")) {
-                    if (args.isEmpty()) {
-                        warningMessage("No URI provided for command: " + command);
+                if (command.equals("karina.run.main")) {
+                    if (!args.isEmpty()) {
+                        warningMessage("Too many arguments for command: " + command);
                         return;
                     }
+                    var path = new ObjectPath("main");
+                    var files = this.vfs.files();
+                    this.oneShotCompiler.run(this.treeNode, files, path);
+                } else if (command.equals("karina.run.file")) {
                     if (args.size() > 1) {
                         warningMessage("Too many arguments for command: " + command);
+                        return;
                     }
-
+                    if (args.isEmpty()) {
+                        warningMessage("Missing argument for command: " + command);
+                        return;
+                    }
                     var uriStr = Objects.toString(args.getFirst());
                     if (uriStr.startsWith("\"") && uriStr.endsWith("\"")) {
                         uriStr = uriStr.substring(1, uriStr.length() - 1);
@@ -253,22 +267,6 @@ public final class KarinaLSP implements EventService {
                     var uri = VirtualFileSystem.toUri(uriStr);
                     var files = this.vfs.files();
                     this.oneShotCompiler.run(this.treeNode, files, uri);
-                } else if (command.equals("karina.run")) {
-                    if (args.isEmpty()) {
-                        warningMessage("No main provided for command: " + command);
-                        return;
-                    }
-                    if (args.size() > 1) {
-                        warningMessage("Too many arguments for command: " + command);
-                    }
-
-                    var uriStr = Objects.toString(args.getFirst());
-                    if (uriStr.startsWith("\"") && uriStr.endsWith("\"")) {
-                        uriStr = uriStr.substring(1, uriStr.length() - 1);
-                    }
-                    var path = ObjectPath.fromString(uriStr, "::");
-                    var files = this.vfs.files();
-                    this.oneShotCompiler.run(this.treeNode, files, path);
                 } else {
                     warningMessage("Unknown command: " + command);
                 }
@@ -329,11 +327,108 @@ public final class KarinaLSP implements EventService {
             }
             case RequestEvent.RequestCompletions(URI uri, Position pos) -> {
                 return CompletableFuture.supplyAsync(() -> {
-                    var items =this.completionProvider.getItems(
+                    var items = this.completionProvider.getItems(
                             this.oneShotCompiler.lastestCompiledModel(),
-                            uri, pos
+                            uri,
+                            pos
                     );
                     return (T) items;
+                });
+            }
+            case RequestEvent.RequestDefinition(URI uri, Position position) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var location = this.definitionProvider.getDefinition(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri,
+                            position
+                    );
+                    return (T) location;
+                });
+            }
+            case RequestEvent.RequestHover(URI uri, Position position) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var hover = this.hoverProvider.getHover(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri,
+                            position
+                    );
+                    return (T) hover;
+                });
+            }
+            case RequestEvent.RequestInlayHints(URI uri, Range range) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var hints = this.inlayHintProvider.getHints(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri,
+                            range
+                    );
+                    return (T) hints;
+                });
+            }
+            case RequestEvent.RequestCodeActions(_, Range range, CodeActionContext context) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var edits = new ArrayList<CodeAction>();
+
+                    for (var diagnostic : context.getDiagnostics()) {
+                        if (diagnostic.getData() instanceof JsonObject jsonObject) {
+                            var fileURI = jsonObject.get("URI");
+                            if (fileURI == null || !fileURI.isJsonPrimitive()) {
+                                continue;
+                            }
+                            var uri = fileURI.getAsString();
+
+                            var pathToImport = jsonObject.get("possible_imports");
+                            if (pathToImport != null && pathToImport.isJsonArray()) {
+
+                                for (var jsonElement : pathToImport.getAsJsonArray()) {
+                                    if (!jsonElement.isJsonPrimitive()) {
+                                        continue;
+                                    }
+                                    var path = jsonElement.getAsString();
+
+                                    var textEdit = new TextEdit();
+                                    textEdit.setNewText("import " + path + "\n");
+                                    textEdit.setRange(
+                                            new Range(new Position(0, 0), new Position(0, 0)));
+                                    var workspaceEdit = new WorkspaceEdit();
+                                    workspaceEdit.setChanges(java.util.Map.of(uri, List.of(textEdit)));
+
+                                    CodeAction action = new CodeAction("Import '" + path + "'");
+                                    action.setKind(CodeActionKind.QuickFix);
+                                    action.setEdit(workspaceEdit);
+                                    edits.add(action);
+                                }
+                            }
+                            var candidates = jsonObject.get("candidates");
+                            if (candidates != null && candidates.isJsonArray()) {
+                                if (diagnostic.getRange() == null) {
+                                    continue;
+                                }
+
+                                var jsonArray = candidates.getAsJsonArray();
+                                for (var jsonElement : jsonArray) {
+                                    if (jsonElement.isJsonPrimitive()) {
+                                        var name = jsonElement.getAsString();
+
+                                        var textEdit = new TextEdit();
+                                        textEdit.setNewText(name);
+                                        textEdit.setRange(diagnostic.getRange());
+                                        var workspaceEdit = new WorkspaceEdit();
+                                        workspaceEdit.setChanges(
+                                                java.util.Map.of(uri, List.of(textEdit)));
+
+                                        CodeAction action = new CodeAction("Use '" + name + "'");
+                                        action.setKind(CodeActionKind.QuickFix);
+                                        action.setEdit(workspaceEdit);
+                                        edits.add(action);
+
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                    return (T) edits;
                 });
             }
         }
@@ -357,6 +452,14 @@ public final class KarinaLSP implements EventService {
     @Override
     public Job createJob(String title, ThrowableFunction<JobProgress, String, Exception> process) {
         return this.theClient.createJob(title, process);
+    }
+
+    @Override
+    public Job createJob(
+            String title, ThrowableFunction<JobProgress, String, Exception> process,
+            BooleanSupplier onKill
+    ) {
+        return this.theClient.createJob(title, process, onKill);
     }
 
 }

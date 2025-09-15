@@ -1,5 +1,6 @@
 package org.karina.lang.lsp;
 
+import karina.lang.Console;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.karina.lang.lsp.base.EventLanguageServer;
 import org.karina.lang.lsp.lib.LanguageClientExtension;
