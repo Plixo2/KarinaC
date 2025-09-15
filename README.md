@@ -23,17 +23,24 @@
 ![macOS](https://img.shields.io/badge/macOS-000000?style=flat&logo=apple&logoColor=white)
 <br>
 
-**Karina is a statically typed, general-purpose, high-level programming language that emphasizes simplicity, 
-interoperability, and concise notation. Karina is fully compatible with Java, allowing you to use existing libraries and 
+**Karina is a statically typed, general-purpose, high-level programming language that emphasizes simplicity,
+interoperability, and concise notation. Karina is fully compatible with Java, allowing you to use existing libraries and
 frameworks seamlessly while enjoying a modern programming experience.**
 
 <br>
 
-> 📢 **Heads up!** If you run into any issues, bugs, unexpected behavior, or have any questions while using this project, you’re encouraged to [open an issue](https://github.com/Plixo2/KarinaC/issues/new).
->
-> Your feedback and inquiries are greatly appreciated!
+
+> [!TIP]
+> Install the [Karina VSCode Extension]( https://marketplace.visualstudio.com/items?itemName=karina.karina-lsp)
+
+
+> If you run into any issues, bugs, unexpected behavior, or have any questions while using this project, you’re encouraged to [open an issue](https://github.com/Plixo2/KarinaC/issues/new).
 
 <br>
+
+<details>
+
+<summary>Outline</summary>
 
 - [**Documentation and Features**](#Documentation)
 - [**Installer and CLI**](#Installer-and-CLI)
@@ -41,6 +48,9 @@ frameworks seamlessly while enjoying a modern programming experience.**
 - [**Compiler architecture**](#Compiler-architecture)
 - [**Licenses**](#Licenses)
 
+</details>
+
+<br>
 
 ## Documentation
 
@@ -216,7 +226,7 @@ This will rebuild the cache for the compiler, so it can use the new standard lib
 
 
 - Read the source code into memory
-- Load the precompiled JAR files (java.core and the karina.base) into a ClassModel 
+- Load the precompiled JAR files (java.core and the karina.base) into a ClassModel
 - [Parser Stage](compiler/src/main/java/org/karina/lang/compiler/stages/parser/ParseProcessor.java)
   - Parse the loaded files into tokens, then into an AST via Antlr
   - Convert the Antlr AST into a ClassModel and IR
