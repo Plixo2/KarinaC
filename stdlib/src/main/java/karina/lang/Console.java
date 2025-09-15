@@ -43,6 +43,9 @@ public final class Console {
     }
 
     public static void println(Object object) {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new RuntimeException("Thread was interrupted");
+        }
         System.out.println(toString(object));
     }
 
@@ -76,43 +79,53 @@ public final class Console {
     }
 
     public static void print(Object object) {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new RuntimeException("Thread was interrupted");
+        }
         System.out.print(toString(object));
     }
-
 
 
     public static String toString(String toStr) {
         return Objects.requireNonNullElse(toStr, "null");
     }
 
+    @Extension
     public static String toString(int number) {
         return toString(Integer.valueOf(number));
     }
 
-    public static String toString(byte b) {
-        return toString(Integer.valueOf(b));
+    @Extension
+    public static String toString(byte number) {
+        return toString(Integer.valueOf(number));
     }
 
-    public static String toString(short s) {
-        return toString(Integer.valueOf(s));
+    @Extension
+    public static String toString(short number) {
+        return toString(Integer.valueOf(number));
     }
 
+    @Extension
     public static String toString(long number) {
         return toString(Long.valueOf(number));
     }
 
+    @Extension
     public static String toString(boolean bool) {
         return toString(Boolean.valueOf(bool));
     }
 
+    @Extension
     public static String toString(char character) {
         return toString(Character.valueOf(character));
     }
 
+    @Extension
     public static String toString(double number) {
         return toString(Double.valueOf(number));
     }
 
+    @Extension
     public static String toString(float number) {
         return toString(Float.valueOf(number));
     }
@@ -132,23 +145,6 @@ public final class Console {
             default -> object.toString();
         };
     }
-
-    public static void assertTrue(boolean condition, String message) {
-        if (!condition) {
-            throw new AssertionError(message);
-        }
-    }
-
-    public static void assertTrue(boolean condition, Option<String> message) {
-        assertTrue(condition, message.orElse("Assertion failed"));
-    }
-
-    public static void assertEquals(Object expected, Object actual) {
-        if (!Objects.equals(expected, actual)) {
-            throw new AssertionError(" Expected: " + toString(expected) + ", but was: " + toString(actual));
-        }
-    }
-
 
     //from Arrays.deepToString
     private static String toDeepString(Object[] objects) {
@@ -218,6 +214,114 @@ public final class Console {
         dejaVu.remove(a);
     }
 
+    public static void assertTrue(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
+        }
+    }
+
+    public static void assertTrue(boolean condition, Option<String> message) {
+        assertTrue(condition, message.orElse("Assertion failed"));
+    }
+
+    public static void assertEquals(Object expected, Object actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError(" Expected: " + toString(expected) + ", but was: " + toString(actual));
+        }
+    }
+
+    @Extension
+    public static int debug(int number) {
+        debugPrint(number);
+        return number;
+    }
+
+    @Extension
+    public static byte debug(byte number) {
+        debugPrint(number);
+        return number;
+    }
+
+    @Extension
+    public static short debug(short number) {
+        debugPrint(number);
+        return number;
+    }
+
+    @Extension
+    public static long debug(long number) {
+        debugPrint(number);
+        return number;
+    }
+
+    @Extension
+    public static boolean debug(boolean bool) {
+        debugPrint(bool);
+        return bool;
+    }
+
+    @Extension
+    public static char debug(char character) {
+        debugPrint(character);
+        return character;
+    }
+
+    @Extension
+    public static double debug(double number) {
+        debugPrint(number);
+        return number;
+    }
+
+    @Extension
+    public static float debug(float number) {
+        debugPrint(number);
+        return number;
+    }
+
+    @Extension
+    public static <T> T debug(T obj) {
+        debugPrint(obj);
+        return obj;
+    }
+
+    @Extension
+    public static void debugPrint(Object obj) {
+        int OFFSET = 3;
+        var traces = Thread.currentThread().getStackTrace();
+        if (traces.length < OFFSET) {
+            println(obj);
+        }
+        var trace = traces[OFFSET];
+        System.out.println("'" + toString(obj) + "' at " + getTrace(trace));
+    }
 
 
+
+    private static String getTrace(StackTraceElement stackTrace) {
+        var sb = new StringBuilder();
+        var path = stackTrace.getClassName().split("\\.");
+        String errorClass;
+        if (path.length == 0) {
+            // should not happen
+            errorClass = "";
+        } else {
+            errorClass = path[path.length - 1];
+        }
+
+        sb.append(errorClass).append('.').append(stackTrace.getMethodName()).append('(');
+
+        if (stackTrace.isNativeMethod()) {
+            sb.append("Native Method");
+        } else if (stackTrace.getFileName() == null) {
+            sb.append("Unknown Source");
+        } else {
+            sb.append(stackTrace.getFileName());
+            if (stackTrace.getLineNumber() >= 0) {
+                sb.append(':').append(stackTrace.getLineNumber());
+            }
+        }
+        sb.append(')');
+
+        return sb.toString();
+    }
 }

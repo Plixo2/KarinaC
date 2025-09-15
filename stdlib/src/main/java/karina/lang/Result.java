@@ -140,6 +140,9 @@ public sealed interface Result<V, E> permits Result.Ok, Result.Err {
         try {
             return ok(supplier.get());
         } catch (Exception e) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new RuntimeException(e);
+            }
             // Let a ClassCastException occur if the exception is not of the expected type
             return err(cls.cast(e));
         }
@@ -149,6 +152,9 @@ public sealed interface Result<V, E> permits Result.Ok, Result.Err {
         try {
             return ok(supplier.get());
         } catch (Exception e) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new RuntimeException(e);
+            }
             return err(e);
         }
     }
@@ -163,6 +169,9 @@ public sealed interface Result<V, E> permits Result.Ok, Result.Err {
         try (var res = resource.get()){
             return ok(supplier.apply(res));
         } catch (Exception e) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new RuntimeException(e);
+            }
             // Let a ClassCastException occur if the exception is not of the expected type
             return err(cls.cast(e));
         }
@@ -179,12 +188,14 @@ public sealed interface Result<V, E> permits Result.Ok, Result.Err {
         };
     }
 
-    static <T, E extends Exception> T unwrap(Result<T, E> result) throws UnwrapException {
+    */
+
+    static <T, E extends Exception> T orThrow(Result<T, E> result) throws UnwrapException {
         return switch (result) {
             case Ok<T, E>(var v) -> v;
             case Result.Err<T, E>(var e) ->
                 throw new UnwrapException("Could not unwrap Result", e);
         };
     }
-    */
+
 }

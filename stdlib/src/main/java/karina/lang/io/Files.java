@@ -1,9 +1,10 @@
 package karina.lang.io;
 
-import com.sun.tools.javac.Main;
 import karina.lang.Option;
 import karina.lang.Result;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -19,7 +20,6 @@ public class Files {
             return Result.err(e);
         }
     }
-
 
     public static Result<List<String>, IOException> readAllLines(Path path) {
         try {
@@ -65,6 +65,15 @@ public class Files {
         }
     }
 
+    public static Result<FileInputStream, FileNotFoundException> createStream(Path path) {
+        try {
+            return Result.ok(new FileInputStream(path.toFile()));
+        } catch (UnsupportedOperationException e) {
+            return Result.err(new FileNotFoundException(e.getMessage()));
+        } catch (FileNotFoundException e) {
+            return Result.err(e);
+        }
+    }
 
     public static Result<Path, InvalidPathException> path(String path) {
         try {
