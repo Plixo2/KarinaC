@@ -1,22 +1,19 @@
 package org.karina.lang.compiler.jvm_loading.binary.in;
 
 import com.google.common.collect.ImmutableList;
-import org.checkerframework.checker.units.qual.C;
-import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.jvm_loading.JavaResource;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
+import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.impl.jvm.JFieldModel;
 import org.karina.lang.compiler.model_api.impl.jvm.JMethodModel;
-import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.jvm_loading.JavaResource;
-import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.objectweb.asm.tree.ClassNode;
+import org.karina.lang.compiler.utils.Context;
+import org.karina.lang.compiler.utils.DefaultTextSource;
+import org.karina.lang.compiler.utils.KType;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 
 public class ClassReader {
     private final ClassInStream stream;
@@ -43,7 +40,7 @@ public class ClassReader {
         var name = this.stream.readString();
         var path = this.stream.readObjectPath();
 
-        var source = new TextSource(new JavaResource(this.stream.readString()), "");
+        var source = new DefaultTextSource(new JavaResource(this.stream.readString()), "");
         var region = source.emptyRegion();
         var currentClass = ClassPointer.of(region, path);
 
@@ -134,9 +131,7 @@ public class ClassReader {
                 source,
                 region
         );
-        synchronized (builder) {
-            builder.addClass(c, model);
-        }
+        builder.addClass(c, model);
         if (outerClassPtr != null) {
             ttyl.add(m -> {
                 var classModel = m.getClass(outerClassPtr);

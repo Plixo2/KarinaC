@@ -1,11 +1,11 @@
 package org.karina.lang.compiler.stages.parser.visitor;
 
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.Unique;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.KAnnotation;
 import org.karina.lang.compiler.utils.annotations.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;

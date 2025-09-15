@@ -2,7 +2,7 @@ package karina.lang;
 
 
 /**
- * String interpolation utility class.
+ * String utility class for compiling interpolated strings.
  * Should be replaced with a more sophisticated implementation in the future.
  */
 public class StringInterpolation {
@@ -54,6 +54,11 @@ public class StringInterpolation {
 
     public StringInterpolation appendExpression(short s) {
         this.sb.append(Console.toString(s));
+        return this;
+    }
+
+    public StringInterpolation appendExpression(boolean b) {
+        this.sb.append(Console.toString(b));
         return this;
     }
 

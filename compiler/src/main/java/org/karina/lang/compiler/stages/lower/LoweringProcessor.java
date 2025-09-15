@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.lower;
 
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
 

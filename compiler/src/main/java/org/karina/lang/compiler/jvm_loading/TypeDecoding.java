@@ -40,7 +40,7 @@ public class TypeDecoding {
             }
             case OBJECT -> {
                 var pointer = internalNameToPointer(region, desc.getInternalName());
-                yield new KType.ClassType(pointer, List.of());
+                yield pointer.implement(List.of());
             }
             default -> throw new IllegalStateException("Unexpected value: " + desc.getSort());
         };

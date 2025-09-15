@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * Directory tree structure
- * @param path full path to the directory, relative to the root
- * @param name simple name of the directory
+ * @param path full path to the directory, relative to the root (not used in the compiler)
+ * @param name simple name of the directory (not used in the compiler)
  * @param children child directories
  * @param leafs files in the directory
  */
@@ -13,8 +13,8 @@ public record DefaultFileTree(
         ObjectPath path,
         String name,
         List<DefaultFileTree> children,
-        List<FileNode<TextSource>> leafs
-) implements FileTreeNode<TextSource> {
+        List<FileNode> leafs
+) implements FileTreeNode {
 
 
 
@@ -42,14 +42,6 @@ public record DefaultFileTree(
 
     }
 
-    @Override
-    public int leafCount() {
-        var count = this.leafs.size();
-        for (var child : this.children()) {
-            count += child.leafCount();
-        }
-        return count;
-    }
 
     /**
      * File node including the string
@@ -57,5 +49,5 @@ public record DefaultFileTree(
      * @param name simple name of the file
      * @param content file content
      */
-    public record DefaultFileNode(ObjectPath path, String name, TextSource content) implements FileNode<TextSource> { }
+    public record DefaultFileNode(ObjectPath path, String name, TextSource content) implements FileNode { }
 }

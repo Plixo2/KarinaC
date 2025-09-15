@@ -1,18 +1,13 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.stages.attrib.expr.BinaryAttrib;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.DoubleBinaryOperator;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntUnaryOperator;
 
 public class ClosureHelper {
 
@@ -46,17 +41,7 @@ public class ClosureHelper {
                 Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i, mappedParam, "from", type);
                 return false;
             }
-//            if (!ctx.checking().canAssign(ctx, region, mappedParam, type, true)) {
-//                Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i,mappedParam, "from", type);
-//                return false;
-//            }
         }
-
-        //TODO what equals or canAssign method should be used here?
-
-//        var returnMatch = ctx.checking().canAssign(ctx, region, returnType, methodReturnType, true);
-//        Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);
-//        return returnMatch;
 
         var returnMatch = returnType.equals(methodReturnType);
         Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);
@@ -170,7 +155,7 @@ public class ClosureHelper {
         for (var arg : expr.args()) {
             var type = arg.type();
             if (type == null) {
-                type = new KType.Resolvable();
+                type = KType.Resolvable.newInstance();
             }
             var variable = new Variable(
                     arg.region(),
@@ -190,7 +175,7 @@ public class ClosureHelper {
 
         var returnType = expr.returnType();
         if (returnType == null) {
-            returnType = new KType.Resolvable(false, true);
+            returnType = KType.Resolvable.newInstanceAllowVoid();
         }
 
         return new ArgsAndReturnType(newArgs, returnType);
@@ -618,11 +603,11 @@ public class ClosureHelper {
         //</editor-fold>
 
         private static boolean isObject(KType type) {
-            return BinaryAttrib.hasIdentity(type);
+            return Types.hasIdentity(type);
         }
 
         private static KType.ClassType mkClassType(ObjectPath path, List<KType> generics) {
-            return new KType.ClassType(ClassPointer.of(KType.JAVA_LIB, path), generics);
+            return ClassPointer.of(KType.JAVA_LIB, path).implement(generics);
         }
 
     }

@@ -7,7 +7,6 @@ import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.MethodCollection;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
@@ -48,7 +47,7 @@ public interface ClassModel {
         var generics = this.generics().stream()
                                     .map(ref -> (KType) new KType.GenericLink(ref)).toList();
 
-        return new KType.ClassType(this.pointer(), generics);
+        return this.pointer().implement(generics);
     }
 
 

@@ -2,10 +2,12 @@ package org.karina.lang.compiler.jvm_loading.loading;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
+import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.FieldSignatureBuilder;
 import org.karina.lang.compiler.jvm_loading.signature.MethodSignatureBuilder;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.jvm_loading.TypeDecoding;
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.impl.jvm.JFieldModel;
@@ -37,8 +39,6 @@ public class InterfaceLinker {
     public JClassModel createClass(IntoContext c, @Nullable JClassModel outerClassModel, OpenSet.LoadedClass cls, OpenSet openSet, Set<String> visited, ModelBuilder modelBuilder, @Nullable String innerName) {
         var node = cls.node();
 
-        Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading class: " + node.name);
-
         var source = cls.getSource();
         var region = source.emptyRegion();
 
@@ -63,9 +63,8 @@ public class InterfaceLinker {
 
         for (var anInterface : node.interfaces) {
             var interFacePointer = TypeDecoding.internalNameToPointer(region, anInterface);
-            Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, " with interface: " + interFacePointer);
 
-            interfaceBuilder.add(new KType.ClassType(interFacePointer, List.of()));
+            interfaceBuilder.add(interFacePointer.implement(List.of()));
         }
         var interfaces = interfaceBuilder.build();
 
@@ -85,7 +84,7 @@ public class InterfaceLinker {
             interfaces = builder.interfaces();
         } else if (node.superName != null) {
             var superPointer = TypeDecoding.internalNameToPointer(region, node.superName);
-            superType = new KType.ClassType(superPointer, List.of());
+            superType = superPointer.implement(List.of());
         } else if (!node.name.equals("java/lang/Object")) {
             Log.bytecode(c, region, node.name, "No super class found");
             throw new Log.KarinaException();
@@ -100,22 +99,7 @@ public class InterfaceLinker {
                 permittedSubclasses.add(interfacePointer);
             }
         }
-//        if (node.outerClass == null) {
-//            if (outerClassModel != null) {
-//                 TODO why does this happen?
-//                Log.temp(c, region, "Outer class model is not null but node.outerClass is null for " + node.name + " (" + outerClassModel.name() + ")");
-//                throw new Log.KarinaException();
-//            }
-//        } else {
-//            if (outerClassModel == null) {
-//                Log.temp(c, region, "Outer class model is null but node.outerClass is not null for " + node.name);
-//                throw new Log.KarinaException();
-//            }
-//            if (!TypeDecoding.internalNameToPointer(region, node.outerClass).path().equals(outerClassModel.path())) {
-//                Log.temp(c, region, "Outer class model path does not match node.outerClass for " + node.name);
-//                throw new Log.KarinaException();
-//            }
-//        }
+
         var nestHost = node.nestHostClass == null ? null : TypeDecoding.internalNameToPointer(region, node.nestHostClass);
 
         var version = node.version;
@@ -151,21 +135,6 @@ public class InterfaceLinker {
             methodsToFill.add(buildMethod(c, classModel, region, method));
         }
         if (node.innerClasses != null) {
-            if (Log.LogTypes.JVM_CLASS_LOADING.isVisible()) {
-                for (var innerClass : node.innerClasses) {
-                    var args = new Object[]{
-                            innerClass.name,
-                            "outerName",
-                            innerClass.outerName,
-                            "innerName",
-                            innerClass.innerName,
-                            "access",
-                            innerClass.access,
-                            Modifier.toString(innerClass.access),
-                    };
-                    Log.record("inner class " + innerClass.name, args);
-                }
-            }
             for (var innerClass : node.innerClasses) {
                 if (innerClass.outerName == null) {
                     var _ = openSet.removeByName(innerClass.name);
@@ -184,7 +153,6 @@ public class InterfaceLinker {
         }
 
 
-        Log.endType(Log.LogTypes.JVM_CLASS_LOADING, node.name, " with " + fieldsToFill.size() + " fields and " + methodsToFill.size() + " methods and " + innerClassesToFill.size() + " inner classes");
         return classModel;
 
     }
@@ -204,8 +172,6 @@ public class InterfaceLinker {
     }
 
     private JMethodModel buildMethod(IntoContext c, JClassModel owner, Region region, MethodNode methodNode) {
-        Log.beginType(Log.LogTypes.JVM_CLASS_LOADING, "Loading method: " + methodNode.name + " of " + owner.path());
-        Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "mods: " + Modifier.toString(methodNode.access));
 
         var nameSplit = methodNode.name.split("/");
         var name = nameSplit[nameSplit.length - 1];
@@ -226,7 +192,18 @@ public class InterfaceLinker {
             parameterTypes = builder.parameters();
             returnType = builder.returnType();
         }
-        Log.endType(Log.LogTypes.JVM_CLASS_LOADING, "Loading method: " + methodNode.name);
+
+        if (Modifier.isStatic(modifiers) && !parameterTypes.isEmpty()) {
+            if (methodNode.invisibleAnnotations != null) {
+                for (var invisibleAnnotation : methodNode.invisibleAnnotations) {
+                    if (invisibleAnnotation.desc.equals("L" + ClassPointer.EXTENSION_PATH.mkString("/") + ";")) {
+                        modifiers |= MethodModel.EXTENSION_MODIFIER;
+                        break;
+                    }
+                }
+            }
+        }
+
         var signature = new Signature(parameterTypes, returnType);
         return new JMethodModel(
                 name,
@@ -269,10 +246,8 @@ public class InterfaceLinker {
             if (Modifier.isStatic(methodNode.access)) {
                 add = 0;
             }
-
             //try to recover parameter names from the first n local variables
             if (methodNode.localVariables != null && methodNode.localVariables.size() >= parameterTypes.size() + add) {
-                Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "Using locals as parameter names");
                 for (var i = 0; i < parameterTypes.size(); i++) {
                     var parameter = methodNode.localVariables.get(i + add);
                     if (parameter.name != null) {
@@ -282,23 +257,12 @@ public class InterfaceLinker {
                     }
                 }
             } else {
-                Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "Method " + methodNode.name + " has no parameter names");
                 for (var i = 0; i < parameterTypes.size(); i++) {
                     parameterNames.add("arg" + i);
                 }
             }
         }
-        Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "params",  parameterTypes.size());
-        Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "vars", methodNode.localVariables);
-        if (methodNode.localVariables != null) {
-            Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "of length", methodNode.localVariables.size());
-        }
-        var build = parameterNames.build();
-        for (var s : build) {
-            Log.recordType(Log.LogTypes.JVM_CLASS_LOADING, "Parameter: " + s);
-        }
-
-        return build;
+        return parameterNames.build();
 
     }
 }

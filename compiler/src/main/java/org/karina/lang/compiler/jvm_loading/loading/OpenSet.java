@@ -2,8 +2,9 @@ package org.karina.lang.compiler.jvm_loading.loading;
 
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.jvm_loading.JavaResource;
+import org.karina.lang.compiler.utils.DefaultTextSource;
+import org.karina.lang.compiler.utils.TextSource;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public class OpenSet {
         public TextSource getSource() {
             var srcId = "jar:///" + this.fileName;
             //TODO jar:file:/...!/...
-            return new TextSource(new JavaResource(srcId), "");
+            return new DefaultTextSource(new JavaResource(srcId), "");
         }
     }
 }

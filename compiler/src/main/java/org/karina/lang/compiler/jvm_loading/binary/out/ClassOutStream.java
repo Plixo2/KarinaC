@@ -1,13 +1,10 @@
 package org.karina.lang.compiler.jvm_loading.binary.out;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.model_api.FieldModel;
-import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.io.IOException;

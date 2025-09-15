@@ -1,4 +1,4 @@
-// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/grammar/language/KarinaParser.g4 by ANTLR 4.13.2
+// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/compiler/grammar/language/KarinaParser.g4 by ANTLR 4.13.2
 package org.karina.lang.compiler.stages.parser.gen;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -137,66 +137,6 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGenericWithBound(KarinaParser.GenericWithBoundContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitGenericWithBound(KarinaParser.GenericWithBoundContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterBounds(KarinaParser.BoundsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitBounds(KarinaParser.BoundsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterImplBounds(KarinaParser.ImplBoundsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitImplBounds(KarinaParser.ImplBoundsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterExtendsBounds(KarinaParser.ExtendsBoundsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitExtendsBounds(KarinaParser.ExtendsBoundsContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterBoundList(KarinaParser.BoundListContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitBoundList(KarinaParser.BoundListContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterField(KarinaParser.FieldContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -252,6 +192,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitInterfaceExtension(KarinaParser.InterfaceExtensionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTypeInterface(KarinaParser.TypeInterfaceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTypeInterface(KarinaParser.TypeInterfaceContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -396,6 +348,30 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterGenericWithBound(KarinaParser.GenericWithBoundContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitGenericWithBound(KarinaParser.GenericWithBoundContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterBoundList(KarinaParser.BoundListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitBoundList(KarinaParser.BoundListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -552,6 +528,18 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitVarDef(KarinaParser.VarDefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterUsingVarDef(KarinaParser.UsingVarDefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitUsingVarDef(KarinaParser.UsingVarDefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -840,6 +828,30 @@ public class KarinaParserBaseListener implements KarinaParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitArray(KarinaParser.ArrayContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterDotPostFix(KarinaParser.DotPostFixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDotPostFix(KarinaParser.DotPostFixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPathPostFix(KarinaParser.PathPostFixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPathPostFix(KarinaParser.PathPostFixContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

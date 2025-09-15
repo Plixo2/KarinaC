@@ -1,15 +1,15 @@
 package org.karina.lang.compiler.jvm_loading.loading;
 
-import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.jvm_loading.binary.BinaryFormatLinker;
-import org.karina.lang.compiler.logging.*;
-import org.karina.lang.compiler.logging.errors.FileLoadError;
-import org.karina.lang.compiler.model_api.impl.ModelBuilder;
+import org.karina.lang.compiler.utils.logging.*;
+import org.karina.lang.compiler.utils.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -18,9 +18,20 @@ import java.util.jar.JarInputStream;
 
 public class ModelLoader {
     private static final List<ResourceLibrary> RESOURCE_LIBRARIES = List.of(
-            new ResourceLibrary("java-base", "java_base.jar"),
-            new ResourceLibrary("karina-base", "karina_base.jar")
+            new ResourceLibrary("java-base",        "java.base.jar"        ),
+            new ResourceLibrary("java-desktop",     "java.desktop.jar"     ),
+            new ResourceLibrary("java-instrument",  "java.instrument.jar"  ),
+            new ResourceLibrary("java-logging",     "java.logging.jar"     ),
+            new ResourceLibrary("java-management",  "java.management.jar"  ),
+            new ResourceLibrary("java-naming",      "java.naming.jar"      ),
+            new ResourceLibrary("java-net-http",    "java.net.http.jar"    ),
+            new ResourceLibrary("java-scripting",   "java.scripting.jar"   ),
+            new ResourceLibrary("java-sql",         "java.sql.jar"         ),
+            new ResourceLibrary("java-xml",         "java.xml.jar"         ),
+
+            new ResourceLibrary("karina-base",      "karina.base.jar"      )
     );
+
 
     private static final String BIN_FILE = "base.bin.gz";
 
@@ -31,10 +42,7 @@ public class ModelLoader {
     public static Model getJarModel(IntoContext c, boolean useBinaryFormat) {
 
         if (useBinaryFormat) {
-            Log.begin("read-binary");
-            var binModel = getBinaryModel(c);
-            Log.end("read-binary", "with " + binModel.getClassCount() + " classes");
-            return binModel;
+            return getBinaryModel(c);
         } else {
             return modelFromResource(c, RESOURCE_LIBRARIES);
         }
@@ -46,15 +54,25 @@ public class ModelLoader {
     private static Model getBinaryModel(IntoContext c) {
         if (FALLBACK_TO_RESOURCES) {
             if (binFileExist()) {
-                 return BinaryFormatLinker.readBinary(c, BIN_FILE);
+                return BinaryFormatLinker.readBinary(c, BIN_FILE);
             }
-            Log.record("Binary cache file '" + BIN_FILE + "' does not exist, falling back to resources.");
+            if (c.log(Logging.ReadJar.class)) {
+                c.tag("problem reading cache",
+                        "Binary cache file '",
+                        BIN_FILE,
+                        "'",
+                        "does not exist (generate it with the buildCache gradle task), ",
+                        "falling back to resources."
+                );
+            }
             return modelFromResource(c, RESOURCE_LIBRARIES);
         } else {
             if (!binFileExist()) {
-                Log.fileError(c, new FileLoadError.BinaryFile(
-                        "Binary cache file '" + BIN_FILE + "' does not exist. "
-                ));
+                Log.fileError(
+                        c, new FileLoadError.BinaryFile(
+                                "Binary cache file '" + BIN_FILE + "' does not exist. " +
+                                        "Generate it with the buildCache gradle task")
+                );
                 throw new Log.KarinaException();
             }
             return BinaryFormatLinker.readBinary(c, BIN_FILE);
@@ -72,66 +90,72 @@ public class ModelLoader {
     }
 
     private static Model modelFromResource(IntoContext c, List<ResourceLibrary> libraries) {
-        Log.begin("jar-load");
+        try (var _ = c.section(Logging.ReadJar.class,"loading jar files")){
 
-        var models = new Model[libraries.size()];
-        for (var i = 0; i < libraries.size(); i++) {
-            var library = libraries.get(i);
-            Log.begin(library.name);
-            var lib = loadFromResource(c, library);
-            Log.end(library.name, "with " + lib.getClassCount() + " classes");
-            models[i] = lib;
+            var models = new Model[libraries.size()];
+            for (var i = 0; i < libraries.size(); i++) {
+                var library = libraries.get(i);
+                try (var _ = c.section(Logging.ReadJar.class, library.name)){
+                    var lib = loadFromResource(c, library);
+                    models[i] = lib;
+                    if (c.log(Logging.ReadJar.class)) {
+                        c.tag("number of classes", lib.getClassCount());
+                    }
+                }
+
+            }
+            return ModelBuilder.merge(c, models);
         }
-        var merged = ModelBuilder.merge(c, models);
-        Log.end("jar-load", "with " + merged.getClassCount() + " classes");
-        return merged;
     }
 
 
     private static Model loadFromResource(IntoContext c, ResourceLibrary library) {
-        Log.begin("read-jar");
         var jdkSet = new OpenSet();
 
-        var resource = "/" + library.resource;
-        try (var resourceStream = ModelLoader.class.getResourceAsStream(resource)) {
+        try (var _ = c.section(Logging.ReadJar.class,"reading")) {
+            var resource = "/" + library.resource;
+            try (var resourceStream = ModelLoader.class.getResourceAsStream(resource)) {
 
-            if (resourceStream == null) {
-                Log.fileError(c, new FileLoadError.Resource(new FileNotFoundException(
-                        "Could not find resource: '" + resource + "'"
-                )));
+                if (resourceStream == null) {
+                    Log.fileError(
+                            c, new FileLoadError.Resource(new FileNotFoundException(
+                                    "Could not find resource: '" + resource + "'"))
+                    );
+                    throw new Log.KarinaException();
+                }
+
+                try (var jarInputStream = new JarInputStream(resourceStream)) {
+                    BytecodeLoading.loadJarFile(jarInputStream, jdkSet);
+                }
+
+            } catch (IOException e) {
+                Log.fileError(c, new FileLoadError.Resource(e));
                 throw new Log.KarinaException();
             }
+        }
 
-            try (var jarInputStream = new JarInputStream(resourceStream)){
-                BytecodeLoading.loadJarFile(jarInputStream, jdkSet);
+        try (var _ = c.section(Logging.ReadJar.class,"linking")) {
+            var builder = new ModelBuilder();
+            var linker = new InterfaceLinker();
+
+            for (var topClass : jdkSet.removeTopClasses()) {
+                var _ = linker.createClass(
+                        c, null, topClass, jdkSet, new HashSet<>(), builder,
+                        null
+                );
             }
 
-        } catch (IOException e) {
-            Log.fileError(c, new FileLoadError.Resource(e));
-            throw new Log.KarinaException();
-        }
-        Log.end("read-jar");
-
-        Log.begin("link-jar");
-        var builder = new ModelBuilder();
-        var linker = new InterfaceLinker();
-
-        for (var topClass : jdkSet.removeTopClasses()) {
-            var _ = linker.createClass(c, null, topClass, jdkSet, new HashSet<>(), builder, null);
-        }
-
-        for (var value : jdkSet.getOpenSet().values()) {
-            if (value.node().outerClass == null) {
-                continue;
+            for (var value : jdkSet.getOpenSet().values()) {
+                if (value.node().outerClass == null) {
+                    continue;
+                }
+                Log.bytecode(c, value.getSource(), value.node().name, "Could not be linked");
+                throw new Log.KarinaException();
             }
-            Log.bytecode(c, value.getSource(), value.node().name, "Could not be linked");
-            throw new Log.KarinaException();
+            return builder.build(c);
         }
 
 
-        var build = builder.build(c);
-        Log.end("link-jar");
-        return build;
     }
 
 
@@ -141,18 +165,19 @@ public class ModelLoader {
     /// Rebuild cache
     public static void main(String[] args) {
 
-        ColorOut.begin(LogColor.GRAY)
-                .append("> Rebuilding cache")
-                .out(System.out);
+        Colored.begin(ConsoleColor.GRAY)
+               .append("> Rebuilding cache")
+               .println(System.out);
 
         var errors = new DiagnosticCollection();
         var warnings = new DiagnosticCollection();
         var recordings = new FlightRecordCollection();
 
-        Log.begin("rebuild-cache");
 
         var startTime = System.currentTimeMillis();
-        var result = KarinaCompiler.runInContext(
+        var config = Context.ContextHandling.of(true, false, false);
+        var result = Context.run(
+                config,
                 errors,
                 warnings,
                 recordings,
@@ -165,24 +190,23 @@ public class ModelLoader {
         System.out.println();
 
         if (result == null) {
-            ColorOut.begin(LogColor.RED).append("Cache building failed").out(System.out);
+            Colored.begin(ConsoleColor.RED).append("Cache building failed").println(System.out);
             System.out.println();
             System.out.flush();
 
             DiagnosticCollection.print(errors, true, System.err);
         } else {
-            ColorOut.begin(LogColor.GRAY)
-                    .append("Finished in ")
-                    .append(deltaTime)
-                    .append("ms")
-                    .out(System.out);
+            Colored.begin(ConsoleColor.GRAY)
+                   .append("Finished in ")
+                   .append(deltaTime)
+                   .append("ms")
+                   .println(System.out);
 
-            LogColor.YELLOW.out(System.out);
+            ConsoleColor.YELLOW.out(System.out);
             DiagnosticCollection.print(warnings, true, System.out);
-            LogColor.NONE.out(System.out);
+            ConsoleColor.RESET.out(System.out);
         }
 
-        Log.end("rebuild-cache");
 
     }
 
@@ -198,6 +222,10 @@ public class ModelLoader {
         }
 
         var loadedModel = modelFromResource(c, RESOURCE_LIBRARIES);
+        if (c.log(Logging.ReadJar.class)) {
+            c.tag("Final number of classes", loadedModel.getClassCount());
+        }
+
         BinaryFormatLinker.writeBinary(c, loadedModel, destination);
 
 

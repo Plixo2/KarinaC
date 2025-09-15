@@ -2,9 +2,11 @@ package org.karina.lang.compiler.model_api.pointer;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
+import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -30,6 +32,7 @@ public class ClassPointer {
     public static final ObjectPath ITERABLE_PATH = new ObjectPath("java", "lang", "Iterable");
     public static final ObjectPath ITERATOR_PATH = new ObjectPath("java", "util", "Iterator");
     public static final ObjectPath THROWABLE_PATH = new ObjectPath("java", "lang", "Throwable");
+    public static final ObjectPath AUTO_CLOSEABLE_PATH = new ObjectPath("java", "lang", "AutoCloseable");
     public static final ObjectPath CLASS_TYPE_PATH = new ObjectPath("java", "lang", "Class");
     public static final ObjectPath MATCH_EXCEPTION_PATH = new ObjectPath("java", "lang", "MatchException");
 
@@ -41,15 +44,9 @@ public class ClassPointer {
     public static final ObjectPath RESULT_OK_PATH = new ObjectPath("karina", "lang", "Result$Ok");
     public static final ObjectPath RESULT_ERR_PATH = new ObjectPath("karina", "lang", "Result$Err");
 
+    public static final ObjectPath EXTENSION_PATH = new ObjectPath("karina", "lang", "Extension");
     public static final ObjectPath RANGE_PATH = new ObjectPath("karina", "lang", "Range");
     public static final ObjectPath STRING_INTERPOLATION_PATH = new ObjectPath("karina", "lang", "StringInterpolation");
-
-    public static boolean shouldIncludeInPrelude(ObjectPath pointer) {
-        if (pointer.size() != 3) {
-            return false;
-        }
-        return pointer.startsWith("java", "lang") || pointer.startsWith("karina", "lang");
-    }
 
 
     /**
@@ -92,5 +89,12 @@ public class ClassPointer {
 
     public static ClassPointer of(Region region, ObjectPath path) {
         return new ClassPointer(region, path);
+    }
+
+    public KType.ClassType implement(List<KType> generics) {
+        return new KType.ClassType(
+                this,
+                generics
+        );
     }
 }

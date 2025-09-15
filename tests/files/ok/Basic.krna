@@ -22,7 +22,7 @@ struct W<T> {
 
 
 interface Writer {
-    fn write(self, input: string) -> W<string>
+    pub fn write(self, input: string) -> W<string>
 }
 
 

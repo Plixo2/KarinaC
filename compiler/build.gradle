@@ -6,7 +6,6 @@ plugins {
 
 application {
     mainClass.set('org.karina.lang.compiler.Main')
-    applicationDefaultJvmArgs = ['-Dkarina.run=true']
 }
 
 tasks.register('buildCache', JavaExec) {

@@ -1,6 +1,7 @@
 package karina.lang;
 
 
+import java.util.Collection;
 import java.util.Iterator;
 
 //Build-in class for numbers in for loop
@@ -8,6 +9,18 @@ public record Range(int start, int end, int step) implements Iterable<Integer> {
 
     public Range reversed() {
         return new Range(this.end, this.start, -this.step);
+    }
+
+    public static <T> Range range(Collection<T> collection) {
+        return range(collection.size());
+    }
+
+    public static <T> Range range(T[] array) {
+        return range(array.length);
+    }
+
+    public static Range range(int end) {
+        return new Range(0, end, 1);
     }
 
     public static Range range(int start, int end) {
@@ -20,7 +33,6 @@ public record Range(int start, int end, int step) implements Iterable<Integer> {
 
     @Override
     public Iterator<Integer> iterator() {
-
         if (this.step > 0) {
             return new ForwardIterator(this.start, this.end, this.step);
         } else if (this.step < 0) {

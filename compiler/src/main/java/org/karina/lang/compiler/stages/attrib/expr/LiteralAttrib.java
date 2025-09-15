@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Types;
@@ -36,7 +36,7 @@ public class LiteralAttrib  {
             var referenceClass = Types.erasedClass(classModel);
             symbol = new LiteralSymbol.StaticClassReference(expr.region(), staticClass, referenceClass, false);
         } else if (staticMethodCollection != null) {
-            symbol = new LiteralSymbol.StaticMethodReference(expr.region(), staticMethodCollection);
+            symbol = new LiteralSymbol.StaticMethodReference(expr.region(), staticMethodCollection, null);
         } else if (staticField != null) {
             var type = ctx.model().getField(staticField).type();
             symbol = new LiteralSymbol.StaticFieldReference(expr.region(), staticField, type);

@@ -1,4 +1,4 @@
-// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/grammar/language/KarinaParser.g4 by ANTLR 4.13.2
+// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/compiler/grammar/language/KarinaParser.g4 by ANTLR 4.13.2
 package org.karina.lang.compiler.stages.parser.gen;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -71,36 +71,6 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitGenericWithBounds(KarinaParser.GenericWithBoundsContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link KarinaParser#genericWithBound}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitGenericWithBound(KarinaParser.GenericWithBoundContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link KarinaParser#bounds}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBounds(KarinaParser.BoundsContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link KarinaParser#implBounds}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitImplBounds(KarinaParser.ImplBoundsContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link KarinaParser#extendsBounds}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitExtendsBounds(KarinaParser.ExtendsBoundsContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link KarinaParser#boundList}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBoundList(KarinaParser.BoundListContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link KarinaParser#field}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -130,6 +100,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitInterfaceExtension(KarinaParser.InterfaceExtensionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#typeInterface}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTypeInterface(KarinaParser.TypeInterfaceContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#selfParameterList}.
 	 * @param ctx the parse tree
@@ -202,6 +178,18 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#genericWithBound}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGenericWithBound(KarinaParser.GenericWithBoundContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#boundList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitBoundList(KarinaParser.BoundListContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#dotWordChain}.
 	 * @param ctx the parse tree
@@ -280,6 +268,12 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitVarDef(KarinaParser.VarDefContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#usingVarDef}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitUsingVarDef(KarinaParser.UsingVarDefContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#closure}.
 	 * @param ctx the parse tree
@@ -424,6 +418,18 @@ public interface KarinaParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitArray(KarinaParser.ArrayContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#dotPostFix}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDotPostFix(KarinaParser.DotPostFixContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link KarinaParser#pathPostFix}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitPathPostFix(KarinaParser.PathPostFixContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link KarinaParser#superCall}.
 	 * @param ctx the parse tree

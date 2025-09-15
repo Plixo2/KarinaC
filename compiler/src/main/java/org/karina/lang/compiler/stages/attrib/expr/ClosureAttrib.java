@@ -4,8 +4,8 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
@@ -13,6 +13,7 @@ import org.karina.lang.compiler.utils.symbols.ClosureSymbol;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
@@ -148,11 +149,16 @@ public class ClosureAttrib  {
         }
 
         var primaryInterface = ClosureHelper.getDefaultInterface(ctx.intoContext(), region, ctx.model(), args, returnType);
+        var readable = "fn(" + args.stream().map(KType::toString).collect(Collectors.joining(", ")) + ") -> " + returnType;
         if (primaryInterface != null) {
             var alreadyAdded = ClosureHelper.isInterfaceAlreadyAdded(primaryInterface, interfaces);
             if (!alreadyAdded) {
                 if (ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, primaryInterface)) {
-                    Log.recordType(Log.LogTypes.CLOSURE, "Using default as interface");
+                    Log.recordType(Log.LogTypes.CLOSURE,
+                            "Using default as interface ",
+                            primaryInterface,
+                            readable
+                    );
                     interfaces.add(primaryInterface);
                 } else {
                     //TODO should we throw an error here?
@@ -166,8 +172,8 @@ public class ClosureAttrib  {
 
         if (interfaces.isEmpty()) {
             Log.temp(ctx, region,
-                    "Cannot find default interface for " + args.size() + " arguments and return type " + returnType + ". " +
-                    "Please specify an interface via 'impl'"
+                    "Cannot find default interface for " + readable + ". " +
+                    "Please specify an interface via 'impl' or give the closure more type hints."
             );
             throw new Log.KarinaException();
         }
@@ -194,7 +200,6 @@ public class ClosureAttrib  {
         ));
 
     }
-
 
 
     private static void checkForPreexistingVariable(AttributionContext ctx, RegionOf<String> argument) {

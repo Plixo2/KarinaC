@@ -32,11 +32,11 @@ public class UntypedMethodCollection {
     public MethodCollection toTypedStaticCollection(ClassPointer referenceSite, Model model) {
         var protection = new ProtectionChecking(model);
         var classModel = model.getClass(this.classPointer);
-        var pointer = classModel.methods().stream().filter(ref -> {
-            return ref.name().equals(this.name)
-                    && Modifier.isStatic(ref.modifiers())
-                    && protection.canReference(referenceSite, ref.classPointer(), ref.modifiers());
-        }).map(MethodModel::pointer).toList();
+        var pointer = classModel.methods().stream().filter(ref ->
+                ref.name().equals(this.name)
+                && Modifier.isStatic(ref.modifiers())
+                && protection.isMethodAccessible(model.getClass(referenceSite), ref)
+        ).map(MethodModel::pointer).toList();
 
         return new MethodCollection(this.name, pointer);
     }

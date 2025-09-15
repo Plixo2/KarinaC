@@ -5,7 +5,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
@@ -25,10 +25,23 @@ public class Prelude {
 
         var classes = ImmutableList.<ClassPointer>builder();
         for (var entry : model.getBinaryClasses()) {
-            if (ClassPointer.shouldIncludeInPrelude(entry.path())) {
+            if (entry.outerClass() != null) {
+                // only outermost classes
+                continue;
+            }
+            var path = entry.path();
+
+            if (path.size() == 3 && (path.startsWith("java", "lang") || path.startsWith("karina", "lang"))) {
+                classes.add(entry.pointer());
+            } else if (path.size() == 4 && path.startsWith("java", "util", "function")) {
+
                 classes.add(entry.pointer());
             }
         }
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_NONE_PATH));
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_SOME_PATH));
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_ERR_PATH));
+        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_OK_PATH));
 
         var fields = ImmutableList.<FieldPointer>builder();
 
@@ -39,6 +52,7 @@ public class Prelude {
         var rangePath = new ObjectPath("karina", "lang", "Range");
         putAllMethodsFromKarinaClass(c, model, rangePath, methods);
 
+        
 
         return new Prelude(classes.build(), fields.build(), methods.build());
     }

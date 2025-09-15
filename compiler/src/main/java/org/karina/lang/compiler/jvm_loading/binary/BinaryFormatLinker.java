@@ -5,8 +5,9 @@ import org.karina.lang.compiler.jvm_loading.binary.in.ClassReader;
 import org.karina.lang.compiler.jvm_loading.binary.in.ModelReader;
 import org.karina.lang.compiler.jvm_loading.binary.out.ModelWriter;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.FileLoadError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.Logging;
+import org.karina.lang.compiler.utils.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.IntoContext;
 
@@ -19,23 +20,30 @@ public class BinaryFormatLinker {
 
     public static Model readBinary(IntoContext c, String resource) {
 
-        try (var resourceStream = ModelLoader.class.getResourceAsStream("/" + resource)) {
+        try (var _ = c.section(Logging.BinaryFile.class,"reading binary cache")) {
+            try (var resourceStream = ModelLoader.class.getResourceAsStream("/" + resource)) {
 
-            if (resourceStream == null) {
-                Log.fileError(c, new FileLoadError.Resource(new FileNotFoundException(
-                        "Could not find resource: '" + resource + "'"
-                )));
+                if (resourceStream == null) {
+                    Log.fileError(
+                            c, new FileLoadError.Resource(new FileNotFoundException(
+                                    "Could not find resource: '" + resource + "'"))
+                    );
+                    throw new Log.KarinaException();
+                }
+
+                try (var stream = new GZIPInputStream(resourceStream)) {
+                    var reader = new ModelReader(stream);
+                    var model = reader.read(c.intoContext());
+                    if (c.log(Logging.ReadBinary.class)) {
+                        c.tag("number of classes", model.getClassCount());
+                    }
+                    return model;
+                }
+
+            } catch (IOException e) {
+                Log.fileError(c, new FileLoadError.Resource(e));
                 throw new Log.KarinaException();
             }
-
-            try (var stream = new GZIPInputStream(resourceStream)) {
-                var reader = new ModelReader(stream);
-                return reader.read(c.intoContext());
-            }
-
-        } catch (IOException e) {
-            Log.fileError(c, new FileLoadError.Resource(e));
-            throw new Log.KarinaException();
         }
     }
 

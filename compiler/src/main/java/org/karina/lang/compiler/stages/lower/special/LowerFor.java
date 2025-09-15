@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.lower.special;
 
 import com.google.common.collect.ImmutableList;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
@@ -118,7 +118,7 @@ public class LowerFor {
 
         var iterValue = new KExpr.Call(
                 region,
-                this.aFor.iter(),
+                LowerExpr.lower(ctx, this.aFor.iter()),
                 ImmutableList.of(),
                 ImmutableList.of(),
                 iterCallSymbol

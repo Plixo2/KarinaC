@@ -1,11 +1,8 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.ImportError;
-import org.karina.lang.compiler.model_api.ClassModel;
-import org.karina.lang.compiler.model_api.FieldModel;
-import org.karina.lang.compiler.model_api.MethodModel;
-import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.*;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
@@ -48,10 +45,10 @@ public class PostImportValidator {
 
     //All Types are validated after importing, so all ClassPointers are valid
     private static void validateClassModel(Context c, Model model, KClassModel classModel) {
+        var protection = new ProtectionChecking(model);
+
         validateSuperClassCycle(c, model, classModel, new HashSet<>());
         validateInterfaceCycle(c, model, classModel, new HashSet<>());
-
-        //TODO access tests
 
 
         var superClass = classModel.superClass();
@@ -68,10 +65,6 @@ public class PostImportValidator {
             }
             if (!Modifier.isAbstract(classModel.modifiers())) {
                 Log.temp(c, classModel.region(), "Interface must be abstract");
-                throw new Log.KarinaException();
-            }
-            if (!classModel.fields().isEmpty()) {
-                Log.temp(c, classModel.region(), "Interface cannot have fields");
                 throw new Log.KarinaException();
             }
         } else {
@@ -93,6 +86,23 @@ public class PostImportValidator {
                 Log.temp(c, classModel.region(), "Field does not have correct class methodPointer");
                 throw new Log.KarinaException();
             }
+            validateAccess(c, protection, classModel, field.region(), field.type());
+
+            if (Modifier.isInterface(classModel.modifiers())) {
+                if (!Modifier.isStatic(field.modifiers())) {
+                    Log.syntaxError(c, field.region(), "Non-static fields in interfaces are not allowed");
+                    throw new Log.KarinaException();
+                }
+                if (!Modifier.isFinal(field.modifiers())) {
+                    Log.syntaxError(c, field.region(), "Non-final fields in interfaces are not allowed");
+                    throw new Log.KarinaException();
+                }
+                if (!Modifier.isPublic(field.modifiers())) {
+                    Log.syntaxError(c, field.region(), "Non-public fields in interfaces are not allowed");
+                    throw new Log.KarinaException();
+                }
+            }
+
         }
 
         validateFields(c, classModel.fields());
@@ -124,11 +134,34 @@ public class PostImportValidator {
                         throw new Log.KarinaException();
                     }
 
+                    if (!Modifier.isPublic(method.modifiers())) {
+                        Log.temp(c, method.region(), "Abstract method must be public");
+                        throw new Log.KarinaException();
+                    }
+
                 } else if (method.expression() == null) {
                     Log.syntaxError(c, method.region(), "Method must have an expression: " + method.name());
                     throw new Log.KarinaException();
                 }
             }
+
+            if (MethodModel.isExtension(method.modifiers())) {
+                if (!Modifier.isStatic(method.modifiers())) {
+                    Log.syntaxError(c, method.region(), "Extension methods must be static");
+                    throw new Log.KarinaException();
+                }
+                if (method.parameters().isEmpty()) {
+                    Log.syntaxError(c, method.region(), "Extension methods must have at least one parameter");
+                    throw new Log.KarinaException();
+                }
+            }
+
+            for (var parameter : method.signature().parameters()) {
+                validateAccess(c, protection, classModel, method.region(), parameter);
+            }
+
+            validateAccess(c, protection, classModel, method.region(), method.signature().returnType());
+
         }
 
         if (!classModel.permittedSubclasses().isEmpty()) {
@@ -138,14 +171,15 @@ public class PostImportValidator {
                 Log.syntaxError(c, classModel.region(), "Duplicate permitted subclass");
                 throw new Log.KarinaException();
             }
+            for (var permittedSubclass : classModel.permittedSubclasses()) {
+                validateAccess(c, protection, model, classModel, classModel.region(), permittedSubclass);
+            }
         }
 
+
         var superClassModel = model.getClass(superClass.pointer());
-        //TODO temporary fix
-        if (!Modifier.isPublic(superClassModel.modifiers())) {
-            Log.syntaxError(c, classModel.region(), "Super class cannot be private");
-            throw new Log.KarinaException();
-        }
+
+        validateAccess(c, protection, model, classModel, classModel.region(), superClass.pointer());
 
         if (Modifier.isFinal(superClassModel.modifiers())) {
             Log.syntaxError(c, classModel.region(), "Cannot extend final class " + superClassModel.name());
@@ -175,11 +209,8 @@ public class PostImportValidator {
 
         for (var anInterface : classModel.interfaces()) {
             var interfaceModel = model.getClass(anInterface.pointer());
-            //TODO temporary fix
-            if (!Modifier.isPublic(interfaceModel.modifiers())) {
-                Log.syntaxError(c, classModel.region(), "Interface " + anInterface.pointer() + " class is private");
-                throw new Log.KarinaException();
-            }
+
+            validateAccess(c, protection, model, classModel, classModel.region(), anInterface.pointer());
 
             if (!Modifier.isInterface(interfaceModel.modifiers()) || Modifier.isFinal(interfaceModel.modifiers())) {
                 Log.syntaxError(c, classModel.region(), "Cannot implement non-interface class " + interfaceModel.name());
@@ -249,7 +280,8 @@ public class PostImportValidator {
 
         for (var innerClass : classModel.innerClasses()) {
             //we want the correct outer class, by identity
-            if (innerClass.outerClass() != classModel) {
+            var innerOuter = innerClass.outerClass();
+            if (innerOuter == null || !Objects.equals(innerOuter.pointer(), classModel.pointer())) {
                 Log.temp(c, classModel.region(), "Inner class does not have correct outer class");
                 throw new Log.KarinaException();
             }
@@ -287,7 +319,7 @@ public class PostImportValidator {
         }
     }
 
-    private static void validateFields(Context c, List<? extends FieldModel> fieldModels) {
+    private static void validateFields(Context c,  List<? extends FieldModel> fieldModels) {
         var stringDuplicate = Unique.testUnique(fieldModels, FieldModel::name);
         if (stringDuplicate != null) {
             Log.error(c, new ImportError.DuplicateItem(
@@ -296,6 +328,7 @@ public class PostImportValidator {
                     stringDuplicate.value()
             ));
             throw new Log.KarinaException();
+
         }
     }
 
@@ -318,6 +351,7 @@ public class PostImportValidator {
 
             buckets.computeIfAbsent(methodModel.name(), k -> new ArrayList<>())
                    .add(methodModel);
+
 
         }
 
@@ -360,6 +394,44 @@ public class PostImportValidator {
 
     }
 
+    private static void validateAccess(
+            Context c,
+            ProtectionChecking protection,
+            ClassModel classModel,
+            Region region,
+            KType type
+    ) {
+        if (!Types.isTypeAccessible(protection, classModel, type)) {
+            Log.error(c, new ImportError.AccessViolation(
+                    region,
+                    classModel.name(),
+                    null,
+                    type
+            ));
+            throw new Log.KarinaException();
+        }
+    }
+
+    private static void validateAccess(
+            Context c,
+            ProtectionChecking protection,
+            Model model,
+            ClassModel classModel,
+            Region region,
+            ClassPointer classPointer
+    ) {
+
+        if (!protection.isClassAccessible(classModel, classPointer)) {
+            Log.error(c, new ImportError.AccessViolation(
+                    region,
+                    classModel.name(),
+                    RegionOf.region(model.getClass(classPointer).region(), classPointer),
+                    classPointer.implement(List.of())
+            ));
+            throw new Log.KarinaException();
+        }
+    }
+
 
     private record NameAndSignature(MethodModel model, List<KType> signature) { }
 
@@ -386,7 +458,7 @@ public class PostImportValidator {
         for (var methodToImplement : toImplement) {
             Log.temp(c, classModel.region(),
                     "Method '" + methodToImplement.toReadableString() + "' is not implemented from class " +
-                            methodToImplement.originalMethodPointer().classPointer()
+                            methodToImplement.originalMethodPointer().classPointer() + " or is not public or non-static"
             );
         }
         if (!toImplement.isEmpty()) {

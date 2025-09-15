@@ -1,0 +1,465 @@
+package org.karina.lang.lsp;
+
+import com.google.gson.JsonObject;
+import karina.lang.Option;
+import karina.lang.Result;
+import karina.lang.ThrowableFunction;
+import lombok.RequiredArgsConstructor;
+import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.SemanticTokens;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.karina.lang.compiler.KarinaCompiler;
+import org.karina.lang.compiler.utils.FileLoader;
+import org.karina.lang.compiler.utils.FileTreeNode;
+import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.lsp.lib.events.*;
+import org.karina.lang.lsp.impl.*;
+import org.karina.lang.lsp.lib.*;
+import org.karina.lang.lsp.lib.process.JobProgress;
+import org.karina.lang.lsp.lib.process.Job;
+import org.karina.lang.lsp.test_compiler.CompiledHelper;
+import org.karina.lang.lsp.test_compiler.OneShotCompiler;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
+
+@RequiredArgsConstructor
+public final class KarinaLSP implements EventService {
+
+    public static final boolean USE_FILESYSTEM_EVENTS = true;
+
+    public final VirtualFileSystem vfs = new DefaultVirtualFileSystem();
+    public final RealFileSystem rfs = new DefaultRealFileSystem();
+    private VirtualFileTreeNode treeNode = DefaultVirtualFileTreeNode.root();
+
+    private final SemanticTokenProvider  semanticTokenProvider  = new DefaultSemanticTokenProvider();
+    private final OneShotCompiler        oneShotCompiler        = new OneShotCompiler(this);
+    private final DocumentSymbolProvider documentSymbolProvider = new DefaultDocumentSymbolProvider();
+    private final CompletionProvider     completionProvider     = new DefaultCompletionProvider(this);
+    private final HoverProvider          hoverProvider          = new DefaultHoverProvider();
+    private final DefinitionProvider     definitionProvider     = new DefaultDefinitionProvider();
+    private final InlayHintProvider      inlayHintProvider      = new DefaultInlayHintProvider();
+
+
+    private Option<BuildConfig> buildConfig = Option.none();
+
+    private EventClientService theClient;
+    private ClientCapabilities clientCapabilities;
+
+    private ClientConfiguration clientConfiguration = ClientConfiguration.getDefault();
+
+    @Override
+    public ServerInfo serverInfo() {
+        return new ServerInfo(
+                "Karina Language Server",
+                KarinaCompiler.VERSION
+        );
+    }
+
+    @Override
+    public void onInit(EventClientService theClient, ClientCapabilities capabilities, Option<ClientInfo> clientInfo, URI clientRoot) {
+        this.theClient = theClient;
+        this.clientCapabilities = capabilities;
+
+
+        if (USE_FILESYSTEM_EVENTS) {
+            //<editor-fold desc="ensure dynamic DidChangeWatchedFiles registration capabilities">
+            var workspaceClientCapabilities = KarinaLSP.this.clientCapabilities.getWorkspace();
+            if (workspaceClientCapabilities == null) {
+                throw new IllegalStateException(
+                        "Client does not support 'workspace' capabilities"
+                );
+            }
+            var clientDidChangeWatchedFilesCapabilities = workspaceClientCapabilities.getDidChangeWatchedFiles();
+            if (clientDidChangeWatchedFilesCapabilities == null) {
+                throw new IllegalStateException(
+                        "Client does not support 'workspace/didChangeWatchedFiles' capability"
+                );
+            }
+            if (!clientDidChangeWatchedFilesCapabilities.getDynamicRegistration()) {
+                throw new IllegalStateException(
+                        "Client does not support dynamic registration for 'workspace/didChangeWatchedFiles' capability"
+                );
+            }
+            //</editor-fold>
+
+            var watchers = new ArrayList<FileSystemWatcher>();
+            watchers.add(new FileSystemWatcher(
+                    Either.forLeft("**/*.{krna}"),
+                    WatchKind.Create | WatchKind.Change | WatchKind.Delete
+            ));
+
+            var registration = new Registration(
+                    "watchFiles",
+                    "workspace/didChangeWatchedFiles",
+                    new DidChangeWatchedFilesRegistrationOptions(watchers)
+            );
+            this.theClient.send(new ClientEvent.RegisterCapability(registration));
+        }
+
+        if (clientInfo instanceof Option.Some(var info)) {
+            var version = Optional.ofNullable(info.getVersion()).orElse("");
+            logMessage(
+                    "Hello " + info.getName() + " " + version
+            );
+        }
+
+        var configFromJson = JsonBuildConfig.fromJsonFile(clientRoot, this.rfs);
+
+        if (configFromJson.asError() instanceof Option.Some(var e)) {
+            errorMessage(e.getMessage());
+        }
+        if (configFromJson instanceof Result.Ok(var config)) {
+            this.buildConfig = Option.some(config);
+            loadInitial(config.projectRootUri());
+        }
+
+    }
+    private void loadInitial(URI projectRootURI) {
+        var files = this.rfs.listAllFilesRecursively(
+                projectRootURI,
+                new FileLoader.FilePredicate("krna")
+        );
+
+        switch (files) {
+            case Result.Ok(List<URI> v) -> {
+                for (var uri : v) {
+                    if (!this.vfs.isFileOpen(uri)) {
+                        var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(uri));
+                        if (content == null) {
+                            continue;
+                        }
+                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+            case Result.Err(IOException e) -> {
+                errorMessage(e.getMessage());
+            }
+        }
+    }
+
+    public void errorMessage(Object object) {
+        var value = Objects.toString(object);
+        this.theClient.send(new ClientEvent.Log(value, MessageType.Error));
+        this.theClient.send(new ClientEvent.Popup(value, MessageType.Error));
+    }
+
+    public void infoMessage(Object object) {
+        var value = Objects.toString(object);
+        this.theClient.send(new ClientEvent.Log(value, MessageType.Info));
+        this.theClient.send(new ClientEvent.Popup(value, MessageType.Info));
+    }
+
+    public void warningMessage(Object object) {
+        var value = Objects.toString(object);
+        this.theClient.send(new ClientEvent.Log(value, MessageType.Warning));
+        this.theClient.send(new ClientEvent.Popup(value, MessageType.Warning));
+    }
+
+    public void logMessage(Object object) {
+        var value = Objects.toString(object);
+        this.theClient.send(new ClientEvent.Log(value, MessageType.Log));
+    }
+
+    public void handleTransaction(Option<FileTransaction> transaction) {
+        if (!(transaction instanceof Option.Some(var fileTransaction))) {
+            return;
+        }
+        if (!(this.buildConfig instanceof Option.Some(var config))) {
+            return;
+        }
+        var files = this.vfs.files();
+        if (fileTransaction.isObjectNew()) {
+            this.treeNode = DefaultVirtualFileTreeNode.builder().build(files, config.projectRootUri());
+            var prettyTree = FileTreePrinter.prettyTree(this.treeNode);
+            logMessage(prettyTree);
+        }
+
+
+        this.oneShotCompiler.build(this.treeNode, files,
+                this.clientConfiguration.logLevel().orElse(ClientConfiguration.LoggingLevel.NONE)
+        );
+    }
+
+
+    @Override
+    public void update(UpdateEvent update) {
+        switch (update) {
+            case UpdateEvent.OpenFile(URI uri, int version, String language, String text) -> {
+                this.handleTransaction(this.vfs.openFile(uri, text, version));
+            }
+            case UpdateEvent.ChangeFile(URI uri, String text, Range range, int version) -> {
+                if (this.vfs.isFileOpen(uri)) {
+                    // Only handles full text change
+                    this.handleTransaction(this.vfs.updateFile(uri, text, version));
+                }
+            }
+            case UpdateEvent.CloseFile(URI uri) -> {
+                this.handleTransaction(this.vfs.closeFile(uri));
+            }
+            case UpdateEvent.SaveFile(URI uri) -> {
+                this.handleTransaction(this.vfs.saveFile(uri));
+            }
+            case UpdateEvent.CreateWatchedFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(uri));
+                    if (content != null) {
+                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+            case UpdateEvent.DeleteWatchedFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    this.handleTransaction(this.vfs.deleteFile(uri));
+                }
+            }
+            case UpdateEvent.CreateFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(uri));
+                    if (content != null) {
+                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+            case UpdateEvent.DeleteFile(URI uri) -> {
+                if (!this.vfs.isFileOpen(uri)) {
+                    this.handleTransaction(this.vfs.deleteFile(uri));
+                }
+            }
+            case UpdateEvent.RenameFile(URI oldUri, URI newUri) -> {
+                if (!this.vfs.isFileOpen(oldUri)) {
+                    this.handleTransaction(this.vfs.deleteFile(oldUri));
+                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(newUri));
+                    if (content != null) {
+                       this.handleTransaction(this.vfs.reloadFromDisk(newUri, content));
+                    }
+                }
+            }
+            case UpdateEvent.UpdateClientConfig updateClientConfig -> {
+                this.clientConfiguration = updateClientConfig.configuration();
+            }
+            case UpdateEvent.ExecuteCommand(String command, List<Object> args) -> {
+                if (command.equals("karina.run.main")) {
+                    if (!args.isEmpty()) {
+                        warningMessage("Too many arguments for command: " + command);
+                        return;
+                    }
+                    var path = new ObjectPath("main");
+                    var files = this.vfs.files();
+                    this.oneShotCompiler.run(this.treeNode, files, path);
+                } else if (command.equals("karina.run.file")) {
+                    if (args.size() > 1) {
+                        warningMessage("Too many arguments for command: " + command);
+                        return;
+                    }
+                    if (args.isEmpty()) {
+                        warningMessage("Missing argument for command: " + command);
+                        return;
+                    }
+                    var uriStr = Objects.toString(args.getFirst());
+                    if (uriStr.startsWith("\"") && uriStr.endsWith("\"")) {
+                        uriStr = uriStr.substring(1, uriStr.length() - 1);
+                    }
+                    var uri = VirtualFileSystem.toUri(uriStr);
+                    var files = this.vfs.files();
+                    this.oneShotCompiler.run(this.treeNode, files, uri);
+                } else {
+                    warningMessage("Unknown command: " + command);
+                }
+            }
+        }
+    }
+
+    @Override
+    public <T> CompletableFuture<T> request(RequestEvent<T> request) {
+        switch (request) {
+            case RequestEvent.RequestSemanticTokens(URI uri) -> {
+                if (this.vfs.getContent(uri) instanceof Option.Some(var content)) {
+                    return CompletableFuture.supplyAsync(() -> {
+                        var start = System.currentTimeMillis();
+                        var tokens = this.semanticTokenProvider.getTokens(content);
+                        var end = System.currentTimeMillis();
+                        logMessage("Semantic tokens in " + (end - start) + "ms");
+                        return (T) new SemanticTokens(tokens);
+                    });
+                } else {
+                    warningMessage("No content found for URI: " + uri);
+                    return CompletableFuture.completedFuture((T) new SemanticTokens());
+                }
+            }
+            case RequestEvent.RequestCodeLens(URI uri) -> {
+                var atLeastImported = this.oneShotCompiler.lastestCompiledModel().importedModel;
+                if (CompiledHelper.findMain(atLeastImported, this.treeNode, uri, this) instanceof Option.Some(var mainMethod)) {
+                    var codeLens = new CodeLens();
+                    var start = mainMethod.region().start();
+                    codeLens.setRange(new Range(
+                            new Position(start.line(), start.column()),
+                            new Position(start.line(), start.column())
+                    ));
+                    codeLens.setCommand(new Command(
+                            "Run",
+                            "karina.run.file",
+                            List.of(uri.toString())
+                    ));
+                    return CompletableFuture.completedFuture((T) List.of(codeLens));
+                } else {
+                    return CompletableFuture.completedFuture((T) List.of());
+                }
+
+            }
+            case RequestEvent.RequestDocumentSymbols(URI uri) -> {
+                if (this.vfs.getContent(uri) instanceof Option.Some(var content)) {
+                    return CompletableFuture.supplyAsync(() -> {
+                        var start = System.currentTimeMillis();
+                        var symbols = this.documentSymbolProvider.getSymbols(content);
+                        var end = System.currentTimeMillis();
+                        logMessage("Document symbols in " + (end - start) + "ms");
+                        return (T) symbols;
+                    });
+                } else {
+                    warningMessage("No content found for URI: " + uri);
+                    return CompletableFuture.completedFuture((T) List.of());
+                }
+            }
+            case RequestEvent.RequestCompletions(URI uri, Position pos) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var items = this.completionProvider.getItems(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri,
+                            pos
+                    );
+                    return (T) items;
+                });
+            }
+            case RequestEvent.RequestDefinition(URI uri, Position position) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var location = this.definitionProvider.getDefinition(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri,
+                            position
+                    );
+                    return (T) location;
+                });
+            }
+            case RequestEvent.RequestHover(URI uri, Position position) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var hover = this.hoverProvider.getHover(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri,
+                            position
+                    );
+                    return (T) hover;
+                });
+            }
+            case RequestEvent.RequestInlayHints(URI uri, Range range) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var hints = this.inlayHintProvider.getHints(
+                            this.oneShotCompiler.lastestCompiledModel(),
+                            uri,
+                            range
+                    );
+                    return (T) hints;
+                });
+            }
+            case RequestEvent.RequestCodeActions(_, Range range, CodeActionContext context) -> {
+                return CompletableFuture.supplyAsync(() -> {
+                    var edits = new ArrayList<CodeAction>();
+
+                    for (var diagnostic : context.getDiagnostics()) {
+                        if (diagnostic.getData() instanceof JsonObject jsonObject) {
+                            var fileURI = jsonObject.get("URI");
+                            if (fileURI == null || !fileURI.isJsonPrimitive()) {
+                                continue;
+                            }
+                            var uri = fileURI.getAsString();
+
+                            var pathToImport = jsonObject.get("possible_imports");
+                            if (pathToImport != null && pathToImport.isJsonArray()) {
+
+                                for (var jsonElement : pathToImport.getAsJsonArray()) {
+                                    if (!jsonElement.isJsonPrimitive()) {
+                                        continue;
+                                    }
+                                    var path = jsonElement.getAsString();
+
+                                    var textEdit = new TextEdit();
+                                    textEdit.setNewText("import " + path + "\n");
+                                    textEdit.setRange(
+                                            new Range(new Position(0, 0), new Position(0, 0)));
+                                    var workspaceEdit = new WorkspaceEdit();
+                                    workspaceEdit.setChanges(java.util.Map.of(uri, List.of(textEdit)));
+
+                                    CodeAction action = new CodeAction("Import '" + path + "'");
+                                    action.setKind(CodeActionKind.QuickFix);
+                                    action.setEdit(workspaceEdit);
+                                    edits.add(action);
+                                }
+                            }
+                            var candidates = jsonObject.get("candidates");
+                            if (candidates != null && candidates.isJsonArray()) {
+                                if (diagnostic.getRange() == null) {
+                                    continue;
+                                }
+
+                                var jsonArray = candidates.getAsJsonArray();
+                                for (var jsonElement : jsonArray) {
+                                    if (jsonElement.isJsonPrimitive()) {
+                                        var name = jsonElement.getAsString();
+
+                                        var textEdit = new TextEdit();
+                                        textEdit.setNewText(name);
+                                        textEdit.setRange(diagnostic.getRange());
+                                        var workspaceEdit = new WorkspaceEdit();
+                                        workspaceEdit.setChanges(
+                                                java.util.Map.of(uri, List.of(textEdit)));
+
+                                        CodeAction action = new CodeAction("Use '" + name + "'");
+                                        action.setKind(CodeActionKind.QuickFix);
+                                        action.setEdit(workspaceEdit);
+                                        edits.add(action);
+
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                    return (T) edits;
+                });
+            }
+        }
+    }
+
+    @Override
+    public void send(ClientEvent clientEvent) {
+        this.theClient.send(clientEvent);
+    }
+
+    @Override
+    public void sendTerminal(String message) {
+        this.theClient.sendTerminal(message);
+    }
+
+    @Override
+    public void clearTerminal() {
+        this.theClient.clearTerminal();
+    }
+
+    @Override
+    public Job createJob(String title, ThrowableFunction<JobProgress, String, Exception> process) {
+        return this.theClient.createJob(title, process);
+    }
+
+    @Override
+    public Job createJob(
+            String title, ThrowableFunction<JobProgress, String, Exception> process,
+            BooleanSupplier onKill
+    ) {
+        return this.theClient.createJob(title, process, onKill);
+    }
+
+}

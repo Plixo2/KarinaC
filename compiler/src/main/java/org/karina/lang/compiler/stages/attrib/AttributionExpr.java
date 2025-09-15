@@ -3,11 +3,12 @@ package org.karina.lang.compiler.stages.attrib;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.expr.*;
 import org.karina.lang.compiler.utils.Variable;
+import org.karina.lang.compiler.utils.logging.Logging;
 
 
 @Getter
@@ -41,9 +42,10 @@ public final class AttributionExpr {
         if (hint != null) {
             hint = hint.unpack();
         }
-        var logName = "expr-" + expr.getClass().getSimpleName();
-        Log.beginType(Log.LogTypes.EXPR,logName);
-        var newExpr = switch (expr) {
+        if (ctx.log(Logging.Expression.class)) {
+            ctx.tag("Expr", expr.getClass().getSimpleName());
+        }
+        return switch (expr) {
             case KExpr.Assignment assignment -> AssignmentAttrib.attribAssignment(hint, ctx, assignment);
             case KExpr.Binary binary -> BinaryAttrib.attribBinary(hint, ctx, binary);
             case KExpr.Block block -> BlockAttrib.attribBlock(hint, ctx, block);
@@ -69,14 +71,13 @@ public final class AttributionExpr {
             case KExpr.StringInterpolation stringExpr -> StringInterpolationAttrib.attribStringExpr(hint, ctx, stringExpr);
             case KExpr.Unary unary -> UnaryAttrib.attribUnary(hint, ctx, unary);
             case KExpr.VariableDefinition variableDefinition -> VariableDefinitionAttrib.attribVariableDefinition(hint, ctx, variableDefinition);
+            case KExpr.UsingVariableDefinition usingVariableDefinition -> UsingVariableDefinitionAttrib.attribUsingVariableDefinition(hint, ctx, usingVariableDefinition);
             case KExpr.While aWhile -> WhileAttrib.attribWhile(hint, ctx, aWhile);
             case KExpr.Throw aThrow -> ThrowAttrib.attribThrow(hint, ctx, aThrow);
             case KExpr.Unwrap unwrap -> UnwrapAttrib.attribUnwrap(hint, ctx, unwrap);
             case KExpr.SpecialCall aSuper -> SpecialCallAttrib.attribSpecialCall(hint, ctx, aSuper);
             case KExpr.StaticPath staticPath -> StaticPathAttrib.attribStaticPath(hint, ctx, staticPath);
         };
-        Log.endType(Log.LogTypes.EXPR, logName);
-        return newExpr;
     }
 
 }

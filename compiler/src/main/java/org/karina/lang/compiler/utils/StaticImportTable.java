@@ -2,14 +2,14 @@ package org.karina.lang.compiler.utils;
 
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
+import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -33,16 +33,34 @@ public record StaticImportTable(
 
     public @Nullable MethodCollection getStaticMethod(String name) {
         if (this.staticMethods.containsKey(name)) {
-            return Objects.requireNonNull(this.staticMethods.get(name));
+            var methodPointers = Objects.requireNonNull(this.staticMethods.get(name));
+            if (!methodPointers.isEmpty()) {
+                return methodPointers;
+            }
         }
         return null;
+    }
+
+    public List<MethodModel> getAllExtensionMethods(Model model) {
+        var methods = new ArrayList<MethodModel>();
+        for (var collection : this.staticMethods.values()) {
+            for (var methodPointer : collection) {
+                var method = model.getMethod(methodPointer);
+                var extension = method.modifiers();
+                if (MethodModel.isExtension(extension)) {
+                    methods.add(method);
+                }
+            }
+        }
+        return methods;
     }
 
     public @Nullable FieldPointer getStaticField(String name) {
         if (this.staticFields.containsKey(name)) {
             return Objects.requireNonNull(this.staticFields.get(name));
+        } else {
+            return null;
         }
-        return null;
     }
 
     public static StaticImportTable fromImportTable(ClassPointer referenceSite, Model model, UserImportTable importTable) {

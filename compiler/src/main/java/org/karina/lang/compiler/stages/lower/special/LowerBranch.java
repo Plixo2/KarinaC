@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.lower.special;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.stages.lower.LowerExpr;
 import org.karina.lang.compiler.stages.lower.LoweringContext;
 import org.karina.lang.compiler.utils.*;

@@ -1,13 +1,13 @@
 package org.karina.lang.compiler.stages.imports;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.stages.imports.table.ImportTable;
 import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;

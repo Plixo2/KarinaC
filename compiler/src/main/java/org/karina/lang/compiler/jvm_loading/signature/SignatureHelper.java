@@ -6,10 +6,10 @@ import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.jvm_loading.signature.model.TypeArgument;
 import org.karina.lang.compiler.jvm_loading.signature.model.TypeParameter;
 import org.karina.lang.compiler.jvm_loading.signature.model.TypeSignature;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.Region;
 
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class SignatureHelper {
             var generic = toType(c, region, symbolName, outer, generics, typeArgument);
             genericsArgs.add(generic);
         }
-        return new KType.ClassType(signature.classPointer(), genericsArgs);
+        return signature.classPointer().implement(genericsArgs);
     }
 
     public static KType toType(

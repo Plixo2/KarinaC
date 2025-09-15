@@ -1,0 +1,20 @@
+import java::io::IOException
+import java::nio::file::Files
+import java::nio::file::Path
+
+struct A {
+    t: IOException?any
+}
+
+fn expectResult() {
+    let r1 = loadFile("a")
+    let r2: string?IOException = loadFile("a")
+    let r3: string?Exception = loadFile("a")
+    let r4: Result<string, Exception> = loadFile("a")
+    let r5: Result<string, IOException> = loadFile("a")
+}
+
+fn loadFile(path: string) -> string?IOException {
+    let abs_path = Path.of(path, []).toAbsolutePath()
+    Result::safeCallExpect(IOException, fn() String { bytes: Files.readAllBytes(abs_path) })
+}

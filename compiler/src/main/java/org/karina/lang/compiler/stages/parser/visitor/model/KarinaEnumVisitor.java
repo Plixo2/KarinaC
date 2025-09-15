@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.karina.lang.compiler.model_api.FieldModel;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
@@ -19,12 +20,12 @@ import java.util.List;
 
 public class KarinaEnumVisitor implements IntoContext {
 
-    private final RegionContext context;
+    private final RegionContext conv;
     private final KarinaUnitVisitor visitor;
 
     public KarinaEnumVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
         this.visitor = base;
-        this.context = regionContext;
+        this.conv = regionContext;
     }
 
     public KClassModel visit(
@@ -34,11 +35,13 @@ public class KarinaEnumVisitor implements IntoContext {
             KarinaParser.EnumContext ctx,
             ModelBuilder modelBuilder
     ) {
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClassPointer = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT;
+
+        // interfaces cannot be private
+        final var mods = (ctx.PUB() != null ? Modifier.PUBLIC : 0) | Modifier.INTERFACE | Modifier.ABSTRACT;
 
         KType.ClassType superClass = KType.ROOT;
 
@@ -46,28 +49,47 @@ public class KarinaEnumVisitor implements IntoContext {
 
         var methods = ImmutableList.<KMethodModel>builder();
         for (var functionContext : ctx.function()) {
-            methods.add(this.visitor.methodVisitor.visit(currentClassPointer, ImmutableList.of(), functionContext));
+            methods.add(this.visitor.methodVisitor.visit(currentClassPointer, ImmutableList.of(), functionContext, false));
         }
 
         for (var implCtx : ctx.implementation()) {
             //pointer have to be validated in the import stage
             var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
-            var clsType = new KType.ClassType(classPointer, structType.generics());
+            var clsType = classPointer.implement(structType.generics());
             interfaces.add(clsType);
 
             for (var functionContext : implCtx.function()) {
                 methods.add(this.visitor.methodVisitor.visit(
                         currentClassPointer, ImmutableList.of(),
-                        functionContext
+                        functionContext, true
                 ));
             }
         }
 
 
-        //TODO add constructor method for easy initialization
 
-        var fields = ImmutableList.<KFieldModel>of();
+        var fields = ImmutableList.<KFieldModel>builder();
+
+        var constNames = new ArrayList<String>();
+        var constValues = new ArrayList<KExpr>();
+        for (var constContext : ctx.const_()) {
+            var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
+            var constModel = this.visitor.visitConst(constContext, visitExpression, currentClassPointer);
+            constNames.add(constModel.name());
+            constValues.add(visitExpression);
+            fields.add(constModel);
+        }
+        if (!constNames.isEmpty()) {
+            var clinit = KarinaUnitVisitor.createStaticConstructor(
+                    this,
+                    region,
+                    currentClassPointer,
+                    constNames,
+                    constValues
+            );
+            methods.add(clinit);
+        }
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
@@ -93,20 +115,20 @@ public class KarinaEnumVisitor implements IntoContext {
                 host,
                 interfaces.build(),
                 innerClassesToFill,
-                fields,
+                fields.build(),
                 methods.build(),
                 generics,
                 imports,
                 permittedSubClassesToFill,
                 nestMembersToFill,
                 annotations,
-                this.context.source(),
+                this.conv.source(),
                 region,
                 null
         );
 
         for (var enumMemberContext : ctx.enumMember()) {
-            var enumMember = innerEnumClass(classModel, currentClassPointer, path, enumMemberContext, generics, modelBuilder);
+            var enumMember = innerEnumClass(classModel, currentClassPointer, path, enumMemberContext, generics, modelBuilder, ctx.PUB() != null);
             innerClassesToFill.add(enumMember);
             permittedSubClassesToFill.add(enumMember.pointer());
         }
@@ -121,15 +143,16 @@ public class KarinaEnumVisitor implements IntoContext {
             ObjectPath owningPath,
             KarinaParser.EnumMemberContext ctx,
             List<Generic> genericsOuter,
-            ModelBuilder modelBuilder
+            ModelBuilder modelBuilder,
+            boolean asPublic
     ) {
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
 
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
         KType.ClassType superClass = KType.ROOT;
-        var mods = Modifier.PUBLIC | Modifier.FINAL;
+        var mods = (asPublic ? Modifier.PUBLIC : 0) | Modifier.FINAL;
 
 
         var innerClasses = ImmutableList.<KClassModel>of();
@@ -168,7 +191,7 @@ public class KarinaEnumVisitor implements IntoContext {
         var permittedSubClasses = ImmutableList.<ClassPointer>of();
 
         var mappedGenerics = generics.stream().map(ref -> (KType) new KType.GenericLink(ref)).toList();
-        var enumInterfaceClassType = new KType.ClassType(enumInterfacePointer, mappedGenerics);
+        var enumInterfaceClassType =enumInterfacePointer.implement(mappedGenerics);
         var interfaces = ImmutableList.of(enumInterfaceClassType);
 
         var host = enumClass.pointer();
@@ -194,7 +217,7 @@ public class KarinaEnumVisitor implements IntoContext {
                 permittedSubClasses,
                 nestMembers,
                 annotations,
-                this.context.source(),
+                this.conv.source(),
                 region,
                 null
         );
@@ -205,7 +228,7 @@ public class KarinaEnumVisitor implements IntoContext {
     }
 
     // TODO generate function for common fields
-    private KMethodModel createGetterMethod(FieldModel fieldModel) {
+    public static KMethodModel createGetterMethod(FieldModel fieldModel) {
         var region = fieldModel.region();
         var expr = new KExpr.GetMember(
                 region,
@@ -222,7 +245,8 @@ public class KarinaEnumVisitor implements IntoContext {
                 ImmutableList.of(),
                 ImmutableList.of(),
                 expr,
-                ImmutableList.of(), region,
+                ImmutableList.of(),
+                region,
                 fieldModel.classPointer(),
                 List.of()
         );
@@ -230,8 +254,8 @@ public class KarinaEnumVisitor implements IntoContext {
 
     private KFieldModel enumField(KarinaParser.ParameterContext ctx, ClassPointer owningClass) {
 
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
         var type = this.visitor.typeVisitor.visitType(ctx.type());
         var mods = Modifier.PRIVATE | Modifier.FINAL;
         return new KFieldModel(name, type, mods, region, owningClass, null);

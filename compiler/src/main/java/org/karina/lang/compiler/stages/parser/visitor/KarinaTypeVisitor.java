@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.stages.parser.visitor;
 
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.IntoContext;
 import org.karina.lang.compiler.utils.KType;
@@ -15,11 +15,11 @@ import java.util.List;
  * Used to convert an AST fieldType object to the corresponding {@link KType}.
  */
 public class KarinaTypeVisitor implements IntoContext {
-    private final RegionContext conv;
+    private final RegionContext context;
     private final KarinaUnitVisitor visitor;
 
     public KarinaTypeVisitor(KarinaUnitVisitor visitor, RegionContext converter) {
-        this.conv = converter;
+        this.context = converter;
         this.visitor = visitor;
     }
 
@@ -28,13 +28,27 @@ public class KarinaTypeVisitor implements IntoContext {
         var inner = visitInnerType(ctx.typeInner());
 
         if (ctx.typePostFix() != null) {
+            var otherInnerCtx = ctx.typePostFix().typeInner();
 
-            if (inner.isPrimitive() || inner.isVoid()) {
-                Log.syntaxError(this, this.conv.toRegion(ctx), "Invalid optional type");
-                throw new Log.KarinaException();
+            if (otherInnerCtx != null) {
+                var otherInner = visitInnerType(otherInnerCtx);
+                if (inner.isPrimitive() || inner.isVoid()) {
+                    Log.syntaxError(this, this.context.toRegion(ctx), "Invalid ok result type");
+                    throw new Log.KarinaException();
+                } else if (otherInner.isPrimitive() || otherInner.isVoid()) {
+                    Log.syntaxError(this, this.context.toRegion(ctx), "Invalid err result type");
+                    throw new Log.KarinaException();
+                }
+                //link to karina standard library result type
+                return KType.KARINA_RESULT(inner, otherInner);
+            } else {
+                if (inner.isPrimitive() || inner.isVoid()) {
+                    Log.syntaxError(this, this.context.toRegion(ctx), "Invalid optional type");
+                    throw new Log.KarinaException();
+                }
+                //link to karina standard library option type
+                return KType.KARINA_OPTION(inner);
             }
-            //link to karina standard library option type
-            return KType.KARINA_OPTION(inner);
         }
 
         return inner;
@@ -42,7 +56,7 @@ public class KarinaTypeVisitor implements IntoContext {
 
     public KType visitInnerType(KarinaParser.TypeInnerContext ctx) {
 
-        var region = this.conv.toRegion(ctx);
+        var region = this.context.toRegion(ctx);
         if (ctx.VOID() != null) {
             return KType.NONE;
         } else if (ctx.INT() != null) {
@@ -69,7 +83,7 @@ public class KarinaTypeVisitor implements IntoContext {
             var innerType = ctx.arrayType().type();
             var inner = visitType(innerType);
             if (inner.isVoid()) {
-                var innerRegion = this.conv.toRegion(innerType);
+                var innerRegion = this.context.toRegion(innerType);
                 Log.error(this, new AttribError.NotSupportedType(innerRegion, inner));
                 throw new Log.KarinaException();
             }
@@ -89,7 +103,7 @@ public class KarinaTypeVisitor implements IntoContext {
 
     public KType.UnprocessedType visitStructType(KarinaParser.StructTypeContext ctx) {
 
-        var region = this.conv.toRegion(ctx);
+        var region = this.context.toRegion(ctx);
         var path = this.visitor.visitDotWordChain(ctx.dotWordChain());
         var generics =
                 ctx.genericHint() != null ? this.visitor.visitGenericHint(ctx.genericHint()) : List.<KType>of();
@@ -114,7 +128,7 @@ public class KarinaTypeVisitor implements IntoContext {
         return ctx.type().stream().map(ref -> {
             var mapped = visitType(ref);
             if (mapped.isVoid()) {
-                var innerRegion = this.conv.toRegion(ref);
+                var innerRegion = this.context.toRegion(ref);
                 Log.error(this, new AttribError.NotSupportedType(innerRegion, mapped));
                 throw new Log.KarinaException();
             }

@@ -1,10 +1,13 @@
-// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/resources/grammar/signature/Signature.g4 by ANTLR 4.13.2
+// Generated from C:/Users/Morit/Documents/Projects/Java/ttyl/compiler/grammar/signature/Signature.g4 by ANTLR 4.13.2
 package org.karina.lang.compiler.jvm_loading.signature.gen;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
+import org.antlr.v4.runtime.misc.*;
 import org.antlr.v4.runtime.tree.*;
 import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast", "CheckReturnValue", "this-escape"})
 public class SignatureParser extends Parser {
@@ -115,19 +118,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_fieldTypeSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterFieldTypeSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitFieldTypeSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitFieldTypeSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final FieldTypeSignatureContext fieldTypeSignature() throws RecognitionException {
@@ -172,19 +162,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_classSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterClassSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitClassSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitClassSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final ClassSignatureContext classSignature() throws RecognitionException {
@@ -260,19 +237,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_methodTypeSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterMethodTypeSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitMethodTypeSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitMethodTypeSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final MethodTypeSignatureContext methodTypeSignature() throws RecognitionException {
@@ -353,19 +317,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_formalTypeParameters; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterFormalTypeParameters(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitFormalTypeParameters(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitFormalTypeParameters(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final FormalTypeParametersContext formalTypeParameters() throws RecognitionException {
@@ -424,19 +375,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_formalTypeParameter; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterFormalTypeParameter(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitFormalTypeParameter(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitFormalTypeParameter(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final FormalTypeParameterContext formalTypeParameter() throws RecognitionException {
@@ -486,19 +424,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_classBound; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterClassBound(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitClassBound(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitClassBound(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final ClassBoundContext classBound() throws RecognitionException {
@@ -541,19 +466,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_interfaceBound; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterInterfaceBound(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitInterfaceBound(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitInterfaceBound(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final InterfaceBoundContext interfaceBound() throws RecognitionException {
@@ -588,19 +500,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_superclassSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterSuperclassSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitSuperclassSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitSuperclassSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final SuperclassSignatureContext superclassSignature() throws RecognitionException {
@@ -633,19 +532,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_superinterfaceSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterSuperinterfaceSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitSuperinterfaceSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitSuperinterfaceSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final SuperinterfaceSignatureContext superinterfaceSignature() throws RecognitionException {
@@ -684,19 +570,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_fieldTypeSignatureInner; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterFieldTypeSignatureInner(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitFieldTypeSignatureInner(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitFieldTypeSignatureInner(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final FieldTypeSignatureInnerContext fieldTypeSignatureInner() throws RecognitionException {
@@ -761,19 +634,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_classTypeSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterClassTypeSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitClassTypeSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitClassTypeSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final ClassTypeSignatureContext classTypeSignature() throws RecognitionException {
@@ -841,19 +701,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_packageSpecifier; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterPackageSpecifier(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitPackageSpecifier(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitPackageSpecifier(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final PackageSpecifierContext packageSpecifier() throws RecognitionException {
@@ -908,19 +755,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_simpleClassTypeSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterSimpleClassTypeSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitSimpleClassTypeSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitSimpleClassTypeSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final SimpleClassTypeSignatureContext simpleClassTypeSignature() throws RecognitionException {
@@ -964,19 +798,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_classTypeSignatureSuffix; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterClassTypeSignatureSuffix(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitClassTypeSignatureSuffix(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitClassTypeSignatureSuffix(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final ClassTypeSignatureSuffixContext classTypeSignatureSuffix() throws RecognitionException {
@@ -1012,19 +833,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_typeVariableSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterTypeVariableSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitTypeVariableSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitTypeVariableSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final TypeVariableSignatureContext typeVariableSignature() throws RecognitionException {
@@ -1064,19 +872,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_typeArguments; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterTypeArguments(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitTypeArguments(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitTypeArguments(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final TypeArgumentsContext typeArguments() throws RecognitionException {
@@ -1129,19 +924,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_typeArgument; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterTypeArgument(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitTypeArgument(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitTypeArgument(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final TypeArgumentContext typeArgument() throws RecognitionException {
@@ -1201,19 +983,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_wildcardIndicator; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterWildcardIndicator(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitWildcardIndicator(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitWildcardIndicator(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final WildcardIndicatorContext wildcardIndicator() throws RecognitionException {
@@ -1255,19 +1024,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_arrayTypeSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterArrayTypeSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitArrayTypeSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitArrayTypeSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final ArrayTypeSignatureContext arrayTypeSignature() throws RecognitionException {
@@ -1305,19 +1061,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_typeSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterTypeSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitTypeSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitTypeSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final TypeSignatureContext typeSignature() throws RecognitionException {
@@ -1375,19 +1118,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_returnType; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterReturnType(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitReturnType(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitReturnType(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final ReturnTypeContext returnType() throws RecognitionException {
@@ -1448,19 +1178,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_throwsSignature; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterThrowsSignature(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitThrowsSignature(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitThrowsSignature(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final ThrowsSignatureContext throwsSignature() throws RecognitionException {
@@ -1515,19 +1232,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_baseType; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterBaseType(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitBaseType(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitBaseType(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final BaseTypeContext baseType() throws RecognitionException {
@@ -1618,19 +1322,6 @@ public class SignatureParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_identifier; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).enterIdentifier(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof SignatureListener ) ((SignatureListener)listener).exitIdentifier(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof SignatureVisitor ) return ((SignatureVisitor<? extends T>)visitor).visitIdentifier(this);
-			else return visitor.visitChildren(this);
-		}
 	}
 
 	public final IdentifierContext identifier() throws RecognitionException {

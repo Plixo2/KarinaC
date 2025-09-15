@@ -1,10 +1,9 @@
 package org.karina.lang.compiler.model_api.impl;
 
-import lombok.RequiredArgsConstructor;
 import org.karina.lang.compiler.model_api.impl.table.ClassLookup;
 import org.karina.lang.compiler.model_api.impl.table.LinearLookup;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
@@ -20,13 +19,11 @@ public class ModelBuilder {
     private final ClassLookup tree = new LinearLookup();
 
 
-    public void addClass(IntoContext c, ClassModel classModel) {
-        synchronized (this.tree) {
-            var prev = this.tree.insert(classModel.path(), classModel);
-            if (prev != null) {
-                testDuplicate(c.intoContext(), prev, classModel.region(), classModel.path());
-                throw new Log.KarinaException();
-            }
+    public synchronized void addClass(IntoContext c, ClassModel classModel) {
+        var prev = this.tree.insert(classModel.path(), classModel);
+        if (prev != null) {
+            testDuplicate(c.intoContext(), prev, classModel.region(), classModel.path());
+            throw new Log.KarinaException();
         }
     }
 

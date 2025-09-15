@@ -1,6 +1,6 @@
 package org.karina.lang.compiler.stages.lower;
 
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Region;
 
@@ -41,7 +41,7 @@ public class LowerType {
     public KType lowerClassType(Region region, KType.ClassType type) {
         var pointer = type.pointer();
         var generics = type.generics().stream().map(ref -> lowerType(region, ref)).toList();
-        return new KType.ClassType(pointer, generics);
+        return pointer.implement(generics);
     }
 
     private KType lowerFunctionType(Region region, KType.FunctionType functionType) {

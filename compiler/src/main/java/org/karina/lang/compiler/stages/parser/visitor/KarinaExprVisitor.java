@@ -3,17 +3,17 @@ package org.karina.lang.compiler.stages.parser.visitor;
 import com.google.common.collect.ImmutableList;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.text.StringEscapeUtils;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.visitor.model.KarinaUnitVisitor;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -39,6 +39,13 @@ public class KarinaExprVisitor implements IntoContext {
             var type = varDefContext.type() == null ? null : this.typeVisitor.visitType(varDefContext.type());
             var expr = visitExprWithBlock(varDefContext.exprWithBlock());
             return new KExpr.VariableDefinition(region, name, type, expr, null);
+        } else if (ctx.usingVarDef() != null) {
+            var usingVarDefContext = ctx.usingVarDef();
+            var name = this.conv.region(usingVarDefContext.id());
+            var type = usingVarDefContext.type() == null ? null : this.typeVisitor.visitType(usingVarDefContext.type());
+            var expr = visitExpression(usingVarDefContext.expression());
+            var block = visitExprWithBlock(usingVarDefContext.exprWithBlock());
+            return new KExpr.UsingVariableDefinition(region, name, type, expr, block, null);
         } else if (ctx.RETURN() != null) {
             var expr = ctx.exprWithBlock() == null ? null : visitExprWithBlock(ctx.exprWithBlock());
             return new KExpr.Return(region, expr, null);
@@ -91,14 +98,11 @@ public class KarinaExprVisitor implements IntoContext {
         var thenBlock = visitBlock(ctx.block());
         BranchPattern branchPattern = null;
         if (condition instanceof KExpr.IsInstanceOf(Region instanceRegion, KExpr left, KType isType)) {
-            if (isType.isVoid() || isType.isPrimitive()) {
-                Log.error(this, new AttribError.NotSupportedType(instanceRegion, isType));
-                throw new Log.KarinaException();
-            }
             if (ctx.id() != null) {
                 condition = left;
                 branchPattern = new BranchPattern.Cast(
-                        instanceRegion, isType,
+                        instanceRegion,
+                        isType,
                         this.conv.region(ctx.id()),
                         null
                 );
@@ -122,11 +126,6 @@ public class KarinaExprVisitor implements IntoContext {
             if (shortPattern != null) {
                 var regionShortPattern = this.conv.toRegion(shortPattern);
                 var isType = this.typeVisitor.visitType(shortPattern.type());
-                if (isType.isVoid() || isType.isPrimitive()) {
-                    var regionInner = this.conv.toRegion(shortPattern.type());
-                    Log.error(this, new AttribError.NotSupportedType(regionInner, isType));
-                    throw new Log.KarinaException();
-                }
                 if (shortPattern.id() != null) {
                     elseBranchPattern = new BranchPattern.Cast(
                             regionShortPattern,
@@ -277,8 +276,8 @@ public class KarinaExprVisitor implements IntoContext {
         if (ctx.additiveExpression() != null) {
             Region position;
             BinaryOperator operator;
-            if (ctx.CHAR_PLIS() != null) {
-                position = this.conv.toRegion(ctx.CHAR_PLIS());
+            if (ctx.CHAR_PLUS() != null) {
+                position = this.conv.toRegion(ctx.CHAR_PLUS());
                 operator = BinaryOperator.ADD;
             } else if (ctx.CHAR_MINUS() != null) {
                 position = this.conv.toRegion(ctx.CHAR_MINUS());
@@ -377,13 +376,25 @@ public class KarinaExprVisitor implements IntoContext {
 
         var region = this.conv.toRegion(ctx);
         var regionMerged = region.merge(prev.region());
-        if (ctx.id() != null) {
-            var name = this.conv.region(ctx.id());
-            return new KExpr.GetMember(regionMerged, prev, name, false, null);
-        } else if (ctx.CLASS() != null) {
-            var nameRegion = this.conv.toRegion(ctx.CLASS());
-            var name = RegionOf.region(nameRegion, "class");
-            return new KExpr.GetMember(regionMerged, prev, name, false, null);
+        if (ctx.dotPostFix() != null) {
+            var dotNotation = ctx.dotPostFix();
+            if (dotNotation.id() != null) {
+                var name = this.conv.region(dotNotation.id());
+                return new KExpr.GetMember(regionMerged, prev, name, false, null);
+            } else if (dotNotation.CLASS() != null) {
+                var nameRegion = this.conv.toRegion(dotNotation.CLASS());
+                var name = RegionOf.region(nameRegion, "class");
+                return new KExpr.GetMember(regionMerged, prev, name, false, null);
+            } else {
+                if (this.intoContext().infos().allowMissingFields()) {
+                    // put '<unknown>' to generate report later
+                    var name = RegionOf.region(region, "<unknown>");
+                    return new KExpr.GetMember(regionMerged, prev, name, false, null);
+                } else {
+                    Log.syntaxError(this, region, "Missing field or method");
+                    throw new Log.KarinaException();
+                }
+            }
         } else if (ctx.CHAR_QUESTION() != null) {
             return new KExpr.Unwrap(regionMerged, prev, null);
         } else if (ctx.expressionList() != null) {
@@ -442,7 +453,31 @@ public class KarinaExprVisitor implements IntoContext {
                 Log.syntaxError(this, region, "Invalid number");
                 throw new Log.KarinaException();
             }
-        } else if (ctx.id() != null && !ctx.id().isEmpty()) {
+        } else if (ctx.id() != null) {
+            var firstName = this.conv.region(ctx.id());
+            var restOfNames = ctx.pathPostFix().stream().map(ref -> {
+                var pathID = ref.id();
+                var pathRegion = this.conv.toRegion(ref);
+
+                var name = switch (pathID) {
+                    //<unknown> to generate a report later
+                    case null -> {
+                        if (this.intoContext().infos().allowMissingFields()) {
+                            yield "<unknown>";
+                        } else {
+                            Log.syntaxError(this, region, "Missing path element");
+                            throw new Log.KarinaException();
+                        }
+                    }
+                    default -> this.conv.escapeID(pathID);
+                };
+
+                return RegionOf.region(pathRegion, name);
+
+            }).toList();
+
+            var fullPath = new ObjectPath(firstName.value()).append(restOfNames.stream().map(RegionOf::value).toList());
+
             if (ctx.initList() != null) {
                 //
                 List<KType> generics;
@@ -458,26 +493,24 @@ public class KarinaExprVisitor implements IntoContext {
                     var value = visitExprWithBlock(ref.exprWithBlock());
                     return new NamedExpression(initRegion, name, value, null);
                 }).toList();
-                var names = ctx.id().stream().map(this.conv::region).toList();
-                var regionOfName = names.stream().map(RegionOf::region).reduce(Region::merge).orElseThrow(() -> {
-                    Log.temp(this, region, "Invalid region");
-                    return new Log.KarinaException();
-                });
-
-                var path = new ObjectPath(names.stream().map(RegionOf::value).toList());
-                var type = new KType.UnprocessedType(regionOfName, RegionOf.region(regionOfName, path), generics);
+                var regionFullPath = restOfNames.stream().map(RegionOf::region).reduce(firstName.region(), Region::merge);
+                var type = new KType.UnprocessedType(regionFullPath, RegionOf.region(regionFullPath, fullPath), generics);
                 return new KExpr.CreateObject(
                         region,
                         type,
                         inits
                 );
             } else {
-                if (ctx.id().size() > 1) {
-                    var elements = ctx.id().stream().map(this.conv::escapeID).toList();
-                    return new KExpr.StaticPath(region, new ObjectPath(elements), null);
+                if (restOfNames.isEmpty()) {
+                    return new KExpr.Literal(region, firstName.value(), null);
                 } else {
-                    var text = this.conv.escapeID(ctx.id().getFirst());
-                    return new KExpr.Literal(region, text, null);
+                    var individualRegions = new ImmutableList.Builder<Region>();
+                    individualRegions.add(firstName.region());
+                    for (var restOfName : restOfNames) {
+                        individualRegions.add(restOfName.region());
+                    }
+
+                    return new KExpr.StaticPath(region, individualRegions.build(), fullPath, null);
                 }
             }
         } else if (ctx.STRING_LITERAL() != null) {

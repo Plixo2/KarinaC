@@ -1,13 +1,13 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
@@ -38,7 +38,8 @@ public class KarinaInterfaceVisitor implements IntoContext {
         var name = this.context.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT;
+        // interfaces cannot be private
+        final var mods = (ctx.PUB() != null ? Modifier.PUBLIC : 0) | Modifier.INTERFACE | Modifier.ABSTRACT;
 
         KType.ClassType superClass = KType.ROOT;
 
@@ -47,7 +48,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
         for (var implCtx : ctx.interfaceExtension()) {
             var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
-            var clsType = new KType.ClassType(classPointer, structType.generics());
+            var clsType = classPointer.implement(structType.generics());
             interfaces.add(clsType);
         }
 
@@ -55,7 +56,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
         for (var functionContext : ctx.function()) {
             var method = this.visitor.methodVisitor.visit(
                     currentClass, ImmutableList.of(),
-                    functionContext
+                    functionContext, false
             );
             methods.add(method);
 
@@ -65,7 +66,27 @@ public class KarinaInterfaceVisitor implements IntoContext {
             }
         }
 
-        var fields = ImmutableList.<KFieldModel>of();
+        var fields = ImmutableList.<KFieldModel>builder();
+
+        var constNames = new ArrayList<String>();
+        var constValues = new ArrayList<KExpr>();
+        for (var constContext : ctx.const_()) {
+            var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
+            var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
+            constNames.add(constModel.name());
+            constValues.add(visitExpression);
+            fields.add(constModel);
+        }
+        if (!constNames.isEmpty()) {
+            var clinit = KarinaUnitVisitor.createStaticConstructor(
+                    this,
+                    region,
+                    currentClass,
+                    constNames,
+                    constValues
+            );
+            methods.add(clinit);
+        }
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
@@ -90,7 +111,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
                 host,
                 interfaces.build(),
                 List.of(),
-                fields,
+                fields.build(),
                 methods.build(),
                 generics,
                 imports,

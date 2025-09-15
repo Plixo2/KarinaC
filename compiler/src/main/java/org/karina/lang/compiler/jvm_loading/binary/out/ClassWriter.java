@@ -1,8 +1,6 @@
 package org.karina.lang.compiler.jvm_loading.binary.out;
 
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
-import org.karina.lang.compiler.model_api.ClassModel;
-import org.karina.lang.compiler.utils.Generic;
 
 import java.io.IOException;
 import java.io.OutputStream;

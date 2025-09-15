@@ -2,8 +2,9 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
@@ -43,7 +44,7 @@ public class KarinaStructVisitor implements IntoContext {
         var path = owningPath.append(name);
         //assume to be valid, as you can only get this, if the class is valid
         var currentClass = ClassPointer.of(region, path);
-        var mods = Modifier.PUBLIC;
+        final int mods = ctx.PUB() != null ? Modifier.PUBLIC : 0;
 
         var superClass = KType.ROOT;
 
@@ -52,7 +53,7 @@ public class KarinaStructVisitor implements IntoContext {
             if (superAnnotation.superType() instanceof KType.UnprocessedType superType) {
                 var superPath = superType.name().value();
                 var superClassPointer = ClassPointer.of(region, superPath);
-                superClass = new KType.ClassType(superClassPointer, superType.generics());
+                superClass = superClassPointer.implement(superType.generics());
             } else if (superAnnotation.superType() instanceof KType.ClassType superType) {
                 superClass = superType;
             } else {
@@ -70,13 +71,14 @@ public class KarinaStructVisitor implements IntoContext {
             //pointer have to be validated in the import stage
             var structType = this.visitor.typeVisitor.visitStructType(implCtx.structType());
             var classPointer = ClassPointer.of(region, structType.name().value());
-            var clsType = new KType.ClassType(classPointer, structType.generics());
+            var clsType = classPointer.implement(structType.generics());
             interfaces.add(clsType);
 
             for (var functionContext : implCtx.function()) {
                 methods.add(this.visitor.methodVisitor.visit(
                         currentClass, ImmutableList.of(),
-                        functionContext
+                        functionContext,
+                        true
                 ));
             }
         }
@@ -87,14 +89,14 @@ public class KarinaStructVisitor implements IntoContext {
             var methodModel = this.visitor.methodVisitor.visit(
                     currentClass,
                     ImmutableList.of(),
-                    functionContext
+                    functionContext, false
             );
             methods.add(methodModel);
 
             if (methodModel.name().equals("<init>")) {
                 containsConstructor = true;
             } else if (methodModel.name().equals("toString")) {
-                if (methodModel.parameters().isEmpty()) {
+                if (methodModel.parameters().isEmpty() && Modifier.isPublic(methodModel.modifiers())) {
                     containsToString = true;
                 }
             }
@@ -103,32 +105,27 @@ public class KarinaStructVisitor implements IntoContext {
         var fields = ImmutableList.<KFieldModel>builder();
 
         for (var fieldContext : ctx.field()) {
-            fields.add(this.visitField(fieldContext, currentClass));
+            // make field public only when the its not mutable
+            // A field also cannot be public when the parent is not public
+            var fieldModel = this.visitField(fieldContext, currentClass, ctx.PUB() != null);
+            fields.add(fieldModel);
+            // when public and mutable, generate a getter
+            var shouldGenerateGetter = fieldContext.PUB() != null && fieldContext.MUT() != null;
+            if (shouldGenerateGetter) {
+                methods.add(KarinaEnumVisitor.createGetterMethod(fieldModel));
+            }
+
         }
 
         var constNames = new ArrayList<String>();
         var constValues = new ArrayList<KExpr>();
         for (var constContext : ctx.const_()) {
-            var visitExpression = this.visitor.exprVisitor.visitExpression(constContext.expression());
+            var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
             var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
             constNames.add(constModel.name());
             constValues.add(visitExpression);
             fields.add(constModel);
         }
-
-
-        var fieldsList = fields.build();
-
-        var memberFields = fieldsList.stream().filter(ref -> !Modifier.isStatic(ref.modifiers())).toList();
-        if (!containsConstructor) {
-            var constructor = createDefaultConstructor(region, currentClass, memberFields, Modifier.PUBLIC, superClass);
-            methods.add(constructor);
-        }
-        if (!containsToString) {
-            var toStringMethod = createToStringMethod(region, name, currentClass, memberFields);
-            methods.add(toStringMethod);
-        }
-
         if (!constNames.isEmpty()) {
             var clinit = KarinaUnitVisitor.createStaticConstructor(
                     this,
@@ -139,6 +136,20 @@ public class KarinaStructVisitor implements IntoContext {
             );
             methods.add(clinit);
         }
+
+        var fieldsList = fields.build();
+
+        var memberFields = fieldsList.stream().filter(ref -> !Modifier.isStatic(ref.modifiers())).toList();
+        if (!containsConstructor) {
+            var constructor = createDefaultConstructor(region, currentClass, memberFields, mods, superClass);
+            methods.add(constructor);
+        }
+        if (!containsToString) {
+            var toStringMethod = createToStringMethod(region, name, currentClass, memberFields);
+            methods.add(toStringMethod);
+        }
+
+
 
         var generics = ImmutableList.<Generic>of();
         if (ctx.genericHintDefinition() != null) {
@@ -179,7 +190,7 @@ public class KarinaStructVisitor implements IntoContext {
         return newModel;
     }
 
-    private KFieldModel visitField(KarinaParser.FieldContext ctx, ClassPointer owningClass) {
+    private KFieldModel visitField(KarinaParser.FieldContext ctx, ClassPointer owningClass, boolean isParentPublic) {
 
         var region = this.context.toRegion(ctx);
         var name = this.context.escapeID(ctx.id());
@@ -190,8 +201,22 @@ public class KarinaStructVisitor implements IntoContext {
         } else {
             mods = Modifier.FINAL;
         }
-        mods |= Modifier.PUBLIC;
-
+        if (isParentPublic) {
+            if (ctx.PUB() != null && ctx.MUT() == null) {
+                // only make it public if it is not mutable, otherwise generate a getter
+                mods |= Modifier.PUBLIC;
+            } else {
+                mods |= Modifier.PRIVATE;
+            }
+        } else {
+            // when the parent is not public, public fields are not allowed
+            if (ctx.PUB() != null) {
+                Log.syntaxError(this, region, "private classes cannot have public fields");
+                throw new Log.KarinaException();
+            } else {
+                mods |= Modifier.PRIVATE;
+            }
+        }
         return new KFieldModel(name, type, mods, region, owningClass, null);
     }
 
@@ -221,7 +246,6 @@ public class KarinaStructVisitor implements IntoContext {
         var arguments = List.<KExpr>of();
         var superCall = new KExpr.Call(region, superLiteral, List.of(), arguments, null);
         expressions.add(superCall);
-
 
 
         for (var field : fields) {
@@ -256,7 +280,6 @@ public class KarinaStructVisitor implements IntoContext {
             ClassPointer classPointer,
             List<KFieldModel> fields
     ) {
-
 
         var components = new ArrayList<StringComponent>();
 

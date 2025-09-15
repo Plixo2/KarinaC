@@ -3,9 +3,10 @@ package org.karina.lang.compiler.stages.imports.table;
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.model_api.Generic;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
@@ -70,7 +71,7 @@ public record UserImportTable(
             case KType.PrimitiveType primitiveType -> primitiveType;
             case KType.Resolvable resolvable -> resolvable;
             case KType.ClassType classType -> importUnprocessedType(region, classType.pointer().path(), classType.generics(), flags);
-            case KType.UnprocessedType unprocessedType -> importUnprocessedType(unprocessedType.region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
+            case KType.UnprocessedType unprocessedType -> importUnprocessedType(unprocessedType.name().region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
             case KType.VoidType _ -> KType.NONE;
         };
     }
@@ -157,7 +158,7 @@ public record UserImportTable(
         }
         //</editor-fold>
 
-        return new KType.ClassType(classPointer, newGenerics);
+        return classPointer.implement(newGenerics);
 
     }
 
@@ -363,19 +364,24 @@ public record UserImportTable(
      */
     public void logUnknownPointerError(Region region, ObjectPath path) {
         var available = availableTypeNames();
-        Log.error(this.c, new ImportError.UnknownImportType(region, path.mkString("::"), available));
+        var availablePaths = availableTypePaths();
+        Log.error(this.c, new ImportError.UnknownImportType(region, path.mkString("::"), available, availablePaths));
     }
 
     private Set<String> availableTypeNames() {
         var keys = new HashSet<>(this.classes.keySet());
+        keys.addAll(this.generics.keySet());
+        return keys;
+    }
+
+    private Set<ObjectPath> availableTypePaths() {
+        var keys = new HashSet<ObjectPath>();
         for (var objectPath : this.model.getBinaryClasses()) {
-            keys.add(objectPath.path().mkString("::"));
+            keys.add(objectPath.path());
         }
         for (var objectPath : this.model.getUserClasses()) {
-            keys.add(objectPath.path().mkString("::"));
+            keys.add(objectPath.path());
         }
-
-        keys.addAll(this.generics.keySet());
         return keys;
     }
 

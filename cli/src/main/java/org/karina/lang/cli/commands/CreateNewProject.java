@@ -12,7 +12,7 @@ import java.nio.file.StandardOpenOption;
 public class CreateNewProject {
     private static final String PROJECT_TEMPLATE =
 """
-fn main(args: [string]) {
+pub fn main(args: [string]) {
     println("Hello, World!")
 }
 """;

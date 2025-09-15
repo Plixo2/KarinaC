@@ -1,7 +1,8 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Generic;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
@@ -74,7 +75,7 @@ public class MethodHelper {
         var currentDefined = new ArrayList<MethodToImplement>();
 
         for (var method : currentClassModel.methods()) {
-            if (Modifier.isStatic(method.modifiers())) {
+            if (Modifier.isStatic(method.modifiers()) || !Modifier.isPublic(method.modifiers())) {
                 continue;
             }
 
@@ -155,7 +156,7 @@ public class MethodHelper {
     }
 
 
-    public record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes, MethodToImplement implementing) {
+    public record MethodToImplement(String name, MethodPointer originalMethodPointer, KType returnType, KType[] argumentTypes, @Nullable MethodToImplement implementing) {
 
         private MethodToImplement project(Map<Generic, KType> mapping, MethodToImplement implementing) {
             var retProj = Types.projectGenerics(this.returnType, mapping);

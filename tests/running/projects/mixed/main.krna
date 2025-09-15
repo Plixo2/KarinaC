@@ -52,7 +52,7 @@ fn test_str(str: string, pattern: Pattern) {
 
 
 
-fn main(args: [string]) {
+pub fn main(args: [string]) {
     println(1000 - 5)
     println(main::ONE)
     println(main::Vector2D::ZERO)
@@ -216,7 +216,7 @@ struct FnWithImpl {
 }
 
 interface Consumer2 {
-    fn consume(self, input: Integer, i: int) -> Integer
+    pub fn consume(self, input: Integer, i: int) -> Integer
 }
 
 
@@ -396,7 +396,7 @@ fn identity2<T>() -> fn(T) -> T {
 //}
 
 struct ObjectSome {
-    \fn: mut string
+    mut \fn: string
 }
 
 fn curry_test() {
@@ -484,7 +484,7 @@ struct SimpleSupplier {
 }
 
 interface Interface {
-    fn function(self) -> bool
+    pub fn function(self) -> bool
 }
 
 fn expect<T, E>(result: Result<T, E>) -> T {
@@ -505,7 +505,7 @@ fn expect<T, E>(result: Result<T, E>, message: string) -> T {
     }
 }
 
-static ONE: mut int = 1
+mut static ONE: int = 1
 
 struct Vector2D {
     static ZERO: Vector2D = Vector2D::new(0)

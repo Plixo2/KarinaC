@@ -1,7 +1,7 @@
 package org.karina.lang.compiler;
 
+import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.logging.DiagnosticCollection;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -10,17 +10,16 @@ public class TestFile {
 
     private final String identifier;
 
-    FileTreeNode<TextSource> fileTree;
+    FileTreeNode fileTree;
 
     public TestFile(String name, TextSource source) {
         this.identifier = source.resource().identifier();
 
-        var basePath = new ObjectPath("src");
-        var node = new DefaultFileTree.DefaultFileNode(basePath.append(name), name, source);
-        this.fileTree = new DefaultFileTree(basePath, "src", List.of(), List.of(node));
+        var node = new DefaultFileTree.DefaultFileNode(new ObjectPath(name), name, source);
+        this.fileTree = new DefaultFileTree(null, "src", List.of(), List.of(node));
     }
 
-    public TestFile(String identifier, FileTreeNode<TextSource> fileTree) {
+    public TestFile(String identifier, FileTreeNode fileTree) {
         this.identifier = identifier;
         this.fileTree = fileTree;
     }
@@ -39,6 +38,7 @@ public class TestFile {
         var compiler = KarinaCompiler.builder()
                 .errorCollection(collection)
                 .warningCollection(warnings)
+                .allowMultipleErrors()
                 .setOutputFile(Path.of("resources/out/build.jar"))
                 .build();
 
@@ -51,7 +51,15 @@ public class TestFile {
                 throw new AssertionError("Expected success for '" + this.identifier + "'");
             }
             if (run) {
-                AutoRun.run(compilation);
+                try (var autoRun = new AutoRun()) {
+                    var result = autoRun.runWithPrints(compilation, true, new String[]{});
+                    if (result != null) {
+                        throw new RuntimeException(result.cause());
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
             }
         } else {
             if (compilation != null) {

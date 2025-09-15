@@ -1,7 +1,7 @@
 package org.karina.lang.compiler.jvm_loading.loading;
 
 import org.jetbrains.annotations.Contract;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 

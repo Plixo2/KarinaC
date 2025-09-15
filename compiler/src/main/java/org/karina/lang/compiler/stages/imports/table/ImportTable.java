@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.imports.table;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.ObjectPath;
@@ -13,9 +14,12 @@ import org.karina.lang.compiler.utils.Region;
  */
 public sealed interface ImportTable permits FunctionInterfaceTable, UserImportTable
 {
+    Model model();
+
     KType importType(Region region, KType kType);
 
     KType importType(Region region, KType kType, ImportGenericBehavior flags);
+
 
     /**
      * Used to determine how deal with generics when resolving types.

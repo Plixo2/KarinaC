@@ -20,15 +20,14 @@ struct WithFunctions {
 }
 
 interface Interface {
-    fn getString(self) -> string
+    pub fn getString(self) -> string
 }
 
 interface InterfaceGeneric<W> {
-    fn getString(self) -> W
+    pub fn getString(self) -> W
 }
 
 interface ImplGeneric {
-
     impl InterfaceGeneric<EnumObj>
 }
 

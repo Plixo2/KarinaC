@@ -1,6 +1,8 @@
 package org.karina.lang.compiler;
 
 
+import org.karina.lang.compiler.stages.generate.CustomClassWriter;
+
 import java.io.*;
 
 ///
@@ -20,6 +22,8 @@ public class Main {
 
         var exitCode = result ? 0 : 1;
         System.exit(exitCode);
+
+
 
     }
 

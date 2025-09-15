@@ -1,7 +1,7 @@
 
 
 struct Mutable {
-    x: mut int
+    mut x: int
 }
 
 fn assign() {

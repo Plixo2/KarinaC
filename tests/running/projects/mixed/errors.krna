@@ -1,6 +1,6 @@
 
 // Expect a specific Error type, otherwise throw the other error
-fn safeCallExpect<R,T>(function: fn() -> R, cls: Class<T>) -> Result<R, T> {
+pub fn safeCallExpect<R,T>(function: fn() -> R, cls: Class<T>) -> Result<R, T> {
     Result::safeCall(function)
         .mapErr(
            // when we encounter any error, try to cast it to a InvalidPathException

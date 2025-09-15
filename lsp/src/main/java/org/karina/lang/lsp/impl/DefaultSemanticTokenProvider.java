@@ -1,0 +1,417 @@
+package org.karina.lang.lsp.impl;
+
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
+import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
+import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
+import org.karina.lang.compiler.stages.parser.gen.KarinaParserBaseVisitor;
+import org.karina.lang.lsp.lib.SemanticToken;
+import org.karina.lang.lsp.lib.SemanticTokenProvider;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
+
+
+    @Override
+    public List<Integer> getTokens(String content) {
+
+        var inputStream = CharStreams.fromString(content);
+        var karinaLexer = new KarinaLexer(inputStream);
+        var parser = new KarinaParser(new CommonTokenStream(karinaLexer));
+
+        karinaLexer.removeErrorListeners();
+        parser.removeErrorListeners();
+
+        var visitor = new SemanticVisitor();
+        visitor.visit(parser.unit());
+        return getDeltaTokens(visitor.tokens);
+    }
+
+    /// Calculates deltas for semantic tokens.
+    /// @param tokens the tokens in multiple of 4, where each group of 4 represents: line, character, length, type
+    /// @return a list of integers representing the deltas, where each group of 5 represents: deltaLine, deltaCharacter, length, type, modifier
+    private static List<Integer> getDeltaTokens(IntList tokens) {
+        assert tokens.size() % 5 == 0;
+        var result = new ArrayList<Integer>(tokens.size());
+        var groups = groupBy(tokens, 5);
+        groups.sort((p1, p2) -> {
+            var lineA = p1[0];
+            var lineB = p2[0];
+            if (lineA != lineB) {
+                return Integer.compare(lineA, lineB);
+            }
+            var columnA = p1[1];
+            var columnB = p2[1];
+            return Integer.compare(columnA, columnB);
+        });
+
+
+        var lastLine = 0;
+        var lastCharacter = 0;
+
+        for (var group : groups) {
+            var line = group[0];
+            var character = group[1];
+            var length = group[2];
+            var type = group[3];
+            var mod = group[4];
+
+            var deltaLine = line - lastLine;
+            var deltaCharacter = character - lastCharacter;
+            if (deltaLine != 0) {
+                deltaCharacter = character;
+            }
+
+            result.add(deltaLine);
+            result.add(deltaCharacter);
+            result.add(length);
+            result.add(type);
+            result.add(mod);
+
+            lastLine = line;
+            lastCharacter = character;
+        }
+
+        return result;
+    }
+
+    private static List<int[]> groupBy(IntList inputList, int groupSize) {
+        List<int[]> result = new ArrayList<>();
+        for (int i = 0; i < inputList.size(); i += groupSize) {
+            var group = new int[groupSize];
+            for (int j = 0; j < groupSize; j++) {
+                group[j] = inputList.get(i + j);
+            }
+            result.add(group);
+        }
+        return result;
+    }
+
+
+    private static class SemanticVisitor extends KarinaParserBaseVisitor<Object> implements  /*for constants*/ SemanticToken {
+        private final IntList tokens = new IntList();
+
+        private void addToken(@Nullable Token token, int type, int mod) {
+            if (token == null) {
+                return;
+            }
+            var line = token.getLine() - 1;
+            var character = token.getCharPositionInLine();
+            var length = token.getText().length();
+            this.tokens.add(line, character, length, type, mod);
+        }
+
+        private void addToken(@Nullable KarinaParser.IdContext id, int type, int mod) {
+            if (id == null) {
+                return;
+            }
+            addToken(id.start, type, mod);
+            var escaped = id.escaped();
+            if (escaped != null) {
+                addToken(escaped.start, type, mod);
+            }
+        }
+        private void addToken(@Nullable KarinaParser.IdContext id, int type) {
+            addToken(id, type, 0);
+        }
+        private void addColored(@Nullable KarinaParser.IdContext id, int defaultType) {
+            if (id == null) {
+                return;
+            }
+            var text = id.getText();
+            if (text == null) {
+                return;
+            }
+            if (isUppercase(text) && text.length() > 1) {
+                addToken(id, PROPERTY, MOD_READONLY);
+            } else if (startsWithUppercase(text)) {
+                addToken(id, CLASS);
+            } else {
+                addToken(id, defaultType);
+            }
+
+        }
+        private void addColored(@Nullable KarinaParser.IdContext id) {
+            addColored(id, FUNCTION);
+        }
+
+        @Override
+        public Object visitStruct(KarinaParser.StructContext ctx) {
+            addToken(ctx.id(), CLASS, MOD_DEFINITION | MOD_STATIC);
+            return super.visitStruct(ctx);
+        }
+
+        @Override
+        public Object visitImport_(KarinaParser.Import_Context ctx) {
+            var idContext = ctx.id();
+            if (idContext != null) {
+                addToken(idContext, PROPERTY, MOD_READONLY);
+            }
+
+            var dotWordChainContext = ctx.dotWordChain();
+            if (dotWordChainContext != null) {
+                var ids = dotWordChainContext.id();
+                if (ids != null) {
+                    for (var id : ids) {
+                        addToken(id, NAMESPACE);
+                    }
+                }
+            }
+
+            var commaWordChain = ctx.commaWordChain();
+            if (commaWordChain != null) {
+                var ids = commaWordChain.id();
+                if (ids != null) {
+                    for (var id : ids) {
+                        addColored(id);
+                    }
+                }
+            }
+
+            return super.visitImport_(ctx);
+        }
+
+        @Override
+        public Object visitFunction(KarinaParser.FunctionContext ctx) {
+            addToken(ctx.id(), FUNCTION, MOD_DEFINITION);
+            return super.visitFunction(ctx);
+        }
+
+        @Override
+        public Object visitConst(KarinaParser.ConstContext ctx) {
+            if (ctx.MUT() != null) {
+                addToken(ctx.id(), VARIABLE, MOD_DECLARATION | MOD_STATIC);
+            } else {
+                addToken(ctx.id(), VARIABLE, MOD_DECLARATION | MOD_STATIC | MOD_READONLY);
+            }
+            return super.visitConst(ctx);
+        }
+
+        @Override
+        public Object visitField(KarinaParser.FieldContext ctx) {
+            if (ctx.MUT() != null) {
+                addToken(ctx.id(), PROPERTY, MOD_DECLARATION);
+            } else {
+                addToken(ctx.id(), PROPERTY, MOD_DECLARATION | MOD_READONLY);
+            }
+
+            return super.visitField(ctx);
+        }
+
+        @Override
+        public Object visitEnum(KarinaParser.EnumContext ctx) {
+            addToken(ctx.id(), ENUM, MOD_DEFINITION | MOD_STATIC);
+
+            return super.visitEnum(ctx);
+        }
+
+        @Override
+        public Object visitEnumMember(KarinaParser.EnumMemberContext ctx) {
+            addToken(ctx.id(), ENUM_MEMBER, MOD_DEFINITION | MOD_STATIC);
+            return super.visitEnumMember(ctx);
+        }
+
+        @Override
+        public Object visitInterface(KarinaParser.InterfaceContext ctx) {
+            addToken(ctx.id(), INTERFACE);
+            return super.visitInterface(ctx);
+        }
+
+        @Override
+        public Object visitParameter(KarinaParser.ParameterContext ctx) {
+            addToken(ctx.id(), PARAMETER);
+            return super.visitParameter(ctx);
+        }
+
+        @Override
+        public Object visitStructType(KarinaParser.StructTypeContext ctx) {
+            var dotWordChain = ctx.dotWordChain();
+            if (dotWordChain != null) {
+                var ids = dotWordChain.id();
+                if (ids != null) {
+                    for (var id : ids) {
+                        addToken(id, CLASS);
+                    }
+                }
+            }
+            return super.visitStructType(ctx);
+        }
+
+        @Override
+        public Object visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
+            var ids = ctx.genericWithBound();
+            if (ids != null) {
+                for (var id : ids) {
+                    addToken(id.id(), TYPE_PARAMETER);
+                }
+            }
+
+            return super.visitGenericHintDefinition(ctx);
+        }
+
+        @Override
+        public Object visitAnnotation(KarinaParser.AnnotationContext ctx) {
+            addToken(ctx.id(), MACRO);
+            return super.visitAnnotation(ctx);
+        }
+
+        @Override
+        public Object visitJsonPair(KarinaParser.JsonPairContext ctx) {
+            addToken(ctx.id(), STRING);
+            return super.visitJsonPair(ctx);
+        }
+
+        @Override
+        public Object visitVarDef(KarinaParser.VarDefContext ctx) {
+            addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
+            return super.visitVarDef(ctx);
+        }
+
+        @Override
+        public Object visitMatchInstance(KarinaParser.MatchInstanceContext ctx) {
+            addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
+            return super.visitMatchInstance(ctx);
+        }
+
+
+        @Override
+        public Object visitIf(KarinaParser.IfContext ctx) {
+            addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
+            return super.visitIf(ctx);
+        }
+
+        @Override
+        public Object visitIsShort(KarinaParser.IsShortContext ctx) {
+            addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
+            return super.visitIsShort(ctx);
+        }
+
+        @Override
+        public Object visitFactor(KarinaParser.FactorContext ctx) {
+            var postFixContexts = ctx.postFix();
+
+
+            if ((postFixContexts == null || postFixContexts.isEmpty()) || postFixContexts.getFirst() != null && postFixContexts.getFirst().CHAR_L_PAREN() == null) {
+                var object = ctx.object();
+                if (object != null && object.CHAR_L_BRACE() == null) {
+                    var ids = getPathElements(object);
+                    if (ids != null && !ids.isEmpty()) {
+                        var lastId = ids.getLast();
+                        //no call, has to be a variable
+                        addColored(lastId, VARIABLE);
+                    }
+                }
+            }
+
+            if (postFixContexts != null) {
+                for (var i = 0; i < postFixContexts.size(); i++) {
+                    var postFixContext = postFixContexts.get(i);
+                    if (postFixContext == null) {
+                        continue;
+                    }
+                    if (i == 0 && postFixContext.CHAR_L_PAREN() != null) {
+                        var object = ctx.object();
+                        if (object != null) {
+                            var ids = getPathElements(object);
+                            if (ids != null) {
+                                if (!ids.isEmpty()) {
+                                    var last = ids.getLast();
+                                    addToken(last, FUNCTION);
+                                }
+                            }
+                        }
+                    }
+                    var hasNext = i < postFixContexts.size() - 1;
+                    var dotPostFix = postFixContext.dotPostFix();
+                    if (dotPostFix == null) {
+                        continue;
+                    }
+                    var id = dotPostFix.id();
+                    if (id == null) {
+                        continue;
+                    }
+                    if (hasNext) {
+                        var nextPostFix = postFixContexts.get(i + 1);
+                        if (nextPostFix != null && nextPostFix.CHAR_L_PAREN() != null) {
+                            addToken(id, METHOD);
+                        } else {
+                            addToken(id, PROPERTY, MOD_READONLY);
+                        }
+                    } else {
+                        addToken(id, PROPERTY, MOD_READONLY);
+                    }
+                }
+            }
+
+
+            return super.visitFactor(ctx);
+        }
+
+        private @Nullable List<KarinaParser.IdContext> getPathElements(KarinaParser.ObjectContext ctx) {
+            var id = ctx.id();
+            if (id == null) {
+                return null;
+            }
+            var paths = ctx.pathPostFix();
+            if (paths == null || paths.isEmpty()) {
+                return List.of(id);
+            }
+            var result = new ArrayList<KarinaParser.IdContext>();
+            result.add(id);
+            for (var path : paths) {
+                var pathId = path.id();
+                if (pathId != null) {
+                    result.add(pathId);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public Object visitOptTypeName(KarinaParser.OptTypeNameContext ctx) {
+            addToken(ctx.id(), VARIABLE, MOD_DECLARATION);
+            return super.visitOptTypeName(ctx);
+        }
+
+        @Override
+        public Object visitObject(KarinaParser.ObjectContext ctx) {
+
+            var ids = getPathElements(ctx);
+            if (ids != null) {
+                if (ctx.CHAR_L_BRACE() != null) {
+                    for (var id : ids) {
+                        addToken(id, TYPE);
+                    }
+                } else {
+                    var size = ids.size();
+                    if (size >= 1) {
+                        for (var i = 0; i < ids.size()-1; i++) {
+                            var id = ids.get(i);
+                            addColored(id, NAMESPACE);
+                        }
+                    }
+                }
+            }
+
+            return super.visitObject(ctx);
+        }
+        private boolean startsWithUppercase(String s) {
+            return s != null && !s.isEmpty() && Character.isUpperCase(s.charAt(0));
+        }
+
+        private boolean isUppercase(String s) {
+            return s != null && !s.isEmpty() && s.equals(s.toUpperCase());
+        }
+
+        @Override
+        public Object visitMemberInit(KarinaParser.MemberInitContext ctx) {
+            addToken(ctx.id(), PROPERTY, MOD_READONLY);
+            return super.visitMemberInit(ctx);
+        }
+    }
+
+}

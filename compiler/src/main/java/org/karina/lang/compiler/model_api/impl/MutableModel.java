@@ -4,7 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.table.ClassLookup;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;

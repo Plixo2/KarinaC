@@ -1,16 +1,18 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.utils.*;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
@@ -35,8 +37,15 @@ public class CallAttrib  {
         List<KExpr> newArguments = new ArrayList<>();
         CallSymbol symbol;
         //OMG PATTERNS
-        if (left instanceof KExpr.Literal(var ignored, var ignored2, LiteralSymbol.StaticMethodReference(var ignored3, MethodCollection collection))) {
-            symbol = getStatic(ctx, expr, collection, genericsAnnotated, newArguments);
+        if (left instanceof KExpr.Literal(
+                var ignored, var ignored2,
+                LiteralSymbol.StaticMethodReference(
+                    var ignored3,
+                    MethodCollection collection,
+                    @Nullable KExpr firstArg
+                )
+        )) {
+            symbol = getStatic(ctx, expr, collection, genericsAnnotated, newArguments, firstArg);
         } else if (left instanceof KExpr.GetMember(var ignored, var object, var name, _, MemberSymbol.VirtualFunctionSymbol sym)) {
             symbol = getVirtual(ctx, expr, name, sym.classType(), sym.collection(), genericsAnnotated, newArguments);
             left = object;
@@ -64,12 +73,17 @@ public class CallAttrib  {
             KExpr.Call expr,
             MethodCollection collection,
             boolean genericsAnnotated,
-            List<KExpr> newArguments
+            List<KExpr> newArguments,
+            @Nullable KExpr firstArg
     ) {
         HashMap<Generic, KType> mapped = new HashMap<>();
-        var methodTypedReturn = matchCollection(ctx, collection, expr, mapped, genericsAnnotated);
+        var arguments = new ArrayList<KExpr>();
+        if (firstArg != null) {
+            arguments.add(firstArg);
+        }
+        arguments.addAll(expr.arguments());
+        var methodTypedReturn = matchCollection(ctx, collection, expr, arguments, mapped, genericsAnnotated);
         newArguments.addAll(methodTypedReturn.newArguments);
-        Log.recordType(Log.LogTypes.CALLS, "returning of static method", methodTypedReturn.pointer, methodTypedReturn.returnType);
 
         var isInterface = Modifier.isInterface(
                 ctx.model().getClass(methodTypedReturn.pointer.classPointer()).modifiers()
@@ -115,32 +129,19 @@ public class CallAttrib  {
 
         //TODO when calling onto super, invoke the super constructor,
         // validate, that this is only called in a constructor
-        Log.recordType(Log.LogTypes.CALLS, "Calling", name, "of object", superType);
 
         var superClassModel = ctx.model().getClass(superType.pointer());
         var collection = superClassModel.getMethodCollectionShallow(name);
-        Log.beginType(Log.LogTypes.CALLS, "raw pointers");
 
-        for (var pointer : collection) {
-            Log.recordType(Log.LogTypes.CALLS, "Method ", pointer);
-        }
-
-        Log.endType(Log.LogTypes.CALLS, "raw pointers");
 
 
         collection = collection.filter(ref -> {
             var modifiers = ctx.model().getMethod(ref).modifiers();
             return !Modifier.isStatic(modifiers) &&
-                    ctx.protection().canReference(ctx.owningClass(), ref.classPointer(), modifiers);
+                    ctx.protection().isMethodAccessible(ctx.model().getClass(ctx.owningClass()), ref);
         });
 
-        Log.beginType(Log.LogTypes.CALLS, "filtered pointers");
 
-        for (var pointer : collection) {
-            Log.recordType(Log.LogTypes.CALLS, "Method", pointer);
-        }
-
-        Log.endType(Log.LogTypes.CALLS, "filtered pointers");
 
         var mapped = new HashMap<Generic, KType>();
         if (superClassModel.generics().size() != superType.generics().size()) {
@@ -154,16 +155,13 @@ public class CallAttrib  {
             mapped.put(generic, type);
         }
 
-        var methodTypedReturn = matchCollection(ctx, collection, expr, mapped, genericsAnnotated);
+        var methodTypedReturn = matchCollection(ctx, collection, expr, expr.arguments(), mapped, genericsAnnotated);
         newArguments.addAll(methodTypedReturn.newArguments);
-
-        Log.recordType(Log.LogTypes.CALLS, "returning of super method", methodTypedReturn.pointer, methodTypedReturn.returnType);
 
         var yielding = switch (invocationType) {
             case InvocationType.NewInit newInit -> newInit.classType();
             default -> methodTypedReturn.returnType;
         };
-        Log.recordType(Log.LogTypes.CALLS, "yielding ", yielding);
 
         return new CallSymbol.CallSuper(
                 methodTypedReturn.pointer,
@@ -198,7 +196,7 @@ public class CallAttrib  {
                 new HashSet<>()
         );
 
-        var methodTypedReturn = matchCollection(ctx, collection, expr, mapped, genericsAnnotated);
+        var methodTypedReturn = matchCollection(ctx, collection, expr, expr.arguments(), mapped, genericsAnnotated);
         newArguments.addAll(methodTypedReturn.newArguments);
         Log.recordType(Log.LogTypes.CALLS, "returning of virtual method", methodTypedReturn.pointer, methodTypedReturn.returnType);
 
@@ -278,11 +276,10 @@ public class CallAttrib  {
         return symbol;
     }
 
-    private static MethodTypedReturn matchCollection(AttributionContext ctx, MethodCollection collection, KExpr.Call expr, Map<Generic, KType> mapped, boolean genericsAnnotated) {
-        var pointers = matchCollectionWithArgs(ctx, collection, expr, mapped, genericsAnnotated);
+    private static MethodTypedReturn matchCollection(AttributionContext ctx, MethodCollection collection, KExpr.Call expr, List<KExpr> arguments, Map<Generic, KType> mapped, boolean genericsAnnotated) {
+        var pointers = matchCollectionWithArgs(ctx, collection, expr, arguments, mapped, genericsAnnotated);
         if (pointers.size() > 1) {
-            var logName = "ambiguous-call-" + collection.name();
-            Log.recordType(Log.LogTypes.AMBIGUOUS, logName);
+            Log.warn(ctx, expr.region(), "Ambiguous call to '" + collection.name() + "'");
 
             //TODO hot fix, analyze what method is the best
             pointers = List.of(pointers.getFirst());
@@ -305,9 +302,8 @@ public class CallAttrib  {
 
             return first;
         }
-        Log.record("Constructing error for", collection.name());
 
-        var foundTypes = expr.arguments().stream().map(ref ->
+        var foundTypes = arguments.stream().map(ref ->
                 attribExpr(null, ctx, ref).expr().type()
         ).toList();
 
@@ -333,24 +329,25 @@ public class CallAttrib  {
             AttributionContext ctx,
             MethodCollection collection,
             KExpr.Call expr,
+            List<KExpr> arguments,
             Map<Generic, KType> mapped,
             boolean genericsAnnotated
     ) {
-        Log.beginType(Log.LogTypes.CALLS, collection.name());
 
         var available = new ArrayList<PotentialMethodPointer>();
         for (var method : collection) {
-            var mapping = new HashMap<>(mapped);
+
 
             var methodModel = ctx.model().getMethod(method);
 
             var parameters = methodModel.signature().parameters();
 
-            if (expr.arguments().size() != parameters.size()) {
+            if (arguments.size() != parameters.size()) {
                 continue;
             }
 
-            if (!putMappedGenerics(expr, genericsAnnotated, methodModel, mapping)) {
+            var mapping = new HashMap<>(mapped);
+            if (!putMappedGenerics(ctx, expr, genericsAnnotated, methodModel, mapping)) {
                 continue;
             }
             available.add(new PotentialMethodPointer(
@@ -361,9 +358,9 @@ public class CallAttrib  {
 
         }
 
-        var arguments = new ArrayList<PrecomputedExpr>();
-        for (var argument : expr.arguments()) {
-            arguments.add(new PrecomputedExpr(argument, ctx));
+        var argumentsP = new ArrayList<PrecomputedExpr>();
+        for (var argument : arguments) {
+            argumentsP.add(new PrecomputedExpr(argument, ctx));
         }
 
         for (var method : available) {
@@ -378,7 +375,6 @@ public class CallAttrib  {
                     Types.projectGenerics(ref, mappedCopy)
             ).toList();
 
-
             var canAssign = true;
             var i = 0;
             for (i = 0; i < mappedParameters.size(); i++) {
@@ -386,18 +382,16 @@ public class CallAttrib  {
 
                 var mutable = available.size() == 1;
 
-                var argument = arguments.get(i).getNew(mappedParameter);
+                var argument = argumentsP.get(i).getNew(mappedParameter);
 
                 var canConvert = ctx.getConversion(argument.region(), mappedParameter, argument, mutable, false) != null;
                 if (!canConvert) {
-                    Log.recordType(Log.LogTypes.CALLS, mappedParameter + " cannot be assigned from " + argument.type());
                     canAssign = false;
                     break;
                 }
             }
             if (canAssign) {
-                Log.endType(Log.LogTypes.CALLS, collection.name(), "Matched signature", mappedParameters);
-                var newArgs = arguments.stream().map(ref -> ref.get(null)).toList();
+                var newArgs = argumentsP.stream().map(ref -> ref.get(null)).toList();
                 return List.of(new MethodTypedReturn(
                         returnType,
                         methodPointer,
@@ -405,12 +399,9 @@ public class CallAttrib  {
                         List.copyOf(mappedCopy.values()),
                         mappedParameters
                 ));
-            } else {
-                Log.recordType(Log.LogTypes.CALLS, "Skipping signature ", mappedParameters, " for element " + i);
             }
 
         }
-        Log.endType(Log.LogTypes.CALLS, collection.name());
 
         return List.of();
     }
@@ -419,7 +410,9 @@ public class CallAttrib  {
 
     record PotentialMethodPointer(MethodPointer pointer, HashMap<Generic, KType> genericMapping, MethodModel methodModel) {}
 
+    @Contract(mutates = "param5")
     private static boolean putMappedGenerics(
+            AttributionContext ctx,
             KExpr.Call expr,
             boolean genericsAnnotated,
             MethodModel method,
@@ -436,12 +429,18 @@ public class CallAttrib  {
             for (var i = 0; i < methodGenerics.size(); i++) {
                 var generic = methodGenerics.get(i);
                 var type = expressionGenerics.get(i);
+
+                var dummyForGeneric = KType.Resolvable.newInstanceFromGeneric(generic);
+
+                if (!ctx.checking().canAssign(ctx, expr.region(), dummyForGeneric, type, true)) {
+                    return false;
+                }
+
                 mapped.put(generic, type);
             }
         } else {
-            for (var i = 0; i < methodGenerics.size(); i++) {
-                var generic = methodGenerics.get(i);
-                var type = new KType.Resolvable();
+            for (var generic : methodGenerics) {
+                var type = KType.Resolvable.newInstanceFromGeneric(generic);
                 mapped.put(generic, type);
             }
         }

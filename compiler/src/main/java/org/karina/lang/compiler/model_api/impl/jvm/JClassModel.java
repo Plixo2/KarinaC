@@ -9,7 +9,7 @@ import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
 

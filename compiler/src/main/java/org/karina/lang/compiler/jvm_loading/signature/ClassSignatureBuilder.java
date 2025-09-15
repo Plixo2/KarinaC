@@ -8,7 +8,7 @@ import org.karina.lang.compiler.model_api.impl.jvm.JClassModel;
 import org.karina.lang.compiler.jvm_loading.signature.model.ClassSignature;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.Region;
 
 @Getter

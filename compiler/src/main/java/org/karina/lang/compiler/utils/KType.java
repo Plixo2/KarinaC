@@ -1,11 +1,14 @@
 package org.karina.lang.compiler.utils;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm_loading.JavaResource;
+import org.karina.lang.compiler.model_api.Generic;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
 
 import java.util.*;
 
@@ -15,12 +18,12 @@ import java.util.*;
  */
 public sealed interface KType {
 
-    Region KARINA_LIB = new TextSource(
+    Region KARINA_LIB = new DefaultTextSource(
             new JavaResource("karina standard library"),
             "<karina sdk>"
     ).emptyRegion();
 
-    Region JAVA_LIB = new TextSource(
+    Region JAVA_LIB = new DefaultTextSource(
             new JavaResource("java standard library"),
          "<java sdk>"
     ).emptyRegion();
@@ -35,126 +38,63 @@ public sealed interface KType {
     PrimitiveType SHORT = new PrimitiveType(KPrimitive.SHORT);
     PrimitiveType BOOL = new PrimitiveType(KPrimitive.BOOL);
 
-    ClassType ROOT = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.ROOT_PATH),
-            List.of()
-    );
+    ClassType ROOT = ClassPointer.of(JAVA_LIB, ClassPointer.ROOT_PATH).implement(List.of());
 
-    ClassType STRING = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.STRING_PATH),
-            List.of()
-    );
+    ClassType STRING = ClassPointer.of(JAVA_LIB, ClassPointer.STRING_PATH).implement(List.of());
 
-    ClassType NUMBER = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.NUMBER_PATH),
-            List.of()
-    );
+    ClassType NUMBER = ClassPointer.of(JAVA_LIB, ClassPointer.NUMBER_PATH).implement(List.of());
 
-    ClassType DOUBLE_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.DOUBLE_PATH),
-            List.of()
-    );
+    ClassType DOUBLE_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.DOUBLE_PATH).implement(List.of());
 
-    ClassType FLOAT_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.FLOAT_PATH),
-            List.of()
-    );
+    ClassType FLOAT_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.FLOAT_PATH).implement(List.of());
 
-    ClassType LONG_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.LONG_PATH),
-            List.of()
-    );
+    ClassType LONG_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.LONG_PATH).implement(List.of());
 
-    ClassType INTEGER_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.INTEGER_PATH),
-            List.of()
-    );
+    ClassType INTEGER_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.INTEGER_PATH).implement(List.of());
 
-    ClassType BOOLEAN_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.BOOLEAN_PATH),
-            List.of()
-    );
+    ClassType BOOLEAN_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.BOOLEAN_PATH).implement(List.of());
 
-    ClassType CHARACTER_CLASS = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.CHARACTER_PATH),
-            List.of()
-    );
+    ClassType CHARACTER_CLASS = ClassPointer.of(JAVA_LIB, ClassPointer.CHARACTER_PATH).implement(List.of());
 
-    ClassType THROWABLE = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH),
-            List.of()
-    );
+    ClassType THROWABLE = ClassPointer.of(JAVA_LIB, ClassPointer.THROWABLE_PATH).implement(List.of());
 
-    ClassType MATCH_EXCEPTION = new ClassType(
-            ClassPointer.of(JAVA_LIB, ClassPointer.MATCH_EXCEPTION_PATH),
-            List.of()
-    );
+    ClassType AUTO_CLOSEABLE = ClassPointer.of(JAVA_LIB, ClassPointer.AUTO_CLOSEABLE_PATH).implement(List.of());
 
-    ClassType KARINA_RANGE = new ClassType(
-            ClassPointer.of(KARINA_LIB, ClassPointer.RANGE_PATH),
-            List.of()
-    );
+    ClassType MATCH_EXCEPTION = ClassPointer.of(JAVA_LIB, ClassPointer.MATCH_EXCEPTION_PATH).implement(List.of());
 
-    ClassType STRING_INTERPOLATION = new ClassType(
-            ClassPointer.of(KARINA_LIB, ClassPointer.STRING_INTERPOLATION_PATH),
-            List.of()
-    );
+
+    ClassType KARINA_RANGE = ClassPointer.of(KARINA_LIB, ClassPointer.RANGE_PATH).implement(List.of());
+
+    ClassType STRING_INTERPOLATION = ClassPointer.of(KARINA_LIB, ClassPointer.STRING_INTERPOLATION_PATH).implement(List.of());
 
     static ClassType ITERABLE(KType iter_type) {
-        return new ClassType(
-                ClassPointer.of(JAVA_LIB, ClassPointer.ITERABLE_PATH),
-                List.of(iter_type)
-        );
+        return ClassPointer.of(JAVA_LIB, ClassPointer.ITERABLE_PATH).implement(List.of(iter_type));
     }
 
     static ClassType ITERATOR(KType iter_type) {
-        return new ClassType(
-                ClassPointer.of(JAVA_LIB, ClassPointer.ITERATOR_PATH),
-                List.of(iter_type)
-        );
+        return ClassPointer.of(JAVA_LIB, ClassPointer.ITERATOR_PATH).implement(List.of(iter_type));
     }
 
     static ClassType CLASS_TYPE(KType clsType) {
-        return new ClassType(
-                ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE_PATH),
-                List.of(clsType)
-        );
+        return ClassPointer.of(JAVA_LIB, ClassPointer.CLASS_TYPE_PATH).implement(List.of(clsType));
     }
     static ClassType KARINA_OPTION(KType inner) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_PATH),
-                List.of(inner)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_PATH).implement(List.of(inner));
     }
     static ClassType KARINA_OPTION_SOME(KType inner) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_SOME_PATH),
-                List.of(inner)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_SOME_PATH).implement(List.of(inner));
     }
     static ClassType KARINA_OPTION_NONE(KType inner) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_NONE_PATH),
-                List.of(inner)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.OPTION_NONE_PATH).implement(List.of(inner));
     }
     static ClassType KARINA_RESULT(KType ok, KType err) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_PATH),
-                List.of(ok, err)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_PATH).implement(List.of(ok, err));
     }
     static ClassType KARINA_RESULT_OK(KType ok, KType err) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_OK_PATH),
-                List.of(ok, err)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_OK_PATH).implement(List.of(ok, err));
     }
     static ClassType KARINA_RESULT_ERR(KType ok, KType err) {
-        return new ClassType(
-                ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_ERR_PATH),
-                List.of(ok, err)
-        );
+        return ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_ERR_PATH).implement(List.of(ok, err));
     }
 
 
@@ -212,8 +152,9 @@ public sealed interface KType {
 
     default KType unpack() {
         if (this instanceof Resolvable resolvable) {
-            if (resolvable.get() != null) {
-                return resolvable.get().unpack();
+            var resolved = resolvable.get();
+            if (resolved != null) {
+                return resolved.unpack();
             }
         }
         return this;
@@ -232,6 +173,7 @@ public sealed interface KType {
                 classType.pointer().isRoot();
     }
 
+    String toString(Map<KType, Object> dejavu);
 
     enum KPrimitive {
         INT,
@@ -265,6 +207,11 @@ public sealed interface KType {
             if (obj instanceof KType type) obj = type.unpack();
             return obj instanceof VoidType;
         }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            return toString();
+        }
     }
 
     /**
@@ -275,7 +222,22 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return "~" + this.name.value().toString() + ("<" + String.join(", ", this.generics.stream().map(KType::toString).toList()) + ">");
+            return toString(new java.util.IdentityHashMap<>());
+        }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            if (dejavu.containsKey(this)) {
+                return this.name.value().toString() + (this.generics.isEmpty() ? "" : "<...>");
+            }
+            dejavu.put(this, this);
+            var generics = String.join(
+                    ", ",
+                    this.generics.stream().map(ref -> ref.toString(dejavu)).toList()
+            );
+            dejavu.remove(this);
+            return "~" + this.name.value().toString() + ("<" + generics + ">");
+
         }
     }
 
@@ -283,7 +245,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return "[" + this.elementType + "]";
+            return toString(new java.util.IdentityHashMap<>());
         }
 
         @Override
@@ -296,6 +258,17 @@ public sealed interface KType {
         public int hashCode() {
             return Objects.hashCode(this.elementType);
         }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            if (dejavu.containsKey(this)) {
+                return "[...]";
+            }
+            dejavu.put(this, this);
+            var string = "[" + this.elementType.toString(dejavu) + "]";
+            dejavu.remove(this);
+            return string;
+        }
     }
 
     record FunctionType(
@@ -307,9 +280,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            var returnType = this.returnType.toString();
-            var impls = this.interfaces.isEmpty() ? "" : " impl (" + String.join(", ", this.interfaces.stream().map(KType::toString).toList()) + ")";
-            return "fn(" + String.join(", ", this.arguments.stream().map(KType::toString).toList()) + ")" + impls + " -> " + returnType;
+            return toString(new java.util.IdentityHashMap<>());
         }
 
         @Override
@@ -325,19 +296,31 @@ public sealed interface KType {
         public int hashCode() {
             return Objects.hash(this.arguments, this.returnType, this.interfaces);
         }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            if (dejavu.containsKey(this)) {
+                return "fn(...) -> ...";
+            }
+            dejavu.put(this, this);
+
+            var returnType = this.returnType.toString(dejavu);
+            var interfaces = String.join(
+                    ", ",
+                    this.interfaces.stream().map(ref -> ref.toString(dejavu)).toList()
+            );
+            var arguments = this.arguments.stream().map(ref -> ref.toString(dejavu)).toList();
+            var impls = this.interfaces.isEmpty() ? "" : " impl (" + interfaces + ")";
+            dejavu.remove(this);
+            return "fn(" + String.join(", ", arguments) + ")" + impls + " -> " + returnType;
+        }
     }
 
     record ClassType(ClassPointer pointer, List<KType> generics) implements KType {
 
         @Override
         public String toString() {
-            String suffix = "";;
-            if (!this.generics.isEmpty()) {
-                var names = String.join(", ", this.generics.stream().map(KType::toString).toList());
-                suffix = "<" + names + ">";
-            }
-
-            return this.pointer.path().mkString("::") + suffix;
+            return toString(new java.util.IdentityHashMap<>());
         }
 
         @Override
@@ -352,6 +335,22 @@ public sealed interface KType {
         public int hashCode() {
             return Objects.hash(this.pointer, this.generics);
         }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            if (dejavu.containsKey(this)) {
+                return this.pointer.path().mkString("::") + (this.generics.isEmpty() ? "" : "<...>");
+            }
+            dejavu.put(this, this);
+
+            String suffix = "";;
+            if (!this.generics.isEmpty()) {
+                var names = String.join(", ", this.generics.stream().map(ref -> ref.toString(dejavu)).toList());
+                suffix = "<" + names + ">";
+            }
+            dejavu.remove(this);
+            return this.pointer.path().mkString("::") + suffix;
+        }
     }
 
     /**
@@ -362,7 +361,24 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return this.link.name();
+            return toString(new java.util.IdentityHashMap<>());
+        }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            if (dejavu.containsKey(this)) {
+                return this.link.name();
+            }
+            dejavu.put(this, this);
+            var constraints = new ArrayList<KType>();
+            if (this.link.superType() != null) {
+                constraints.add(this.link.superType());
+            }
+            constraints.addAll(this.link.bounds());
+
+            var constraintStr = constraints.stream().map(ref -> ref.toString(dejavu)).toList();
+            dejavu.remove(this);
+            return this.link.name() + (constraints.isEmpty() ? "" : ": " + String.join(" + ", constraintStr));
         }
 
         @Override
@@ -375,6 +391,7 @@ public sealed interface KType {
         public int hashCode() {
             return Objects.hashCode(this.link);
         }
+
     }
 
     /**
@@ -392,17 +409,46 @@ public sealed interface KType {
          */
         private final boolean canUseVoid;
 
-        public Resolvable() {
-            this(false, false);
-        }
+        @Getter
+        @Accessors(fluent = true)
+        private final List<KType> constraints;
 
-        public Resolvable(boolean canUsePrimitives, boolean canUseVoid) {
+
+        private Resolvable(boolean canUsePrimitives, boolean canUseVoid, List<KType> constraints) {
             this.canUsePrimitives = canUsePrimitives;
             this.canUseVoid = canUseVoid;
+            this.constraints = constraints;
+        }
+
+        public static Resolvable newInstance() {
+            return new Resolvable(false, false, List.of());
+        }
+
+        public static Resolvable newInstanceAllowVoid() {
+            return new Resolvable(false, true, List.of());
+        }
+
+
+        public static Resolvable newInstanceAllowPrimitives() {
+            return new Resolvable(true, false, List.of());
+        }
+
+        public static Resolvable newInstanceFromGeneric(Generic generic) {
+            var constraints = new ArrayList<KType>();
+            if (generic.superType() != null) {
+                constraints.add(generic.superType());
+            }
+            constraints.addAll(generic.bounds());
+
+            return new Resolvable(false, false, constraints);
         }
 
         public boolean canUsePrimitives() {
             return this.canUsePrimitives;
+        }
+
+        public boolean canUseVoid() {
+            return this.canUseVoid;
         }
 
         private @Nullable KType resolved = null;
@@ -415,10 +461,16 @@ public sealed interface KType {
             return this.resolved;
         }
 
+        public void collapseToObject() {
+            if (!isResolved()) {
+                this.resolved = KType.ROOT;
+            }
+        }
+
         /**
          * Make sure to call this before calling {@link #tryResolve}. Otherwise there might be cycles.
          */
-        public boolean canResolve(IntoContext c, Region checkingRegion, KType resolved) {
+        public boolean canResolve(IntoContext c, Region checkingRegion, KType resolved, TypeChecking typeChecking, boolean mutable) {
             resolved = resolved.unpack();
             /*
              * return true if the resolved type refers to itself.
@@ -433,6 +485,12 @@ public sealed interface KType {
 
             if (!this.canUsePrimitives && resolved.isPrimitive()) {
                 return false;
+            }
+
+            for (var constraint : this.constraints) {
+                if (!typeChecking.canAssignInner(c.intoContext(), checkingRegion, constraint, resolved, false)) {
+                    return false;
+                }
             }
 
             var dependencies = new ArrayList<Types.TypeDependency>();
@@ -502,13 +560,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            var code = this.hashCode() & 0xFFFF;
-            var readable = Integer.toHexString(code).toUpperCase();
-            if (this.resolved == null) {
-                return "?" + readable;
-            } else {
-                return "?" + readable + " as " + this.resolved;
-            }
+            return toString(new java.util.IdentityHashMap<>());
         }
 
         @Override
@@ -523,6 +575,25 @@ public sealed interface KType {
         @Override
         public int hashCode() {
             return Objects.hash(this.canUsePrimitives, this.canUseVoid, this.resolved);
+        }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            if (dejavu.containsKey(this)) {
+                return "?...";
+            }
+
+            var code = this.hashCode() & 0xFFFF;
+            var readable = Integer.toHexString(code).toUpperCase();
+            if (this.resolved == null) {
+
+                return "?" + readable;
+            } else {
+                dejavu.put(this, this);
+                var string = "?" + readable + " as " + this.resolved.toString(dejavu);
+                dejavu.remove(this);
+                return string;
+            }
         }
     }
 
@@ -544,6 +615,11 @@ public sealed interface KType {
         @Override
         public int hashCode() {
             return Objects.hashCode(this.primitive);
+        }
+
+        @Override
+        public String toString(Map<KType, Object> dejavu) {
+            return toString();
         }
     }
 

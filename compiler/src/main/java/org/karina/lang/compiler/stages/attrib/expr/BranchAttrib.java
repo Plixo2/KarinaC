@@ -2,12 +2,12 @@ package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.utils.symbols.BranchYieldSymbol;
 import org.karina.lang.compiler.utils.BranchPattern;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.ElsePart;
@@ -35,7 +35,7 @@ public class BranchAttrib  {
             condition = ctx.makeAssignment(condition.region(), boolType, condition);
             trueBranchPattern = null;
         } else {
-            if (!InstanceOfAttrib.isReferenceType(ctx, condition.region(), condition.type())) {
+            if (!Types.hasIdentity(condition.type())) {
                 Log.error(ctx, new AttribError.NotSupportedType(
                         condition.region(),
                         condition.type()
@@ -183,13 +183,19 @@ public class BranchAttrib  {
                 } else if (elseReturns) {
                     yieldSymbol = getSymbolFromType(then.type());
                 } else {
-                    var yieldingType = elseContext.checking().superType(
-                            ctx.intoContext(),
-                            then.region(),
-                            then.type(),
-                            elseExpr.type()
-                    );
-                    yieldSymbol = getSymbolFromType(yieldingType);
+                    if (hint != null && elseContext.checking().canAssign(ctx, expr.region(), hint, then.type(), true)
+                            && elseContext.checking().canAssign(ctx, expr.region(), hint, elseExpr.type(), true)
+                    ) {
+                        yieldSymbol = getSymbolFromType(hint);
+                    } else {
+                        var yieldingType = elseContext.checking().superType(
+                                ctx.intoContext(),
+                                then.region(),
+                                then.type(),
+                                elseExpr.type()
+                        );
+                        yieldSymbol = getSymbolFromType(yieldingType);
+                    }
                 }
             }
 
@@ -241,10 +247,10 @@ public class BranchAttrib  {
                 if (isType instanceof KType.ClassType classType) {
                     var classModel = ctx.model().getClass(classType.pointer());
                     var newGenerics = new ArrayList<KType>();
-                    for (var i = 0; i < classModel.generics().size(); i++) {
-                        newGenerics.add(new KType.Resolvable());
+                    for (var generic : classModel.generics()) {
+                        newGenerics.add(KType.Resolvable.newInstanceFromGeneric(generic));
                     }
-                    isType = new KType.ClassType(classType.pointer(), newGenerics);
+                    isType = classType.pointer().implement(newGenerics);
                     //for inference only
                     var _ = ctx.checking().canAssign(ctx, cast.region(), inferHint, isType, true);
                     //if not inferred, resolve to base case
@@ -256,8 +262,8 @@ public class BranchAttrib  {
                             type.tryResolve(ctx, cast.region(), Types.eraseGeneric(generic));
                         }
                     }
-                } else {
-                    Log.error(ctx, new AttribError.NotAClass(cast.region(), isType));
+                } else if (!Types.hasIdentity(isType)) {
+                    Log.error(ctx, new AttribError.NotSupportedType(cast.region(), isType));
                     throw new Log.KarinaException();
                 }
 

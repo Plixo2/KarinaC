@@ -6,7 +6,7 @@ import java::nio::file::InvalidPathException
 
 import errors { Modifier }
 
-fn loadFile(path: Path) -> Result<string, IOException> {
+pub fn loadFile(path: Path) -> Result<string, IOException> {
 
     let call = fn() {
         let abs_path = path.toAbsolutePath()
@@ -31,11 +31,11 @@ fn test(f: java::lang::module::ModuleDescriptor$Exports$Modifier) {
 
 
 
-fn getPath(path: string) -> Result<Path, InvalidPathException> {
+pub fn getPath(path: string) -> Result<Path, InvalidPathException> {
     errors::safeCallExpect(fn() Path.of(path, []), InvalidPathException)
 }
 
-fn exists(path: Path) -> bool {
+pub fn exists(path: Path) -> bool {
     Files.exists(path, [])
 }
 

@@ -1,5 +1,5 @@
 
-fn main(args: [string]) {
+pub fn main(args: [string]) {
     test_regex()
 }
 
@@ -28,11 +28,11 @@ fn test_str(str: string, pattern: java::util::regex::Pattern) {
     let matcher = pattern.matcher(str)
     if matcher.matches() {
         if str.contains("bab") {
-            raise java::lang::IllegalStateException{ _: 'Pattern $str matches, but contains "bab"' }
+            throw java::lang::IllegalStateException{ _: 'Pattern $str matches, but contains "bab"' }
         }
     } else {
         if !str.contains("bab") {
-            raise java::lang::IllegalStateException { _: 'Pattern $str does not match, but does not contain "bab"' }
+            throw java::lang::IllegalStateException { _: 'Pattern $str does not match, but does not contain "bab"' }
         }
     }
 }

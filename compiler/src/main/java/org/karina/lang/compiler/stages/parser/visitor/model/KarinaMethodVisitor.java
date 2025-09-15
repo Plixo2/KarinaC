@@ -1,14 +1,16 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
+import org.karina.lang.compiler.utils.annotations.AnnotationBool;
+import org.karina.lang.compiler.utils.annotations.AnnotationObject;
+import org.karina.lang.compiler.utils.logging.Log;
 
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -22,8 +24,9 @@ public class KarinaMethodVisitor implements IntoContext {
         this.context = regionContext;
     }
 
-    public KMethodModel visit(ClassPointer owningClass,  ImmutableList<KAnnotation> annotations, KarinaParser.FunctionContext function) {
+    public KMethodModel visit(ClassPointer owningClass,  ImmutableList<KAnnotation> annotations, KarinaParser.FunctionContext function, boolean asPublic) {
         String name;
+        var isPublic = function.PUB() != null || asPublic;
         if (function.id() != null) {
             name = this.context.escapeID(function.id());
         } else {
@@ -51,7 +54,15 @@ public class KarinaMethodVisitor implements IntoContext {
             expr = null;
         }
         var isAbstract = expr == null;
-        var mods = Modifier.PUBLIC | (isStatic ? Modifier.STATIC : 0) | (isAbstract ? Modifier.ABSTRACT : 0);
+        if (isAbstract) {
+            isPublic = true;
+        }
+
+        var mods = (isPublic ? Modifier.PUBLIC : Modifier.PRIVATE) | (isStatic ? Modifier.STATIC : 0) | (isAbstract ? Modifier.ABSTRACT : 0);
+
+        if (this.isExtensionMethod(annotations)) {
+            mods |= KMethodModel.EXTENSION_MODIFIER;
+        }
 
         return new KMethodModel(
                 name,
@@ -87,6 +98,33 @@ public class KarinaMethodVisitor implements IntoContext {
                 parameters.build(),
                 returnType
         );
+    }
+
+    private boolean isExtensionMethod(ImmutableList<KAnnotation> annotations) {
+
+        KAnnotation extensionAnnotation = null;
+        for (var annotation : annotations) {
+            if (annotation.name().equals("Extension")) {
+                if (extensionAnnotation != null) {
+                    Log.temp(this, annotation.region(), "Duplicate 'Extension' annotation");
+                    throw new Log.KarinaException();
+                } else {
+                    extensionAnnotation = annotation;
+                }
+            } else {
+                Log.warn(this, annotation.region(), "Unexpected annotation: " + annotation.name());
+            }
+        }
+        if (extensionAnnotation != null) {
+            if (!(extensionAnnotation.value() instanceof AnnotationBool(_, boolean value))) {
+                Log.temp(this, extensionAnnotation.value().region(), "Expected boolean value for 'Extension' annotation");
+                throw new Log.KarinaException();
+            }
+            return value;
+        } else {
+            return false;
+        }
+
     }
 
     @Override

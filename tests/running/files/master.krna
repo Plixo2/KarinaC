@@ -1,8 +1,9 @@
 
 
-fn main(args: [string]) {
+pub fn main(args: [string]) {
    test()
 }
+
 
 fn test() -> bool {
 
@@ -12,7 +13,7 @@ fn test() -> bool {
     assertFalse(10 < 5)
     assertTrue(10 > 5)
 
-
+    testMultiDimensionalArray()
 
     testEnum()
     assertTrue(testReturns())
@@ -25,49 +26,55 @@ fn test() -> bool {
     testCall()
 }
 
+fn testMultiDimensionalArray() {
+    let a = [[1, 2, 3], [4, 5, 6]]
+    let b: [[string]] = [["string", "none"]]
+    b[0][0] = "test"
+    b[0][1] = "test2"
+}
 
 fn testCall() -> bool  = true
 
 fn testEnum() {
-    let wrapped = Option.Some(10)
+    let wrapped = Option::some(10)
     let unwrapped = unwrap(wrapped)
     assert(unwrapped == 10, "Unwrapped value should be 10")
     assertFalse(wrapped is None)
-    assertTrue(wrapped is Some<?>)
+    assertTrue(wrapped is Some<any>)
 
 }
 
 fn testInference() {
-    let any = ToInfer()
-    let toInferArg = ToInferArg(Option.Some(10))
-    assertTrue(toInferArg is Ok<?, ?>)
-    let toInferArg2 = ToInferArg(Option.None())
+    let anyT = ToInfer()
+    let toInferArg = ToInferArg(Option::some(10))
+    assertTrue(toInferArg is Ok<any, any>)
+    let toInferArg2 = ToInferArg(Option.none())
     assertTrue(toInferArg2 is Err)
 
 
     let any2 = ToInfer()
     let toInferArg3 = ToInferArg(any2)
     assertTrue(toInferArg3 is Err)
-    let setTypeOf3: Result<int, int> = toInferArg3
+    let setTypeOf3: Result<Integer, Integer> = toInferArg3
 
     let any3 = ToInfer()
     let toInferArg4 = ToInferArg(any3)
-    assertTrue(toInferArg4 is Err<?, ?>)
-    let setTypeOf4: Result<string, int> = toInferArg4
+    assertTrue(toInferArg4 is Err<any, any>)
+    let setTypeOf4: Result<string, Integer> = toInferArg4
 
 
-    let anyAssigned: Option<int> = any
+    let anyAssigned: Option<Integer> = anyT
 
     let any4 = ToInfer()
     let anyAssigned2: Option<Option<string>> = any4
 }
 
-fn ToInfer<T>() -> Option<T> = Option.None()
-fn ToInferArg<T>(option: Option<T>) -> Result<T, int> {
+fn ToInfer<T>() -> Option<T> = Option::none()
+fn ToInferArg<T>(option: Option<T>) -> Result<T, Integer> {
     if option is Some s {
-        Result.Ok(s.value)
+        Result.ok(s.value())
     } else {
-        Result.Err(10)
+        Result.err(10)
     }
 }
 
@@ -118,27 +125,27 @@ fn testStaticCall() {
     assertTrue(staticGeneric(true) == true)
     assertTrue(staticGeneric(0.04) == 0.04)
     assertTrue(staticGenericUnknown(10) == 10)
-    let v1 = staticGenericNested(Option.None(), 10)
+    let v1 = staticGenericNested(Option.none(), 10)
     assertTrue(v1 is Err)
-    let v2 = staticGenericNested(Option.Some(true), 10)
-    assertTrue(v2 is Ok<?,?>)
+    let v2 = staticGenericNested(Option.some(true), 10)
+    assertTrue(v2 is Ok<any,any>)
 
-    assertTrue(orDefault(Option.Some(10), 20) == 10)
-    assertTrue(orDefault(Option.None(), 20) == 20)
+    assertTrue(orDefault(Option.some(10), 20) == 10)
+    assertTrue(orDefault(Option.none(), 20) == 20)
 }
 fn staticGeneric<T>(value: T) -> T = value
 fn staticGenericUnknown<T>(value: int) -> int = value
 fn staticGenericNested<T, E>(value: Option<T>, err: E) -> Result<T, E> {
-    if value is Some<?> s {
-        return Result.Ok(s.value)
+    if value is Some<any> s {
+        return Result.ok(s.value())
     } else {
-        return Result.Err(err)
+        return Result.err(err)
     }
 }
 
 fn orDefault<T>(value: Option<T>, defaultValue: T) -> T {
-    if value is Some<?> s {
-        return s.value
+    if value is Some<any> s {
+        return s.value()
     } else {
         return defaultValue
     }
@@ -153,19 +160,23 @@ fn testVirtualCall() {
 }
 
 fn testDynamicCall() {
-    let f = fn(a) -> int {
+    let f = fn(a) -> int impl java::util::function::IntUnaryOperator {
         a
     }
     let w: fn(int) -> int = f
     f(0)
 
-    let f2 = fn(a) a
+    let f2 = fn(a) impl BooleanUnary a
     f2(true)
-    let w2 : fn(bool) -> bool = f2
+    let w2 : fn(bool) -> bool impl BooleanUnary = f2
 
-    let f3 = fn(a) Option.Some(a)
-    assertTrue(f3(10) is Some<?>)
-    let w3: fn(int) -> Option<int> = f3
+    let f3 = fn(a: Integer) Option.some(a)
+    assertTrue(f3(10) is Some<any>)
+    let w3: fn(Integer) -> Option<Integer> = f3
+}
+
+interface BooleanUnary {
+    pub fn call(self, a: bool) -> bool
 }
 
 fn testInterfaceCall() {
@@ -181,7 +192,7 @@ fn testInterfaceCall() {
     assertTrue(InterfaceImpl.staticCall() == 20)
 }
 
-fn callAsInterface(dut: InterfaceTest<int>) {
+fn callAsInterface(dut: InterfaceTest<Integer>) {
     dut.set(20)
     assertTrue(dut.call() == 20)
     dut.callVoid()
@@ -189,37 +200,37 @@ fn callAsInterface(dut: InterfaceTest<int>) {
 }
 
 struct InterfaceImpl {
-    value: int
+    mut value: int
 
     fn staticCall() -> int = 20
 
-    impl InterfaceTest<int> {
+    impl InterfaceTest<Integer> {
         fn call(self) -> int = self.value
         fn callVoid(self) {
             //?
         }
-        fn callArgs(self, a: int, b: int) -> bool {
+        fn callArgs(self, a: int, b: Integer) -> bool {
             assertTrue(a == 1)
             assertTrue(b == 2)
             true
         }
-        fn set(self, value: int) {
+        fn set(self, value: Integer) {
             self.value = value
         }
     }
 }
 
 interface InterfaceTest<T> {
-    fn call(self) -> int
-    fn callVoid(self)
-    fn callArgs(self, a: int, b: T) -> bool
-    fn set(self, value: T)
+    pub fn call(self) -> int
+    pub fn callVoid(self)
+    pub fn callArgs(self, a: int, b: T) -> bool
+    pub fn set(self, value: T)
 
     fn staticCall() -> int = 10
 }
 
 struct DefaultStruct {
-    value: int
+    mut value: int
 
     fn setValue(self, value: int) {
         self.value = value
@@ -233,48 +244,34 @@ struct DefaultStruct {
 
 }
 
-@Throwable
-struct Error {
-    message: string
-}
 
-
-enum Option<T> {
-    Some(value: T)
-    None
-}
 
 
 fn unwrap<T>(option: Option<T>) -> T {
-    if option is None {
-        raise Error { message: "Option is None" }
-    } else if option is Some<?> s {
-        return s.value
+    if option is None n {
+        throw Error { message: "Option is None" }
+    } else is Some<any> s {
+        s.value()
     }
-}
-
-enum Result<T, E> {
-    Ok(v: T)
-    Err(e: E)
 }
 
 
 
 fn assertFalse(condition: bool) {
     if condition {
-        raise Error { message: "Assertion failed" }
+        throw AssertionError { _: "Assertion failed" }
     }
 }
 
 fn assertTrue(condition: bool) {
     if !condition {
-        raise Error { message: "Assertion failed" }
+        throw AssertionError { _: "Assertion failed" }
     }
 }
 
 
 fn assert(condition: bool, message: string) {
     if !condition {
-        raise Error { message: message }
+        throw AssertionError { _: message }
     }
 }

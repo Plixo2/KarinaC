@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.stages.imports;
 
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.Unique;
-import org.karina.lang.compiler.logging.errors.ImportError;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.*;
 
 import java.util.ArrayList;
@@ -41,6 +41,7 @@ public class ImportExpr {
             case KExpr.StringInterpolation stringInterpolation -> importStringInterpolation(ctx, stringInterpolation);
             case KExpr.Unary unary -> importUnary(ctx, unary);
             case KExpr.VariableDefinition variableDefinition -> importVariableDefinition(ctx, variableDefinition);
+            case KExpr.UsingVariableDefinition usingVariableDefinition -> importUsingVariableDefinition(ctx, usingVariableDefinition);
             case KExpr.While aWhile -> importWhile(ctx, aWhile);
             case KExpr.Throw aThrow -> importThrow(ctx, aThrow);
             case KExpr.SpecialCall aSpecialCall -> importSuper(ctx, aSpecialCall);
@@ -392,6 +393,19 @@ public class ImportExpr {
         }
         var name = expr.name();
         return new KExpr.VariableDefinition(expr.region(), name, hint, value, null);
+    }
+
+    private static KExpr importUsingVariableDefinition(ImportContext ctx, KExpr.UsingVariableDefinition expr) {
+        var value = importExpr(ctx, expr.value());
+        KType hint;
+        if (expr.varHint() == null) {
+            hint = null;
+        } else {
+            hint = ctx.resolveType(expr.region(), expr.varHint());
+        }
+        var name = expr.name();
+        var block = importExpr(ctx, expr.block());
+        return new KExpr.UsingVariableDefinition(expr.region(), name, hint, value, block, null);
     }
 
     private static KExpr importWhile(ImportContext ctx, KExpr.While expr) {

@@ -2,13 +2,14 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
+import org.karina.lang.compiler.model_api.Generic;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
@@ -79,7 +80,7 @@ public class KarinaUnitVisitor {
                 }
                 var kAnnotations = annotationsInner.build();
 
-                var method = this.methodVisitor.visit(currentClass, kAnnotations, itemContext.function());
+                var method = this.methodVisitor.visit(currentClass, kAnnotations, itemContext.function(), false);
                 methods.add(method);
             }
         }
@@ -93,7 +94,7 @@ public class KarinaUnitVisitor {
 
         for (var itemContext : ctx.item()) {
             if (itemContext.const_() != null) {
-                var visitExpression = this.exprVisitor.visitExpression(itemContext.const_().expression());
+                var visitExpression = this.exprVisitor.visitExprWithBlock(itemContext.const_().exprWithBlock());
                 var constModel = this.visitConst(itemContext.const_(), visitExpression, currentClass);
 
                 constNames.add(constModel.name());
@@ -215,7 +216,8 @@ public class KarinaUnitVisitor {
     public RegionOf<ObjectPath> visitDotWordChain(KarinaParser.DotWordChainContext ctx) {
 
         var elements = ctx.id().stream().map(this.conv::escapeID).toList();
-        return this.conv.region(new ObjectPath(elements), ctx.getSourceInterval());
+        var region = this.conv.toRegion(ctx);
+        return RegionOf.region(region, new ObjectPath(elements));
 
     }
 
@@ -237,9 +239,14 @@ public class KarinaUnitVisitor {
         var region = this.conv.toRegion(ctx);
         var name = this.conv.escapeID(ctx.id());
         var type = this.typeVisitor.visitType(ctx.type());
-        int mods = Modifier.STATIC | Modifier.PUBLIC;
+        int mods = Modifier.STATIC;
         if (ctx.MUT() == null) {
             mods |= Modifier.FINAL;
+        }
+        if (ctx.PUB() != null) {
+            mods |= Modifier.PUBLIC;
+        } else {
+            mods |= Modifier.PRIVATE;
         }
 
         Object defaultValue = null;
@@ -291,10 +298,15 @@ public class KarinaUnitVisitor {
             var name = staticFieldsNames.get(i);
             var value = staticFieldsValues.get(i);
 
-            var self = new KExpr.StaticPath(region, owningClass.path(), owningClass);
-            var fieldName = RegionOf.region(region, name);
-            var lhs = new KExpr.GetMember(region, self, fieldName, false, null);
-            var assign = new KExpr.Assignment(region, lhs, value, null);
+            var individualRegions = new ImmutableList.Builder<Region>();
+            for (var _ : owningClass.path().elements()) {
+                individualRegions.add(value.region());
+            }
+
+            var self = new KExpr.StaticPath(value.region(), individualRegions.build(), owningClass.path(), owningClass);
+            var fieldName = RegionOf.region(value.region(), name);
+            var lhs = new KExpr.GetMember(value.region(), self, fieldName, false, null);
+            var assign = new KExpr.Assignment(value.region(), lhs, value, null);
             assignments.add(assign);
         }
 
@@ -320,10 +332,17 @@ public class KarinaUnitVisitor {
     }
 
     public List<Generic> visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
-        return ctx.id().stream().map(ref -> {
-            var region = this.conv.region(ref);
-            var generic = new Generic(region.region(), region.value());
-            generic.updateBounds(KType.ROOT, List.of());
+        return ctx.genericWithBound().stream().map(ref -> {
+            var name = this.conv.region(ref.id());
+            var generic = new Generic(name.region(), name.value());
+            var bounds = ref.boundList();
+            if (bounds == null) {
+                generic.updateBounds(KType.ROOT, List.of());
+            } else {
+                var structs = bounds.structType();
+                var boundTypes = structs.stream().map(this.typeVisitor::visitStructType).toList();
+                generic.updateBounds(null, boundTypes);
+            }
             return generic;
         }).toList();
     }
@@ -331,4 +350,7 @@ public class KarinaUnitVisitor {
     public Context context() {
         return this.c;
     }
+
+
+
 }

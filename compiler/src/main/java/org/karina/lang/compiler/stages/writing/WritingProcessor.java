@@ -2,8 +2,8 @@ package org.karina.lang.compiler.stages.writing;
 
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.Config;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.FileLoadError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.FileLoadError;
 import org.karina.lang.compiler.stages.generate.JarCompilation;
 import org.karina.lang.compiler.utils.Context;
 

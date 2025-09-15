@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.model_api.ClassModel;
@@ -13,7 +14,6 @@ import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KAnnotation;
 import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.stages.imports.table.ImportTable;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.KType;
 
@@ -121,6 +121,10 @@ public class KClassModel implements ClassModel {
     @Override
     public ImmutableList<ClassPointer> nestMembers() {
         return ImmutableList.copyOf(this.nestMembers);
+    }
+
+    public ArrayList<ClassPointer> nestMembersMutable() {
+        return this.nestMembers;
     }
 
 

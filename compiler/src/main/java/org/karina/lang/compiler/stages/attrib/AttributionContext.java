@@ -2,8 +2,9 @@ package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.AttribError;
+import org.karina.lang.compiler.stages.imports.ImportContext;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.Signature;
@@ -57,7 +58,7 @@ public record AttributionContext(
 
     public AttributionContext addVariable(Variable variable) {
         if (variable.name().equals("_")) {
-            Log.warn(this.c, "Variable name '_' is reserved for ignored variables, this should not happen");
+            Log.warn(this.c, variable.region(), "Variable name '_' is reserved for ignored variables, this should not happen");
         }
         if (this.variables.contains(variable.name())) {
             var existingVariable = Objects.requireNonNull(this.variables.get(variable.name()));
@@ -74,6 +75,7 @@ public record AttributionContext(
                 this.variables.add(variable), this.table, this.checking, this.protection
         );
     }
+
 
     public AttributionContext markImmutable(Variable variable) {
         return new AttributionContext(
@@ -143,7 +145,7 @@ public record AttributionContext(
         if (rightType instanceof KType.Resolvable resolvable && !resolvable.isResolved() && !resolvable.canUsePrimitives()) {
             var unboxFrom = BOX_MAPPING.get(primitive);
             if (unboxFrom != null) {
-                var toType = new KType.ClassType(unboxFrom.pointer, List.of());
+                var toType = unboxFrom.pointer.implement(List.of());
                 //we just say, that the type is now a Boxed version, and let the makeAssignment handle the rest
                 resolvable.tryResolve(this.c, checkingRegion, toType);
 
@@ -219,11 +221,11 @@ public record AttributionContext(
                 return null;
             }
 
-            var classTypeToConvert = new KType.ClassType(boxed.pointer, List.of());
+            var classTypeToConvert = boxed.pointer.implement(List.of());
             var call = createBoxingCall(right, classTypeToConvert, primitive, debug);
 
             //it should be resolvable, even tho currently, this should not happen
-            if (!resolvable.canResolve(this.c, checkingRegion, classTypeToConvert)) {
+            if (!resolvable.canResolve(this.c, checkingRegion, classTypeToConvert, this.checking, false)) {
                 return null;
             }
             resolvable.tryResolve(this.c, checkingRegion, classTypeToConvert);
@@ -247,7 +249,7 @@ public record AttributionContext(
             if (boxing == null) {
                 return null;
             }
-            var type = new KType.ClassType(boxing.pointer, List.of());
+            var type = boxing.pointer.implement(List.of());
             var call = createBoxingCall(right, type, primitive, debug);
 
             //check again

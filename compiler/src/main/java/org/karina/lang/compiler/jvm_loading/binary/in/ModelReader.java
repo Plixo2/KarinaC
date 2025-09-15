@@ -2,21 +2,18 @@ package org.karina.lang.compiler.jvm_loading.binary.in;
 
 import org.jetbrains.annotations.NotNull;
 import org.karina.lang.compiler.KarinaCompiler;
-import org.karina.lang.compiler.logging.Log;
-import org.karina.lang.compiler.logging.errors.FileLoadError;
+import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.Logging;
+import org.karina.lang.compiler.utils.logging.errors.FileLoadError;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.utils.Context;
-import org.karina.lang.compiler.utils.IntoContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 public class ModelReader {
@@ -60,61 +57,54 @@ public class ModelReader {
 
         var offsets = outerReader.readIntList();
 
-
-        var remainingBytes = this.stream.readAllBytes();
+        byte[] remainingBytes;
+        try (var _ = c.section(Logging.BinaryFile.class,"reading stream")) {
+            remainingBytes = this.stream.readAllBytes();
+        }
 
         //Fork and Join
-        List<Future<?>> futures = new ArrayList<>();
-        var availableProcessors = Runtime.getRuntime().availableProcessors();
+        int availableProcessors = 1;
+        if (c.infos().threading()) {
+            availableProcessors = Runtime.getRuntime().availableProcessors();
+        }
 
-        Log.record("cache with " + offsets.length + " offsets and " + availableProcessors + " threads");
+        if (c.log(Logging.BinaryFile.class)) {
+            c.tag("number of offsets", offsets.length);
+            c.tag("number of threads", availableProcessors);
+        }
 
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var readers = new ClassReader[offsets.length];
-            Log.begin("calculating offsets");
+        var readers = new ClassReader[offsets.length];
+        try (var _ = c.section(Logging.BinaryFile.class,"calculating offsets")) {
             for (var index = 0; index < offsets.length; index++) {
                 readers[index] = getClassReader(index, offsets, remainingBytes);
             }
-            Log.end("calculating offsets");
+        }
 
-            Log.begin("setup");
-            var tasks = new ArrayList<Runnable>();
 
-            for (var index = 0; index < offsets.length; index++) {
-                var reader = readers[index];
-                Runnable runnable = () -> {
-                    try {
-                        var _ = reader.read(c, ttyl, builder);
-                    } catch (IOException e) {
-                        Log.fileError(c, new FileLoadError.Resource(e));
-                        throw new Log.KarinaException();
-                    }
-                };
-                tasks.add(runnable);
+
+        try (var _ = c.section(Logging.BinaryFile.class,"building classes")) {
+            try (var fork = c.fork()) {
+                for (var index = 0; index < offsets.length; index++) {
+                    var reader = readers[index];
+                    fork.collect(subC -> {
+                        try {
+                            var _ = reader.read(subC, ttyl, builder);
+                        } catch (IOException e) {
+                            Log.fileError(subC, new FileLoadError.Resource(e));
+                            throw new Log.KarinaException();
+                        }
+                        //return null, and mutate thread-safe ModelBuilder
+                        return null;
+                    });
+                }
+                var _ = fork.dispatchParallel();
             }
-            Log.end("setup");
-
-            Log.begin("submit");
-            for (var task : tasks) {
-                futures.add(executor.submit(task));
-            }
-            Log.end("submit");
-
-            Log.begin("link");
-            for (var future : futures) {
-                future.get();
-            }
-            Log.end("link");
-
-        } catch (ExecutionException | InterruptedException e) {
-            Log.internal(c, e);
-            throw new Log.KarinaException();
         }
 
         var finished = builder.build(c);
-        Log.begin("resolve");
-        ttyl.resolve(finished);
-        Log.end("resolve");
+        try (var _ = c.section(Logging.BinaryFile.class,"resolving classes")) {
+            ttyl.resolve(finished);
+        }
         return finished;
     }
 
@@ -131,7 +121,7 @@ public class ModelReader {
     }
 
 
-
+    /// Talk To You Later
     public static class TTYL {
         List<Consumer<Model>> tasks = new ArrayList<>();
 
