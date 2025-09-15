@@ -8,6 +8,7 @@ import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.expr.*;
 import org.karina.lang.compiler.utils.Variable;
+import org.karina.lang.compiler.utils.logging.Logging;
 
 
 @Getter
@@ -40,6 +41,9 @@ public final class AttributionExpr {
     public static AttributionExpr attribExpr(@Nullable KType hint, AttributionContext ctx, KExpr expr) {
         if (hint != null) {
             hint = hint.unpack();
+        }
+        if (ctx.log(Logging.Expression.class)) {
+            ctx.tag("Expr", expr.getClass().getSimpleName());
         }
         return switch (expr) {
             case KExpr.Assignment assignment -> AssignmentAttrib.attribAssignment(hint, ctx, assignment);

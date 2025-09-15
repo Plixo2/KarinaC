@@ -16,4 +16,9 @@ public sealed interface Logging {
     final class Forks implements Logging {}
 
     final class ReadBinary implements Logging {}
+
+    final class MethodAttribution implements Logging {}
+    final class ClassAttribution implements Logging {}
+    final class TypeChecking implements Logging {}
+    final class Expression implements Logging {}
 }

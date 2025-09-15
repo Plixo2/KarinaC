@@ -14,11 +14,11 @@ public interface IntoContext {
     }
 
     default void tag(String text, Object... args) {
-        intoContext().tag(text, args);
+        intoContext().tagWrapper(text, args);
     }
 
     default @Nullable Context.OpenSection section(Class<? extends Logging> type, String name) {
-        return intoContext().section(type, name);
+        return intoContext().section(type, name, 1);
     }
 
 }

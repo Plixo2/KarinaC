@@ -111,14 +111,22 @@ public final class Context implements IntoContext {
         if (!this.infos.traces()) {
             return false;
         }
-        if (type == Logging.Forks.class) {
-            return false;
-        }
+        var forbidden = Set.of(
+                Logging.Forks.class,
+                Logging.MethodAttribution.class,
+                Logging.ClassAttribution.class,
+                Logging.TypeChecking.class,
+                Logging.Expression.class
+        );
+        return !forbidden.contains(type);
 
-        return true;
     }
 
     public void tag(String text, Object... args) {
+        tagWrapper(text, args);
+    }
+
+    public void tagWrapper(String text, Object... args) {
         if (!this.infos.traces()) {
             return;
         }
@@ -136,13 +144,15 @@ public final class Context implements IntoContext {
         var trace = Thread.currentThread().getStackTrace();
         top.entries.add(new LoggingContext.Entry.Tag(formattedText, trace, false));
     }
-
-
     public @Nullable OpenSection section(Class<? extends Logging> type, String name) {
+        return section(type, name, 1);
+    }
+
+    public @Nullable OpenSection section(Class<? extends Logging> type, String name, int offset) {
         if (!this.log(type)) {
             return null;
         }
-        var subLoggingContext = this.new LoggingContext(name, 0);
+        var subLoggingContext = this.new LoggingContext(name, offset);
         this.ensureSectionStackNotEmpty();
         var top = this.sections.peek();
         top.entries.add(new LoggingContext.Entry.SubSection(subLoggingContext));

@@ -505,7 +505,7 @@ fn expect<T, E>(result: Result<T, E>, message: string) -> T {
     }
 }
 
-static ONE: mut int = 1
+mut static ONE: int = 1
 
 struct Vector2D {
     static ZERO: Vector2D = Vector2D::new(0)

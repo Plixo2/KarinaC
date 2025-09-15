@@ -38,6 +38,7 @@ public class TestFile {
         var compiler = KarinaCompiler.builder()
                 .errorCollection(collection)
                 .warningCollection(warnings)
+                .allowMultipleErrors()
                 .setOutputFile(Path.of("resources/out/build.jar"))
                 .build();
 

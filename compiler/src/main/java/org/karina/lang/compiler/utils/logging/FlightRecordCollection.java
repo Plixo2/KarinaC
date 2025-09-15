@@ -56,7 +56,7 @@ public class FlightRecordCollection {
                 case Context.LoggingContext.Entry.Tag(var text, var trace, var error) -> {
                     var childPrefix = ">  ".repeat(depth + 1);
                     var childSuffix = "";
-                    var tagStackOffset = 2;
+                    var tagStackOffset = 3;
                     if (error) {
                         tagStackOffset = 0; // point straight to the error
                     }

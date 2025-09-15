@@ -488,7 +488,7 @@ public sealed interface KType {
             }
 
             for (var constraint : this.constraints) {
-                if (!typeChecking.canAssign(c, checkingRegion, constraint, resolved, mutable)) {
+                if (!typeChecking.canAssignInner(c.intoContext(), checkingRegion, constraint, resolved, false)) {
                     return false;
                 }
             }

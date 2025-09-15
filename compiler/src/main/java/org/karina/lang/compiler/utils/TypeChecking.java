@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.utils.logging.Logging;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -20,10 +21,10 @@ public record TypeChecking(Model model) {
 
     private @Nullable KType superTypeInner(Context c, Region checkingRegion, KType a, KType b) {
         var mutable = true;
-        if (canAssign(c, checkingRegion, a, b, mutable)) {
+        if (canAssignInner(c, checkingRegion, a, b, mutable)) {
             Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + a);
             return a;
-        } else if (canAssign(c, checkingRegion, b, a, mutable)) {
+        } else if (canAssignInner(c, checkingRegion, b, a, mutable)) {
             Log.recordType(Log.LogTypes.BRANCH, "Most common super type found for " + a + " and " + b + " is " + b);
             return b;
         }
@@ -180,10 +181,23 @@ public record TypeChecking(Model model) {
      * {@code let a: left = right}
      */
     public boolean canAssign(IntoContext c, Region checkingRegion, KType left, KType right, boolean mutable) {
-        return canAssignInner(c.intoContext(), checkingRegion, left, right, mutable);
+        boolean result;
+        try (var _ = c.section(Logging.TypeChecking.class, "Assignment check")) {
+            if (c.log(Logging.TypeChecking.class)) {
+                c.tag("testing assigment", left, " from ", right, mutable ? " (mutable)" : " (immutable)");
+            }
+
+            result = canAssignInner(c.intoContext(), checkingRegion, left, right, mutable);
+
+            if (c.log(Logging.TypeChecking.class)) {
+                c.tag("assigment result", result ? "can assign" : "cannot assign");
+            }
+
+        }
+        return result;
     }
 
-    private boolean canAssignInner(Context c, Region checkingRegion, KType left, KType right, boolean mutable) {
+    public boolean canAssignInner(Context c, Region checkingRegion, KType left, KType right, boolean mutable) {
         var logName = left + " from " + right;
 
         if (left instanceof KType.Resolvable resolvable) {
@@ -225,10 +239,8 @@ public record TypeChecking(Model model) {
                             elementType,
                             mutable
                     );
-                    Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Array match", resultInner);
                     yield resultInner;
                 } else {
-                    Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Array mismatch", false);
                     yield false;
                 }
             }
@@ -237,47 +249,30 @@ public record TypeChecking(Model model) {
 
                 if (right instanceof KType.ClassType rightClassType) {
                     var classCheck = canAssignClass(c, checkingRegion, classType, rightClassType, mutable);
-                    Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class match", classCheck);
                     yield classCheck;
                 } else if (right instanceof KType.GenericLink genericLink) {
 
                     var superType = genericLink.link().superType();
                     if (superType != null) {
-                        var resultInner = canAssign(c, checkingRegion, classType, superType, mutable);
+                        var resultInner = canAssignInner(c, checkingRegion, classType, superType, mutable);
                         if (resultInner) {
                             yield true;
                         }
                     }
                     for (var bound : genericLink.link().bounds()) {
-                        var resultInner = canAssign(c, checkingRegion, classType, bound, mutable);
+                        var resultInner = canAssignInner(c, checkingRegion, classType, bound, mutable);
                         if (resultInner) {
                             yield true;
                         }
                     }
 
                     yield false;
-
-//                    if (isObject) {
-//                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Object match with generic", true);
-//                        yield true;
-//                    } else {
-//                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class mismatch with generics", false);
-//                        yield false;
-//                    }
                 } else if (right instanceof KType.FunctionType functionType) {
                     if (isObject) {
-                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Object match with function", true);
                         yield true;
                     }
-                    var resultInner = canAssignFunctionToClass(c, checkingRegion, classType, functionType, mutable);
-                    Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class match via Function interface", resultInner);
-                    yield resultInner;
+                    yield canAssignFunctionToClass(c, checkingRegion, classType, functionType, mutable);
                 } else if (right instanceof KType.ArrayType) {
-                    if (isObject) {
-                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Object match with Array", true);
-                    } else {
-                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class mismatch with Array", false);
-                    }
                     yield isObject;
                 }else {
                     Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class mismatch, right side is not a class, generic, function or array", false);
