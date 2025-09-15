@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.attrib;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.stages.imports.ImportContext;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.MethodModel;
@@ -74,6 +75,7 @@ public record AttributionContext(
                 this.variables.add(variable), this.table, this.checking, this.protection
         );
     }
+
 
     public AttributionContext markImmutable(Variable variable) {
         return new AttributionContext(
@@ -223,7 +225,7 @@ public record AttributionContext(
             var call = createBoxingCall(right, classTypeToConvert, primitive, debug);
 
             //it should be resolvable, even tho currently, this should not happen
-            if (!resolvable.canResolve(this.c, checkingRegion, classTypeToConvert)) {
+            if (!resolvable.canResolve(this.c, checkingRegion, classTypeToConvert, this.checking, false)) {
                 return null;
             }
             resolvable.tryResolve(this.c, checkingRegion, classTypeToConvert);

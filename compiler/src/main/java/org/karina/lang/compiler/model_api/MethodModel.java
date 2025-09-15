@@ -6,10 +6,10 @@ import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
 import org.karina.lang.compiler.utils.Region;
 
 public interface MethodModel {
+    int EXTENSION_MODIFIER = 0x10000;
     int modifiers();
     String name();
     ImmutableList<String> parameters();
@@ -26,5 +26,9 @@ public interface MethodModel {
     }
     default boolean isStaticConstructor() {
         return name().equals("<clinit>");
+    }
+
+    static boolean isExtension(int modifiers) {
+        return (modifiers & EXTENSION_MODIFIER) != 0;
     }
 }

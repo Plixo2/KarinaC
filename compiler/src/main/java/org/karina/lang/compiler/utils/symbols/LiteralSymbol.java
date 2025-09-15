@@ -1,11 +1,9 @@
 package org.karina.lang.compiler.utils.symbols;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
-import org.karina.lang.compiler.utils.MethodCollection;
-import org.karina.lang.compiler.utils.Region;
-import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Variable;
+import org.karina.lang.compiler.utils.*;
 
 public sealed interface LiteralSymbol {
     Region region();
@@ -34,7 +32,7 @@ public sealed interface LiteralSymbol {
         }
     }
 
-    record StaticMethodReference(Region region, MethodCollection collection) implements LiteralSymbol { }
+    record StaticMethodReference(Region region, MethodCollection collection, @Nullable KExpr firstArg) implements LiteralSymbol { }
     record StaticFieldReference(Region region, FieldPointer fieldPointer, KType fieldType) implements LiteralSymbol { }
 
     record VariableReference(Region region, Variable variable) implements LiteralSymbol { }

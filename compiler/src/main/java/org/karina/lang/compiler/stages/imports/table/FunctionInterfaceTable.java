@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.stages.imports.table;
 
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
@@ -12,7 +13,11 @@ import java.util.ArrayList;
  * This is the second importing step.
  * @param model has to be fully imported.
  */
-public record FunctionInterfaceTable(Context c, Model model) implements ImportTable, IntoContext {
+public record FunctionInterfaceTable(Context c, Model model, TypeChecking checking) implements ImportTable, IntoContext {
+    public FunctionInterfaceTable(Context c, Model model) {
+        this(c, model, new TypeChecking(model));
+    }
+
     @Override
     public KType importType(Region region, KType kType) {
         return importType(region, kType, ImportGenericBehavior.DEFAULT);
@@ -31,7 +36,24 @@ public record FunctionInterfaceTable(Context c, Model model) implements ImportTa
                                         .stream()
                                         .map(ref -> importType(region, ref, flags))
                                         .toList();
-                yield  classType.pointer().implement(generics);
+
+                var toImplement = this.model.getClass(classType.pointer());
+
+                if (toImplement.generics().size() == generics.size()) {
+                    for (var i = 0; i < toImplement.generics().size(); i++) {
+                        var genericToImplement = toImplement.generics().get(i);
+                        var implementation = generics.get(i);
+
+                        var dummyForGeneric = KType.Resolvable.newInstanceFromGeneric(genericToImplement);
+
+                        if (!this.checking.canAssign(this, region, dummyForGeneric, implementation, true)) {
+                            Log.error(this, new AttribError.TypeMismatch(region, new KType.GenericLink(genericToImplement), implementation));
+                            throw new Log.KarinaException();
+                        }
+                    }
+                }
+
+                yield classType.pointer().implement(generics);
             }
             case KType.UnprocessedType unprocessedType -> {
                 Log.temp(this, region, "Unprocessed type: " + unprocessedType.name() + " after importing, this should not happen.");

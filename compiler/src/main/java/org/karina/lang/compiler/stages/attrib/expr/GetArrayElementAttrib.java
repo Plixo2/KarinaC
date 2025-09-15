@@ -17,7 +17,7 @@ public class GetArrayElementAttrib  {
             @Nullable KType hint, AttributionContext ctx, KExpr.GetArrayElement expr) {
 
         KType arrayHint;
-        arrayHint = Objects.requireNonNullElse(hint, new KType.PrimitiveType.Resolvable(true, false));
+        arrayHint = Objects.requireNonNullElse(hint, KType.Resolvable.newInstanceAllowPrimitives());
         arrayHint = new KType.ArrayType(arrayHint);
 
         var left = attribExpr(arrayHint, ctx, expr.left()).expr();

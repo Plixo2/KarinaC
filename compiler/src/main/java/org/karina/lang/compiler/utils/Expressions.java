@@ -97,6 +97,9 @@ public class Expressions {
             case KExpr.Match match -> {
                 throw new IllegalStateException("Symbol is null");
             }
+            case KExpr.UsingVariableDefinition usingVariableDefinition -> {
+                return getType(usingVariableDefinition.block());
+            }
             case KExpr.Number number -> {
                 if (number.symbol() == null) {
                     throw new IllegalStateException("Symbol is null");
@@ -166,7 +169,9 @@ public class Expressions {
                 }
                 yield branch.symbol() instanceof BranchYieldSymbol.Returns;
             }
-
+            case KExpr.UsingVariableDefinition usingVariableDefinition -> {
+                yield usingVariableDefinition.block().doesReturn();
+            }
             case KExpr.Return aReturn -> true;
             //Also include loop control
             case KExpr.Continue aContinue -> true;

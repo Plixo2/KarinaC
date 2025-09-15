@@ -20,6 +20,7 @@ import org.karina.lang.compiler.stages.writing.WritingProcessor;
 import org.karina.lang.compiler.utils.Context;
 import org.karina.lang.compiler.utils.FileTreeNode;
 import org.karina.lang.compiler.utils.KType;
+import org.objectweb.asm.Opcodes;
 
 import java.nio.file.Path;
 import java.util.Objects;
@@ -39,6 +40,9 @@ public class KarinaCompiler {
     /// 16 bits for the version, 16 bits for iteration
     public static final int BINARY_VERSION = 6 << 16 | 4;
     public static final int BINARY_MAGIC_NUMBER = 20000411;
+
+    //Java 21
+    public static final int CLASS_TARGET = Opcodes.V21;
 
     /**
      * Cache for faster testing & faster lsp
@@ -91,8 +95,10 @@ public class KarinaCompiler {
         Model userModel;
         try (var _ = c.section(Logging.Parsing.class,"parsing")) {
             userModel = parser.parseTree(c, files);
-            c.tag("number of files", files.leafCount());
-            c.tag("number of classes", userModel.getUserClasses().size());
+            if (c.log(Logging.Parsing.class)) {
+                c.tag("number of files", files.leafCount());
+                c.tag("number of classes", userModel.getUserClasses().size());
+            }
         }
 
         Model languageModel;
@@ -246,6 +252,7 @@ public class KarinaCompiler {
 
         public KarinaCompiler build() {
             var contextHandling = Context.ContextHandling.of(true, this.threading, this.allowMultipleErrors);
+            contextHandling = contextHandling.enableMissingMembersSupport();
             var compiler = new KarinaCompiler(contextHandling);
             compiler.outputConfig = this.outputConfig;
             compiler.useBinaryFormat = this.useBinaryFormat;

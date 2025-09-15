@@ -1,9 +1,12 @@
 package org.karina.lang.compiler.stages.imports;
 
+import com.google.common.collect.ImmutableList;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.stages.imports.table.ImportTable;
 import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;
+
+import java.util.Optional;
 
 /**
  * Only used as a wrapper for the ImportTable, no need for this calls in the future
@@ -34,6 +37,7 @@ public record ImportContext(Context c, ImportTable table) implements IntoContext
         }
 
         var region = staticPath.region();
+        var individualRegions = staticPath.individualRegions();
         var path = staticPath.path();
         var pointer = importTable.getClassPointerNullable(region, path);
         if (pointer == null) {
@@ -43,18 +47,22 @@ public record ImportContext(Context c, ImportTable table) implements IntoContext
             }
             var potentialFunctionName = path.last();
             var potentialClassName = path.everythingButLast();
-            var potentialClass = importTable.getClassPointer(region, potentialClassName);
+            var prevRegions = individualRegions.subList(0, individualRegions.size() - 1);
+            var classRegion = prevRegions.stream().reduce(Region::merge).orElse(region);
+
+            var potentialClass = importTable.getClassPointer(classRegion, potentialClassName);
+
 
             return new KExpr.GetMember(
-                    region,
-                    new KExpr.StaticPath(region, potentialClassName, potentialClass),
-                    RegionOf.region(region, potentialFunctionName),
+                    classRegion,
+                    new KExpr.StaticPath(classRegion, prevRegions, potentialClassName, potentialClass),
+                    RegionOf.region(classRegion, potentialFunctionName),
                     true,
                     null
             );
 
         } else {
-            return new KExpr.StaticPath(region, path, pointer);
+            return new KExpr.StaticPath(region, individualRegions, path, pointer);
         }
     }
 }

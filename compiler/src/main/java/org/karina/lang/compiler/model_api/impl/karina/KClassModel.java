@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.model_api.ClassModel;
@@ -13,13 +14,11 @@ import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KAnnotation;
 import org.karina.lang.compiler.utils.KImport;
-import org.karina.lang.compiler.stages.imports.table.ImportTable;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.KType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 //TODO add outerMethod and outerMethodDescriptor
 @RequiredArgsConstructor

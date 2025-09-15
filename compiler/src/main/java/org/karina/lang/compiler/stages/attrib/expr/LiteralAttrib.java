@@ -36,7 +36,7 @@ public class LiteralAttrib  {
             var referenceClass = Types.erasedClass(classModel);
             symbol = new LiteralSymbol.StaticClassReference(expr.region(), staticClass, referenceClass, false);
         } else if (staticMethodCollection != null) {
-            symbol = new LiteralSymbol.StaticMethodReference(expr.region(), staticMethodCollection);
+            symbol = new LiteralSymbol.StaticMethodReference(expr.region(), staticMethodCollection, null);
         } else if (staticField != null) {
             var type = ctx.model().getField(staticField).type();
             symbol = new LiteralSymbol.StaticFieldReference(expr.region(), staticField, type);

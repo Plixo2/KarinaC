@@ -1,5 +1,0 @@
-#!/bin/bash
-
-pushd "$(dirname "$0")" > /dev/null
-java -cp "build.jar:../../src/main/resources/karina_base.jar" main
-popd > /dev/null

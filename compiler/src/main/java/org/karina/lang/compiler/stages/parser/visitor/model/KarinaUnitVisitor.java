@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
@@ -93,7 +94,7 @@ public class KarinaUnitVisitor {
 
         for (var itemContext : ctx.item()) {
             if (itemContext.const_() != null) {
-                var visitExpression = this.exprVisitor.visitExpression(itemContext.const_().expression());
+                var visitExpression = this.exprVisitor.visitExprWithBlock(itemContext.const_().exprWithBlock());
                 var constModel = this.visitConst(itemContext.const_(), visitExpression, currentClass);
 
                 constNames.add(constModel.name());
@@ -297,7 +298,12 @@ public class KarinaUnitVisitor {
             var name = staticFieldsNames.get(i);
             var value = staticFieldsValues.get(i);
 
-            var self = new KExpr.StaticPath(value.region(), owningClass.path(), owningClass);
+            var individualRegions = new ImmutableList.Builder<Region>();
+            for (var _ : owningClass.path().elements()) {
+                individualRegions.add(value.region());
+            }
+
+            var self = new KExpr.StaticPath(value.region(), individualRegions.build(), owningClass.path(), owningClass);
             var fieldName = RegionOf.region(value.region(), name);
             var lhs = new KExpr.GetMember(value.region(), self, fieldName, false, null);
             var assign = new KExpr.Assignment(value.region(), lhs, value, null);
@@ -326,10 +332,17 @@ public class KarinaUnitVisitor {
     }
 
     public List<Generic> visitGenericHintDefinition(KarinaParser.GenericHintDefinitionContext ctx) {
-        return ctx.id().stream().map(ref -> {
-            var region = this.conv.region(ref);
-            var generic = new Generic(region.region(), region.value());
-            generic.updateBounds(KType.ROOT, List.of());
+        return ctx.genericWithBound().stream().map(ref -> {
+            var name = this.conv.region(ref.id());
+            var generic = new Generic(name.region(), name.value());
+            var bounds = ref.boundList();
+            if (bounds == null) {
+                generic.updateBounds(KType.ROOT, List.of());
+            } else {
+                var structs = bounds.structType();
+                var boundTypes = structs.stream().map(this.typeVisitor::visitStructType).toList();
+                generic.updateBounds(null, boundTypes);
+            }
             return generic;
         }).toList();
     }

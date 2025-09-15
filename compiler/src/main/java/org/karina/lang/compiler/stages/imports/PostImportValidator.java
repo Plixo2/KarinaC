@@ -1,11 +1,8 @@
 package org.karina.lang.compiler.stages.imports;
 
+import org.karina.lang.compiler.model_api.*;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.ImportError;
-import org.karina.lang.compiler.model_api.ClassModel;
-import org.karina.lang.compiler.model_api.FieldModel;
-import org.karina.lang.compiler.model_api.MethodModel;
-import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
@@ -100,6 +97,10 @@ public class PostImportValidator {
                     Log.syntaxError(c, field.region(), "Non-final fields in interfaces are not allowed");
                     throw new Log.KarinaException();
                 }
+                if (!Modifier.isPublic(field.modifiers())) {
+                    Log.syntaxError(c, field.region(), "Non-public fields in interfaces are not allowed");
+                    throw new Log.KarinaException();
+                }
             }
 
         }
@@ -140,6 +141,17 @@ public class PostImportValidator {
 
                 } else if (method.expression() == null) {
                     Log.syntaxError(c, method.region(), "Method must have an expression: " + method.name());
+                    throw new Log.KarinaException();
+                }
+            }
+
+            if (MethodModel.isExtension(method.modifiers())) {
+                if (!Modifier.isStatic(method.modifiers())) {
+                    Log.syntaxError(c, method.region(), "Extension methods must be static");
+                    throw new Log.KarinaException();
+                }
+                if (method.parameters().isEmpty()) {
+                    Log.syntaxError(c, method.region(), "Extension methods must have at least one parameter");
                     throw new Log.KarinaException();
                 }
             }

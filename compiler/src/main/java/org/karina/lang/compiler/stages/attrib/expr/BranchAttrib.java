@@ -247,8 +247,8 @@ public class BranchAttrib  {
                 if (isType instanceof KType.ClassType classType) {
                     var classModel = ctx.model().getClass(classType.pointer());
                     var newGenerics = new ArrayList<KType>();
-                    for (var i = 0; i < classModel.generics().size(); i++) {
-                        newGenerics.add(new KType.Resolvable());
+                    for (var generic : classModel.generics()) {
+                        newGenerics.add(KType.Resolvable.newInstanceFromGeneric(generic));
                     }
                     isType = classType.pointer().implement(newGenerics);
                     //for inference only

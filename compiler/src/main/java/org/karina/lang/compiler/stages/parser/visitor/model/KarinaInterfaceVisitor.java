@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
@@ -70,7 +71,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
         var constNames = new ArrayList<String>();
         var constValues = new ArrayList<KExpr>();
         for (var constContext : ctx.const_()) {
-            var visitExpression = this.visitor.exprVisitor.visitExpression(constContext.expression());
+            var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
             var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
             constNames.add(constModel.name());
             constValues.add(visitExpression);

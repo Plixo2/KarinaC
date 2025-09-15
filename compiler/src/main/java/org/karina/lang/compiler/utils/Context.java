@@ -103,6 +103,9 @@ public final class Context implements IntoContext {
         return this.new Collector<>();
     }
 
+    public Context uncheckedSubContext() {
+        return new Context("unchecked-fork", this.infos, 1);
+    }
 
     public boolean log(Class<? extends Logging> type) {
         if (!this.infos.traces()) {
@@ -273,7 +276,7 @@ public final class Context implements IntoContext {
             return dispatchWrapper();
         }
 
-        //for the same thread offset
+        // wrapper for the same thread offset
         private List<T> dispatchWrapper() {
 
             if (this.dispatched.getAndSet(true)) {
@@ -312,6 +315,7 @@ public final class Context implements IntoContext {
         public void close()  {
             if (!this.dispatched.get()) {
                 Log.internal(Context.this, new IllegalStateException("dispatch() not called on this collector"));
+                throw new Log.KarinaException();
             }
         }
     }

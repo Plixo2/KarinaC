@@ -155,7 +155,7 @@ public class ClosureHelper {
         for (var arg : expr.args()) {
             var type = arg.type();
             if (type == null) {
-                type = new KType.Resolvable(false, false);
+                type = KType.Resolvable.newInstance();
             }
             var variable = new Variable(
                     arg.region(),
@@ -175,7 +175,7 @@ public class ClosureHelper {
 
         var returnType = expr.returnType();
         if (returnType == null) {
-            returnType = new KType.Resolvable(false, true);
+            returnType = KType.Resolvable.newInstanceAllowVoid();
         }
 
         return new ArgsAndReturnType(newArgs, returnType);

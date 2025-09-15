@@ -39,6 +39,7 @@ SUPER: 'super';
 PUBLIC: 'public';
 PUB: 'pub';
 WHERE: 'where';
+USING: 'using';
 INTERFACE: 'interface';
 SELF: 'self';
 INT: 'int';
@@ -52,7 +53,6 @@ STRING: 'string';
 FLOAT: 'float';
 BOOL: 'bool';
 VOID: 'void';
-JSON: 'json';
 CONTINUE: 'continue';
 
 ARROW_RIGHT: '->';
@@ -103,15 +103,15 @@ CHAR_LITERAL: '\'' (CHAR_CHARACTERS | ESCAPED_DOLLAR | CHAR_VARIABLE)* '\'';
 fragment CHAR_VARIABLE: '$' (ID | 'expr' | 'type' | '\\' ESCAPED);
 fragment ESCAPED: FN | IS | IN | AS | EXTEND
                    | MATCH | OVERRIDE | VIRTUAL | YIELD
-                   | STRUCT | TRAIT | IMPL | LET
-                   | SELF | STRING | JSON | BOOL | WHERE | CONST | MUT | ANY;
+                   | STRUCT | TRAIT | IMPL | LET | USING
+                   | SELF | STRING | BOOL | WHERE | CONST | MUT | ANY;
 fragment ESCAPED_DOLLAR: '\\$';
 fragment CHAR_CHARACTERS: CHAR_CHARACTER+;
 fragment CHAR_CHARACTER: ~[$'\\\r\n] | ESCAPE_SEQUENCE;
 
 fragment STRING_CHARACTERS: STRING_CHARACTER+;
 fragment STRING_CHARACTER: ~["\\\r\n] | ESCAPE_SEQUENCE;
-fragment ESCAPE_SEQUENCE: '\\' [btnfr"'\\] | 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT;
+fragment ESCAPE_SEQUENCE: '\\' ([btnfr"'\\] | 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT);
 
 NUMBER: HEX_NUMBER | BINARY_NUMBER | INTEGER_NUMBER | FLOAT_NUMBER;
 fragment HEX_NUMBER: '0x' HEX_DIGIT+;

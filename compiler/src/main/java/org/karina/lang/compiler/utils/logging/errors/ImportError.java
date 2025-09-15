@@ -38,7 +38,6 @@ public sealed interface ImportError extends Error {
                 names.addAll(simpleNames);
                 names.addAll(pathLookup.keySet());
 
-
                 var suggestions = DidYouMean.suggestions(names, name, 10);
 
                 if (!suggestions.isEmpty()) {

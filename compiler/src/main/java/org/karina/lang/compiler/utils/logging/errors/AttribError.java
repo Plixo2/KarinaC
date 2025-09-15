@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.utils.logging.errors;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.utils.logging.DidYouMean;
@@ -132,9 +133,11 @@ public sealed interface AttribError extends Error {
 
                 var fieldNames = unknownMember.availableFields().stream().map(FieldModel::name).collect(Collectors.toSet());
                 var methodNames = unknownMember.availableMethods().stream().map(MethodModel::name).collect(Collectors.toSet());
+                var classNames = unknownMember.availableClasses().stream().map(ClassModel::name).collect(Collectors.toSet());
 
                 Collection<String> suggestionField;
                 Collection<String> suggestionMethod;
+                Collection<String> suggestionClasses;
                 Collection<RegionOf<String>> suggestionsOther;
                 if (unknownMember.name() != null) {
                     builder.append("Unknown Member '").append(unknownMember.name()).append("'")
@@ -142,6 +145,7 @@ public sealed interface AttribError extends Error {
 
                     suggestionField = DidYouMean.suggestions(fieldNames, unknownMember.name(), 10);
                     suggestionMethod = DidYouMean.suggestions(methodNames, unknownMember.name(), 10);
+                    suggestionClasses = DidYouMean.suggestions(classNames, unknownMember.name(), 10);
                     suggestionsOther = DidYouMean.suggestionsOfRegions(new HashSet<>(unknownMember.otherProtected()), unknownMember.name(), 10);
                 } else {
                     builder.append("Unknown Member of ").append(unknownMember.of());
@@ -154,6 +158,12 @@ public sealed interface AttribError extends Error {
                     if (suggestionMethod.size() > 10) {
                         suggestionMethod = new ArrayList<>(suggestionMethod.stream().limit(10).toList());
                         suggestionMethod.add("...");
+                    }
+
+                    suggestionClasses = classNames;
+                    if (suggestionClasses.size() > 10) {
+                        suggestionClasses = new ArrayList<>(suggestionClasses.stream().limit(10).toList());
+                        suggestionClasses.add("...");
                     }
                     suggestionsOther = List.of();
                 }
@@ -170,6 +180,11 @@ public sealed interface AttribError extends Error {
                     builder.append("Available Methods: ").append(quoted);
                 }
 
+                if (!suggestionClasses.isEmpty()) {
+                    var quoted = suggestionClasses.stream().map(x -> "'" + x + "'").toList();
+                    builder.append("Available Classes: ").append(quoted);
+                }
+
                 if (!unknownMember.protectedMembers().isEmpty()) {
                     builder.append("members of the name '").append(unknownMember.name())
                            .append("' exists, but are not accessible here:");
@@ -177,7 +192,6 @@ public sealed interface AttribError extends Error {
                 for (var protectedMember : unknownMember.protectedMembers()) {
                     builder.addSecondarySource(protectedMember.region(), protectedMember.value());
                 }
-
 
                 if (!suggestionsOther.isEmpty()) {
                     builder.append("other members also exist, but are not accessible here:");
@@ -204,6 +218,7 @@ public sealed interface AttribError extends Error {
                 builder.append(notSupportedExpression.readable());
                 builder.setPrimarySource(notSupportedExpression.region());
             }
+
             case NotSupportedOperator notSupportedOperator -> {
                 builder.setTitle("Unsupported operator");
                 builder.append("Operator '").append(notSupportedOperator.operator().value())
@@ -234,7 +249,7 @@ public sealed interface AttribError extends Error {
 
     record InvalidNarrowingCast(Region region) implements AttribError {}
 
-    record UnknownMember(Region region, String of, @Nullable String name, Set<MethodModel> availableMethods, Set<FieldModel> availableFields, List<RegionOf<String>> protectedMembers, List<RegionOf<String>> otherProtected) implements AttribError {}
+    record UnknownMember(Region region, String of, @Nullable String name, Set<MethodModel> availableMethods, Set<FieldModel> availableFields, Set<ClassModel> availableClasses, List<RegionOf<String>> protectedMembers, List<RegionOf<String>> otherProtected) implements AttribError {}
 
     record DuplicateInterface(Region region, KType.ClassType interfaceType) implements AttribError {}
 

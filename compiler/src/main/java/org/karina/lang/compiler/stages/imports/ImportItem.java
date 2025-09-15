@@ -2,6 +2,8 @@ package org.karina.lang.compiler.stages.imports;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.ClassModel;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
@@ -37,7 +39,13 @@ public class ImportItem {
             importTable = ctx;
         }
 
+
         //now the import table is ready to import types
+
+        // import generics
+        for (var generic : classModel.generics()) {
+            importGeneric(c, generic, importTable);
+        }
 
         //start by importing the super class
         var superClass = classModel.superClass();
@@ -135,13 +143,20 @@ public class ImportItem {
             Log.error(c, new AttribError.NotSupportedType(field.region(), field.type()));
             throw new Log.KarinaException();
         }
+
+        var defaultValue = field.defaultValue();
+        if (!field.type().equals(KType.STRING) && defaultValue instanceof String) {
+            // remove default value for non-string fields types
+            defaultValue = null;
+        }
+
         return new KFieldModel(
                 field.name(),
                 type,
                 field.modifiers(),
                 field.region(),
                 field.classPointer(),
-                field.defaultValue()
+                defaultValue
         );
     }
 
@@ -163,8 +178,16 @@ public class ImportItem {
         }
 
 
-
         //Now ready to import the expression
+
+        // import generics
+        for (var generic : method.generics()) {
+//            if (!generic.bounds().isEmpty()) {
+//                Log.temp(c, generic.region(), "Method generics with bounds are not supported yet");
+//                throw new Log.KarinaException();
+//            }
+            importGeneric(c, generic, table);
+        }
 
         // We only expose the resolveType method to the expression import
         var importContext = new ImportContext(c, table);
@@ -180,6 +203,8 @@ public class ImportItem {
 
         //dont check for '_', as a parameter name, the parameter may be required for a method
         // that must be implemented, but is not in use
+
+
 
         return new KMethodModel(
                 method.name(),
@@ -201,7 +226,7 @@ public class ImportItem {
         for (var parameter : signature.parameters()) {
             var importedParam = ctx.importType(region, parameter);
             if (importedParam.isVoid()) {
-                Log.error(c, new AttribError.NotSupportedType(region, parameter));
+                Log.error(c, new AttribError.NotSupportedType(region, importedParam));
                 throw new Log.KarinaException();
             }
             parameters.add(importedParam);
@@ -211,6 +236,55 @@ public class ImportItem {
     }
 
 
+    private static void importGeneric(Context c, Generic generic, ImportTable ctx) {
+
+        List<KType.ClassType> newBounds = new ArrayList<>();
+        for (var bound : generic.bounds()) {
+            var importedBound = ctx.importType(generic.region(), bound);
+            if (!(importedBound instanceof KType.ClassType classType)) {
+                Log.error(c, new AttribError.NotSupportedType(generic.region(), importedBound));
+                throw new Log.KarinaException();
+            }
+            newBounds.add(classType);
+        }
+
+        KType.ClassType superClass = null;
+        if (generic.superType() != null) {
+            var importedSuper = ctx.importType(generic.region(), generic.superType());
+            if (!(importedSuper instanceof KType.ClassType classType)) {
+                Log.error(c, new AttribError.NotSupportedType(generic.region(), importedSuper));
+                throw new Log.KarinaException();
+            }
+            superClass = classType;
+        }
+        if (superClass == null && !newBounds.isEmpty()) {
+            var maybeAClass = newBounds.getFirst();
+            var theMaybeClassModel = ctx.model().getClass(maybeAClass.pointer());
+            if (!Modifier.isInterface(theMaybeClassModel.modifiers())) {
+                superClass = maybeAClass;
+                newBounds = newBounds.subList(1, newBounds.size());
+            }
+        }
+
+        for (var newBound : newBounds) {
+            var interfaceBound = ctx.model().getClass(newBound.pointer());
+            if (!Modifier.isInterface(interfaceBound.modifiers())) {
+                Log.error(c, new AttribError.NotAInterface(generic.region(), newBound));
+                throw new Log.KarinaException();
+            }
+        }
+        if (superClass != null) {
+            var superClassModel = ctx.model().getClass(superClass.pointer());
+            if (Modifier.isInterface(superClassModel.modifiers())) {
+                Log.error(c, new AttribError.NotAClass(generic.region(), superClass));
+                throw new Log.KarinaException();
+            }
+        }
+
+
+        generic.updateBounds(superClass, newBounds);
+
+    }
     /**
      * Adds user defined imports and generics to the import table.
      */

@@ -24,9 +24,6 @@ public class GenerateExpr implements Opcodes {
             ctx.add(new LineNumberNode(currentLine, label));
             ctx.setLastLineNumber(currentLine);
         }
-        if (Log.LogTypes.GENERATION_EXPR.isVisible()) {
-            Log.begin(expr.getClass().getName());
-        }
 
         switch (expr) {
             case KExpr.Assignment assignment -> {
@@ -43,7 +40,7 @@ public class GenerateExpr implements Opcodes {
                         generate(field.object(), ctx);
                         generate(assignment.right(), ctx);
                         var owner = TypeEncoding.toJVMPath(ctx.model(), field.pointer().classPointer());
-                        var fieldType = TypeEncoding.getDescriptor(ctx.model(), field.fieldType());
+                        var fieldType = TypeEncoding.getDescriptor(ctx.model(), ctx.model().getField(field.pointer()).type());
                         ctx.add(new FieldInsnNode(
                                 PUTFIELD,
                                 owner,
@@ -163,9 +160,8 @@ public class GenerateExpr implements Opcodes {
                                 var desc = Type.getMethodDescriptor(Type.BOOLEAN_TYPE, argType, argType);
                                 var name = "equals";
 
-                                var opcode = INVOKESTATIC;
                                 ctx.add(new MethodInsnNode(
-                                        opcode,
+                                        INVOKESTATIC,
                                         owner,
                                         name,
                                         desc,
@@ -295,7 +291,7 @@ public class GenerateExpr implements Opcodes {
                         for (var argument : call.arguments()) {
                             generate(argument, ctx);
                         }
-                        if ( callVirtual.onInterface()) {
+                        if (callVirtual.onInterface()) {
                             ctx.add(new MethodInsnNode(
                                     INVOKEINTERFACE,
                                     owner,
@@ -440,7 +436,7 @@ public class GenerateExpr implements Opcodes {
                     case MemberSymbol.FieldSymbol fieldSymbol -> {
                         generate(getMember.left(), ctx);
                         var owner = TypeEncoding.toJVMPath(ctx.model(), fieldSymbol.pointer().classPointer());
-                        var fieldType = TypeEncoding.getDescriptor(ctx.model(), fieldSymbol.type());
+                        var fieldType = TypeEncoding.getDescriptor(ctx.model(), ctx.model().getField(fieldSymbol.pointer()).type());
                         var name = fieldSymbol.pointer().name();
                         ctx.add(new FieldInsnNode(
                                 GETFIELD,
@@ -580,6 +576,7 @@ public class GenerateExpr implements Opcodes {
                 var symbol = variableDefinition.symbol();
                 assert symbol != null;
                 ctx.putVariable(symbol);
+                ctx.addVariableSpace(2);
                 generate(variableDefinition.value(), ctx);
                 var target = ctx.getVariableIndex(variableDefinition.region(), symbol);
                 var type = TypeEncoding.getDescriptor(ctx.model(), symbol.type());
@@ -600,6 +597,100 @@ public class GenerateExpr implements Opcodes {
                 ctx.getLocalVariables().add(localVariableNode);
                 var instruction = TypeEncoding.getVariableStoreInstruction(symbol.type());
                 ctx.add(new VarInsnNode(instruction, target));
+                ctx.add(end);
+            }
+            case KExpr.UsingVariableDefinition variableDefinition -> {
+                var symbol = variableDefinition.symbol();
+                assert symbol != null;
+                ctx.putVariable(symbol);
+                generate(variableDefinition.value(), ctx);
+                var target = ctx.getVariableIndex(variableDefinition.region(), symbol);
+                var type = TypeEncoding.getDescriptor(ctx.model(), symbol.type());
+
+                var variableStart = new LabelNode();
+
+                var firstCatchStart = new LabelNode();
+                var firstCatchEnd = new LabelNode();
+                var firstCatchHandler = new LabelNode();
+
+                var secondCatchStart = new LabelNode();
+                var secondCatchEnd = new LabelNode();
+                var secondCatchHandler = new LabelNode();
+
+                var secondCatchHandlerEnd = new LabelNode();
+                var end = new LabelNode();
+
+                var signature = GenerateSignature.fieldSignature(ctx.model(), symbol.type());
+                LocalVariableNode localVariableNode = new LocalVariableNode(
+                        symbol.name(),
+                        type,
+                        signature,
+                        variableStart,
+                        end,
+                        target
+                );
+                ctx.getLocalVariables().add(localVariableNode);
+                ctx.add(variableStart);
+
+                ctx.add(new VarInsnNode(Opcodes.ASTORE, target));
+                ctx.add(firstCatchStart);
+                generate(variableDefinition.block(), ctx);
+                ctx.add(firstCatchEnd);
+
+                // close
+                ctx.add(new VarInsnNode(Opcodes.ALOAD, target));
+                ctx.add(new MethodInsnNode(
+                        INVOKEINTERFACE,
+                        "java/lang/AutoCloseable",
+                        "close",
+                        "()V",
+                        true
+                ));
+
+                ctx.add(new JumpInsnNode(GOTO, end));
+
+                ctx.add(firstCatchHandler);
+
+                ctx.add(new VarInsnNode(Opcodes.ASTORE, target + 1));
+                ctx.add(secondCatchStart);
+
+                // close
+                ctx.add(new VarInsnNode(Opcodes.ALOAD, target));
+                ctx.add(new MethodInsnNode(
+                        INVOKEINTERFACE,
+                        "java/lang/AutoCloseable",
+                        "close",
+                        "()V",
+                        true
+                ));
+
+                ctx.add(new JumpInsnNode(GOTO, secondCatchHandlerEnd));
+                ctx.add(secondCatchEnd);
+                ctx.add(secondCatchHandler);
+
+                ctx.add(new VarInsnNode(Opcodes.ASTORE, target + 2));
+                ctx.add(new VarInsnNode(Opcodes.ALOAD, target + 1));
+                ctx.add(new VarInsnNode(Opcodes.ALOAD, target + 2));
+                ctx.add(new MethodInsnNode(
+                    Opcodes.INVOKEVIRTUAL,
+                    "java/lang/Throwable",
+                    "addSuppressed",
+                    "(Ljava/lang/Throwable;)V",
+                    false
+                ));
+
+                ctx.add(secondCatchHandlerEnd);
+                ctx.add(new VarInsnNode(Opcodes.ALOAD, target + 1));
+                ctx.add(new InsnNode(ATHROW));
+
+                ctx.add(new TryCatchBlockNode(
+                    firstCatchStart, firstCatchEnd, firstCatchHandler, "java/lang/Throwable"
+                ));
+
+                ctx.add(new TryCatchBlockNode(
+                        secondCatchStart, secondCatchEnd, secondCatchHandler, "java/lang/Throwable"
+                ));
+
                 ctx.add(end);
             }
             case KExpr.While aWhile -> {
@@ -645,10 +736,6 @@ public class GenerateExpr implements Opcodes {
                 Log.temp(ctx, expr.region(), "Cannot be expressed");
                 throw new Log.KarinaException();
             }
-        }
-
-        if (Log.LogTypes.GENERATION_EXPR.isVisible()) {
-            Log.end(expr.getClass().getName());
         }
     }
 

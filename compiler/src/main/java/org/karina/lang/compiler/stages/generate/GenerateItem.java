@@ -26,20 +26,16 @@ public class GenerateItem {
 
         for (var method : classModel.methods()) {
             var name = "Method " + method.name();
-            Log.beginType(Log.LogTypes.GENERATION, name);
             if (method instanceof KMethodModel kMethodModel) {
                 var node = compileMethod(c, model, kMethodModel);
                 classNode.methodMap.put(kMethodModel, node);
             }
-            Log.endType(Log.LogTypes.GENERATION, name);
         }
         for (var field : classModel.fields()) {
             var name = "Field " + field.name();
-            Log.beginType(Log.LogTypes.GENERATION, name);
             if (field instanceof KFieldModel kFieldModel) {
                 classNode.fields.add(compileField(model, kFieldModel));
             }
-            Log.endType(Log.LogTypes.GENERATION, "Field " + field.name());
         }
 
         classNode.signature = GenerateSignature.getClassSignature(model, classModel);
@@ -70,7 +66,7 @@ public class GenerateItem {
                 TypeEncoding.toJVMPath(model, ref.pointer())
         ).toList();
         classNode.sourceFile = classModel.resource().resource().identifier();
-        classNode.access = classModel.modifiers();
+        classNode.access = classModel.modifiers() & 0xFFFF; // remove non-standard modifiers
         classNode.name = TypeEncoding.toJVMPath(model, classModel.pointer());
         classNode.version = classVersion;
         var superClass = classModel.superClass();
@@ -86,7 +82,7 @@ public class GenerateItem {
         var signature = GenerateSignature.fieldSignature(model, fieldModel.type());
 
         return new FieldNode(
-                fieldModel.modifiers(),
+                fieldModel.modifiers() & 0xFFFF, // remove non-standard modifiers
                 fieldModel.name(),
                 descriptor,
                 signature,
@@ -97,7 +93,7 @@ public class GenerateItem {
     private static MethodNode compileMethod(Context c, Model model, KMethodModel methodModel) {
         var methodNode = new MethodNode();
 
-        methodNode.access = methodModel.modifiers();
+        methodNode.access = methodModel.modifiers() & 0xFFFF; // remove non-standard modifiers
         methodNode.name = methodModel.name();
 
         methodNode.parameters = new ArrayList<>();
@@ -112,12 +108,13 @@ public class GenerateItem {
 
         var instructions = new InsnList();
         methodNode.localVariables = new ArrayList<>();
-
+        methodNode.tryCatchBlocks = new ArrayList<>();
 
         var context = new GenerationContext(
                 -1,
                 instructions,
                 methodNode.localVariables,
+                methodNode.tryCatchBlocks,
                 c,
                 model,
                 0,

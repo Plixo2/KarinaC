@@ -1,19 +1,19 @@
 package org.karina.lang.compiler.utils.logging;
 
 
-public interface Logging {
+public sealed interface Logging {
 
-    class Parsing implements Logging {}
-    class Merging implements Logging {}
-    class Importing implements Logging {}
-    class Attribution implements Logging {}
-    class Lowering implements Logging {}
-    class Generation implements Logging {}
-    class Writing implements Logging {}
+    final class Parsing implements Logging {}
+    final class Merging implements Logging {}
+    final class Importing implements Logging {}
+    final class Attribution implements Logging {}
+    final class Lowering implements Logging {}
+    final class Generation implements Logging {}
+    final class Writing implements Logging {}
 
-    class ReadJar implements Logging {}
-    class BinaryFile implements Logging {}
-    class Forks implements Logging {}
+    final class ReadJar implements Logging {}
+    final class BinaryFile implements Logging {}
+    final class Forks implements Logging {}
 
-    class ReadBinary implements Logging {}
+    final class ReadBinary implements Logging {}
 }

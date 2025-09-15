@@ -1,15 +1,12 @@
 package org.karina.lang.compiler.jvm_loading.binary.in;
 
 import com.google.common.collect.ImmutableList;
-import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.TextSource;
-import org.karina.lang.compiler.model_api.impl.jvm.JFieldModel;
-import org.karina.lang.compiler.model_api.impl.jvm.JMethodModel;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.KType;
-import org.karina.lang.compiler.utils.Generic;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.ObjectPath;
 
 import java.io.IOException;

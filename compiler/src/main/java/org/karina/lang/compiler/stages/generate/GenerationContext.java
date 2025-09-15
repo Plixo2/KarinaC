@@ -26,6 +26,7 @@ public class GenerationContext implements IntoContext {
     private final InsnList instructions;
     private final Map<Variable, Integer> variables = new HashMap<>();
     private final List<LocalVariableNode> localVariables;
+    private final List<TryCatchBlockNode> tryCatchNodes;
     private final Context c;
     @Accessors(fluent = true)
     private final Model model;
@@ -42,12 +43,20 @@ public class GenerationContext implements IntoContext {
         this.instructions.add(instruction);
     }
 
+    public void add(TryCatchBlockNode tryCatchBlockNode) {
+        this.tryCatchNodes.add(tryCatchBlockNode);
+    }
+
     public void putVariable(Variable variable) {
         if (!this.variables.containsKey(variable)) {
             this.variables.put(variable, this.variablesCount);
             var type = variable.type();
             this.variablesCount += TypeEncoding.jvmSize(type);
         }
+    }
+
+    public void addVariableSpace(int objectCount) {
+        this.variablesCount += objectCount; // each object takes one slot
     }
 
     public int getVariableIndex(Region region, Variable variable) {
@@ -57,10 +66,6 @@ public class GenerationContext implements IntoContext {
             throw new Log.KarinaException();
         }
         return this.variables.get(variable);
-    }
-
-    public ImmutableMap<Variable, Integer> getVariables() {
-        return ImmutableMap.copyOf(this.variables);
     }
 
 

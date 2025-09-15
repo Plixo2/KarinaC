@@ -30,11 +30,11 @@ public class Prelude {
                 continue;
             }
             var path = entry.path();
-            if (path.size() != 3) {
-                continue;
-            }
 
-            if (path.startsWith("java", "lang") || path.startsWith("karina", "lang")) {
+            if (path.size() == 3 && (path.startsWith("java", "lang") || path.startsWith("karina", "lang"))) {
+                classes.add(entry.pointer());
+            } else if (path.size() == 4 && path.startsWith("java", "util", "function")) {
+
                 classes.add(entry.pointer());
             }
         }

@@ -58,13 +58,19 @@ public class ConsoleCompiler {
             var endTime = System.currentTimeMillis();
             onSuccess(outputFile, warnings, endTime - startTime);
 
-            if (config.run()) {
-                var result = AutoRun.runWithPrints(compilation, true, new String[]{});
-                if (result != null) {
-                    // just print errors to the console
-                    result.cause().printStackTrace(System.out);
+
+            try(var autoRun = new AutoRun()) {
+                if (config.run()) {
+                    var result = autoRun.runWithPrints(compilation, true, new String[]{});
+                    if (result != null) {
+                        // just print errors to the console
+                        result.cause().printStackTrace(System.out);
+                    }
                 }
             }
+
+
+
 
             return true;
         } else {

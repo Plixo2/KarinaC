@@ -37,6 +37,7 @@ public sealed interface KExpr {
 
     record Block(Region region, List<KExpr> expressions, @Nullable @Symbol KType symbol, @Symbol boolean doesReturn) implements KExpr {}
     record VariableDefinition(Region region, RegionOf<String> name, @Nullable KType varHint, KExpr value, @Nullable @Symbol Variable symbol) implements KExpr {}
+    record UsingVariableDefinition(Region region, RegionOf<String> name, @Nullable KType varHint, KExpr value, KExpr block, @Nullable @Symbol Variable symbol) implements KExpr {}
     record Branch(Region region, KExpr condition, KExpr thenArm, @Nullable ElsePart elseArm, @Nullable BranchPattern branchPattern, @Nullable @Symbol BranchYieldSymbol symbol) implements KExpr {}
     record While(Region region, KExpr condition, KExpr body) implements KExpr {}
     record For(Region region, NameAndOptType varPart, KExpr iter, KExpr body, @Nullable @Symbol IteratorTypeSymbol symbol) implements KExpr {}
@@ -55,7 +56,7 @@ public sealed interface KExpr {
     record Number(Region region, BigDecimal number, boolean decimalAnnotated, @Nullable @Symbol NumberSymbol symbol) implements KExpr {}
     record Boolean(Region region, boolean value) implements KExpr {}
     record Literal(Region region, String name, @Nullable @Symbol LiteralSymbol symbol) implements KExpr {}
-    record StaticPath(Region region, ObjectPath path, @Nullable ClassPointer importedPointer) implements KExpr {}
+    record StaticPath(Region region, ImmutableList<Region> individualRegions, ObjectPath path, @Nullable ClassPointer importedPointer) implements KExpr {}
     record Self(Region region, @Nullable @Symbol Variable symbol) implements KExpr {}
     record SpecialCall(Region region, InvocationType invocationType) implements KExpr {}
     record StringExpr(Region region, String value, boolean isChar) implements KExpr {}

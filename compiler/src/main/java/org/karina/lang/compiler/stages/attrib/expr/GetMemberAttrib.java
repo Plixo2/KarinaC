@@ -1,10 +1,7 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model_api.ClassModel;
-import org.karina.lang.compiler.model_api.FieldModel;
-import org.karina.lang.compiler.model_api.MethodModel;
-import org.karina.lang.compiler.model_api.Model;
+import org.karina.lang.compiler.model_api.*;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
@@ -30,7 +27,7 @@ public class GetMemberAttrib  {
         var left = attribExpr(null, ctx, expr.left()).expr();
 
         var name = expr.name().value();
-        var staticFunc = attribStaticFunctionReference(expr.region(), ctx, left, name, expr.isNextACall());
+        var staticFunc = attribStaticFunctionReference(expr, ctx, left, name, expr.isNextACall());
         if (staticFunc != null) {
             return staticFunc;
         }
@@ -39,24 +36,42 @@ public class GetMemberAttrib  {
             return arrayLength;
         }
 
-        var symbol = attribFieldOrMethodOnClass(ctx, expr, left, name);
-        return of(ctx, new KExpr.GetMember(expr.region(), left, expr.name(), false, symbol));
+        return switch (attribFieldOrMethodOnClass(ctx, expr, left, name)) {
+            case MemberResult.Expr(var kExpr) -> {
+                yield  of(ctx, kExpr);
+            }
+            case MemberResult.Symbol(var symbol) -> {
+                yield of(ctx, new KExpr.GetMember(expr.region(), left, expr.name(), false, symbol));
+            }
+        };
+
     }
 
-    private static MemberSymbol attribFieldOrMethodOnClass(
+    private static MemberResult attribFieldOrMethodOnClass(
             AttributionContext ctx, KExpr.GetMember expr, KExpr left, String name
     ) {
-        if (!(left.type() instanceof KType.ClassType classType)) {
-            if (left.type().isVoid()) {
+        var leftType = left.type();
+        if (!(leftType instanceof KType.ClassType classType)) {
+            if (leftType.isVoid()) {
                 Log.error(
                         ctx, new AttribError.NotSupportedType(
                         expr.left().region(),
                         KType.NONE
                 ));
+                throw new Log.KarinaException();
             } else {
-                Log.error(ctx, new AttribError.NotAClass(expr.left().region(), left.type()));
+                var extensions = attribExtensionMethods(ctx, left, expr.region(), name);
+                if (extensions != null) {
+                    return new MemberResult.Expr(extensions);
+                } else {
+                    var nameToReport = name;
+                    if (name.equals("<unknown>")) {
+                        nameToReport = null;
+                    }
+                    reportUnknownExtension(expr.name().region(), ctx, leftType, nameToReport, left);
+                    throw new Log.KarinaException();
+                }
             }
-            throw new Log.KarinaException();
         }
         if (name.equals("<unknown>")) {
             assert ctx.intoContext().infos().allowMissingFields();
@@ -67,6 +82,7 @@ public class GetMemberAttrib  {
                     ctx,
                     classType.pointer(),
                     null,
+                    left,
                     false
             );
             throw new Log.KarinaException();
@@ -75,24 +91,57 @@ public class GetMemberAttrib  {
         if (expr.isNextACall()) {
             var methodSymbol = attribMethodOnClass(expr.region(), ctx, name, classType);
             if (methodSymbol != null) {
-                return methodSymbol;
+                return new MemberResult.Symbol(methodSymbol);
             }
         }
         var fieldSymbol = attribFieldOnClass(ctx, name, classType);
 
 
-        if (fieldSymbol == null) {
-            reportUnknownMemberError(
-                    expr.name().region(), ctx,
-                    classType.pointer(), name,
-                    false
-            );
-            throw new Log.KarinaException();
+        if (fieldSymbol != null) {
+            return new MemberResult.Symbol(fieldSymbol);
         }
 
-        return fieldSymbol;
+        var extensions = attribExtensionMethods(ctx, left, expr.region(), name);
+        if (extensions != null) {
+            return new MemberResult.Expr(extensions);
+        }
+
+        reportUnknownMemberError(
+                expr.name().region(),
+                ctx,
+                classType.pointer(),
+                name,
+                left,
+                false
+        );
+        throw new Log.KarinaException();
+    }
+    sealed interface MemberResult {
+        record Symbol(MemberSymbol symbol) implements MemberResult {}
+        record Expr(KExpr expr) implements MemberResult {}
     }
 
+    private static @Nullable KExpr attribExtensionMethods(AttributionContext ctx, KExpr left, Region region, String name) {
+        var staticMethodCollection = ctx.table().getStaticMethod(name);
+        if (staticMethodCollection == null) {
+            return null;
+        }
+        staticMethodCollection = staticMethodCollection.filter(ref -> {
+            var extension = ctx.model().getMethod(ref).modifiers();
+            return MethodModel.isExtension(extension);
+        });
+        if (staticMethodCollection.isEmpty()) {
+            return null;
+        }
+
+        var symbol = new LiteralSymbol.StaticMethodReference(region, staticMethodCollection, left);
+
+        return new KExpr.Literal(
+                region,
+                name,
+                symbol
+        );
+    }
 
     private static @Nullable MemberSymbol attribFieldOnClass(AttributionContext ctx, String name, KType.ClassType classType) {
         var owningClass = ctx.model().getClass(ctx.owningClass());
@@ -133,7 +182,7 @@ public class GetMemberAttrib  {
 
     private static @Nullable AttributionExpr attribArrayLength(Region region, AttributionContext ctx, KExpr left, String name) {
         if (left.type() instanceof KType.ArrayType arrayType) {
-            if (name.equals("size")) {
+            if (name.equals("length")) {
                 var symbol = new MemberSymbol.ArrayLength(region);
                 return of(ctx, new KExpr.GetMember(region, left, RegionOf.region(region, name), false, symbol));
             } else if (name.equals("class")) {
@@ -143,23 +192,13 @@ public class GetMemberAttrib  {
                 return of(ctx, newLiteral);
             } else {
                 return null;
-//                Log.error(ctx, new AttribError.UnknownMember(
-//                        region,
-//                        arrayType.toString(),
-//                        name,
-//                        Set.of(),
-//                        Set.of("size", "class"),
-//                        List.of(),
-//                        List.of()
-//                ));
-//                throw new Log.KarinaException();
             }
         }
         return null;
     }
 
     private static @Nullable AttributionExpr attribStaticFunctionReference(
-            Region region,
+            KExpr.GetMember expr,
             AttributionContext ctx,
             KExpr left,
             String name,
@@ -171,6 +210,22 @@ public class GetMemberAttrib  {
         )))) {
             return null;
         }
+
+        if (name.equals("<unknown>")) {
+            assert ctx.intoContext().infos().allowMissingFields();
+
+            reportUnknownMemberError(
+                    expr.name().region(),
+                    ctx,
+                    classPointer,
+                    null,
+                    left,
+                    true
+            );
+            throw new Log.KarinaException();
+        }
+        var region = expr.region();
+
 
         if (name.equals("class")) {
             var symbol = new LiteralSymbol.StaticClassReference(regionInner, classPointer, classType, true);
@@ -191,7 +246,7 @@ public class GetMemberAttrib  {
                 return Modifier.isStatic(modifiers) && ctx.protection().isMethodAccessible(owningClass, ref);
             });
             if (!collection.isEmpty()) {
-                var symbol = new LiteralSymbol.StaticMethodReference(region, collection);
+                var symbol = new LiteralSymbol.StaticMethodReference(region, collection, null);
                 var newLiteral = new KExpr.Literal(region, name, symbol);
                 return of(ctx, newLiteral);
             }
@@ -210,9 +265,7 @@ public class GetMemberAttrib  {
             return of(ctx, newLiteral);
         }
 
-
-
-        reportUnknownMemberError(region, ctx, classPointer, name, true);
+        reportUnknownMemberError(expr.name().region(), ctx, classPointer, name, left, true);
         throw new Log.KarinaException();
 
     }
@@ -305,6 +358,7 @@ public class GetMemberAttrib  {
             AttributionContext ctx,
             ClassPointer classType,
             @Nullable String name,
+            KExpr left,
             boolean staticOnly
     ) {
         var classModel = ctx.model().getClass(classType);
@@ -337,6 +391,35 @@ public class GetMemberAttrib  {
             var toString = Modifier.toString(field.modifiers()) + " " + field.name() + ": " + field.type();
             otherProtected.add(new RegionOf<>(field.region(), toString));
         }
+        var extensionMethods = ctx.table().getAllExtensionMethods(ctx.model());
+
+        try {
+            var subContext = ctx.intoContext().uncheckedSubContext();
+            var subCtx = ctx.withNewContext(subContext);
+
+            for (var extensionMethod : extensionMethods) {
+                if (extensionMethod.signature().parameters().isEmpty()) {
+                    continue;
+                }
+                var firstParameter = extensionMethod.signature().parameters().getFirst();
+                var mapped = new HashMap<Generic, KType>();
+                for (var generic : extensionMethod.generics()) {
+                    var type = KType.Resolvable.newInstanceFromGeneric(generic);
+                    mapped.put(generic, type);
+                }
+                var firstType = Types.projectGenerics(firstParameter, mapped);
+                if (subCtx.getConversion(region, firstType, left, true, false) != null) {
+                    methods.add(extensionMethod);
+                }
+            }
+
+        } catch(Log.KarinaException e) {
+            // ignore, already in error state
+        }
+        var classes = new HashSet<ClassModel>();
+        if (staticOnly) {
+            classes.addAll(classModel.innerClasses());
+        }
 
         Log.error(ctx, new AttribError.UnknownMember(
                 region,
@@ -344,6 +427,61 @@ public class GetMemberAttrib  {
                 name,
                 methods,
                 fields,
+                classes,
+                related,
+                otherProtected
+        ));
+
+    }
+
+    private static void reportUnknownExtension(
+            Region region,
+            AttributionContext ctx,
+            KType leftType,
+            @Nullable String name,
+            KExpr left
+    ) {
+
+        var methods = new HashSet<MethodModel>();
+
+        var extensionMethods = ctx.table().getAllExtensionMethods(ctx.model());
+
+        try {
+            var subContext = ctx.intoContext().uncheckedSubContext();
+            var subCtx = ctx.withNewContext(subContext);
+
+            for (var extensionMethod : extensionMethods) {
+                if (extensionMethod.signature().parameters().isEmpty()) {
+                    continue;
+                }
+                var firstParameter = extensionMethod.signature().parameters().getFirst();
+                var mapped = new HashMap<Generic, KType>();
+                for (var generic : extensionMethod.generics()) {
+                    var type = KType.Resolvable.newInstanceFromGeneric(generic);
+                    mapped.put(generic, type);
+                }
+                var firstType = Types.projectGenerics(firstParameter, mapped);
+                if (subCtx.getConversion(region, firstType, left, true, false) != null) {
+                    methods.add(extensionMethod);
+                }
+            }
+
+        } catch(Log.KarinaException e) {
+            // ignore, already in error state
+        }
+
+        var classes = new HashSet<ClassModel>();
+        var related = new ArrayList<RegionOf<String>>();
+        var otherProtected = new ArrayList<RegionOf<String>>();
+        var fields = new HashSet<FieldModel>();
+
+        Log.error(ctx, new AttribError.UnknownMember(
+                region,
+                leftType.toString(),
+                name,
+                methods,
+                fields,
+                classes,
                 related,
                 otherProtected
         ));

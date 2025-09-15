@@ -199,7 +199,7 @@ Gradle task `stdlib:buildForCompiler`:
 gradlew stdlib:buildForCompiler
 ```
 
-This will create a new  `karina_base.jar` file, located in [`src/main/resources`](compiler/src/main/resources)
+This will create a new  `karina.base.jar` file, located in [`src/main/resources`](compiler/src/main/resources)
 
 After that run the task `compiler:buildCache`:
 ```shell

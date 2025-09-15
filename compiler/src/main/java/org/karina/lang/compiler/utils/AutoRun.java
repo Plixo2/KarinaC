@@ -1,5 +1,6 @@
 package org.karina.lang.compiler.utils;
 
+import lombok.SneakyThrows;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm_loading.loading.ModelLoader;
@@ -29,32 +30,19 @@ import java.util.stream.Collectors;
 /**
  * Runs the compiled jar file from memory.
  */
-public class AutoRun {
+public class AutoRun implements AutoCloseable {
+    private final ExecutorService executor;
+    private boolean ended = false;
 
-   /* public static @Nullable Exception run(JarCompilation compilation) {
-
-        var mainClass = compilation.manifest().getMainAttributes().getValue(Attributes.Name.MAIN_CLASS);
-        if (mainClass == null) {
-            return new RuntimeException("No main class found in the manifest");
-        }
-        try {
-            var karinaLib = karinaLibLoader();
-            var classLoader = new CompilationClassLoader(karinaLib, compilation);
-            var cls = classLoader.loadClass(mainClass);
-            var mainMethod = cls.getMethod("main", String[].class);
-            mainMethod.invoke(null, (Object) new String[]{});
-            return null;
-        } catch (Exception e) {
-            return e;
-        }
-    }*/
-
+    public AutoRun() {
+        this.executor = Executors.newSingleThreadExecutor();
+    }
 
     /// This method invokes the main method of the compiled jar file.
     /// This method is big for 'correct' stack traces
     /// @return the kind of error that occurred, or null if the main method was executed successfully.
     @CheckReturnValue
-    public static @Nullable MainInvocationResult runWithPrints(JarCompilation compilation, boolean colors, String[] args) {
+    public @Nullable MainInvocationResult runWithPrints(JarCompilation compilation, boolean colors, String[] args) {
 
         try {
             System.out.println();
@@ -65,32 +53,30 @@ public class AutoRun {
                 return new MainInvocationResult.OtherError(new IllegalStateException());
             }
 
-            try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
-                Future<?> future = executor.submit(() -> {
-                    try {
-                        mainMethod.invokeExact(args);
-                    } catch (WrongMethodTypeException e) {
-                        // should not happen
-                        throw e;
-                    } catch (Throwable e) {
-                        // e is the exception thrown by the main method, not a wrapper
-                        throw new ExpectedMainException(e);
-                    }
-                    return null;
-                });
-                executor.shutdown();
-
+            Future<?> future = this.executor.submit(() -> {
                 try {
-                    future.get();
-                } catch (ExecutionException e) {
-                    if (e.getCause() instanceof ExpectedMainException m) {
-                        throw m; // rethrow the expected exception
-                    } if (e.getCause() instanceof WrongMethodTypeException m) {
-                        throw m; // should not happen, as the method type is checked
-                    } else {
-                        // should not happen
-                        throw new ExpectedMainException(e);
-                    }
+                    mainMethod.invokeExact(args);
+                    this.ended = true;
+                } catch (WrongMethodTypeException e) {
+                    // should not happen
+                    throw e;
+                } catch (Throwable e) {
+                    // e is the exception thrown by the main method, not a wrapper
+                    throw new ExpectedMainException(e);
+                }
+                return null;
+            });
+
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof ExpectedMainException m) {
+                    throw m; // rethrow the expected exception
+                } if (e.getCause() instanceof WrongMethodTypeException m) {
+                    throw m; // should not happen, as the method type is checked
+                } else {
+                    // should not happen
+                    throw new ExpectedMainException(e);
                 }
             }
 
@@ -108,6 +94,18 @@ public class AutoRun {
             return new MainInvocationResult.MainError(e.getCause());
         }
 
+    }
+
+    @Override
+    public void close() {
+        this.executor.close();
+    }
+
+    public boolean cancel() {
+        this.executor.shutdown();
+        this.executor.shutdownNow();
+        this.executor.close();
+        return this.ended;
     }
 
     private static @Nullable MethodHandle getMainMethod(JarCompilation compilation, boolean colors) throws IOException {
@@ -175,7 +173,7 @@ public class AutoRun {
     }
 
     public static ClassLoader karinaLibLoader() throws IOException {
-        var resource = "/karina_base.jar";
+        var resource = "/karina.base.jar";
         var url = AutoRun.class.getResource(resource);
         if (url != null) {
             return new URLClassLoader(new URL[]{url});
@@ -190,7 +188,8 @@ public class AutoRun {
 
     }
 
-    public static class InMemoryJarClassLoader extends ClassLoader {
+
+    private static class InMemoryJarClassLoader extends ClassLoader {
         private final Map<String, byte[]> classBytes = new HashMap<>();
 
         public InMemoryJarClassLoader(InputStream jarInputStream) throws IOException {

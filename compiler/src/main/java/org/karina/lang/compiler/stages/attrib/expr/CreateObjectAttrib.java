@@ -66,10 +66,9 @@ public class CreateObjectAttrib  {
         if (annotatedGenerics) {
             newGenerics = classType.generics();
         } else {
-            var genericCount = classModel.generics().size();
-            newGenerics = new ArrayList<>(genericCount);
-            for (var ignored = 0; ignored < genericCount; ignored++) {
-                newGenerics.add(new KType.PrimitiveType.Resolvable());
+            newGenerics = new ArrayList<>();
+            for (var generic : classModel.generics()) {
+                newGenerics.add(KType.Resolvable.newInstanceFromGeneric(generic));
             }
         }
 

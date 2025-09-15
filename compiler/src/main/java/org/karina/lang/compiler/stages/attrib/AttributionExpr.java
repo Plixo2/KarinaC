@@ -41,9 +41,7 @@ public final class AttributionExpr {
         if (hint != null) {
             hint = hint.unpack();
         }
-        var logName = "expr-" + expr.getClass().getSimpleName();
-        Log.beginType(Log.LogTypes.EXPR,logName);
-        var newExpr = switch (expr) {
+        return switch (expr) {
             case KExpr.Assignment assignment -> AssignmentAttrib.attribAssignment(hint, ctx, assignment);
             case KExpr.Binary binary -> BinaryAttrib.attribBinary(hint, ctx, binary);
             case KExpr.Block block -> BlockAttrib.attribBlock(hint, ctx, block);
@@ -69,14 +67,13 @@ public final class AttributionExpr {
             case KExpr.StringInterpolation stringExpr -> StringInterpolationAttrib.attribStringExpr(hint, ctx, stringExpr);
             case KExpr.Unary unary -> UnaryAttrib.attribUnary(hint, ctx, unary);
             case KExpr.VariableDefinition variableDefinition -> VariableDefinitionAttrib.attribVariableDefinition(hint, ctx, variableDefinition);
+            case KExpr.UsingVariableDefinition usingVariableDefinition -> UsingVariableDefinitionAttrib.attribUsingVariableDefinition(hint, ctx, usingVariableDefinition);
             case KExpr.While aWhile -> WhileAttrib.attribWhile(hint, ctx, aWhile);
             case KExpr.Throw aThrow -> ThrowAttrib.attribThrow(hint, ctx, aThrow);
             case KExpr.Unwrap unwrap -> UnwrapAttrib.attribUnwrap(hint, ctx, unwrap);
             case KExpr.SpecialCall aSuper -> SpecialCallAttrib.attribSpecialCall(hint, ctx, aSuper);
             case KExpr.StaticPath staticPath -> StaticPathAttrib.attribStaticPath(hint, ctx, staticPath);
         };
-        Log.endType(Log.LogTypes.EXPR, logName);
-        return newExpr;
     }
 
 }

@@ -32,7 +32,13 @@ public final class ObjectPath {
     }
 
 
-
+    /**
+     * Returns a new ObjectPath by appending the elements of the given ObjectPath
+     * to the end of this ObjectPath.
+     *
+     * @param other the ObjectPath whose elements are to be appended
+     * @return a new ObjectPath containing the combined elements
+     */
     public ObjectPath join(ObjectPath other) {
 
         var strings = Arrays.copyOf(this.elements, this.elements.length + other.elements.length);
@@ -46,7 +52,15 @@ public final class ObjectPath {
         var strings = Arrays.copyOf(this.elements, this.elements.length + 1);
         strings[this.elements.length] = element;
         return new ObjectPath(strings);
+    }
 
+
+    public ObjectPath append(List<String> elements) {
+        var strings = Arrays.copyOf(this.elements, this.elements.length + elements.size());
+        for (var i = 0; i < elements.size(); i++) {
+            strings[this.elements.length + i] = elements.get(i);
+        }
+        return new ObjectPath(strings);
     }
 
     public ObjectPath tail() {

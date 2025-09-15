@@ -3,6 +3,7 @@ package org.karina.lang.compiler.stages.imports.table;
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.logging.errors.ImportError;
@@ -70,7 +71,7 @@ public record UserImportTable(
             case KType.PrimitiveType primitiveType -> primitiveType;
             case KType.Resolvable resolvable -> resolvable;
             case KType.ClassType classType -> importUnprocessedType(region, classType.pointer().path(), classType.generics(), flags);
-            case KType.UnprocessedType unprocessedType -> importUnprocessedType(unprocessedType.region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
+            case KType.UnprocessedType unprocessedType -> importUnprocessedType(unprocessedType.name().region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
             case KType.VoidType _ -> KType.NONE;
         };
     }
@@ -369,13 +370,6 @@ public record UserImportTable(
 
     private Set<String> availableTypeNames() {
         var keys = new HashSet<>(this.classes.keySet());
-//        for (var objectPath : this.model.getBinaryClasses()) {
-//            keys.add(objectPath.path().mkString("::"));
-//        }
-//        for (var objectPath : this.model.getUserClasses()) {
-//            keys.add(objectPath.path().mkString("::"));
-//        }
-
         keys.addAll(this.generics.keySet());
         return keys;
     }

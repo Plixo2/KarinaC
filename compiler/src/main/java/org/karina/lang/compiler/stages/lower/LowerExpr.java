@@ -58,6 +58,7 @@ public class LowerExpr {
             case KExpr.Unary unary -> lowerUnary(ctx, unary);
             case KExpr.Unwrap unwrap -> lowerUnwrap(ctx, unwrap);
             case KExpr.VariableDefinition variableDefinition -> lowerVariableDefinition(ctx, variableDefinition);
+            case KExpr.UsingVariableDefinition usingVariableDefinition -> lowerUsingVariableDefinition(ctx, usingVariableDefinition);
             case KExpr.While aWhile -> lowerWhile(ctx, aWhile);
             case KExpr.StaticPath staticPath -> {
                 Log.error(ctx, new LowerError.NotValidAnymore(
@@ -96,6 +97,20 @@ public class LowerExpr {
         var symbol = expr.symbol();
         assert symbol != null;
         return new KExpr.VariableDefinition(region, name, varHint, value, symbol);
+    }
+
+    ///
+    /// Signature:
+    ///     `UsingVariableDefinition(Region region, RegionOf<String> name, @Nullable KType varHint, KExpr value, KExpr block, @Nullable @Symbol Variable symbol)`
+    private static KExpr lowerUsingVariableDefinition(LoweringContext context, KExpr.UsingVariableDefinition expr) {
+        var region = expr.region();
+        var name = expr.name();
+        var varHint = expr.varHint();
+        var value = lower(context, expr.value());
+        var symbol = expr.symbol();
+        assert symbol != null;
+        var block = lower(context, expr.block());
+        return new KExpr.UsingVariableDefinition(region, name, varHint, value, block, symbol);
     }
 
 
@@ -335,7 +350,7 @@ public class LowerExpr {
                     );
                     return new KExpr.Call(region, left, generics, arguments, newSymbol);
                 } else {
-                    Log.error(context, new LowerError.NotValidAnymore(callDynamic.region(), "Dynamic Call cannot be expressed"));
+                    Log.error(context, new LowerError.NotValidAnymore(callDynamic.region(), "Dynamic Call cannot be expressed: " + left.type().getClass()));
                     throw new Log.KarinaException();
                 }
 

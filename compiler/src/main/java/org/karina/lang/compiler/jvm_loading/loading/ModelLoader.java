@@ -18,9 +18,20 @@ import java.util.jar.JarInputStream;
 
 public class ModelLoader {
     private static final List<ResourceLibrary> RESOURCE_LIBRARIES = List.of(
-            new ResourceLibrary("java-base", "java_base.jar"),
-            new ResourceLibrary("karina-base", "karina_base.jar")
+            new ResourceLibrary("java-base",        "java.base.jar"        ),
+            new ResourceLibrary("java-desktop",     "java.desktop.jar"     ),
+            new ResourceLibrary("java-instrument",  "java.instrument.jar"  ),
+            new ResourceLibrary("java-logging",     "java.logging.jar"     ),
+            new ResourceLibrary("java-management",  "java.management.jar"  ),
+            new ResourceLibrary("java-naming",      "java.naming.jar"      ),
+            new ResourceLibrary("java-net-http",    "java.net.http.jar"    ),
+            new ResourceLibrary("java-scripting",   "java.scripting.jar"   ),
+            new ResourceLibrary("java-sql",         "java.sql.jar"         ),
+            new ResourceLibrary("java-xml",         "java.xml.jar"         ),
+
+            new ResourceLibrary("karina-base",      "karina.base.jar"      )
     );
+
 
     private static final String BIN_FILE = "base.bin.gz";
 
@@ -29,15 +40,6 @@ public class ModelLoader {
 
 
     public static Model getJarModel(IntoContext c, boolean useBinaryFormat) {
-
-//        for (var i = 0; i < 15; i++) {
-//            System.out.println(i);
-//            if (useBinaryFormat) {
-//                getBinaryModel(c);
-//            } else {
-//                modelFromResource(c, RESOURCE_LIBRARIES);
-//            }
-//        }
 
         if (useBinaryFormat) {
             return getBinaryModel(c);
@@ -220,6 +222,10 @@ public class ModelLoader {
         }
 
         var loadedModel = modelFromResource(c, RESOURCE_LIBRARIES);
+        if (c.log(Logging.ReadJar.class)) {
+            c.tag("Final number of classes", loadedModel.getClassCount());
+        }
+
         BinaryFormatLinker.writeBinary(c, loadedModel, destination);
 
 

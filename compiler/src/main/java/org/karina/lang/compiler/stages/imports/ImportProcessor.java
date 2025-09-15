@@ -7,6 +7,7 @@ import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 
+
 /**
  * This class is responsible for resolving types with some basic class validation.
  * First import all types, then apply functional interfaces to function types.
@@ -16,7 +17,6 @@ import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 public class ImportProcessor {
 
     public Model importTree(Context c, Model model) throws Log.KarinaException {
-
         Log.begin("import");
 
         var prelude = Prelude.fromModel(c, model);
@@ -56,6 +56,7 @@ public class ImportProcessor {
     }
 
     /**
+     * Also validates generic bounds
      * Applies and validates functional interfaces to function types in the model.
      */
     private static Model applyFunctionalInterfaces(Context c, Model model) {

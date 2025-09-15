@@ -93,7 +93,7 @@ public class ForAttrib  {
 //                }
 //            }
 
-            var iter_type = new KType.Resolvable();
+            var iter_type = KType.Resolvable.newInstance();
             var iterable_interface = KType.ITERABLE(iter_type);
             var expr = ctx.makeAssignment(iter.region(), iterable_interface, iter);
 

@@ -19,9 +19,9 @@ public class ReturnAttrib  {
         KType returnType;
         if (expr.value() != null) {
             value = AttributionExpr.attribExpr(ctx.returnType(), ctx, expr.value()).expr();
-            returnType = value.type();
 
             value = ctx.makeAssignment(expr.region(), ctx.returnType(), value);
+            returnType = value.type();
         } else {
             value = null;
             returnType = KType.NONE;

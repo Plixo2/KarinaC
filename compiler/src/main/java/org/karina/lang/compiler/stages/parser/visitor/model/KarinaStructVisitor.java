@@ -2,6 +2,7 @@ package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
@@ -119,7 +120,7 @@ public class KarinaStructVisitor implements IntoContext {
         var constNames = new ArrayList<String>();
         var constValues = new ArrayList<KExpr>();
         for (var constContext : ctx.const_()) {
-            var visitExpression = this.visitor.exprVisitor.visitExpression(constContext.expression());
+            var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
             var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
             constNames.add(constModel.name());
             constValues.add(visitExpression);
@@ -279,7 +280,6 @@ public class KarinaStructVisitor implements IntoContext {
             ClassPointer classPointer,
             List<KFieldModel> fields
     ) {
-
 
         var components = new ArrayList<StringComponent>();
 

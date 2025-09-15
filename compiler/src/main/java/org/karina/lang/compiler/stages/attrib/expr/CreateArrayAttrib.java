@@ -24,7 +24,7 @@ public class CreateArrayAttrib  {
             if (hint instanceof KType.ArrayType(KType type)) {
                 elementType = type;
             } else {
-                elementType = new KType.PrimitiveType.Resolvable(true, false);
+                elementType = KType.Resolvable.newInstanceAllowPrimitives();
             }
         }
 

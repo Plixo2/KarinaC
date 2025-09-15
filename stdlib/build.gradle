@@ -2,7 +2,7 @@
 
 
 tasks.register('buildForCompiler', Jar) {
-    archiveFileName = 'karina_base.jar'
+    archiveFileName = 'karina.base.jar'
     from sourceSets.main.output
     destinationDirectory = file("${projectDir}/../compiler/src/main/resources")
     doLast {

@@ -23,7 +23,7 @@ public class CompileProject {
 """
 @echo off
 pushd "%~dp0"
-java -cp "out/build.jar;libs/karina_base.jar" main
+java -cp "out/build.jar;libs/karina.base.jar" main
 popd
 """;
 
@@ -32,7 +32,7 @@ popd
 #!/bin/bash
 
 pushd "$(dirname "$0")" > /dev/null
-java -cp "out/build.jar:libs/karina_base.jar" main
+java -cp "out/build.jar:libs/karina.base.jar" main
 popd > /dev/null
 """;
     
@@ -42,7 +42,7 @@ popd > /dev/null
      * @param run if true, runs the program after compiling
      * @param compileOption compile options
      * @throws IOException an I/O error occurs when loading of the src directory fails
-     *                      or the karina_base.jar or build scripts cannot be copied.
+     *                      or the karina.base.jar or build scripts cannot be copied.
      */
     public static void compile(Path project, boolean run, CLIParser.CompileOption compileOption) throws IOException {
         project = project.toAbsolutePath().normalize();
@@ -80,24 +80,24 @@ popd > /dev/null
 
     }
 
-    private static void putScript(Path buildDir, String content, String file) throws IOException {
+    public static void putScript(Path buildDir, String content, String file) throws IOException {
         var script = buildDir.resolve(file);
 
         Files.write(script, content.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
 
     }
 
-    private static void putKarinaLib(Path buildDir) throws IOException {
-        var jarDest = buildDir.resolve("libs/karina_base.jar");
+    public static void putKarinaLib(Path buildDir) throws IOException {
+        var jarDest = buildDir.resolve("libs/karina.base.jar");
 
         Path destinationDir = jarDest.getParent();
         if (!Files.exists(destinationDir)) {
             Files.createDirectories(destinationDir);
         }
 
-        try (var resourceStream = CompileProject.class.getResourceAsStream("/karina_base.jar")) {
+        try (var resourceStream = CompileProject.class.getResourceAsStream("/karina.base.jar")) {
             if (resourceStream == null) {
-                System.out.println("Could not find karina_base.jar");
+                System.out.println("Could not find karina.base.jar");
                 System.exit(1);
             }
 

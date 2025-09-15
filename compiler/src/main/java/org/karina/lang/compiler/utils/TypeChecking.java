@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.utils;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 
@@ -179,44 +180,33 @@ public record TypeChecking(Model model) {
      * {@code let a: left = right}
      */
     public boolean canAssign(IntoContext c, Region checkingRegion, KType left, KType right, boolean mutable) {
-        var logName = "type-checking (" + left + " from " + right + ")" + (mutable ? " mutable" : "");
-        Log.beginType(Log.LogTypes.CHECK_TYPE, logName);
-        var resultInner = canAssignInner(c.intoContext(), checkingRegion, left, right, mutable);
-        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "result: " + resultInner, checkingRegion, "left: " + left, "right: " + right);
-        return resultInner;
+        return canAssignInner(c.intoContext(), checkingRegion, left, right, mutable);
     }
 
     private boolean canAssignInner(Context c, Region checkingRegion, KType left, KType right, boolean mutable) {
         var logName = left + " from " + right;
-        Log.beginType(Log.LogTypes.CHECK_TYPE, logName);
 
         if (left instanceof KType.Resolvable resolvable) {
             if (resolvable.isResolved()) {
-                var resultInner = canAssignInner(c, checkingRegion, resolvable.get(), right, mutable);
-                Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Left Resolvable resolved", resultInner);
-                return resultInner;
+                return canAssignInner(c, checkingRegion, resolvable.get(), right, mutable);
             } else {
-                var canResolve = resolvable.canResolve(c, checkingRegion, right);
+                var canResolve = resolvable.canResolve(c, checkingRegion, right, this, mutable);
                 if (mutable && canResolve) {
                     resolvable.tryResolve(c, checkingRegion, right);
                     //we dont test again if it was resolved, since the resolvable might reference itself
                 }
 
-                Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Trying to resolve left", canResolve);
                 return canResolve;
             }
         } else if (right instanceof KType.Resolvable resolvable) {
             if (resolvable.isResolved()) {
-                var resultInner = canAssignInner(c, checkingRegion, left, resolvable.get(), mutable);
-                Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Right Resolvable resolved", resultInner);
-                return resultInner;
+                return canAssignInner(c, checkingRegion, left, resolvable.get(), mutable);
             } else {
-                var canResolve = resolvable.canResolve(c, checkingRegion, left);
+                var canResolve = resolvable.canResolve(c, checkingRegion, left, this, mutable);
                 if (mutable && canResolve) {
                     resolvable.tryResolve(c, checkingRegion, left);
                     //we dont test again if it was resolved, since the resolvable might reference itself
                 }
-                Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Trying to resolve right", canResolve);
                 return canResolve;
             }
         }
@@ -249,14 +239,31 @@ public record TypeChecking(Model model) {
                     var classCheck = canAssignClass(c, checkingRegion, classType, rightClassType, mutable);
                     Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class match", classCheck);
                     yield classCheck;
-                } else if (right instanceof KType.GenericLink) {
-                    if (isObject) {
-                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Object match with generic", true);
-                        yield true;
-                    } else {
-                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class mismatch with generics", false);
-                        yield false;
+                } else if (right instanceof KType.GenericLink genericLink) {
+
+                    var superType = genericLink.link().superType();
+                    if (superType != null) {
+                        var resultInner = canAssign(c, checkingRegion, classType, superType, mutable);
+                        if (resultInner) {
+                            yield true;
+                        }
                     }
+                    for (var bound : genericLink.link().bounds()) {
+                        var resultInner = canAssign(c, checkingRegion, classType, bound, mutable);
+                        if (resultInner) {
+                            yield true;
+                        }
+                    }
+
+                    yield false;
+
+//                    if (isObject) {
+//                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Object match with generic", true);
+//                        yield true;
+//                    } else {
+//                        Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Class mismatch with generics", false);
+//                        yield false;
+//                    }
                 } else if (right instanceof KType.FunctionType functionType) {
                     if (isObject) {
                         Log.endType(Log.LogTypes.CHECK_TYPE, logName, "Object match with function", true);

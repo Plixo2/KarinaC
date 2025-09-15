@@ -50,10 +50,15 @@ public class TestFile {
                 throw new AssertionError("Expected success for '" + this.identifier + "'");
             }
             if (run) {
-                var result = AutoRun.runWithPrints(compilation, true, new String[]{});
-                if (result != null) {
-                    throw new RuntimeException(result.cause());
+                try (var autoRun = new AutoRun()) {
+                    var result = autoRun.runWithPrints(compilation, true, new String[]{});
+                    if (result != null) {
+                        throw new RuntimeException(result.cause());
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
+
             }
         } else {
             if (compilation != null) {
