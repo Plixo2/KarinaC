@@ -1,0 +1,180 @@
+import java::util::concurrent::Future
+import java::nio::charset::StandardCharsets
+import java::net::http::HttpResponse
+import java::util::concurrent::Executors
+import java::net::URI
+import java::net::http::HttpRequest
+import java::net::http::HttpClient
+import java::io::IOException
+import java::nio::file::Path
+import java::io::FileInputStream
+import java::util::Arrays
+
+import karina::lang::json::JsonParseException
+import karina::lang::json::JsonFormatter
+import karina::lang::io::Files
+import karina::lang::json::Json
+
+
+import console::AnsiColor *
+import console *
+
+pub fn main(args: [string]) {
+
+    let content = '{ "source": "witness" }'
+
+    let json = Result::orThrow(Json::parse(content))
+    println(json.mkString())
+
+    let metaInt = Meta { value: CustomInteger { value: 42 } }
+    println(metaInt.extension())
+
+
+    println(100_000_000.format())
+
+    httpJsonDemo()
+    prettyDemo()
+}
+
+
+struct Meta<T: Copy> {
+    value: T
+
+    impl Copy {
+        fn copy(self) -> any {
+            Meta {
+                value: Option::instanceOf(Copy, (self.value as Copy).copy()).expect("Copy should work")
+            }
+        }
+    }
+
+    where T: Display {
+        fn display(self) -> string {
+            Meta {
+                value: Option::instanceOf(Display, (self.value as Display).copy()).expect("Display should work")
+            }
+        }
+    }
+}
+
+@Extension
+fn extension<T: Copy + Display>(meta: Meta<T>) -> string {
+    let valueStr = (meta.value as Display).toStr()
+    'Meta { value: $valueStr }'
+}
+
+@Extension
+fn format(v: int) -> string {
+    String::format("%,d", [v])
+}
+
+fn readFile(path: string) -> string?IOException {
+    let pathObject = Files::path(path).mapErr(fn(e) {
+        IOException { message: 'Invalid path \'$path\'', cause: e }
+    })?
+
+    using f = Files::createStream(pathObject)? {
+        let content = String { bytes: f.readAllBytes() }
+        Result::ok(content)
+    }
+}
+
+struct DummyResource {
+    impl AutoCloseable {
+        fn close(self) {
+            println("Resource closed")
+        }
+    }
+}
+
+struct CustomInteger {
+    value: int
+
+    impl Copy {
+        fn copy(self) -> any {
+            CustomInteger { value: self.value }
+        }
+    }
+
+    impl Display {
+        fn toStr(self) -> string {
+            String::valueOf(self.value)
+        }
+    }
+}
+
+
+interface Copy {
+    fn copy(self) -> any
+}
+
+interface Display {
+    fn toStr(self) -> string
+}
+
+fn httpJsonDemo() {
+    let client = HttpClient::newHttpClient();
+    let request = HttpRequest::newBuilder()
+        .uri(URI::create("https://dummyjson.com/todos?limit=2"))
+        .GET()
+        .build()
+
+    using executor = Executors::newVirtualThreadPerTaskExecutor() {
+        let future = executor.submit(fn() {
+            let response = client.send(request, JsonBodyHandler {})
+            response.body()
+        })
+
+        let body: Json::Value = Result::orThrow(future.get())
+
+        let b = Result::orThrow(Json::parse(body.mkString(JsonFormatter::COMPACT)))
+        let c = Result::orThrow(Json::parse(body.mkString(JsonFormatter::DEFAULT)))
+        println(body.mkString(JsonFormatter::DEFAULT))
+    }
+}
+struct JsonBodyHandler {
+    impl HttpResponse::BodyHandler<Json::Value?JsonParseException> {
+        fn apply(self, responseInfo: HttpResponse::ResponseInfo) -> HttpResponse::BodySubscriber<Json::Value?JsonParseException> {
+            HttpResponse::BodySubscribers::mapping(
+                HttpResponse::BodySubscribers::ofString(StandardCharsets::UTF_8),
+                fn(body) Json::parse(body)
+            )
+        }
+    }
+}
+
+
+fn prettyDemo() {
+    println('$RED RED')
+    println('$GREEN GREEN')
+    println('$BLUE BLUE')
+    println('$YELLOW YELLOW')
+    println('$PURPLE PURPLE')
+    println('$CYAN CYAN')
+    println('$BLACK BLACK')
+    println('$GRAY GRAY')
+    println('$WHITE WHITE')
+
+    let bar = ProgressBar { text: "Progress" }
+    bar.render(0.0)
+    Thread::sleep(500)
+    bar.render(0.25)
+    Thread::sleep(500)
+    bar.render(0.5)
+    Thread::sleep(500)
+    bar.render(0.75)
+    Thread::sleep(500)
+    bar.end()
+    Thread::sleep(500)
+
+    let spinner = Spinner { text: "Processing"}
+
+    let file_name_array = ["file1.txt", "file2.txt", "file3.txt"]
+    let file_names = Arrays::asList(file_name_array)
+
+    for i in range(file_names) {
+        spinner.update(file_names.get(i))
+        Thread::sleep(600)
+    }
+    spinner.end()
+}

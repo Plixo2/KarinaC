@@ -1,0 +1,83 @@
+
+
+pub struct AnsiColor {
+    pub static RED: string = "\u001B[31m"
+    pub static GREEN: string = "\u001B[32m"
+    pub static BLUE: string = "\u001B[34m"
+    pub static YELLOW: string = "\u001B[33m"
+    pub static PURPLE: string = "\u001B[35m"
+    pub static CYAN: string = "\u001B[36m"
+    pub static BLACK: string = "\u001B[30m"
+    pub static GRAY: string = "\u001B[37m"
+    pub static WHITE: string = "\u001B[0m"
+}
+
+pub struct ProgressBar {
+    text: string
+
+    pub fn (self) {
+        super<Object>()
+        self.text = ""
+    }
+    pub fn (self, text: string) {
+        super<Object>()
+        self.text = text
+    }
+
+    pub fn render(self, percentage: float) {
+        let totalBlocks = 20
+        let filledBlocks = Math::round(percentage * totalBlocks as float)
+        let emptyBlocks = totalBlocks - filledBlocks
+
+        // let filledPart = "█".repeat(filledBlocks)
+        // let emptyPart = "░".repeat(emptyBlocks)
+        let filledPart = "■".repeat(filledBlocks)
+        let emptyPart = " ".repeat(emptyBlocks)
+
+        let percentageString = Math::round(percentage * 100.0)
+        let prefixText = self.text
+        let prefix = if prefixText != "" { '$prefixText: ' } else { '' }
+
+        print('\r$prefix[$filledPart$emptyPart] $percentageString%')
+    }
+
+    pub fn end(self) {
+        self.render(1.0)
+        println("")
+    }
+}
+
+pub struct Spinner {
+    static frames: [string] = ["|", "/", "-", "\\"]
+
+    text: string
+    mut currentFrame: int
+
+    pub fn (self) {
+        super<Object>()
+        self.text = ""
+        self.currentFrame = 0
+    }
+    pub fn (self, text: string) {
+        super<Object>()
+        self.text = text
+        self.currentFrame = 0
+    }
+
+    pub fn update(self) {
+        self.update("")
+    }
+
+    pub fn update(self, suffix: string) {
+        self.currentFrame = (self.currentFrame + 1) % (Spinner::frames).length
+        let frame = Spinner::frames[self.currentFrame]
+        let prefixText = self.text
+        let prefix = if prefixText != "" { '$prefixText ' } else { '' }
+        print('\r$prefix[$frame] $suffix')
+    }
+
+    pub fn end(self) {
+        print('\r')
+    }
+
+}
