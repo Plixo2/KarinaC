@@ -1,4 +1,5 @@
-
+import karina::lang::Option {Some, None}
+import karina::lang::Result {Err, Ok}
 
 pub fn main(args: [string]) {
    test()
@@ -39,7 +40,7 @@ fn testEnum() {
     let wrapped = Option::some(10)
     let unwrapped = unwrap(wrapped)
     assert(unwrapped == 10, "Unwrapped value should be 10")
-    assertFalse(wrapped is None)
+    assertFalse(wrapped is Option::None)
     assertTrue(wrapped is Some<any>)
 
 }

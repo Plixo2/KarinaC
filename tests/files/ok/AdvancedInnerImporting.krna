@@ -3,7 +3,7 @@ import karina::lang::Result::Ok
 // Expect a specific Error type, otherwise throw the other error
 fn safeCallExpect<R,T>(function: fn() -> R, cls: Class<T>) -> Result<R, T> {
     let cls4 = karina::lang::Option::Some.class
-    let cls2 = Some.class
+    let cls2 = Option::Some.class
     let cls3 = Option::Some.class
     Result::safeCall(function)
         .mapErr(

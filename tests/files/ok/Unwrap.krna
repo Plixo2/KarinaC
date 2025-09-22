@@ -1,3 +1,4 @@
+import karina::lang::Option {Some, None}
 fn f() {
     option().expect("Success")
     result(false).inverse().expect("No Error")

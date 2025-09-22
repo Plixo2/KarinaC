@@ -1,4 +1,4 @@
-
+import karina::lang::Option {Some, None}
 // TODO more cases:
 // (a,b) -> void
 // () -> void
