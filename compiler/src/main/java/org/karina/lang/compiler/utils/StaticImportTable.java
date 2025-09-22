@@ -6,8 +6,6 @@ import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.model_api.pointer.FieldPointer;
-import org.karina.lang.compiler.model_api.pointer.MethodPointer;
-import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 
 import java.util.*;
 
@@ -61,30 +59,6 @@ public record StaticImportTable(
         } else {
             return null;
         }
-    }
-
-    public static StaticImportTable fromImportTable(ClassPointer referenceSite, Model model, UserImportTable importTable) {
-        var classes = ImmutableMap.<String, ClassPointer>builder();
-
-        importTable.classes().forEach((name, ptr) -> {
-            classes.put(name, ptr.reference());
-        });
-
-        var staticFields = ImmutableMap.<String, FieldPointer>builder();
-        importTable.staticFields().forEach((name, ptr) -> {
-            staticFields.put(name, ptr.reference());
-        });
-
-
-        var staticMethods = ImmutableMap.<String, MethodCollection>builder();
-        importTable.typedStaticMethods().forEach((name, ptr) -> {
-            staticMethods.put(name, ptr.reference());
-        });
-        importTable.untypedStaticMethods().forEach((name, ptr) -> {
-            staticMethods.put(name, ptr.reference().toTypedStaticCollection(referenceSite, model));
-        });
-
-        return new StaticImportTable(classes.build(), staticMethods.build(), staticFields.build());
     }
 
     public Set<String> availableItemNames() {

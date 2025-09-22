@@ -5,12 +5,12 @@ public sealed interface FileTransaction {
 
     VirtualFile file();
 
-    boolean isObjectNew();
+    boolean objectChange();
 
-    record UpdateFile(VirtualFile file, boolean isObjectNew) implements FileTransaction {}
+    record UpdateFile(VirtualFile file, boolean objectChange) implements FileTransaction {}
     record RemovedFile(VirtualFile file) implements FileTransaction {
         @Override
-        public boolean isObjectNew() {
+        public boolean objectChange() {
             return true;
         }
     }

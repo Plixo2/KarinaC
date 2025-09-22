@@ -16,6 +16,7 @@ import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Types;
+import org.karina.lang.compiler.utils.logging.Logging;
 import org.karina.lang.compiler.utils.symbols.CallSymbol;
 import org.karina.lang.compiler.utils.symbols.CastSymbol;
 import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
@@ -34,72 +35,59 @@ public class LoweringItem {
             KClassModel classModel,
             ModelBuilder builder
     ) {
-
-        var logName = "class-" + classModel.name();
-        Log.beginType(Log.LogTypes.LOWERING, logName);
-        var fields = ImmutableList.<KFieldModel>builder();
-        for (var field : classModel.fields()) {
-            //TODO lower field
-            if (!(field instanceof KFieldModel kFieldModel)) {
-                Log.temp(c, field.region(), "Invalid field");
-                throw new Log.KarinaException();
+        try(var _ = c.section(Logging.Lowering.Classes.class, classModel.name())) {
+            var fields = ImmutableList.<KFieldModel>builder();
+            for (var field : classModel.fields()) {
+                //TODO lower field
+                if (!(field instanceof KFieldModel kFieldModel)) {
+                    Log.temp(c, field.region(), "Invalid field");
+                    throw new Log.KarinaException();
+                }
+                fields.add(kFieldModel);
             }
-            fields.add(kFieldModel);
-        }
 
-        var methodsToFill = new ArrayList<KMethodModel>();
-        var innerToFill = new ArrayList<KClassModel>();
-        var classModelNew = new KClassModel(
-                classModel.name(),
-                classModel.path(),
-                classModel.modifiers(),
-                classModel.superClass(),
-                outerClass,
-                classModel.nestHost(),
-                classModel.interfaces(),
-                innerToFill,
-                fields.build(),
-                methodsToFill,
-                classModel.generics(),
-                classModel.imports(),
-                classModel.permittedSubclasses(),
-                classModel.nestMembersMutable(),
-                classModel.annotations(),
-                classModel.resource(),
-                classModel.region(),
-                classModel.symbolTable()
-        );
+            var methodsToFill = new ArrayList<KMethodModel>();
+            var innerToFill = new ArrayList<KClassModel>();
+            var classModelNew = new KClassModel(
+                    classModel.name(), classModel.path(), classModel.modifiers(),
+                    classModel.superClass(), outerClass, classModel.nestHost(),
+                    classModel.interfaces(), innerToFill, fields.build(), methodsToFill,
+                    classModel.generics(), classModel.imports(), classModel.permittedSubclasses(),
+                    classModel.nestMembersMutable(), classModel.annotations(),
+                    classModel.resource(), classModel.region(), classModel.symbolTable()
+            );
 
 
-        for (var kClassModel : classModel.innerClasses()) {
-            var inner = lowerClass(c, model, classModelNew, kClassModel, builder);
-            innerToFill.add(inner);
-        }
-
-        MutableInt syntheticCounter = new MutableInt(0);
-        var newClasses = new LinearLookup();
-        for (var method : classModel.methods()) {
-            if (!(method instanceof KMethodModel kMethodModel)) {
-                Log.temp(c, method.region(), "Invalid method");
-                throw new Log.KarinaException();
+            for (var kClassModel : classModel.innerClasses()) {
+                var inner = lowerClass(c, model, classModelNew, kClassModel, builder);
+                innerToFill.add(inner);
             }
-            var lowerMethod = lowerMethod(c, model, classModelNew, kMethodModel, syntheticCounter, newClasses, List.of());
-            methodsToFill.add(lowerMethod);
+
+            MutableInt syntheticCounter = new MutableInt(0);
+            var newClasses = new LinearLookup();
+            for (var method : classModel.methods()) {
+                if (!(method instanceof KMethodModel kMethodModel)) {
+                    Log.temp(c, method.region(), "Invalid method");
+                    throw new Log.KarinaException();
+                }
+                var lowerMethod =
+                        lowerMethod(
+                                c, model, classModelNew, kMethodModel, syntheticCounter, newClasses,
+                                List.of()
+                        );
+                methodsToFill.add(lowerMethod);
+            }
+            methodsToFill.addAll(createBridgeMethods(c, model, classModelNew));
+
+            for (var kClassModel : newClasses.userClasses()) {
+                builder.addClass(c, kClassModel);
+            }
+
+            builder.addClass(c, classModelNew);
+
+
+            return classModelNew;
         }
-        Log.beginType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
-        methodsToFill.addAll(createBridgeMethods(c, model, classModelNew));
-        Log.endType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Creating bridge methods for " + classModel.name());
-
-        for (var kClassModel : newClasses.userClasses()) {
-            builder.addClass(c, kClassModel);
-        }
-
-        builder.addClass(c, classModelNew);
-        Log.endType(Log.LogTypes.LOWERING, logName);
-
-
-
-        return classModelNew;
     }
 
     public static KMethodModel lowerMethod(
@@ -126,9 +114,7 @@ public class LoweringItem {
 
         var expression = methodModel.expression();
         if (expression != null) {
-            Log.beginType(Log.LogTypes.LOWERING, "lowering method " + methodModel.name());
             expression = LowerExpr.lower(ctx, expression);
-            Log.endType(Log.LogTypes.LOWERING, "lowering method " + methodModel.name());
         }
 
         return new KMethodModel(
@@ -171,8 +157,6 @@ public class LoweringItem {
 
         var toImplement = MethodHelper.getMethodForBridgeConstruction(c, model, classType);
         if (!toImplement.isEmpty()) {
-            Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Implemented for "  + classModel.name() + ": " + toImplement);
-            Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Size", toImplement.size());
 
             var methods = new ArrayList<KMethodModel>();
             for (var methodToImplement : toImplement) {
@@ -197,26 +181,10 @@ public class LoweringItem {
                         );
                         throw new Log.KarinaException();
                     } else {
-                        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Method " + foundMethod.name() + " already exists with the same signature");
-                        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "to call",
-                                methodToImplement.implementing().originalMethodPointer(),
-                                "found",
-                                foundMethod.pointer(),
-                                foundMethod.pointer().equals(methodToImplement.implementing().originalMethodPointer())
-                        );
                         continue;
                     }
-                } else {
-                    Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Method " + methodModel.name() +
-                            " does not exist with the same signature");
-                    Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "to call",
-                            methodToImplement.implementing()
-                    );
                 }
 
-                var readable = methodModel.name() + "(" + paramsErased + ")" +
-                        " -> " + returnTypeErased;
-                Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Constructing bridge method " + readable);
 
                 var bridgeMethod =
                         createBridgeMethod(
@@ -229,8 +197,6 @@ public class LoweringItem {
             }
             return methods;
 
-        } else {
-            Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "No bridge methods to implement for " + classModel.name());
         }
 
         return List.of();
@@ -239,7 +205,6 @@ public class LoweringItem {
 
     public static boolean doesMethodWithSameSignatureExist(MethodModel methodModel, List<? extends MethodModel> existing) {
 
-        Log.beginType(Log.LogTypes.LOWERING, "Signature check");
         var selfErased = methodModel.erasedParameters();
         for (var existingMethodModel : existing) {
             if (!existingMethodModel.name().equals(methodModel.name())) {
@@ -250,14 +215,10 @@ public class LoweringItem {
                 var returnErased = Types.erase(existingMethodModel.signature().returnType());
                 var existingReturnErased = Types.erase(methodModel.signature().returnType());
                 if (Types.erasedEquals(returnErased, existingReturnErased)) {
-                    Log.recordType(Log.LogTypes.LOWERING, "new", selfErased, " -> ", returnErased);
-                    Log.recordType(Log.LogTypes.LOWERING, "old", erased, " -> ", existingReturnErased);
-                    Log.endType(Log.LogTypes.LOWERING, "Signature check", "Found method with same signature: " + existingMethodModel.name());
                     return true;
                 }
             }
         }
-        Log.endType(Log.LogTypes.LOWERING, "Signature check", "No method with same signature found");
         return false;
 
     }
@@ -329,8 +290,6 @@ public class LoweringItem {
             callArgs.add(expr);
         }
 
-        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "Calling original " + reference.pointer());
-        Log.recordType(Log.LogTypes.LOWERING_BRIDGE_METHODS, "With return type  " + reference.signature().returnType());
 
         var callSymbol = new CallSymbol.CallVirtual(
                 reference.pointer(),

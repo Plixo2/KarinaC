@@ -1,12 +1,9 @@
 package org.karina.lang.compiler.stages.imports;
 
-import com.google.common.collect.ImmutableList;
+import org.karina.lang.compiler.stages.imports.table.ExtendableImportTable;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.stages.imports.table.ImportTable;
-import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;
-
-import java.util.Optional;
 
 /**
  * Only used as a wrapper for the ImportTable, no need for this calls in the future
@@ -32,7 +29,7 @@ public record ImportContext(Context c, ImportTable table) implements IntoContext
 
 
     public KExpr importStaticPath(KExpr.StaticPath staticPath) {
-        if (!(this.table instanceof UserImportTable importTable)) {
+        if (!(this.table instanceof ExtendableImportTable importTable)) {
             return staticPath;
         }
 
@@ -56,7 +53,7 @@ public record ImportContext(Context c, ImportTable table) implements IntoContext
             return new KExpr.GetMember(
                     classRegion,
                     new KExpr.StaticPath(classRegion, prevRegions, potentialClassName, potentialClass),
-                    RegionOf.region(classRegion, potentialFunctionName),
+                    RegionOf.region(individualRegions.getLast(), potentialFunctionName),
                     true,
                     null
             );

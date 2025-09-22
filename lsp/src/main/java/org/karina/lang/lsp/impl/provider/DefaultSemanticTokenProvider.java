@@ -1,34 +1,43 @@
-package org.karina.lang.lsp.impl;
+package org.karina.lang.lsp.impl.provider;
 
+import karina.lang.Option;
+import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
+import org.eclipse.lsp4j.SemanticTokens;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParserBaseVisitor;
+import org.karina.lang.lsp.impl.IntList;
 import org.karina.lang.lsp.lib.SemanticToken;
-import org.karina.lang.lsp.lib.SemanticTokenProvider;
+import org.karina.lang.lsp.lib.events.EventService;
+import org.karina.lang.lsp.lib.provider.SemanticTokenProvider;
+import org.karina.lang.lsp.test_compiler.CompiledModelIndex;
+import org.karina.lang.lsp.test_compiler.ProviderArgs;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class DefaultSemanticTokenProvider implements SemanticTokenProvider  {
-
+    private final EventService eventService;
 
     @Override
-    public List<Integer> getTokens(String content) {
+    public SemanticTokens getTokens(ProviderArgs index, URI uri) {
+        if (!(index.getFile(uri) instanceof Option.Some(var virtualFile))) {
+            return new SemanticTokens(List.of());
+        }
+        if (!(index.getCache(virtualFile) instanceof Option.Some(var cacheState))) {
+            return new SemanticTokens(List.of());
+        }
 
-        var inputStream = CharStreams.fromString(content);
-        var karinaLexer = new KarinaLexer(inputStream);
-        var parser = new KarinaParser(new CommonTokenStream(karinaLexer));
-
-        karinaLexer.removeErrorListeners();
-        parser.removeErrorListeners();
 
         var visitor = new SemanticVisitor();
-        visitor.visit(parser.unit());
-        return getDeltaTokens(visitor.tokens);
+        visitor.visit(cacheState.parsedUnit());
+        return new SemanticTokens(getDeltaTokens(visitor.tokens));
     }
 
     /// Calculates deltas for semantic tokens.

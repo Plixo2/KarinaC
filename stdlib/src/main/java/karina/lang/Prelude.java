@@ -1,14 +1,46 @@
 package karina.lang;
 
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
 
-//Build-in Utility class for auto importing of print, println, and toString methods
-public final class Console {
-//    private static final NumberFormat NUMBER_FORMAT = new DecimalFormat("#,###.############");
+import java.util.*;
+
+//Auto imported functions and fields
+public final class Prelude {
+
+    public static <T> Option.Some<T> some(T value) {
+        return new Option.Some<>(value);
+    }
+    public static <T> Option.None<T> none() {
+        return new Option.None<>();
+    }
+    public static <T, E> Result.Ok<T, E> ok(T value) {
+        return new Result.Ok<>(value);
+    }
+    public static <T, E> Result.Err<T, E> err(E error) {
+        return new Result.Err<>(error);
+    }
+
+
+
+    public static <T> Range range(Collection<T> collection) {
+        return range(collection.size());
+    }
+
+    public static <T> Range range(T[] array) {
+        return range(array.length);
+    }
+
+    public static Range range(int end) {
+        return new Range(0, end, 1);
+    }
+
+    public static Range range(int start, int end) {
+        return new Range(start, end, 1);
+    }
+
+    public static Range range(int start, int end, int step) {
+        return new Range(start, end, step);
+    }
 
     public static void println() {
         System.out.println();
@@ -43,9 +75,6 @@ public final class Console {
     }
 
     public static void println(Object object) {
-        if (Thread.currentThread().isInterrupted()) {
-            throw new RuntimeException("Thread was interrupted");
-        }
         System.out.println(toString(object));
     }
 
@@ -79,9 +108,6 @@ public final class Console {
     }
 
     public static void print(Object object) {
-        if (Thread.currentThread().isInterrupted()) {
-            throw new RuntimeException("Thread was interrupted");
-        }
         System.out.print(toString(object));
     }
 
@@ -284,8 +310,7 @@ public final class Console {
         return obj;
     }
 
-    @Extension
-    public static void debugPrint(Object obj) {
+    private static void debugPrint(Object obj) {
         int OFFSET = 3;
         var traces = Thread.currentThread().getStackTrace();
         if (traces.length < OFFSET) {
@@ -324,4 +349,88 @@ public final class Console {
 
         return sb.toString();
     }
+
+
+
+    @Extension
+    public static float sqrt(float number) {
+        return (float) Math.sqrt(number);
+    }
+
+    @Extension
+    public static double sqrt(double number) {
+        return Math.sqrt(number);
+    }
+
+    @Extension
+    public static double sqrt(int number) {
+        return Math.sqrt(number);
+    }
+
+    @Extension
+    public static double sqrt(long number) {
+        return Math.sqrt(number);
+    }
+
+    @Extension
+    public static long abs(long number) {
+        return Math.abs(number);
+    }
+
+    @Extension
+    public static int abs(int number) {
+        return Math.abs(number);
+    }
+
+    @Extension
+    public static float abs(float number) {
+        return Math.abs(number);
+    }
+
+    @Extension
+    public static double abs(double number) {
+        return Math.abs(number);
+    }
+
+
+    @Extension
+    public static long min(long number, long other) {
+        return Math.min(number, other);
+    }
+
+    @Extension
+    public static int min(int number, int other) {
+        return Math.min(number, other);
+    }
+
+    @Extension
+    public static float min(float number, float other) {
+        return Math.min(number, other);
+    }
+
+    @Extension
+    public static double min(double number, double other) {
+        return Math.min(number, other);
+    }
+
+    @Extension
+    public static long max(long number, long other) {
+        return Math.max(number, other);
+    }
+
+    @Extension
+    public static int max(int number, int other) {
+        return Math.max(number, other);
+    }
+    @Extension
+    public static float max(float number, float other) {
+        return Math.max(number, other);
+    }
+    @Extension
+    public static double max(double number, double other) {
+        return Math.max(number, other);
+    }
+
+
+
 }

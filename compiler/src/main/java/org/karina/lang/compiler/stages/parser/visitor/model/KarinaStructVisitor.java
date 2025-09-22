@@ -24,12 +24,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class KarinaStructVisitor implements IntoContext {
-    private final RegionContext context;
+    private final RegionContext conv;
     private final KarinaUnitVisitor visitor;
 
     public KarinaStructVisitor(KarinaUnitVisitor visitor, RegionContext regionContext) {
         this.visitor = visitor;
-        this.context = regionContext;
+        this.conv = regionContext;
     }
 
     public KClassModel visit(
@@ -39,8 +39,8 @@ public class KarinaStructVisitor implements IntoContext {
             KarinaParser.StructContext ctx,
             ModelBuilder modelBuilder
     ) {
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
         var path = owningPath.append(name);
         //assume to be valid, as you can only get this, if the class is valid
         var currentClass = ClassPointer.of(region, path);
@@ -119,11 +119,13 @@ public class KarinaStructVisitor implements IntoContext {
 
         var constNames = new ArrayList<String>();
         var constValues = new ArrayList<KExpr>();
+        var regions = new ArrayList<Region>();
         for (var constContext : ctx.const_()) {
             var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
             var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
             constNames.add(constModel.name());
             constValues.add(visitExpression);
+            regions.add(this.conv.toRegion(constContext));
             fields.add(constModel);
         }
         if (!constNames.isEmpty()) {
@@ -132,7 +134,8 @@ public class KarinaStructVisitor implements IntoContext {
                     region,
                     currentClass,
                     constNames,
-                    constValues
+                    constValues,
+                    regions
             );
             methods.add(clinit);
         }
@@ -181,7 +184,7 @@ public class KarinaStructVisitor implements IntoContext {
                 permittedSubClasses,
                 new ArrayList<>(),
                 annotations,
-                this.context.source(),
+                this.conv.source(),
                 region,
                 null
         );
@@ -192,8 +195,8 @@ public class KarinaStructVisitor implements IntoContext {
 
     private KFieldModel visitField(KarinaParser.FieldContext ctx, ClassPointer owningClass, boolean isParentPublic) {
 
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
         var type = this.visitor.typeVisitor.visitType(ctx.type());
         int mods;
         if (ctx.MUT() != null) {
@@ -227,6 +230,11 @@ public class KarinaStructVisitor implements IntoContext {
             int mods,
             KType superClass
     ) {
+        region = new Region(
+                region.source(),
+                region.start(),
+                region.start()
+        );
         var name = "<init>";
 
         var paramTypes = ImmutableList.copyOf(fields.stream().map(KFieldModel::type).toList());
@@ -280,7 +288,11 @@ public class KarinaStructVisitor implements IntoContext {
             ClassPointer classPointer,
             List<KFieldModel> fields
     ) {
-
+        region = new Region(
+                region.source(),
+                region.start(),
+                region.start()
+        );
         var components = new ArrayList<StringComponent>();
 
         components.add(new StringComponent.StringLiteralComponent(

@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.symbols.BranchYieldSymbol;
 import org.karina.lang.compiler.utils.BranchPattern;
 import org.karina.lang.compiler.utils.logging.Log;
@@ -239,6 +240,16 @@ public class BranchAttrib  {
         switch (pattern) {
             case BranchPattern.Cast cast -> {
                 var isType = cast.type();
+                var owningClass = ctx.model().getClass(ctx.owningClass());
+                if (!Types.isTypeAccessible(ctx.protection(), owningClass, isType)) {
+                    Log.error(ctx, new ImportError.AccessViolation(
+                            cast.region(),
+                            owningClass.name(),
+                            null,
+                            isType
+                    ));
+                    throw new Log.KarinaException();
+                }
 
                 //TODO: Allow function to be checked
                 // allow auto conversion

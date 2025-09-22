@@ -1,7 +1,6 @@
 package org.karina.lang.compiler.stages.imports.table;
 
 import com.google.common.collect.ImmutableMap;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.utils.logging.Log;
@@ -16,6 +15,7 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.*;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 
 /*
  * Import table for importing types.
@@ -31,10 +31,8 @@ import java.util.*;
  *  import, class, subClass, method and generic.
  *  prelude alone has > 300 entries.
  */
-public record UserImportTable(
-        Context c,
-        Model model,
-        ImmutableMap<String, ImportEntry<ClassPointer>> classes,
+public record FirstPassImportTable(
+        Context c, Model model, ImmutableMap<String, ImportEntry<ClassPointer>> classes,
         ImmutableMap<String, ImportEntry<Generic>> generics,
 
         //list of UntypedMethodCollection, as we dont know the signature yet, see 'UntypedMethodCollection'
@@ -42,20 +40,45 @@ public record UserImportTable(
         //for prelude methods, we know the signature
         ImmutableMap<String, ImportEntry<MethodCollection>> typedStaticMethods,
 
-        ImmutableMap<String, ImportEntry<FieldPointer>> staticFields
-) implements IntoContext, ImportTable {
+        ImmutableMap<String, ImportEntry<FieldPointer>> staticFields,
+        @Nullable BiConsumer<KType.UnprocessedType, KType> listener
+) implements ExtendableImportTable {
 
-    public UserImportTable(Context c, Model model) {
-        this(c, model, ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of(), ImmutableMap.of());
+    public FirstPassImportTable(Context c, Model model) {
+        this(
+                c,
+                model,
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                null
+        );
+    }
+
+    public FirstPassImportTable(
+            Context c, Model model, BiConsumer<KType.UnprocessedType, KType> listener) {
+        this(
+                c,
+                model,
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                listener
+        );
     }
 
     //<editor-fold defaultstate="collapsed" desc="Table Lookup">
+
     /**
-     *  Import a Type with default ImportGenericBehavior.
+     * Import a Type with default ImportGenericBehavior.
      */
     @Override
     public KType importType(Region region, KType kType) {
-        return importType(region, kType, ImportGenericBehavior.DEFAULT);
+        return this.importType(region, kType, ImportGenericBehavior.DEFAULT);
     }
 
     /**
@@ -65,22 +88,44 @@ public record UserImportTable(
     @Override
     public KType importType(Region region, KType kType, ImportGenericBehavior flags) {
         return switch (kType) {
-            case KType.ArrayType arrayType -> new KType.ArrayType(importType(region, arrayType.elementType()));
+            case KType.ArrayType arrayType ->
+                    new KType.ArrayType(importType(region, arrayType.elementType()));
             case KType.FunctionType functionType -> importFunctionType(region, functionType);
             case KType.GenericLink genericLink -> genericLink;
             case KType.PrimitiveType primitiveType -> primitiveType;
             case KType.Resolvable resolvable -> resolvable;
-            case KType.ClassType classType -> importUnprocessedType(region, classType.pointer().path(), classType.generics(), flags);
-            case KType.UnprocessedType unprocessedType -> importUnprocessedType(unprocessedType.name().region(), unprocessedType.name().value(), unprocessedType.generics(), flags);
+            case KType.ClassType classType ->
+                    importUnprocessedType(
+                            region,
+                            classType.pointer().path(),
+                            classType.generics(),
+                            flags
+                    );
+            case KType.UnprocessedType unprocessedType -> {
+
+                var result = importUnprocessedType(
+                        unprocessedType.name().region(),
+                        unprocessedType.name().value(),
+                        unprocessedType.generics(),
+                        flags
+                );
+                if (this.listener != null) {
+                    this.listener.accept(unprocessedType, result);
+                }
+                yield result;
+            }
             case KType.VoidType _ -> KType.NONE;
         };
     }
 
+
     /**
      * Type lookup bases on a path.
+     * @param flags behavior for generics, see {@link ImportGenericBehavior}
      * @return the ClassType or a Generic (path is one element and generics is empty)
      */
-    KType importUnprocessedType(Region region, ObjectPath path, List<KType> generics, ImportGenericBehavior flags) {
+    KType importUnprocessedType(
+            Region region, ObjectPath path, List<KType> generics, ImportGenericBehavior flags) {
 
         if (path.isEmpty()) {
             Log.temp(this, region, "Empty path, this should not happen");
@@ -95,12 +140,10 @@ public record UserImportTable(
             var generic = getGeneric(head);
             if (generic != null) {
                 if (!generics.isEmpty()) {
-                    Log.error(this, new ImportError.GenericCountMismatch(
-                            region,
-                            head,
-                            0,
-                            generics.size()
-                    ));
+                    Log.error(
+                            this,
+                            new ImportError.GenericCountMismatch(region, head, 0, generics.size())
+                    );
                     throw new Log.KarinaException();
                 }
                 return new KType.GenericLink(generic);
@@ -116,9 +159,10 @@ public record UserImportTable(
         var classModel = this.model.getClass(classPointer);
 
         var expectedSize = classModel.generics().size();
-        var newGenerics = generics.stream().map(ref -> importType(region, ref)).toList();
+        var newGenerics = generics.stream().map(ref -> this.importType(region, ref)).toList();
 
-        boolean checkGenericLength = flags == ImportGenericBehavior.INSTANCE_CHECK || flags == ImportGenericBehavior.DEFAULT;
+        boolean checkGenericLength = flags == ImportGenericBehavior.INSTANCE_CHECK ||
+                flags == ImportGenericBehavior.DEFAULT;
         switch (flags) {
             case DEFAULT -> {
                 //unused
@@ -149,11 +193,11 @@ public record UserImportTable(
 
 
         if (checkGenericLength && expectedSize != newGenerics.size()) {
-            Log.error(this, new ImportError.GenericCountMismatch(
-                    region,
-                    classModel.name(), expectedSize,
-                    newGenerics.size()
-            ));
+            Log.error(
+                    this,
+                    new ImportError.GenericCountMismatch(
+                            region, classModel.name(), expectedSize, newGenerics.size())
+            );
             throw new Log.KarinaException();
         }
         //</editor-fold>
@@ -162,6 +206,7 @@ public record UserImportTable(
 
     }
 
+    @Override
     public ClassPointer getClassPointer(Region region, ObjectPath path) {
 
         var classPointer = getClassPointerNullable(region, path);
@@ -174,6 +219,7 @@ public record UserImportTable(
         return classPointer;
     }
 
+    @Override
     public @Nullable ClassPointer getClassPointerNullable(Region region, ObjectPath path) {
 
         var head = path.first();
@@ -252,7 +298,8 @@ public record UserImportTable(
 
         // Import types
         var returnType = importType(region, functionType.returnType());
-        var arguments = functionType.arguments().stream().map(ref -> importType(region, ref)).toList();
+        var arguments =
+                functionType.arguments().stream().map(ref -> importType(region, ref)).toList();
         var interfaces = new ArrayList<>(functionType.interfaces().stream().map(ref -> {
             var imported = importType(region, ref);
             if (!(imported instanceof KType.ClassType classType)) {
@@ -271,76 +318,178 @@ public record UserImportTable(
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Table Insertion">
-    public UserImportTable addClass(Region declarationRegion, String name, ClassPointer pointer, boolean declaredExplicit, boolean prelude) {
+    @Override
+    public FirstPassImportTable addClass(
+            Region declarationRegion, String name, ClassPointer pointer, boolean declaredExplicit,
+            boolean prelude
+    ) {
         var newClasses = new HashMap<>(this.classes);
         var declare = testDuplicate(newClasses, declarationRegion, name, declaredExplicit);
         if (declare) {
-            newClasses.put(name, new ImportEntry<>(declarationRegion, pointer, declaredExplicit, prelude));
+            newClasses.put(
+                    name, new ImportEntry<>(declarationRegion, pointer, declaredExplicit, prelude));
         }
-        return new UserImportTable(this.c, this.model, ImmutableMap.copyOf(newClasses), this.generics, this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+        return new FirstPassImportTable(
+                this.c,
+                this.model,
+                ImmutableMap.copyOf(newClasses),
+                this.generics,
+                this.untypedStaticMethods,
+                this.typedStaticMethods,
+                this.staticFields,
+                this.listener
+        );
     }
 
     /*
      * Add a generic to the table.
      * they always overwrite existing generics
      */
-    public UserImportTable addGeneric(Region declarationRegion, Generic generic) {
+    @Override
+    public FirstPassImportTable addGeneric(Region declarationRegion, Generic generic) {
         var newGenerics = new HashMap<>(this.generics);
         newGenerics.put(generic.name(), new ImportEntry<>(declarationRegion, generic, true, false));
-        return new UserImportTable(this.c, this.model, this.classes, ImmutableMap.copyOf(newGenerics), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+        return new FirstPassImportTable(
+                this.c,
+                this.model,
+                this.classes,
+                ImmutableMap.copyOf(newGenerics),
+                this.untypedStaticMethods,
+                this.typedStaticMethods,
+                this.staticFields,
+                this.listener
+        );
+    }
+
+    @Override
+    public StaticImportTable intoStaticTable(ClassPointer referenceSite, Model model) {
+        var classes = ImmutableMap.<String, ClassPointer>builder();
+
+        this.classes().forEach((name, ptr) -> {
+            classes.put(name, ptr.reference());
+        });
+
+        var staticFields = ImmutableMap.<String, FieldPointer>builder();
+        this.staticFields().forEach((name, ptr) -> {
+            staticFields.put(name, ptr.reference());
+        });
+
+
+        var staticMethods = ImmutableMap.<String, MethodCollection>builder();
+        this.typedStaticMethods().forEach((name, ptr) -> {
+            staticMethods.put(name, ptr.reference());
+        });
+        this.untypedStaticMethods().forEach((name, ptr) -> {
+            staticMethods.put(name, ptr.reference().toTypedStaticCollection(referenceSite, model));
+        });
+
+        return new StaticImportTable(classes.build(), staticMethods.build(), staticFields.build());
     }
 
     /**
      * TODO Replace with {@link MethodCollection}
      */
-    public @NotNull UserImportTable addStaticMethod(Region declarationRegion, String name, ClassPointer classPointer, boolean declaredExplicit, boolean prelude) {
+    @Override
+    public FirstPassImportTable addStaticMethod(
+            Region declarationRegion, String name, ClassPointer classPointer,
+            boolean declaredExplicit, boolean prelude
+    ) {
         var newStaticMethods = new HashMap<>(this.untypedStaticMethods);
         var declare = testDuplicate(newStaticMethods, declarationRegion, name, declaredExplicit);
         if (declare) {
             var collection = new UntypedMethodCollection(name, classPointer);
-            newStaticMethods.put(name, new ImportEntry<>(declarationRegion, collection, declaredExplicit, prelude));
+            newStaticMethods.put(
+                    name,
+                    new ImportEntry<>(declarationRegion, collection, declaredExplicit, prelude)
+            );
         }
         var newTypedStaticMethods = new HashMap<>(this.typedStaticMethods);
         //remove any duplicates
         newTypedStaticMethods.remove(name);
 
-        return new UserImportTable(this.c, this.model, this.classes, this.generics, ImmutableMap.copyOf(newStaticMethods), ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
+        return new FirstPassImportTable(
+                this.c,
+                this.model,
+                this.classes,
+                this.generics,
+                ImmutableMap.copyOf(newStaticMethods),
+                ImmutableMap.copyOf(newTypedStaticMethods),
+                this.staticFields,
+                this.listener
+        );
     }
 
-    public @NotNull UserImportTable addPreludeMethods(Region declarationRegion, String name, List<MethodPointer> methods) {
+    @Override
+    public FirstPassImportTable addPreludeMethods(
+            Region declarationRegion, String name,
+            List<MethodPointer> methods
+    ) {
         if (this.untypedStaticMethods.containsKey(name)) {
             return this;
         }
         var newTypedStaticMethods = new HashMap<>(this.typedStaticMethods);
         newTypedStaticMethods.remove(name); // remove any duplicates
         var typedCollection = new MethodCollection(name, methods);
-        newTypedStaticMethods.put(name, new ImportEntry<>(declarationRegion, typedCollection, false, true));
+        newTypedStaticMethods.put(
+                name, new ImportEntry<>(declarationRegion, typedCollection, false, true));
 
-        return new UserImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, ImmutableMap.copyOf(newTypedStaticMethods), this.staticFields);
+        return new FirstPassImportTable(
+                this.c,
+                this.model,
+                this.classes,
+                this.generics,
+                this.untypedStaticMethods,
+                ImmutableMap.copyOf(newTypedStaticMethods),
+                this.staticFields,
+                this.listener
+        );
     }
 
-    public @NotNull UserImportTable addStaticField(Region declarationRegion, String name, FieldPointer reference, boolean declaredExplicit, boolean prelude) {
+    @Override
+    public boolean containsClass(String name) {
+        return this.classes.containsKey(name);
+    }
+
+    @Override
+    public FirstPassImportTable addStaticField(
+            Region declarationRegion, String name,
+            FieldPointer reference, boolean declaredExplicit, boolean prelude
+    ) {
         var newStaticFields = new HashMap<>(this.staticFields);
         var declare = testDuplicate(newStaticFields, declarationRegion, name, declaredExplicit);
         if (declare) {
-            newStaticFields.put(name, new ImportEntry<>(declarationRegion, reference, declaredExplicit, prelude));
+            newStaticFields.put(
+                    name,
+                    new ImportEntry<>(declarationRegion, reference, declaredExplicit, prelude)
+            );
         }
-        return new UserImportTable(this.c, this.model, this.classes, this.generics, this.untypedStaticMethods, this.typedStaticMethods, ImmutableMap.copyOf(newStaticFields));
+        return new FirstPassImportTable(
+                this.c,
+                this.model,
+                this.classes,
+                this.generics,
+                this.untypedStaticMethods,
+                this.typedStaticMethods,
+                ImmutableMap.copyOf(newStaticFields),
+                this.listener
+        );
     }
+
 
     /**
      * @return true if the entry should be added to the table
      */
     private <T> boolean testDuplicate(
-            Map<String, ImportEntry<T>> objects, Region declarationRegion, String name,
-            boolean declaredExplicit
+            Map<String, ImportEntry<T>> objects, Region declarationRegion,
+            String name, boolean declaredExplicit
     ) {
         if (!objects.containsKey(name)) {
             return true;
         }
         var entry = objects.get(name);
         if (entry.wasDeclaredExplicit() && declaredExplicit) {
-            Log.error(this,
+            Log.error(
+                    this,
                     new ImportError.DuplicateItem(entry.definedRegion(), declarationRegion, name)
             );
             throw new Log.KarinaException();
@@ -352,20 +501,37 @@ public record UserImportTable(
      * Remove all generics from the import table.
      * Used in static methods, where generics are from the outer environment allowed.
      */
-    public UserImportTable removeGenerics() {
-        return new UserImportTable(this.c, this.model, this.classes, ImmutableMap.of(), this.untypedStaticMethods, this.typedStaticMethods, this.staticFields);
+    @Override
+    public FirstPassImportTable removeGenerics() {
+        return new FirstPassImportTable(
+                this.c,
+                this.model,
+                this.classes,
+                ImmutableMap.of(),
+                this.untypedStaticMethods,
+                this.typedStaticMethods,
+                this.staticFields,
+                this.listener
+        );
     }
     //</editor-fold>
 
     //<editor-fold desc="Debugging and Error Logging" collapsed="true">
+
     /**
      * When error occurs, log the error with the relevant information.
      * Dont forget to throw the exception after this call
      */
+    @Override
     public void logUnknownPointerError(Region region, ObjectPath path) {
         var available = availableTypeNames();
         var availablePaths = availableTypePaths();
-        Log.error(this.c, new ImportError.UnknownImportType(region, path.mkString("::"), available, availablePaths));
+        Log.error(
+                this.c, new ImportError.UnknownImportType(
+                        region, path.mkString("::"), available,
+                        availablePaths
+                )
+        );
     }
 
     private Set<String> availableTypeNames() {
@@ -385,80 +551,41 @@ public record UserImportTable(
         return keys;
     }
 
-    /**
-     * Debug logging function for the import table.
-     * very verbose!
-     */
-    public void debugImport() {
-        if (Log.LogTypes.IMPORTS.isVisible()) {
-            Log.beginType(Log.LogTypes.IMPORTS, "generics");
-            for (var entry : this.generics.entrySet()) {
-                var entryValue = entry.getValue();
-                if (entryValue.prelude()) continue;
-                var name = entry.getKey();
-                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
-            }
-            Log.endType(Log.LogTypes.IMPORTS, "generics");
-
-            Log.beginType(Log.LogTypes.IMPORTS, "classes");
-            for (var entry : this.classes.entrySet()) {
-                var entryValue = entry.getValue();
-                if (entryValue.prelude()) continue;
-                var name = entry.getKey();
-                Log.record(name, entryValue.reference(), "explicit: ", entryValue.wasDeclaredExplicit());
-            }
-            Log.endType(Log.LogTypes.IMPORTS, "classes");
-
-            Log.beginType(Log.LogTypes.IMPORTS, "untyped static methods");
-            for (var entry : this.untypedStaticMethods.entrySet()) {
-                var entryValue = entry.getValue();
-                if (entryValue.prelude()) continue;
-                var name = entry.getKey();
-                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
-            }
-            Log.endType(Log.LogTypes.IMPORTS, "untyped static methods");
-
-            Log.beginType(Log.LogTypes.IMPORTS, "typed static methods");
-            for (var entry : this.typedStaticMethods.entrySet()) {
-                var entryValue = entry.getValue();
-                if (entryValue.prelude()) continue;
-                var name = entry.getKey();
-                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
-            }
-            Log.endType(Log.LogTypes.IMPORTS, "typed static methods");
-
-            Log.beginType(Log.LogTypes.IMPORTS, "static fields");
-
-            for (var entry : this.staticFields.entrySet()) {
-                var entryValue = entry.getValue();
-                if (entryValue.prelude()) continue;
-                var name = entry.getKey();
-                Log.record(name, entryValue.reference().name(), "explicit: ", entryValue.wasDeclaredExplicit());
-            }
-
-            Log.endType(Log.LogTypes.IMPORTS, "static fields");
-
-        }
-    }
-    //</editor-fold>
 
     @Override
     public Context intoContext() {
         return this.c;
     }
 
+    @Override
+    public FirstPassImportTable withNewContext(Context c) {
+        return new FirstPassImportTable(
+                c,
+                this.model,
+                this.classes,
+                this.generics,
+                this.untypedStaticMethods,
+                this.typedStaticMethods,
+                this.staticFields,
+                this.listener
+        );
+    }
     /**
      * A given entry in the import table.
-     * @param definedRegion where the entry was defined. Used when a collision happens.
-     * @param reference the object to import, see the argument of the {@link UserImportTable} constructor.
+     *
+     * @param definedRegion       where the entry was defined. Used when a collision happens.
+     * @param reference           the object to import, see the argument of the {@link FirstPassImportTable} constructor.
      * @param wasDeclaredExplicit when true, this entry was declared explicitly, so it cannot be overridden.
      *                            when another entry is declared with the same name, it will be an error.
      *                            Otherwise the import was implicit (like 'import java::util::Arrays *'
      *                            and can be overridden.
-     * @param prelude when true, this entry can always be overridden by other entries
-     * @param <T> type of import
+     * @param prelude             when true, this entry can always be overridden by other entries
+     * @param <T>                 type of import
      */
-    public record ImportEntry<T>(Region definedRegion, T reference, boolean wasDeclaredExplicit, boolean prelude) { }
+    public record ImportEntry<T>(
+            Region definedRegion, T reference, boolean wasDeclaredExplicit, boolean prelude
+    ) {
+    }
 
 
 }

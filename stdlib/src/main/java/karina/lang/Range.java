@@ -11,26 +11,6 @@ public record Range(int start, int end, int step) implements Iterable<Integer> {
         return new Range(this.end, this.start, -this.step);
     }
 
-    public static <T> Range range(Collection<T> collection) {
-        return range(collection.size());
-    }
-
-    public static <T> Range range(T[] array) {
-        return range(array.length);
-    }
-
-    public static Range range(int end) {
-        return new Range(0, end, 1);
-    }
-
-    public static Range range(int start, int end) {
-        return new Range(start, end, 1);
-    }
-
-    public static Range range(int start, int end, int step) {
-        return new Range(start, end, step);
-    }
-
     @Override
     public Iterator<Integer> iterator() {
         if (this.step > 0) {
@@ -52,6 +32,7 @@ public record Range(int start, int end, int step) implements Iterable<Integer> {
             this.current = start;
             this.end = end;
             this.step = step;
+            assert step > 0;
         }
 
         @Override
@@ -76,6 +57,7 @@ public record Range(int start, int end, int step) implements Iterable<Integer> {
             this.current = start;
             this.end = end;
             this.step = step;
+            assert step < 0;
         }
 
         @Override

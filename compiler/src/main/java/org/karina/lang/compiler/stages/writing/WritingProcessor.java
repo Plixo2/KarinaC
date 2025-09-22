@@ -26,16 +26,11 @@ public class WritingProcessor {
            return;
        }
        var outputPath = outputConfig.outputFile();
-       Log.record("compiled to " + outputPath.toAbsolutePath());
 
-       Log.begin("jar");
        writeJar(c, compilation, outputPath);
-       Log.end("jar");
 
        if (outputConfig.emitClassFiles()) {
-           Log.begin("classes");
            writeClasses(c, compilation, outputPath.getParent().resolve("classes"));
-           Log.end("classes");
        }
 
    }

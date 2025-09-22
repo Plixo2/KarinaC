@@ -263,7 +263,7 @@ public sealed interface AttribError extends Error {
 
     record NotAClass(Region region, KType type) implements AttribError { }
 
-    record NotAValidInterface(Region region, List<KType> args, KType returning, KType type) implements AttribError { }
+    record NotAValidInterface(Region region, List<@Nullable KType> args, KType returning, KType type) implements AttribError { }
 
     record NotAArray(Region region, KType type) implements AttribError { }
 

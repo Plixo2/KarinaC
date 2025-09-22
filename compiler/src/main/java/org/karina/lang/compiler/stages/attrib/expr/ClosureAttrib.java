@@ -9,6 +9,7 @@ import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.symbols.ClosureSymbol;
 
 import java.lang.reflect.Modifier;
@@ -19,12 +20,8 @@ import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
 public class ClosureAttrib  {
     public static AttributionExpr attribClosure(@Nullable KType hint, AttributionContext ctx, KExpr.Closure expr) {
-
-        var logName = "Attributing closure";
-        Log.beginType(Log.LogTypes.CLOSURE, logName);
-        var owningMethod = ctx.owningMethod();
+        var owningClass = ctx.model().getClass(ctx.owningClass());
         var region = expr.region();
-        Log.recordType(Log.LogTypes.CLOSURE, "Closure", region, "in", ctx.owningClass(), "/", owningMethod != null ? owningMethod.name() : null);
 
         for (var arg : expr.args()) {
             checkForPreexistingVariable(ctx, arg.name());
@@ -34,6 +31,16 @@ public class ClosureAttrib  {
 
         var newArgs = argsAndReturnType.args();
         var returnType = argsAndReturnType.returnType();
+
+        if (!Types.isTypeAccessible(ctx.protection(), owningClass, returnType)) {
+            Log.error(ctx, new ImportError.AccessViolation(
+                    region,
+                    owningClass.name(),
+                    null,
+                    returnType
+            ));
+            throw new Log.KarinaException();
+        }
 
         var bodyContext = new AttributionContext(
                 ctx.model(),
@@ -73,17 +80,9 @@ public class ClosureAttrib  {
             usageMap.put(variable, variable.usageCount());
         }
 
-        Log.recordType(Log.LogTypes.CLOSURE,
-                "parameter types pre body",
-                argsAndReturnType.args().stream().map(NameAndOptType::type).toList()
-        );
 
         var newBody = attribExpr(returnType, bodyContext, expr.body()).expr();
 
-        Log.recordType(Log.LogTypes.CLOSURE,
-                "parameter types post body",
-                argsAndReturnType.args().stream().map(NameAndOptType::type).toList()
-        );
 
         var usageSelfPost = ctx.selfVariable() != null ? ctx.selfVariable().usageCount() : 0;
         var captureSelf = usageSelfPost > usageSelf;
@@ -97,34 +96,51 @@ public class ClosureAttrib  {
         }
         newBody = MethodHelper.createRetuningExpression(newBody, returnType, ctx);
 
+
         var args = newArgs.stream().map(NameAndOptType::type).toList();
+
+        for (var arg : args) {
+            if (!Types.isTypeAccessible(ctx.protection(), owningClass, arg)) {
+                Log.error(ctx, new ImportError.AccessViolation(
+                        region,
+                        owningClass.name(),
+                        null,
+                        arg
+                ));
+                throw new Log.KarinaException();
+            }
+        }
 
         List<KType.ClassType> interfaces = new ArrayList<>();
 
         for (var anInterface : expr.interfaces()) {
-            Log.beginType(Log.LogTypes.CLOSURE, "Checking annotated interface");
             if (!(anInterface instanceof KType.ClassType classType)) {
-                Log.record("Impl is not a class");
                 Log.error(ctx, new AttribError.NotAClass(region, anInterface));
                 throw new Log.KarinaException();
             }
             var model = ctx.model().getClass(classType.pointer());
             if (!Modifier.isInterface(model.modifiers())) {
-                Log.record("Impl is not a interface");
                 Log.error(ctx, new AttribError.NotAInterface(region, classType));
                 throw new Log.KarinaException();
             }
+            if (!Types.isTypeAccessible(ctx.protection(), owningClass, classType)) {
+                Log.error(ctx, new ImportError.AccessViolation(
+                        region,
+                        owningClass.name(),
+                        RegionOf.region(region, classType.pointer()),
+                        classType
+                ));
+                throw new Log.KarinaException();
+            }
+
             if (!ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, classType)) {
-                Log.record("Impl is not a functional interface");
                 Log.error(ctx, new AttribError.NotAValidInterface(region, args, returnType, classType));
                 throw new Log.KarinaException();
             }
-            Log.endType(Log.LogTypes.CLOSURE, "Checking annotated interface");
 
             //TODO check if interface is a supertype or subType of a already added interface
             var alreadyAdded = ClosureHelper.isInterfaceAlreadyAdded(classType, interfaces);
             if (alreadyAdded) {
-                Log.record("Interface already added");
                 Log.error(ctx, new AttribError.DuplicateInterface(region, classType));
                 throw new Log.KarinaException();
             }
@@ -132,40 +148,22 @@ public class ClosureAttrib  {
             interfaces.add(classType);
         }
 
-        Log.recordType(Log.LogTypes.CLOSURE, "with hint", hint);
         if (hint instanceof KType.ClassType classType) {
-            Log.beginType(Log.LogTypes.CLOSURE, "Checking hint interface");
             //TODO check if interface is a supertype or subType of a already added interface
             var alreadyAdded = ClosureHelper.isInterfaceAlreadyAdded(classType, interfaces);
-            if (alreadyAdded) {
-                Log.recordType(Log.LogTypes.CLOSURE, "hint interface already added");
-            } else if (ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, classType)) {
-                Log.recordType(Log.LogTypes.CLOSURE, "Using hint as interface");
+            if (!alreadyAdded && ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, classType)) {
                 interfaces.add(classType);
-            } else {
-                //Dont throw an error here, we just ignore the hint if it is not valid
             }
-            Log.endType(Log.LogTypes.CLOSURE, "Checking hint interface");
         }
 
         var primaryInterface = ClosureHelper.getDefaultInterface(ctx.intoContext(), region, ctx.model(), args, returnType);
-        var readable = "fn(" + args.stream().map(KType::toString).collect(Collectors.joining(", ")) + ") -> " + returnType;
+        var readable = "fn(" + args.stream().map(Objects::toString).collect(Collectors.joining(", ")) + ") -> " + returnType;
         if (primaryInterface != null) {
             var alreadyAdded = ClosureHelper.isInterfaceAlreadyAdded(primaryInterface, interfaces);
             if (!alreadyAdded) {
                 if (ClosureHelper.canUseInterface(region, ctx.intoContext(), ctx.model(), args, returnType, primaryInterface)) {
-                    Log.recordType(Log.LogTypes.CLOSURE,
-                            "Using default as interface ",
-                            primaryInterface,
-                            readable
-                    );
                     interfaces.add(primaryInterface);
-                } else {
-                    //TODO should we throw an error here?
-                    Log.recordType(Log.LogTypes.CLOSURE, "(error) Could not use default as interface ", primaryInterface);
                 }
-            } else {
-                Log.recordType(Log.LogTypes.CLOSURE, "default already added");
             }
             interfaces = sortInterfaces(ctx, primaryInterface.pointer(), interfaces);
         }
@@ -183,12 +181,9 @@ public class ClosureAttrib  {
                 returnType,
                 interfaces
         );
-        Log.recordType(Log.LogTypes.CLOSURE, "Function type", functionType);
 
         var variables = newArgs.stream().map(NameAndOptType::symbol).toList();
         var symbol = new ClosureSymbol(functionType, captures, captureSelf, ctx.selfVariable(), variables);
-
-        Log.endType(Log.LogTypes.CLOSURE, logName);
 
         return of(ctx, new KExpr.Closure(
                 region,

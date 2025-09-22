@@ -30,7 +30,7 @@ public final class EventDocumentService implements TextDocumentService {
     public void didOpen(DidOpenTextDocumentParams params) {
         TextDocumentItem doc = params.getTextDocument();
         var uri = VirtualFileSystem.toUri(doc.getUri());
-        this.eventService.update(new UpdateEvent.OpenFile(uri, doc.getVersion(), doc.getLanguageId(), doc.getText()));
+        this.eventService.update(new UpdateEvent.UpdateFileEvent.OpenFile(uri, doc.getVersion(), doc.getLanguageId(), doc.getText()));
     }
 
     @Override
@@ -38,7 +38,7 @@ public final class EventDocumentService implements TextDocumentService {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
         int version = params.getTextDocument().getVersion();
         for (TextDocumentContentChangeEvent change : params.getContentChanges()) {
-            this.eventService.update(new UpdateEvent.ChangeFile(uri, change.getText(), change.getRange(), version));
+            this.eventService.update(new UpdateEvent.UpdateFileEvent.ChangeFile(uri, change.getText(), change.getRange(), version));
         }
     }
 
@@ -46,13 +46,13 @@ public final class EventDocumentService implements TextDocumentService {
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
-        this.eventService.update(new UpdateEvent.CloseFile(uri));
+        this.eventService.update(new UpdateEvent.UpdateFileEvent.CloseFile(uri));
     }
 
     @Override
     public void didSave(DidSaveTextDocumentParams params) {
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
-        this.eventService.update(new UpdateEvent.SaveFile(uri));
+        this.eventService.update(new UpdateEvent.UpdateFileEvent.SaveFile(uri));
     }
 
 
@@ -103,6 +103,11 @@ public final class EventDocumentService implements TextDocumentService {
     }
 
     @Override
+    public CompletableFuture<InlayHint> resolveInlayHint(InlayHint unresolved) {
+        return CompletableFuture.completedFuture(unresolved);
+    }
+
+    @Override
     public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(
             CodeActionParams params
     ) {
@@ -123,17 +128,20 @@ public final class EventDocumentService implements TextDocumentService {
     }
 
     @Override
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> typeDefinition(
+            TypeDefinitionParams params
+    ) {
+        var pos = params.getPosition();
+        var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
+        return this.eventService.request(new RequestEvent.RequestTypeDefinition(uri, pos)).thenApply(Either::forRight);
+    }
+
+    @Override
     public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> definition(
             DefinitionParams params
     ) {
         var pos = params.getPosition();
         var uri = VirtualFileSystem.toUri(params.getTextDocument().getUri());
-        return this.eventService.request(new RequestEvent.RequestDefinition(uri, pos)).thenApply(ref -> {
-            if (ref == null) {
-                return Either.forLeft(List.of());
-            } else {
-                return Either.forLeft(List.of(ref));
-            }
-        });
+        return this.eventService.request(new RequestEvent.RequestDefinition(uri, pos)).thenApply(Either::forRight);
     }
 }

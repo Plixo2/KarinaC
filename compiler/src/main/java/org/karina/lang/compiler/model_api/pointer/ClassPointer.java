@@ -36,7 +36,7 @@ public class ClassPointer {
     public static final ObjectPath CLASS_TYPE_PATH = new ObjectPath("java", "lang", "Class");
     public static final ObjectPath MATCH_EXCEPTION_PATH = new ObjectPath("java", "lang", "MatchException");
 
-    public static final ObjectPath FUNCTIONS_BASE = new ObjectPath("karina", "lang", "internal", "functions");
+    public static final ObjectPath PRELUDE_PATH = new ObjectPath("karina", "lang", "Prelude");
     public static final ObjectPath OPTION_PATH = new ObjectPath("karina", "lang", "Option");
     public static final ObjectPath OPTION_SOME_PATH = new ObjectPath("karina", "lang", "Option$Some");
     public static final ObjectPath OPTION_NONE_PATH = new ObjectPath("karina", "lang", "Option$None");

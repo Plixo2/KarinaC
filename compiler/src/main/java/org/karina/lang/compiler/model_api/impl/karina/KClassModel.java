@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.Generic;
-import org.karina.lang.compiler.stages.imports.table.UserImportTable;
+import org.karina.lang.compiler.stages.imports.table.ExtendableImportTable;
 import org.karina.lang.compiler.utils.TextSource;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
@@ -45,7 +45,7 @@ public class KClassModel implements ClassModel {
 
     @Getter
     @Accessors(fluent = true)
-    private final @Nullable @Symbol UserImportTable symbolTable;
+    private final @Nullable @Symbol ExtendableImportTable symbolTable;
 
 
     @Override

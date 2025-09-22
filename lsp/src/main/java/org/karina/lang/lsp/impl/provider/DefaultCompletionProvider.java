@@ -1,10 +1,9 @@
-package org.karina.lang.lsp.impl;
+package org.karina.lang.lsp.impl.provider;
 
 import karina.lang.Option;
 import lombok.AllArgsConstructor;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
-import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Position;
 import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.FieldModel;
@@ -16,10 +15,11 @@ import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.utils.logging.DiagnosticCollection;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
-import org.karina.lang.lsp.lib.CompletionProvider;
-import org.karina.lang.lsp.lib.events.ClientEvent;
+import org.karina.lang.lsp.impl.CodeDiagnosticInformationBuilder;
+import org.karina.lang.lsp.lib.provider.CompletionProvider;
 import org.karina.lang.lsp.lib.events.EventService;
-import org.karina.lang.lsp.test_compiler.OneShotCompiler;
+import org.karina.lang.lsp.test_compiler.CompiledModelIndex;
+import org.karina.lang.lsp.test_compiler.ProviderArgs;
 
 import java.lang.reflect.Modifier;
 import java.net.URI;
@@ -33,10 +33,14 @@ public class DefaultCompletionProvider implements CompletionProvider {
 
     @Override
     public List<CompletionItem> getItems(
-            OneShotCompiler.CompiledModelIndex index,
+            ProviderArgs index,
             URI uri,
             Position position
     ) {
+        var region_position = new Region.Position(
+                position.getLine(),
+                position.getCharacter()
+        );
         var config = Context.ContextHandling.of(
                 false,
                 true,
@@ -45,7 +49,7 @@ public class DefaultCompletionProvider implements CompletionProvider {
         config = config.enableMissingMembersSupport();
 
         var diagnostics = new DiagnosticCollection();
-        if (!(index.importedModel instanceof Option.Some(var importedModel))) {
+        if (!(index.models().importedModel() instanceof Option.Some(var importedModel))) {
             return List.of();
         }
 
@@ -81,16 +85,10 @@ public class DefaultCompletionProvider implements CompletionProvider {
                 if (file == null) {
                     continue;
                 }
-                if (!file.uri().equals(uri)) {
+                if (!file.equals(uri)) {
                     continue;
                 }
-                if (region.start().line() != position.getLine()) {
-                    continue;
-                }
-                if (region.end().column() < position.getCharacter() - 2) {
-                    continue;
-                }
-                if (region.end().column() > position.getCharacter() + 3) {
+                if (!region.doesContainPosition(region_position)) {
                     continue;
                 }
 

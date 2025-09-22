@@ -1,48 +1,55 @@
 package org.karina.lang.lsp;
 
-import com.google.gson.JsonObject;
 import karina.lang.Option;
 import karina.lang.Result;
-import karina.lang.ThrowableFunction;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.lsp4j.*;
-import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.KarinaCompiler;
 import org.karina.lang.compiler.utils.FileLoader;
-import org.karina.lang.compiler.utils.FileTreeNode;
-import org.karina.lang.compiler.utils.ObjectPath;
+import org.karina.lang.lsp.impl.provider.*;
 import org.karina.lang.lsp.lib.events.*;
 import org.karina.lang.lsp.impl.*;
 import org.karina.lang.lsp.lib.*;
 import org.karina.lang.lsp.lib.process.JobProgress;
 import org.karina.lang.lsp.lib.process.Job;
-import org.karina.lang.lsp.test_compiler.CompiledHelper;
-import org.karina.lang.lsp.test_compiler.OneShotCompiler;
+import org.karina.lang.lsp.lib.provider.*;
+import org.karina.lang.lsp.test_compiler.CompiledModelIndex;
+import org.karina.lang.lsp.test_compiler.ProviderArgs;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 
 @RequiredArgsConstructor
 public final class KarinaLSP implements EventService {
 
     public static final boolean USE_FILESYSTEM_EVENTS = true;
 
-    public final VirtualFileSystem vfs = new DefaultVirtualFileSystem();
     public final RealFileSystem rfs = new DefaultRealFileSystem();
-    private VirtualFileTreeNode treeNode = DefaultVirtualFileTreeNode.root();
+    private final VirtualFileSystem vfs = new DefaultVirtualFileSystem(this);
+    private final VirtualFileElevator elevator = new DefaultVirtualFileElevator(this);
 
-    private final SemanticTokenProvider  semanticTokenProvider  = new DefaultSemanticTokenProvider();
-    private final OneShotCompiler        oneShotCompiler        = new OneShotCompiler(this);
-    private final DocumentSymbolProvider documentSymbolProvider = new DefaultDocumentSymbolProvider();
+    private final SemanticTokenProvider  semanticTokenProvider  = new DefaultSemanticTokenProvider(this);
+    private final DocumentSymbolProvider documentSymbolProvider = new DefaultDocumentSymbolProvider(this);
     private final CompletionProvider     completionProvider     = new DefaultCompletionProvider(this);
-    private final HoverProvider          hoverProvider          = new DefaultHoverProvider();
-    private final DefinitionProvider     definitionProvider     = new DefaultDefinitionProvider();
-    private final InlayHintProvider      inlayHintProvider      = new DefaultInlayHintProvider();
+    private final HoverProvider          hoverProvider          = new DefaultHoverProvider(this);
+    private final DefinitionProvider     definitionProvider     = new DefaultDefinitionProvider(this);
+    private final InlayHintProvider      inlayHintProvider      = new DefaultInlayHintProvider(this);
+    private final CodeLensProvider       codeLensProvider       = new DefaultCodeLensProvider(this);
+    private final CompileProvider        compileProvider        = new DefaultCompileProvider(this);
+    private final CodeActionProvider     codeActionProvider     = new DefaultCodeActionProvider();
+    private final ExecuteCommandProvider ExecuteCommandProvider = new DefaultExecuteCommandProvider(this);
 
+    private VirtualFileTreeNode.NodeMapping fileTree = VirtualFileTreeNode.NodeMapping.EMPTY;
+
+    private CompiledModelIndex compiledModelIndex = CompiledModelIndex.EMPTY;
+    private Job<CompiledModelIndex> lastJob = Job.of(this.compiledModelIndex);
+
+    private final ModelUpdater modelUpdater = new DefaultModelUpdater(this);
 
     private Option<BuildConfig> buildConfig = Option.none();
 
@@ -173,15 +180,26 @@ public final class KarinaLSP implements EventService {
             return;
         }
         var files = this.vfs.files();
-        if (fileTransaction.isObjectNew()) {
-            this.treeNode = DefaultVirtualFileTreeNode.builder().build(files, config.projectRootUri());
-            var prettyTree = FileTreePrinter.prettyTree(this.treeNode);
+
+        var level = this.clientConfiguration.logLevel().orElse(ClientConfiguration.LoggingLevel.NONE);
+
+        if (fileTransaction.objectChange()) {
+            var builder = DefaultVirtualFileTreeNode.builder();
+            var newTree = builder.build(files, config.projectRootUri());
+            this.fileTree = newTree;
+            this.elevator.clearCompiledCache(fileTransaction.file());
+
+            var prettyTree = FileTreePrinter.prettyTree(newTree.root());
             logMessage(prettyTree);
         }
+        this.lastJob.cancel();
 
-
-        this.oneShotCompiler.build(this.treeNode, files,
-                this.clientConfiguration.logLevel().orElse(ClientConfiguration.LoggingLevel.NONE)
+        this.lastJob = this.modelUpdater.update(
+                this.fileTree,
+                this.elevator,
+                this.codeActionProvider,
+                fileTransaction.file(),
+                level
         );
     }
 
@@ -189,87 +207,11 @@ public final class KarinaLSP implements EventService {
     @Override
     public void update(UpdateEvent update) {
         switch (update) {
-            case UpdateEvent.OpenFile(URI uri, int version, String language, String text) -> {
-                this.handleTransaction(this.vfs.openFile(uri, text, version));
-            }
-            case UpdateEvent.ChangeFile(URI uri, String text, Range range, int version) -> {
-                if (this.vfs.isFileOpen(uri)) {
-                    // Only handles full text change
-                    this.handleTransaction(this.vfs.updateFile(uri, text, version));
-                }
-            }
-            case UpdateEvent.CloseFile(URI uri) -> {
-                this.handleTransaction(this.vfs.closeFile(uri));
-            }
-            case UpdateEvent.SaveFile(URI uri) -> {
-                this.handleTransaction(this.vfs.saveFile(uri));
-            }
-            case UpdateEvent.CreateWatchedFile(URI uri) -> {
-                if (!this.vfs.isFileOpen(uri)) {
-                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(uri));
-                    if (content != null) {
-                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
-                    }
-                }
-            }
-            case UpdateEvent.DeleteWatchedFile(URI uri) -> {
-                if (!this.vfs.isFileOpen(uri)) {
-                    this.handleTransaction(this.vfs.deleteFile(uri));
-                }
-            }
-            case UpdateEvent.CreateFile(URI uri) -> {
-                if (!this.vfs.isFileOpen(uri)) {
-                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(uri));
-                    if (content != null) {
-                        this.handleTransaction(this.vfs.reloadFromDisk(uri, content));
-                    }
-                }
-            }
-            case UpdateEvent.DeleteFile(URI uri) -> {
-                if (!this.vfs.isFileOpen(uri)) {
-                    this.handleTransaction(this.vfs.deleteFile(uri));
-                }
-            }
-            case UpdateEvent.RenameFile(URI oldUri, URI newUri) -> {
-                if (!this.vfs.isFileOpen(oldUri)) {
-                    this.handleTransaction(this.vfs.deleteFile(oldUri));
-                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(newUri));
-                    if (content != null) {
-                       this.handleTransaction(this.vfs.reloadFromDisk(newUri, content));
-                    }
-                }
+            case UpdateEvent.UpdateFileEvent fileEvent -> {
+                updateFileEvent(fileEvent);
             }
             case UpdateEvent.UpdateClientConfig updateClientConfig -> {
                 this.clientConfiguration = updateClientConfig.configuration();
-            }
-            case UpdateEvent.ExecuteCommand(String command, List<Object> args) -> {
-                if (command.equals("karina.run.main")) {
-                    if (!args.isEmpty()) {
-                        warningMessage("Too many arguments for command: " + command);
-                        return;
-                    }
-                    var path = new ObjectPath("main");
-                    var files = this.vfs.files();
-                    this.oneShotCompiler.run(this.treeNode, files, path);
-                } else if (command.equals("karina.run.file")) {
-                    if (args.size() > 1) {
-                        warningMessage("Too many arguments for command: " + command);
-                        return;
-                    }
-                    if (args.isEmpty()) {
-                        warningMessage("Missing argument for command: " + command);
-                        return;
-                    }
-                    var uriStr = Objects.toString(args.getFirst());
-                    if (uriStr.startsWith("\"") && uriStr.endsWith("\"")) {
-                        uriStr = uriStr.substring(1, uriStr.length() - 1);
-                    }
-                    var uri = VirtualFileSystem.toUri(uriStr);
-                    var files = this.vfs.files();
-                    this.oneShotCompiler.run(this.treeNode, files, uri);
-                } else {
-                    warningMessage("Unknown command: " + command);
-                }
             }
         }
     }
@@ -278,160 +220,77 @@ public final class KarinaLSP implements EventService {
     public <T> CompletableFuture<T> request(RequestEvent<T> request) {
         switch (request) {
             case RequestEvent.RequestSemanticTokens(URI uri) -> {
-                if (this.vfs.getContent(uri) instanceof Option.Some(var content)) {
-                    return CompletableFuture.supplyAsync(() -> {
-                        var start = System.currentTimeMillis();
-                        var tokens = this.semanticTokenProvider.getTokens(content);
-                        var end = System.currentTimeMillis();
-                        logMessage("Semantic tokens in " + (end - start) + "ms");
-                        return (T) new SemanticTokens(tokens);
-                    });
-                } else {
-                    warningMessage("No content found for URI: " + uri);
-                    return CompletableFuture.completedFuture((T) new SemanticTokens());
-                }
+                return runOnNewestIndex(
+                        (index) -> this.semanticTokenProvider.getTokens(index, uri)
+                );
             }
             case RequestEvent.RequestCodeLens(URI uri) -> {
-                var atLeastImported = this.oneShotCompiler.lastestCompiledModel().importedModel;
-                if (CompiledHelper.findMain(atLeastImported, this.treeNode, uri, this) instanceof Option.Some(var mainMethod)) {
-                    var codeLens = new CodeLens();
-                    var start = mainMethod.region().start();
-                    codeLens.setRange(new Range(
-                            new Position(start.line(), start.column()),
-                            new Position(start.line(), start.column())
-                    ));
-                    codeLens.setCommand(new Command(
-                            "Run",
-                            "karina.run.file",
-                            List.of(uri.toString())
-                    ));
-                    return CompletableFuture.completedFuture((T) List.of(codeLens));
-                } else {
-                    return CompletableFuture.completedFuture((T) List.of());
-                }
-
+                return runOnNewestIndex(
+                        (index) -> this.codeLensProvider.getLenses(index, uri)
+                );
             }
             case RequestEvent.RequestDocumentSymbols(URI uri) -> {
-                if (this.vfs.getContent(uri) instanceof Option.Some(var content)) {
-                    return CompletableFuture.supplyAsync(() -> {
-                        var start = System.currentTimeMillis();
-                        var symbols = this.documentSymbolProvider.getSymbols(content);
-                        var end = System.currentTimeMillis();
-                        logMessage("Document symbols in " + (end - start) + "ms");
-                        return (T) symbols;
-                    });
-                } else {
-                    warningMessage("No content found for URI: " + uri);
-                    return CompletableFuture.completedFuture((T) List.of());
-                }
+                return runOnNewestIndex(
+                        (index) -> this.documentSymbolProvider.getSymbols(index, uri)
+                );
             }
             case RequestEvent.RequestCompletions(URI uri, Position pos) -> {
-                return CompletableFuture.supplyAsync(() -> {
-                    var items = this.completionProvider.getItems(
-                            this.oneShotCompiler.lastestCompiledModel(),
-                            uri,
-                            pos
-                    );
-                    return (T) items;
-                });
+                return runOnNewestIndex(
+                        (index) -> this.completionProvider.getItems(index, uri, pos)
+                );
             }
             case RequestEvent.RequestDefinition(URI uri, Position position) -> {
-                return CompletableFuture.supplyAsync(() -> {
-                    var location = this.definitionProvider.getDefinition(
-                            this.oneShotCompiler.lastestCompiledModel(),
-                            uri,
-                            position
-                    );
-                    return (T) location;
-                });
+                return runOnNewestIndex(
+                        (index) -> this.definitionProvider.getDefinition(index, uri, position, false)
+                );
+            }
+            case RequestEvent.RequestTypeDefinition(URI uri, Position position) -> {
+                return runOnNewestIndex(
+                        (index) -> this.definitionProvider.getDefinition(index, uri, position, true)
+                );
             }
             case RequestEvent.RequestHover(URI uri, Position position) -> {
-                return CompletableFuture.supplyAsync(() -> {
-                    var hover = this.hoverProvider.getHover(
-                            this.oneShotCompiler.lastestCompiledModel(),
-                            uri,
-                            position
-                    );
-                    return (T) hover;
-                });
+                return runOnNewestIndex(
+                        (index) -> this.hoverProvider.getHover(index, uri, position)
+                );
             }
             case RequestEvent.RequestInlayHints(URI uri, Range range) -> {
-                return CompletableFuture.supplyAsync(() -> {
-                    var hints = this.inlayHintProvider.getHints(
-                            this.oneShotCompiler.lastestCompiledModel(),
-                            uri,
-                            range
-                    );
-                    return (T) hints;
-                });
+                return runOnNewestIndex(
+                        (index) -> this.inlayHintProvider.getHints(index, uri, range)
+                );
             }
-            case RequestEvent.RequestCodeActions(_, Range range, CodeActionContext context) -> {
-                return CompletableFuture.supplyAsync(() -> {
-                    var edits = new ArrayList<CodeAction>();
-
-                    for (var diagnostic : context.getDiagnostics()) {
-                        if (diagnostic.getData() instanceof JsonObject jsonObject) {
-                            var fileURI = jsonObject.get("URI");
-                            if (fileURI == null || !fileURI.isJsonPrimitive()) {
-                                continue;
-                            }
-                            var uri = fileURI.getAsString();
-
-                            var pathToImport = jsonObject.get("possible_imports");
-                            if (pathToImport != null && pathToImport.isJsonArray()) {
-
-                                for (var jsonElement : pathToImport.getAsJsonArray()) {
-                                    if (!jsonElement.isJsonPrimitive()) {
-                                        continue;
-                                    }
-                                    var path = jsonElement.getAsString();
-
-                                    var textEdit = new TextEdit();
-                                    textEdit.setNewText("import " + path + "\n");
-                                    textEdit.setRange(
-                                            new Range(new Position(0, 0), new Position(0, 0)));
-                                    var workspaceEdit = new WorkspaceEdit();
-                                    workspaceEdit.setChanges(java.util.Map.of(uri, List.of(textEdit)));
-
-                                    CodeAction action = new CodeAction("Import '" + path + "'");
-                                    action.setKind(CodeActionKind.QuickFix);
-                                    action.setEdit(workspaceEdit);
-                                    edits.add(action);
-                                }
-                            }
-                            var candidates = jsonObject.get("candidates");
-                            if (candidates != null && candidates.isJsonArray()) {
-                                if (diagnostic.getRange() == null) {
-                                    continue;
-                                }
-
-                                var jsonArray = candidates.getAsJsonArray();
-                                for (var jsonElement : jsonArray) {
-                                    if (jsonElement.isJsonPrimitive()) {
-                                        var name = jsonElement.getAsString();
-
-                                        var textEdit = new TextEdit();
-                                        textEdit.setNewText(name);
-                                        textEdit.setRange(diagnostic.getRange());
-                                        var workspaceEdit = new WorkspaceEdit();
-                                        workspaceEdit.setChanges(
-                                                java.util.Map.of(uri, List.of(textEdit)));
-
-                                        CodeAction action = new CodeAction("Use '" + name + "'");
-                                        action.setKind(CodeActionKind.QuickFix);
-                                        action.setEdit(workspaceEdit);
-                                        edits.add(action);
-
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                    return (T) edits;
-                });
+            case RequestEvent.RequestCodeActions(URI uri, Range range, CodeActionContext context) -> {
+                return runOnNewestIndex(
+                        (index) -> this.codeActionProvider.getAction(index, uri, range, context)
+                );
+            }
+            case RequestEvent.RequestExecuteCommand(String command, List<Object> args) -> {
+                return runOnNewestIndex(
+                        (index) -> this.ExecuteCommandProvider.executeCommand(index, this.compileProvider, command, args)
+                );
             }
         }
+    }
+
+    private <T> CompletableFuture<T> runOnNewestIndex(Function<ProviderArgs, Object> task) {
+        return CompletableFuture.supplyAsync(() -> {
+            var result = getCurrentIndex();
+            var index = new ProviderArgs(
+                    this.vfs,
+                    this.fileTree,
+                    this.elevator,
+                    result
+            );
+            return (T) task.apply(index);
+        });
+    }
+
+    private CompiledModelIndex getCurrentIndex() {
+        var result = this.lastJob.awaitResult();
+        if (result != null) {
+            this.compiledModelIndex = result;
+        }
+        return this.compiledModelIndex;
     }
 
     @Override
@@ -439,27 +298,66 @@ public final class KarinaLSP implements EventService {
         this.theClient.send(clientEvent);
     }
 
-    @Override
-    public void sendTerminal(String message) {
-        this.theClient.sendTerminal(message);
-    }
 
     @Override
-    public void clearTerminal() {
-        this.theClient.clearTerminal();
-    }
-
-    @Override
-    public Job createJob(String title, ThrowableFunction<JobProgress, String, Exception> process) {
+    public <T> Job<T> createJob(String title, Function<JobProgress, T> process) {
         return this.theClient.createJob(title, process);
     }
 
-    @Override
-    public Job createJob(
-            String title, ThrowableFunction<JobProgress, String, Exception> process,
-            BooleanSupplier onKill
-    ) {
-        return this.theClient.createJob(title, process, onKill);
+    private void updateFileEvent(UpdateEvent.UpdateFileEvent fileEvent) {
+        var vfs = this.vfs;
+        switch (fileEvent) {
+            case UpdateEvent.UpdateFileEvent.OpenFile(URI uri, int version, String language, String text) -> {
+                this.handleTransaction(vfs.openFile(uri, text, version));
+            }
+            case UpdateEvent.UpdateFileEvent.ChangeFile(URI uri, String text, @Nullable Range range, int version) -> {
+                if (vfs.isFileOpen(uri)) {
+                    this.handleTransaction(vfs.updateFile(uri, text, range, version));
+                }
+            }
+            case UpdateEvent.UpdateFileEvent.CloseFile(URI uri) -> {
+                this.handleTransaction(vfs.closeFile(uri));
+            }
+            case UpdateEvent.UpdateFileEvent.SaveFile(URI uri) -> {
+                this.handleTransaction(vfs.saveFile(uri));
+            }
+            case UpdateEvent.UpdateFileEvent.CreateWatchedFile(URI uri) -> {
+                if (!vfs.isFileOpen(uri)) {
+                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(uri));
+                    if (content != null) {
+                        this.handleTransaction(vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+            case UpdateEvent.UpdateFileEvent.DeleteWatchedFile(URI uri) -> {
+                if (!vfs.isFileOpen(uri)) {
+                    this.handleTransaction(vfs.deleteFile(uri));
+                }
+            }
+            case UpdateEvent.UpdateFileEvent.CreateFile(URI uri) -> {
+                if (!vfs.isFileOpen(uri)) {
+                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(uri));
+                    if (content != null) {
+                        this.handleTransaction(vfs.reloadFromDisk(uri, content));
+                    }
+                }
+            }
+            case UpdateEvent.UpdateFileEvent.DeleteFile(URI uri) -> {
+                if (!vfs.isFileOpen(uri)) {
+                    this.handleTransaction(vfs.deleteFile(uri));
+                }
+            }
+            case UpdateEvent.UpdateFileEvent.RenameFile(URI oldUri, URI newUri) -> {
+                if (!vfs.isFileOpen(oldUri)) {
+                    this.handleTransaction(vfs.deleteFile(oldUri));
+                    var content = unwrapOrMessageAndNull(this.rfs.readFileFromDisk(newUri));
+                    if (content != null) {
+                        this.handleTransaction(vfs.reloadFromDisk(newUri, content));
+                    }
+                }
+            }
+        }
     }
+
 
 }

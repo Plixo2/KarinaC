@@ -19,12 +19,12 @@ import java.util.List;
 
 public class KarinaInterfaceVisitor implements IntoContext {
 
-    private final RegionContext context;
+    private final RegionContext conv;
     private final KarinaUnitVisitor visitor;
 
     public KarinaInterfaceVisitor(KarinaUnitVisitor base, RegionContext regionContext) {
         this.visitor = base;
-        this.context = regionContext;
+        this.conv = regionContext;
     }
 
     public KClassModel visit(
@@ -34,8 +34,8 @@ public class KarinaInterfaceVisitor implements IntoContext {
             KarinaParser.InterfaceContext ctx,
             ModelBuilder modelBuilder
     ) {
-        var region = this.context.toRegion(ctx);
-        var name = this.context.escapeID(ctx.id());
+        var region = this.conv.toRegion(ctx);
+        var name = this.conv.escapeID(ctx.id());
         var path = owningPath.append(name);
         var currentClass = ClassPointer.of(region, path);
         // interfaces cannot be private
@@ -70,11 +70,13 @@ public class KarinaInterfaceVisitor implements IntoContext {
 
         var constNames = new ArrayList<String>();
         var constValues = new ArrayList<KExpr>();
+        var regions = new ArrayList<Region>();
         for (var constContext : ctx.const_()) {
             var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
             var constModel = this.visitor.visitConst(constContext, visitExpression, currentClass);
             constNames.add(constModel.name());
             constValues.add(visitExpression);
+            regions.add(this.conv.toRegion(constContext));
             fields.add(constModel);
         }
         if (!constNames.isEmpty()) {
@@ -83,7 +85,8 @@ public class KarinaInterfaceVisitor implements IntoContext {
                     region,
                     currentClass,
                     constNames,
-                    constValues
+                    constValues,
+                    regions
             );
             methods.add(clinit);
         }
@@ -118,7 +121,7 @@ public class KarinaInterfaceVisitor implements IntoContext {
                 permittedSubClasses,
                 new ArrayList<>(),
                 annotations,
-                this.context.source(),
+                this.conv.source(),
                 region,
                 null
         );

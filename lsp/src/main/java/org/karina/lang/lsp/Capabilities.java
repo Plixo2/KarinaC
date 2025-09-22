@@ -11,7 +11,8 @@ public class Capabilities {
     public static ServerCapabilities get() {
 
         ServerCapabilities capabilities = new ServerCapabilities();
-        capabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        capabilities.setTextDocumentSync(TextDocumentSyncKind.Incremental);
+        capabilities.setPositionEncoding(PositionEncodingKind.UTF16);
 
         capabilities.setSemanticTokensProvider(new SemanticTokensWithRegistrationOptions(
                 new SemanticTokensLegend(
@@ -46,9 +47,11 @@ public class Capabilities {
         capabilities.setCodeActionProvider(true);
 
         capabilities.setDefinitionProvider(true);
+        capabilities.setTypeDefinitionProvider(true);
         capabilities.setHoverProvider(true);
-        capabilities.setInlayHintProvider(true);
-
+        var inlayHintCapabilities = new InlayHintRegistrationOptions();
+        capabilities.setInlayHintProvider(inlayHintCapabilities);
+        inlayHintCapabilities.setResolveProvider(true);
 
         var codeLensOptions = new CodeLensOptions();
         codeLensOptions.setResolveProvider(false);
@@ -56,7 +59,7 @@ public class Capabilities {
 
         var completionProvider = new CompletionOptions();
         completionProvider.setResolveProvider(false);
-        completionProvider.setTriggerCharacters(List.of("."));
+        completionProvider.setTriggerCharacters(List.of(".", "::"));
         completionProvider.setAllCommitCharacters(List.of(
                 ".",
                 "(",
@@ -79,11 +82,6 @@ public class Capabilities {
                 "'"
         ));
         capabilities.setCompletionProvider(completionProvider);
-
-//        var execCmdOptions = new ExecuteCommandOptions();
-//        execCmdOptions.setCommands(List.of("karina.run.file"));
-//        execCmdOptions.setWorkDoneProgress(false);
-//        capabilities.setExecuteCommandProvider(execCmdOptions);
 
 
         return capabilities;

@@ -1,6 +1,8 @@
 package org.karina.lang.compiler.stages.generate;
 
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.utils.logging.Log;
+import org.karina.lang.compiler.utils.logging.Logging;
 import org.karina.lang.compiler.utils.logging.errors.GenerateError;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
@@ -15,6 +17,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 public class GenerateItem {
@@ -23,58 +26,108 @@ public class GenerateItem {
     public static JarCompilation.JarOutput compileClass(Context c, Model model, KClassModel classModel, int classVersion) {
 
         var classNode = new CustomClassWriter.TracingClassNode(c);
-
-        for (var method : classModel.methods()) {
-            var name = "Method " + method.name();
-            if (method instanceof KMethodModel kMethodModel) {
-                var node = compileMethod(c, model, kMethodModel);
-                classNode.methodMap.put(kMethodModel, node);
-            }
-        }
-        for (var field : classModel.fields()) {
-            var name = "Field " + field.name();
-            if (field instanceof KFieldModel kFieldModel) {
-                classNode.fields.add(compileField(model, kFieldModel));
-            }
-        }
-
-        classNode.signature = GenerateSignature.getClassSignature(model, classModel);
-
-
-        classNode.permittedSubclasses = classModel.permittedSubclasses()
-                              .stream()
-                              .map(ref -> TypeEncoding.toJVMPath(model, ref))
-                              .toList();
-
-        classNode.nestMembers = classModel.nestMembers().stream().map(ref -> TypeEncoding.toJVMPath(model, ref)).toList();
-
-
-        var outerClass = classModel.outerClass();
-        if (outerClass != null) {
-            classNode.outerClass = TypeEncoding.toJVMPath(model, outerClass.pointer());
-        } else {
-            classNode.outerClass = null;
-        }
-        var nestHost = classModel.nestHost();
-        if (nestHost != null) {
-            classNode.nestHostClass = TypeEncoding.toJVMPath(model, nestHost);
-        } else {
-            classNode.nestHostClass = null;
-        }
-
-        classNode.interfaces = classModel.interfaces().stream().map(ref ->
-                TypeEncoding.toJVMPath(model, ref.pointer())
-        ).toList();
-        classNode.sourceFile = classModel.resource().resource().identifier();
-        classNode.access = classModel.modifiers() & 0xFFFF; // remove non-standard modifiers
         classNode.name = TypeEncoding.toJVMPath(model, classModel.pointer());
-        classNode.version = classVersion;
-        var superClass = classModel.superClass();
-        assert superClass != null;
-        classNode.superName = TypeEncoding.toJVMPath(model, superClass.pointer());
+
+        try(var _ = c.section(Logging.Generation.Classes.class, classNode.name)) {
+            for (var method : classModel.methods()) {
+                if (method instanceof KMethodModel kMethodModel) {
+                    var node = compileMethod(c, model, kMethodModel);
+                    classNode.methodMap.put(kMethodModel, node);
+                }
+            }
+            for (var field : classModel.fields()) {
+                if (field instanceof KFieldModel kFieldModel) {
+                    classNode.fields.add(compileField(model, kFieldModel));
+                }
+            }
+
+            classNode.signature = GenerateSignature.getClassSignature(model, classModel);
+
+            if (ClassModel.isSealed(classModel.modifiers())) {
+                classNode.permittedSubclasses = classModel.permittedSubclasses()
+                                  .stream()
+                                  .map(ref -> TypeEncoding.toJVMPath(model, ref))
+                                  .toList();
+            } else {
+                classNode.permittedSubclasses = null;
+            }
+
+            classNode.nestMembers = classModel.nestMembers().stream().map(ref -> TypeEncoding.toJVMPath(model, ref)).toList();
 
 
-        return getJarOutput(c, model, classModel.region(), classNode);
+            var outerClass = classModel.outerClass();
+            if (outerClass != null) {
+                classNode.outerClass = TypeEncoding.toJVMPath(model, outerClass.pointer());
+            } else {
+                classNode.outerClass = null;
+            }
+            var nestHost = classModel.nestHost();
+            if (nestHost != null) {
+                classNode.nestHostClass = TypeEncoding.toJVMPath(model, nestHost);
+            } else {
+                classNode.nestHostClass = null;
+            }
+
+            classNode.interfaces = classModel.interfaces().stream().map(ref ->
+                    TypeEncoding.toJVMPath(model, ref.pointer())
+            ).toList();
+            classNode.sourceFile = classModel.resource().resource().identifier();
+            classNode.access = classModel.modifiers() & 0xFFFF; // remove non-standard modifiers
+            classNode.version = classVersion;
+            var superClass = classModel.superClass();
+            assert superClass != null;
+            classNode.superName = TypeEncoding.toJVMPath(model, superClass.pointer());
+
+            classNode.innerClasses = new ArrayList<>();
+
+
+
+            for (var innerClass : classModel.innerClasses()) {
+                var name = TypeEncoding.toJVMPath(model, innerClass.pointer());
+                var innerClassNode = new InnerClassNode(
+                        name,
+                        classNode.name,
+                        innerClass.name(),
+                        innerClass.modifiers() & 0xFFFF
+                );
+                classNode.innerClasses.add(innerClassNode);
+
+                if (c.log(Logging.Generation.InnerClassesNodes.class)) {
+                    var bob = new StringBuilder();
+                    bob.append("{");
+                    bob.append("name: ").append(innerClassNode.name).append(", ");
+                    bob.append("outerName: ").append(innerClassNode.outerName).append(", ");
+                    bob.append("innerName: ").append(innerClassNode.innerName).append(", ");
+                    bob.append("access: ").append(Modifier.toString(innerClassNode.access));
+                    bob.append("}");
+
+                    c.tag(bob.toString());
+                }
+            }
+            if (outerClass != null) {
+                var outerName = TypeEncoding.toJVMPath(model, outerClass.pointer());
+                var innerClassNode = new InnerClassNode(
+                        classNode.name,
+                        outerName,
+                        classModel.name(),
+                        classNode.access
+                );
+                classNode.innerClasses.add(innerClassNode);
+
+                if (c.log(Logging.Generation.InnerClassesNodes.class)) {
+                    var bob = new StringBuilder();
+                    bob.append("{");
+                    bob.append("name: ").append(innerClassNode.name).append(", ");
+                    bob.append("outerName: ").append(innerClassNode.outerName).append(", ");
+                    bob.append("innerName: ").append(innerClassNode.innerName).append(", ");
+                    bob.append("access: ").append(Modifier.toString(innerClassNode.access));
+                    bob.append("}");
+
+                    c.tag(bob.toString());
+                }
+            }
+            return getJarOutput(c, model, classModel.region(), classNode);
+        }
     }
 
     private static FieldNode compileField(Model model, KFieldModel fieldModel) {

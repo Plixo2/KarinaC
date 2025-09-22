@@ -23,47 +23,47 @@ public class StringInterpolation {
     }
 
     public StringInterpolation appendExpression(int i) {
-        this.sb.append(Console.toString(i));
+        this.sb.append(Prelude.toString(i));
         return this;
     }
 
     public StringInterpolation appendExpression(long l) {
-        this.sb.append(Console.toString(l));
+        this.sb.append(Prelude.toString(l));
         return this;
     }
 
     public StringInterpolation appendExpression(double d) {
-        this.sb.append(Console.toString(d));
+        this.sb.append(Prelude.toString(d));
         return this;
     }
 
     public StringInterpolation appendExpression(float f) {
-        this.sb.append(Console.toString(f));
+        this.sb.append(Prelude.toString(f));
         return this;
     }
 
     public StringInterpolation appendExpression(char c) {
-        this.sb.append(Console.toString(c));
+        this.sb.append(Prelude.toString(c));
         return this;
     }
 
     public StringInterpolation appendExpression(byte b) {
-        this.sb.append(Console.toString(b));
+        this.sb.append(Prelude.toString(b));
         return this;
     }
 
     public StringInterpolation appendExpression(short s) {
-        this.sb.append(Console.toString(s));
+        this.sb.append(Prelude.toString(s));
         return this;
     }
 
     public StringInterpolation appendExpression(boolean b) {
-        this.sb.append(Console.toString(b));
+        this.sb.append(Prelude.toString(b));
         return this;
     }
 
     public StringInterpolation appendExpression(Object obj) {
-        this.sb.append(Console.toString(obj));
+        this.sb.append(Prelude.toString(obj));
         return this;
     }
 

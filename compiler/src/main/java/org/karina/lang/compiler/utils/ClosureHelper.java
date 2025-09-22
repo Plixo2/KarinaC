@@ -38,14 +38,11 @@ public class ClosureHelper {
 
             //TODO what equals or canAssign method should be used here?
             if (!mappedParam.equals(type)) {
-                Log.recordType(Log.LogTypes.CLOSURE, "invalid parameter " + i, mappedParam, "from", type);
                 return false;
             }
         }
 
-        var returnMatch = returnType.equals(methodReturnType);
-        Log.recordType(Log.LogTypes.CLOSURE, "return type ", returnMatch, returnType, "from", methodReturnType);
-        return returnMatch;
+        return returnType.equals(methodReturnType);
     }
 
     /**

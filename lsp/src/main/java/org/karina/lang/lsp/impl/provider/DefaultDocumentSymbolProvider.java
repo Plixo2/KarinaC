@@ -1,35 +1,37 @@
-package org.karina.lang.lsp.impl;
+package org.karina.lang.lsp.impl.provider;
 
+import karina.lang.Option;
+import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.eclipse.lsp4j.DocumentSymbol;
-import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.Range;
-import org.eclipse.lsp4j.SymbolKind;
+import org.eclipse.lsp4j.*;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.stages.parser.gen.KarinaLexer;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
-import org.karina.lang.lsp.lib.DocumentSymbolProvider;
+import org.karina.lang.lsp.lib.events.EventService;
+import org.karina.lang.lsp.lib.provider.DocumentSymbolProvider;
+import org.karina.lang.lsp.test_compiler.CompiledModelIndex;
+import org.karina.lang.lsp.test_compiler.ProviderArgs;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
+@RequiredArgsConstructor
 public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
-
+    private final EventService eventService;
 
     @Override
-    public List<DocumentSymbol> getSymbols(String content) {
-        var inputStream = CharStreams.fromString(content);
-        var karinaLexer = new KarinaLexer(inputStream);
-        var parser = new KarinaParser(new CommonTokenStream(karinaLexer));
-
-        karinaLexer.removeErrorListeners();
-        parser.removeErrorListeners();
+    public List<DocumentSymbol> getSymbols(ProviderArgs index, URI uri) {
+        if (!(index.getCache(uri) instanceof Option.Some(var cacheState))) {
+            return List.of();
+        }
 
         var symbols = new ArrayList<DocumentSymbol>();
-        var unit = parser.unit();
+        var unit = cacheState.parsedUnit();
         if (unit != null) {
             var items = unit.item();
             if (items != null) {
@@ -51,9 +53,19 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
                     }
                 }
             }
-
         }
+
         return symbols;
+    }
+
+    private static void setCorrectRange(
+            DocumentSymbol symbol,
+            ParserRuleContext ctx,
+            ParserRuleContext selectionCtx
+    ) {
+        symbol.setRange(getRange(ctx));
+        symbol.setSelectionRange(getRange(selectionCtx));
+
     }
 
     private static @Nullable DocumentSymbol interfaceSymbol(@Nullable KarinaParser.InterfaceContext ctx) {
@@ -72,8 +84,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         symbol.setDetail(genericDefString);
         symbol.setKind(SymbolKind.Interface);
 
-        symbol.setRange(getRange(ctx));
-        symbol.setSelectionRange(getRange(id));
+        setCorrectRange(symbol, ctx, id);
 
         var children = new ArrayList<DocumentSymbol>();
 
@@ -107,8 +118,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         symbol.setDetail(genericDefString);
         symbol.setKind(SymbolKind.Struct);
 
-        symbol.setRange(getRange(ctx));
-        symbol.setSelectionRange(getRange(id));
+        setCorrectRange(symbol, ctx, id);
 
         var children = new ArrayList<DocumentSymbol>();
 
@@ -164,8 +174,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         symbol.setDetail(genericDefString);
         symbol.setKind(SymbolKind.Enum);
 
-        symbol.setRange(getRange(ctx));
-        symbol.setSelectionRange(getRange(id));
+        setCorrectRange(symbol, ctx, id);
 
         var children = new ArrayList<DocumentSymbol>();
 
@@ -224,8 +233,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         }
         symbol.setKind(SymbolKind.Constant);
 
-        symbol.setRange(getRange(ctx));
-        symbol.setSelectionRange(getRange(id));
+        setCorrectRange(symbol, ctx, id);
 
         return symbol;
     }
@@ -248,9 +256,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         }
         symbol.setKind(SymbolKind.Field);
 
-        symbol.setRange(getRange(ctx));
-        symbol.setSelectionRange(getRange(id));
-
+        setCorrectRange(symbol, ctx, id);
         return symbol;
     }
 
@@ -268,8 +274,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         symbol.setName(name);
         symbol.setKind(SymbolKind.EnumMember);
 
-        symbol.setRange(getRange(ctx));
-        symbol.setSelectionRange(getRange(id));
+        setCorrectRange(symbol, ctx, id);
 
         var children = new ArrayList<DocumentSymbol>();
 
@@ -301,11 +306,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
             symbol.setDetail(signature);
             symbol.setKind(SymbolKind.Function);
 
-            symbol.setRange(getRange(ctx));
-            var token = ctx.FN().getSymbol();
-            var pos = new Position(token.getLine() - 1, token.getCharPositionInLine());
-            var pos2 = new Position(token.getLine() - 1, token.getCharPositionInLine() + 2);
-            symbol.setSelectionRange( new Range(pos, pos2));
+            setCorrectRange(symbol, ctx, ctx);
             return symbol;
         }
         var name = escapeID(id);
@@ -319,8 +320,7 @@ public class DefaultDocumentSymbolProvider implements DocumentSymbolProvider {
         symbol.setDetail(signature);
         symbol.setKind(SymbolKind.Function);
 
-        symbol.setRange(getRange(ctx));
-        symbol.setSelectionRange(getRange(id));
+        setCorrectRange(symbol, ctx, id);
 
         return symbol;
     }

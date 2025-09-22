@@ -4,6 +4,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.LOCAL_VARIABLE;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
@@ -12,5 +13,5 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * All other code before the attribution phase cannot use symbols and should insert nulls instead.
  */
 @Retention(SOURCE)
-@Target(FIELD)
+@Target({FIELD, LOCAL_VARIABLE})
 public @interface Symbol {}

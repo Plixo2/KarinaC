@@ -195,6 +195,19 @@ public sealed interface Option<T> permits Option.Some, Option.None {
     }
 
     @SuppressWarnings("unchecked")
+    static <T> Option<T[]> unwrapArray(Class<T> cls, Option<T>[] array) {
+        T[] newArray = (T[]) Array.newInstance(cls, array.length);
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] instanceof Some(var v)) {
+                newArray[i] = v;
+            } else {
+                return Option.none();
+            }
+        }
+        return Option.some(newArray);
+    }
+
+    @SuppressWarnings("unchecked")
     static <T> Option<T>[] newArray(Class<T> ignoredCls, int size) {
         Option<T>[] array = (Option<T>[]) Array.newInstance(Option.class, size);
         for (int i = 0; i < size; i++) {

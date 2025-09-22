@@ -32,8 +32,6 @@ public class KMethodModel implements MethodModel {
     @Getter
     private final List<Variable> paramVariables;
 
-//    @Getter
-//    private @Nullable KType overrideOf;
 
     public KMethodModel(
             String name, int modifiers, Signature signature, ImmutableList<String> parameters,

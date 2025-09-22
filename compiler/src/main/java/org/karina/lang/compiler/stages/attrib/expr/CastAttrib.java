@@ -1,15 +1,13 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.symbols.CastSymbol;
-import org.karina.lang.compiler.utils.CastTo;
-import org.karina.lang.compiler.utils.Region;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
@@ -38,7 +36,19 @@ public class CastAttrib  {
                 KType hintType = to;
                 if (to.isPrimitive()) {
                     hintType = null;
+                } else {
+                    var owningClass = ctx.model().getClass(ctx.owningClass());
+                    if (!Types.isTypeAccessible(ctx.protection(), owningClass, hintType)) {
+                        Log.error(ctx, new ImportError.AccessViolation(
+                                expr.region(),
+                                owningClass.name(),
+                                null,
+                                hintType
+                        ));
+                        throw new Log.KarinaException();
+                    }
                 }
+
 
                 //dont give hint, it should be casted to the type, no conversion
                 left = attribExpr(hintType, ctx, expr.expression()).expr();

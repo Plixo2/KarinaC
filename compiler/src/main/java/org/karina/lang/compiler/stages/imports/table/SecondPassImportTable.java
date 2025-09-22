@@ -1,6 +1,5 @@
 package org.karina.lang.compiler.stages.imports.table;
 
-import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Model;
@@ -9,12 +8,13 @@ import org.karina.lang.compiler.utils.*;
 import java.util.ArrayList;
 
 /**
- * Applies and validates functional interfaces to function types in the model.
+ *
+ * Tests generics and apply and validate functional interfaces.
  * This is the second importing step.
  * @param model has to be fully imported.
  */
-public record FunctionInterfaceTable(Context c, Model model, TypeChecking checking) implements ImportTable, IntoContext {
-    public FunctionInterfaceTable(Context c, Model model) {
+public record SecondPassImportTable(Context c, Model model, TypeChecking checking) implements ImportTable, IntoContext {
+    public SecondPassImportTable(Context c, Model model) {
         this(c, model, new TypeChecking(model));
     }
 
@@ -61,6 +61,11 @@ public record FunctionInterfaceTable(Context c, Model model, TypeChecking checki
             }
             case KType.VoidType _ -> KType.NONE;
         };
+    }
+
+    @Override
+    public ImportTable withNewContext(Context c) {
+        return new SecondPassImportTable(c, this.model, this.checking);
     }
 
     private KType.FunctionType importFunctionType(Region region, KType.FunctionType functionType) {

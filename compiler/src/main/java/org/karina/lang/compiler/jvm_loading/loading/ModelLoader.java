@@ -10,10 +10,12 @@ import org.karina.lang.compiler.utils.IntoContext;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.*;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.jar.JarInputStream;
 
 public class ModelLoader {
@@ -110,10 +112,18 @@ public class ModelLoader {
 
 
     private static Model loadFromResource(IntoContext c, ResourceLibrary library) {
-        var jdkSet = new OpenSet();
+        var resource = "/" + library.resource;
+        String sourceJar = null;
+        var url = ModelLoader.class.getResource(resource);
+        if (url != null) {
+            sourceJar = url.getFile();
+            if (sourceJar.startsWith("/")) {
+                sourceJar = sourceJar.substring(1);
+            }
+        }
+        var jdkSet = new OpenSet(sourceJar);
 
         try (var _ = c.section(Logging.ReadJar.class,"reading")) {
-            var resource = "/" + library.resource;
             try (var resourceStream = ModelLoader.class.getResourceAsStream(resource)) {
 
                 if (resourceStream == null) {

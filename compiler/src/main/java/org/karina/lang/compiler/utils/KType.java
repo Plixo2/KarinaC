@@ -62,7 +62,6 @@ public sealed interface KType {
 
     ClassType MATCH_EXCEPTION = ClassPointer.of(JAVA_LIB, ClassPointer.MATCH_EXCEPTION_PATH).implement(List.of());
 
-
     ClassType KARINA_RANGE = ClassPointer.of(KARINA_LIB, ClassPointer.RANGE_PATH).implement(List.of());
 
     ClassType STRING_INTERPOLATION = ClassPointer.of(KARINA_LIB, ClassPointer.STRING_INTERPOLATION_PATH).implement(List.of());
@@ -96,16 +95,6 @@ public sealed interface KType {
     static ClassType KARINA_RESULT_ERR(KType ok, KType err) {
         return ClassPointer.of(KARINA_LIB, ClassPointer.RESULT_ERR_PATH).implement(List.of(ok, err));
     }
-
-
-    static @Nullable ClassPointer FUNCTION_BASE(Model model, int args, boolean doesReturn) {
-        final String FUNCTIONS_NAME = "Function";
-        var name = FUNCTIONS_NAME + args + "_" + (doesReturn ? "1" : "0");
-
-        var objectPath = ClassPointer.FUNCTIONS_BASE.append(name);
-        return model.getClassPointer(KARINA_LIB, objectPath);
-    }
-
 
     static void validateBuildIns(Context c, Model model) {
         validatePointer(c, model, ROOT);
@@ -173,7 +162,7 @@ public sealed interface KType {
                 classType.pointer().isRoot();
     }
 
-    String toString(Map<KType, Object> dejavu);
+    String toString(Map<KType, Object> dejavu, boolean showResolvable);
 
     enum KPrimitive {
         INT,
@@ -209,7 +198,7 @@ public sealed interface KType {
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             return toString();
         }
     }
@@ -222,18 +211,18 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return toString(new java.util.IdentityHashMap<>());
+            return toString(new java.util.IdentityHashMap<>(), false);
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             if (dejavu.containsKey(this)) {
                 return this.name.value().toString() + (this.generics.isEmpty() ? "" : "<...>");
             }
             dejavu.put(this, this);
             var generics = String.join(
                     ", ",
-                    this.generics.stream().map(ref -> ref.toString(dejavu)).toList()
+                    this.generics.stream().map(ref -> ref.toString(dejavu, showResolvable)).toList()
             );
             dejavu.remove(this);
             return "~" + this.name.value().toString() + ("<" + generics + ">");
@@ -245,7 +234,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return toString(new java.util.IdentityHashMap<>());
+            return toString(new java.util.IdentityHashMap<>(), false);
         }
 
         @Override
@@ -260,12 +249,12 @@ public sealed interface KType {
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             if (dejavu.containsKey(this)) {
                 return "[...]";
             }
             dejavu.put(this, this);
-            var string = "[" + this.elementType.toString(dejavu) + "]";
+            var string = "[" + this.elementType.toString(dejavu, showResolvable) + "]";
             dejavu.remove(this);
             return string;
         }
@@ -280,7 +269,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return toString(new java.util.IdentityHashMap<>());
+            return toString(new java.util.IdentityHashMap<>(), false);
         }
 
         @Override
@@ -298,21 +287,21 @@ public sealed interface KType {
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             if (dejavu.containsKey(this)) {
                 return "fn(...) -> ...";
             }
             dejavu.put(this, this);
 
-            var returnType = this.returnType.toString(dejavu);
+            var returnType = this.returnType.toString(dejavu, showResolvable);
             var interfaces = String.join(
                     ", ",
-                    this.interfaces.stream().map(ref -> ref.toString(dejavu)).toList()
+                    this.interfaces.stream().map(ref -> ref.toString(dejavu, showResolvable)).toList()
             );
-            var arguments = this.arguments.stream().map(ref -> ref.toString(dejavu)).toList();
+            var arguments = this.arguments.stream().map(ref -> ref.toString(dejavu, showResolvable)).toList();
             var impls = this.interfaces.isEmpty() ? "" : " impl (" + interfaces + ")";
             dejavu.remove(this);
-            return "fn(" + String.join(", ", arguments) + ")" + impls + " -> " + returnType;
+            return "fn(" + String.join(", ", arguments) + ") -> " + returnType + impls;
         }
     }
 
@@ -320,7 +309,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return toString(new java.util.IdentityHashMap<>());
+            return toString(new java.util.IdentityHashMap<>(), false);
         }
 
         @Override
@@ -337,7 +326,7 @@ public sealed interface KType {
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             if (dejavu.containsKey(this)) {
                 return this.pointer.path().mkString("::") + (this.generics.isEmpty() ? "" : "<...>");
             }
@@ -345,7 +334,7 @@ public sealed interface KType {
 
             String suffix = "";;
             if (!this.generics.isEmpty()) {
-                var names = String.join(", ", this.generics.stream().map(ref -> ref.toString(dejavu)).toList());
+                var names = String.join(", ", this.generics.stream().map(ref -> ref.toString(dejavu, showResolvable)).toList());
                 suffix = "<" + names + ">";
             }
             dejavu.remove(this);
@@ -361,11 +350,11 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return toString(new java.util.IdentityHashMap<>());
+            return toString(new java.util.IdentityHashMap<>(), false);
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             if (dejavu.containsKey(this)) {
                 return this.link.name();
             }
@@ -376,7 +365,7 @@ public sealed interface KType {
             }
             constraints.addAll(this.link.bounds());
 
-            var constraintStr = constraints.stream().map(ref -> ref.toString(dejavu)).toList();
+            var constraintStr = constraints.stream().map(ref -> ref.toString(dejavu, showResolvable)).toList();
             dejavu.remove(this);
             return this.link.name() + (constraints.isEmpty() ? "" : ": " + String.join(" + ", constraintStr));
         }
@@ -560,7 +549,7 @@ public sealed interface KType {
 
         @Override
         public String toString() {
-            return toString(new java.util.IdentityHashMap<>());
+            return toString(new java.util.IdentityHashMap<>(), false);
         }
 
         @Override
@@ -578,7 +567,7 @@ public sealed interface KType {
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             if (dejavu.containsKey(this)) {
                 return "?...";
             }
@@ -586,11 +575,16 @@ public sealed interface KType {
             var code = this.hashCode() & 0xFFFF;
             var readable = Integer.toHexString(code).toUpperCase();
             if (this.resolved == null) {
-
                 return "?" + readable;
             } else {
                 dejavu.put(this, this);
-                var string = "?" + readable + " as " + this.resolved.toString(dejavu);
+                String string;
+                if (showResolvable) {
+                    string = this.resolved.toString(dejavu, true);
+                } else {
+                    string = "?" + readable + " as " + this.resolved.toString(dejavu, false);
+                }
+
                 dejavu.remove(this);
                 return string;
             }
@@ -618,7 +612,7 @@ public sealed interface KType {
         }
 
         @Override
-        public String toString(Map<KType, Object> dejavu) {
+        public String toString(Map<KType, Object> dejavu, boolean showResolvable) {
             return toString();
         }
     }

@@ -1,7 +1,9 @@
 package org.karina.lang.compiler.utils.symbols;
 
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.model_api.pointer.MethodPointer;
 import org.karina.lang.compiler.utils.InvocationType;
+import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.KType;
 
@@ -15,7 +17,17 @@ public sealed interface CallSymbol {
     // The MethodPointer is the only thing to get information about the method.
     // Also only used for compilation.
     record CallStatic(MethodPointer pointer, List<KType> generics, KType returnType, boolean onInterface) implements CallSymbol { }
-    record CallVirtual(MethodPointer pointer, List<KType> generics, KType returnType, boolean onInterface) implements CallSymbol { }
+    record CallVirtual(MethodPointer pointer, @Nullable KExpr original, List<KType> generics, KType returnType, boolean onInterface) implements CallSymbol {
+
+        public CallVirtual(
+                MethodPointer pointer,
+                List<KType> generics,
+                KType returnType,
+                boolean onInterface
+        ) {
+            this(pointer, null, generics, returnType, onInterface);
+        }
+    }
 
 
     record CallSuper(MethodPointer pointer, List<KType> generics, KType returnType, InvocationType invocationType) implements CallSymbol { }

@@ -10,11 +10,14 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.MethodCollection;
 import org.karina.lang.compiler.utils.ObjectPath;
 import org.karina.lang.compiler.utils.Region;
+import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.function.Predicate;
 
 public interface ClassModel {
+    int EXTENSION_MODIFIER = 0x10000;
+    int SEALED_MODIFIER = 0x20000;
     String name();
     int modifiers();
     ObjectPath path();
@@ -68,5 +71,9 @@ public interface ClassModel {
             }
         }
         return null;
+    }
+
+    static boolean isSealed(int modifiers) {
+        return (modifiers & ClassModel.SEALED_MODIFIER) != 0;
     }
 }

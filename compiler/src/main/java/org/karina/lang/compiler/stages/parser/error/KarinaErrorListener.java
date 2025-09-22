@@ -36,30 +36,24 @@ public class KarinaErrorListener implements ANTLRErrorListener {
             RecognitionException e
     ) {
 
-        var region = new Region(
-            this.source,
-            new Region.Position(line - 1, charPositionInLine),
-            new Region.Position(line - 1, charPositionInLine + 1)
-        );
+        Region region;
+        if (offendingSymbol instanceof Token token) {
+            line = token.getLine();
+            charPositionInLine = token.getCharPositionInLine();
+            var width = token.getText() != null ? token.getText().length() : 1;
 
-//        if (KarinaRecoveringStrategy.isRecoverableError(recognizer, e)) {
-//            if (offendingSymbol instanceof CommonToken token && recognizer.getInputStream() instanceof TokenStream tokenStream) {
-//                var previous = tokenStream.get(token.getTokenIndex() - 1);
-//                if (previous != null && previous.getType() == KarinaLexer.CHAR_DOT) {
-//                    var previousLine = previous.getLine();
-//                    var previousCharPositionInLine = previous.getCharPositionInLine();
-//                    region = new Region(
-//                            this.source,
-//                            new Region.Position(previousLine - 1, previousCharPositionInLine),
-//                            new Region.Position(previousLine - 1, previousCharPositionInLine + 1)
-//                    );
-//                }
-//            }
-//
-//            Log.warn(this.c, region, "Missing Field, replaced with " + KarinaRecoveringStrategy.MISSING_FIELD);
-//            return;
-//        }
-
+            region = new Region(
+                    this.source,
+                    new Region.Position(line - 1, charPositionInLine),
+                    new Region.Position(line - 1, charPositionInLine + width)
+            );
+        } else {
+            region = new Region(
+                    this.source,
+                    new Region.Position(line - 1, charPositionInLine),
+                    new Region.Position(line - 1, charPositionInLine + 1)
+            );
+        }
 
         var name = "?";
         if (e != null) {

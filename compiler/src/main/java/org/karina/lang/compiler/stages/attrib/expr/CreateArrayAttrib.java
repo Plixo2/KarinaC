@@ -1,12 +1,14 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.utils.Types;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +19,21 @@ public class CreateArrayAttrib  {
     public static AttributionExpr attribCreateArray(
             @Nullable KType hint, AttributionContext ctx, KExpr.CreateArray expr) {
 
+        var owningClass = ctx.model().getClass(ctx.owningClass());
         KType elementType;
         if (expr.hint() != null) {
             elementType = expr.hint();
+
+            if (!Types.isTypeAccessible(ctx.protection(), owningClass, elementType)) {
+                Log.error(ctx, new ImportError.AccessViolation(
+                        expr.region(),
+                        owningClass.name(),
+                        null,
+                        elementType
+                ));
+                throw new Log.KarinaException();
+            }
+
         } else {
             if (hint instanceof KType.ArrayType(KType type)) {
                 elementType = type;

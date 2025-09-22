@@ -1,13 +1,12 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.symbols.IteratorTypeSymbol;
-import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
@@ -32,6 +31,17 @@ public class ForAttrib  {
         iter = typeOfLoop.expr();
 
         if (annotatedHint != null) {
+            var owningClass = ctx.model().getClass(ctx.owningClass());
+
+            if (!Types.isTypeAccessible(ctx.protection(), owningClass, annotatedHint)) {
+                Log.error(ctx, new ImportError.AccessViolation(
+                        expr.region(),
+                        owningClass.name(),
+                        null,
+                        annotatedHint
+                ));
+                throw new Log.KarinaException();
+            }
             if (!ctx.checking().canAssign(ctx, expr.region(), annotatedHint, typeOfLoop.varType(), true)) {
                 Log.error(ctx, new AttribError.TypeMismatch(expr.region(), annotatedHint, typeOfLoop.varType()));
                 throw new Log.KarinaException();
@@ -66,9 +76,14 @@ public class ForAttrib  {
         }
         var body = attribExpr(null, bodyCtx, expr.body()).expr();
 
+        var varPart = new NameAndOptType(
+                expr.varPart().region(), expr.varPart().name(),
+                expr.varPart().type(), variable
+        );
+
         return of(ctx, new KExpr.For(
                 expr.region(),
-                expr.varPart(),
+                varPart,
                 iter,
                 body,
                 symbol

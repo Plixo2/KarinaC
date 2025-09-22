@@ -38,7 +38,7 @@ public class KarinaCompiler {
     public static final String VERSION = "v0.7";
 
     /// 16 bits for the version, 16 bits for iteration
-    public static final int BINARY_VERSION = 6 << 16 | 4;
+    public static final int BINARY_VERSION = 7 << 16 | 3;
     public static final int BINARY_MAGIC_NUMBER = 20000411;
 
     //Java 21
@@ -88,7 +88,6 @@ public class KarinaCompiler {
                 cache, () -> ModelLoader.getJarModel(c, this.useBinaryFormat)
         );
 
-        ImportHelper.logFullModel(bytecodeClasses);
         KType.validateBuildIns(c, bytecodeClasses);
 
 

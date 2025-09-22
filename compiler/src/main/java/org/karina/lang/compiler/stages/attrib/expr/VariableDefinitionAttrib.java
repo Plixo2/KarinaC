@@ -1,13 +1,12 @@
 package org.karina.lang.compiler.stages.attrib.expr;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
-import org.karina.lang.compiler.utils.KExpr;
-import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionContext;
-import org.karina.lang.compiler.utils.Variable;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 
 import static org.karina.lang.compiler.stages.attrib.AttributionExpr.*;
 
@@ -27,6 +26,17 @@ public class VariableDefinitionAttrib  {
             }
         } else {
             valueExpr = ctx.makeAssignment(valueExpr.region(), varType, valueExpr);
+
+            var owningClass = ctx.model().getClass(ctx.owningClass());
+            if (!Types.isTypeAccessible(ctx.protection(), owningClass, varType)) {
+                Log.error(ctx, new ImportError.AccessViolation(
+                        expr.region(),
+                        owningClass.name(),
+                        null,
+                        varType
+                ));
+                throw new Log.KarinaException();
+            }
         }
 
         if (valueExpr.type().isVoid()) {

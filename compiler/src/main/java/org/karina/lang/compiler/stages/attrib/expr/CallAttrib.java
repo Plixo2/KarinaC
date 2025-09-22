@@ -16,6 +16,7 @@ import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.utils.KExpr;
 import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.utils.symbols.CallSymbol;
 import org.karina.lang.compiler.utils.symbols.LiteralSymbol;
 import org.karina.lang.compiler.utils.symbols.MemberSymbol;
@@ -34,8 +35,26 @@ public class CallAttrib  {
 
         var left = attribExpr(null, ctx, expr.left()).expr();
         var genericsAnnotated = !expr.generics().isEmpty();
+
+        var owningClass = ctx.model().getClass(ctx.owningClass());
+
+        for (var generic : expr.generics()) {
+            if (!Types.isTypeAccessible(ctx.protection(), owningClass, generic)) {
+                Log.error(ctx, new ImportError.AccessViolation(
+                        expr.region(),
+                        owningClass.name(),
+                        null,
+                        generic
+                ));
+                throw new Log.KarinaException();
+            }
+        }
+
+
         List<KExpr> newArguments = new ArrayList<>();
         CallSymbol symbol;
+
+        var region = expr.region();
         //OMG PATTERNS
         if (left instanceof KExpr.Literal(
                 var ignored, var ignored2,
@@ -47,20 +66,20 @@ public class CallAttrib  {
         )) {
             symbol = getStatic(ctx, expr, collection, genericsAnnotated, newArguments, firstArg);
         } else if (left instanceof KExpr.GetMember(var ignored, var object, var name, _, MemberSymbol.VirtualFunctionSymbol sym)) {
-            symbol = getVirtual(ctx, expr, name, sym.classType(), sym.collection(), genericsAnnotated, newArguments);
+            symbol = getVirtual(ctx, expr, left, name, sym.classType(), sym.collection(), genericsAnnotated, newArguments);
             left = object;
         } else if (left.type() instanceof KType.FunctionType functionType) {
             symbol = getFunctionalType(ctx, expr, functionType, newArguments);
         } else if (left instanceof KExpr.SpecialCall specialCallExpr) {
             symbol = getSuper(ctx, expr, specialCallExpr.invocationType(), genericsAnnotated, newArguments);
         } else {
-            Log.temp(ctx, expr.region(), "Invalid call onto " + left.getClass().getSimpleName() + " with type " + left.type());
+            Log.temp(ctx, region, "Invalid call onto " + left.getClass().getSimpleName() + " with type " + left.type());
             throw new Log.KarinaException();
         }
-
+        region = region.merge(left.region());
 
         return of(ctx, new KExpr.Call(
-                expr.region(),
+                region,
                 left,
                 expr.generics(),
                 newArguments,
@@ -174,6 +193,7 @@ public class CallAttrib  {
     private static @NotNull CallSymbol getVirtual(
             AttributionContext ctx,
             KExpr.Call expr,
+            KExpr left,
             RegionOf<String> name,
             KType.ClassType classType,
             MethodCollection collection,
@@ -206,6 +226,7 @@ public class CallAttrib  {
 
         return new CallSymbol.CallVirtual(
                 methodTypedReturn.pointer,
+                left,
                 methodTypedReturn.generics,
                 methodTypedReturn.returnType,
                 isInterface

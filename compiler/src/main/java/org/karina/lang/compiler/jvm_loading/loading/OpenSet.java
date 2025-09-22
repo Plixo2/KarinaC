@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.jvm_loading.loading;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 import org.karina.lang.compiler.jvm_loading.JavaResource;
 import org.karina.lang.compiler.utils.DefaultTextSource;
@@ -15,9 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Set of loaded classes that need to be processed
  */
+@RequiredArgsConstructor
 public class OpenSet {
+    private final @Nullable String sourceJar;
+
     @Getter
     private final Map<String, LoadedClass> openSet = new ConcurrentHashMap<>();
+
 
     public boolean isEmpty() {
         return this.openSet.isEmpty();
@@ -50,14 +55,18 @@ public class OpenSet {
         if (this.openSet.containsKey(node.name)) {
             throw new NullPointerException("Class already loaded " + node.name);
         }
-        this.openSet.put(node.name, new LoadedClass(fileName, node));
+        this.openSet.put(node.name, new LoadedClass(this.sourceJar, fileName, node));
     }
 
-    public record LoadedClass(String fileName, ClassNode node){
+    public record LoadedClass(@Nullable String sourceJar, String fileName, ClassNode node){
         public TextSource getSource() {
-            var srcId = "jar:///" + this.fileName;
-            //TODO jar:file:/...!/...
-            return new DefaultTextSource(new JavaResource(srcId), "");
+            if (this.sourceJar == null) {
+                var sourceID = "<buildin>" + this.fileName;
+                return new DefaultTextSource(new JavaResource(sourceID), "");
+            } else {
+                var srcId = "jar:file:///" + this.sourceJar + "!/" + this.fileName;
+                return new DefaultTextSource(new JavaResource(srcId), "");
+            }
         }
     }
 }

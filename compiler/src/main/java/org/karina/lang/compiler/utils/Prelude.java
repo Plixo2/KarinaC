@@ -38,21 +38,16 @@ public class Prelude {
                 classes.add(entry.pointer());
             }
         }
-        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_NONE_PATH));
-        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_SOME_PATH));
-        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_ERR_PATH));
-        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_OK_PATH));
+//        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_NONE_PATH));
+//        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.OPTION_SOME_PATH));
+//        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_ERR_PATH));
+//        classes.add(ClassPointer.of(KType.KARINA_LIB, ClassPointer.RESULT_OK_PATH));
 
         var fields = ImmutableList.<FieldPointer>builder();
-
         var methods = ImmutableList.<MethodPointer>builder();
 
-        var consolePath = new ObjectPath("karina", "lang", "Console");
-        putAllMethodsFromKarinaClass(c, model, consolePath, methods);
-        var rangePath = new ObjectPath("karina", "lang", "Range");
-        putAllMethodsFromKarinaClass(c, model, rangePath, methods);
-
-        
+        var preludePath = ClassPointer.PRELUDE_PATH;
+        putAllStaticsFromKarinaClass(c, model, preludePath, methods, fields);
 
         return new Prelude(classes.build(), fields.build(), methods.build());
     }
@@ -111,7 +106,7 @@ public class Prelude {
         }
     }
 
-    private static void putStaticFieldFromKarinaClass(Context c, Model model, ObjectPath path, String name,  ImmutableList.Builder<FieldPointer> collection) {
+    private static void putStaticFieldFromKarinaClass(Context c, Model model, ObjectPath path, String name, ImmutableList.Builder<FieldPointer> collection) {
         var classPointer = model.getClassPointer(KType.KARINA_LIB, path);
 
         if (classPointer == null) {
@@ -131,6 +126,33 @@ public class Prelude {
 
         collection.add(fieldPointer);
 
+    }
+
+    private static void putAllStaticsFromKarinaClass(
+            Context c,
+            Model model,
+            ObjectPath path,
+            ImmutableList.Builder<MethodPointer> methods,
+            ImmutableList.Builder<FieldPointer> fields
+    ) {
+        var classPointer = model.getClassPointer(KType.KARINA_LIB, path);
+
+        if (classPointer == null) {
+            Log.bytecode(c, KType.KARINA_LIB, path.mkString("/"), "Build-in Karina class not found");
+            throw new Log.KarinaException();
+        }
+
+        var classModel = model.getClass(classPointer);
+        for (var method : classModel.methods()) {
+            if (Modifier.isStatic(method.modifiers()) && Modifier.isPublic(method.modifiers())) {
+                methods.add(method.pointer());
+            }
+        }
+        for (var field : classModel.fields()) {
+            if (Modifier.isStatic(field.modifiers()) && Modifier.isPublic(field.modifiers())) {
+                fields.add(field.pointer());
+            }
+        }
     }
 
 }

@@ -33,7 +33,7 @@ public class CreateObjectAttrib  {
         if (!Types.isTypeAccessible(ctx.protection(), owningClass, classType)) {
             Log.error(ctx, new ImportError.AccessViolation(
                     expr.region(),
-                    referenceClass.name(),
+                    owningClass.name(),
                     RegionOf.region(referenceClass.region(), classType.pointer()),
                     classType
             ));

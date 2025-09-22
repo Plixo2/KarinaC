@@ -31,7 +31,7 @@ public class GetMemberAttrib  {
         if (staticFunc != null) {
             return staticFunc;
         }
-        var arrayLength = attribArrayLength(expr.region(), ctx, left, name);
+        var arrayLength = attribArrayLength(expr.name().region(), ctx, left, name);
         if (arrayLength != null) {
             return arrayLength;
         }
@@ -101,7 +101,7 @@ public class GetMemberAttrib  {
             return new MemberResult.Symbol(fieldSymbol);
         }
 
-        var extensions = attribExtensionMethods(ctx, left, expr.region(), name);
+        var extensions = attribExtensionMethods(ctx, left, expr.name().region(), name);
         if (extensions != null) {
             return new MemberResult.Expr(extensions);
         }
@@ -229,7 +229,7 @@ public class GetMemberAttrib  {
 
         if (name.equals("class")) {
             var symbol = new LiteralSymbol.StaticClassReference(regionInner, classPointer, classType, true);
-            var newLiteral = new KExpr.Literal(region, name, symbol);
+            var newLiteral = new KExpr.Literal(expr.name().region(), name, symbol);
             return of(ctx, newLiteral);
         } else if (implicitGetClass) {
             return null;
@@ -247,7 +247,7 @@ public class GetMemberAttrib  {
             });
             if (!collection.isEmpty()) {
                 var symbol = new LiteralSymbol.StaticMethodReference(region, collection, null);
-                var newLiteral = new KExpr.Literal(region, name, symbol);
+                var newLiteral = new KExpr.Literal(expr.name().region(), name, symbol);
                 return of(ctx, newLiteral);
             }
         }
@@ -261,7 +261,7 @@ public class GetMemberAttrib  {
         if (modelField != null) {
             var type = ctx.model().getField(modelField).type();
             var symbol = new LiteralSymbol.StaticFieldReference(regionInner, modelField, type);
-            var newLiteral = new KExpr.Literal(region, name, symbol);
+            var newLiteral = new KExpr.Literal(expr.name().region(), name, symbol);
             return of(ctx, newLiteral);
         }
 

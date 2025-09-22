@@ -26,7 +26,14 @@ public class ModelBuilder {
             throw new Log.KarinaException();
         }
     }
-
+    public synchronized void add(IntoContext c, Model model) {
+        for (var allUserClass : model.getUserClasses()) {
+            this.addClass(c, allUserClass);
+        }
+        for (var binaryClass : model.getBinaryClasses()) {
+            this.addClass(c, binaryClass);
+        }
+    }
 
     public Model build(IntoContext c) {
         return new JKModel(c.intoContext(), this.tree.lock());

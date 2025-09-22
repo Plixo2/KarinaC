@@ -38,7 +38,7 @@ public interface FileTreeNode {
                     .toList()
         );
     }
-    private static FileNode copyFile(FileNode file) {
+    static FileNode copyFile(FileNode file) {
         return new DefaultFileTree.DefaultFileNode(
                 file.path(),
                 file.name(),

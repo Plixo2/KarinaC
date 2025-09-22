@@ -91,6 +91,7 @@ public class KarinaUnitVisitor {
 
         var constNames = new ArrayList<String>();
         var constValues = new ArrayList<KExpr>();
+        var regions = new ArrayList<Region>();
 
         for (var itemContext : ctx.item()) {
             if (itemContext.const_() != null) {
@@ -99,6 +100,7 @@ public class KarinaUnitVisitor {
 
                 constNames.add(constModel.name());
                 constValues.add(visitExpression);
+                regions.add(this.conv.toRegion(itemContext.const_()));
 
                 fields.add(constModel);
             }
@@ -109,7 +111,8 @@ public class KarinaUnitVisitor {
                     region,
                     currentClass,
                     constNames,
-                    constValues
+                    constValues,
+                    regions
             );
             methods.add(clinit);
         }
@@ -285,10 +288,15 @@ public class KarinaUnitVisitor {
             Region region,
             ClassPointer owningClass,
             List<String> staticFieldsNames,
-            List<KExpr> staticFieldsValues
+            List<KExpr> staticFieldsValues,
+            List<Region> regions
     ) {
         if (staticFieldsNames.size() != staticFieldsValues.size()) {
             Log.temp(c, region, "Static fields names and values size mismatch");
+            throw new Log.KarinaException();
+        }
+        if (regions.size() != staticFieldsValues.size()) {
+            Log.temp(c, region, "Static fields regions and values size mismatch");
             throw new Log.KarinaException();
         }
 
@@ -297,16 +305,22 @@ public class KarinaUnitVisitor {
         for (var i = 0; i < staticFieldsNames.size(); i++) {
             var name = staticFieldsNames.get(i);
             var value = staticFieldsValues.get(i);
+            var fieldRegion = regions.get(i);
+            fieldRegion = new Region(
+                    fieldRegion.source(),
+                    fieldRegion.start(),
+                    fieldRegion.start()
+            );
 
             var individualRegions = new ImmutableList.Builder<Region>();
             for (var _ : owningClass.path().elements()) {
-                individualRegions.add(value.region());
+                individualRegions.add(fieldRegion);
             }
 
-            var self = new KExpr.StaticPath(value.region(), individualRegions.build(), owningClass.path(), owningClass);
-            var fieldName = RegionOf.region(value.region(), name);
-            var lhs = new KExpr.GetMember(value.region(), self, fieldName, false, null);
-            var assign = new KExpr.Assignment(value.region(), lhs, value, null);
+            var self = new KExpr.StaticPath(fieldRegion, individualRegions.build(), owningClass.path(), owningClass);
+            var fieldName = RegionOf.region(fieldRegion, name);
+            var lhs = new KExpr.GetMember(fieldRegion, self, fieldName, false, null);
+            var assign = new KExpr.Assignment(fieldRegion, lhs, value, null);
             assignments.add(assign);
         }
 

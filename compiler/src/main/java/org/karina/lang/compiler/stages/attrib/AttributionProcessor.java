@@ -19,7 +19,7 @@ public class AttributionProcessor {
                     continue;
                 }
                 fork.collect(subC -> {
-                    AttributionItem.attribClass(subC, model, null, kClassModel , build);
+                    AttributionItem.attribClass(subC, model, null, kClassModel, build);
                     //return null, and mutate thread-safe ModelBuilder
                     return null;
                 });

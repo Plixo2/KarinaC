@@ -114,9 +114,11 @@ public final class Context implements IntoContext {
         var forbidden = Set.of(
                 Logging.Forks.class,
                 Logging.MethodAttribution.class,
-                Logging.ClassAttribution.class,
                 Logging.TypeChecking.class,
-                Logging.Expression.class
+                Logging.Expression.class,
+                Logging.Generation.InnerClassesNodes.class,
+                Logging.Importing.ClassesSecondPass.class
+//                Logging.Classes.class
         );
         return !forbidden.contains(type);
 
@@ -417,6 +419,7 @@ public final class Context implements IntoContext {
 
 
     @Contract(mutates = "param2, param3, param4")
+    @CheckReturnValue
     public static <T> @Nullable T run(
             ContextHandling contextHandling,
             @Nullable DiagnosticCollection errors,

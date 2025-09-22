@@ -1,8 +1,8 @@
 package org.karina.lang.compiler.stages.imports;
 
 import org.karina.lang.compiler.model_api.Model;
-import org.karina.lang.compiler.stages.imports.table.FunctionInterfaceTable;
-import org.karina.lang.compiler.stages.imports.table.UserImportTable;
+import org.karina.lang.compiler.stages.imports.table.SecondPassImportTable;
+import org.karina.lang.compiler.stages.imports.table.FirstPassImportTable;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
@@ -17,7 +17,6 @@ import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 public class ImportProcessor {
 
     public Model importTree(Context c, Model model) throws Log.KarinaException {
-        Log.begin("import");
 
         var prelude = Prelude.fromModel(c, model);
 
@@ -32,8 +31,8 @@ public class ImportProcessor {
                     continue;
                 }
                 importFork.collect(subC -> {
-                    var withPrelude = ImportHelper.importPrelude(kClassModel, new UserImportTable(c, model), prelude);
-                    ImportItem.importClass(subC, kClassModel, null, withPrelude, build);
+                    var withPrelude = ImportHelper.importPrelude(kClassModel, new FirstPassImportTable(c, model), prelude);
+                    ImportItem.importClass(subC, kClassModel, null, withPrelude.withNewContext(subC), build);
                     //return null and mutate thread-safe ModelBuilder
                     return null;
                 });
@@ -44,8 +43,6 @@ public class ImportProcessor {
         for (var bytecodeClass : model.getBinaryClasses()) {
             build.addClass(c, bytecodeClass);
         }
-
-        Log.end("import");
 
         var newModel = build.build(c);
         newModel = applyFunctionalInterfaces(c, newModel);
@@ -67,10 +64,10 @@ public class ImportProcessor {
                 if (!kClassModel.isTopLevel()) {
                     continue;
                 }
-                var importContext = new FunctionInterfaceTable(c, model);
+                var importContext = new SecondPassImportTable(c, model);
                 importFork.collect(subC -> {
                     // set importTable parameter to null to signal the import stage to only apply and validate functional interfaces
-                    ImportItem.importClass(subC, kClassModel, null, importContext, build);
+                    ImportItem.importClass(subC, kClassModel, null, importContext.withNewContext(subC), build);
                     //return null and mutate thread-safe ModelBuilder
                     return null;
                 });

@@ -1,6 +1,7 @@
 package org.karina.lang.lsp.impl;
 
 
+import com.google.common.collect.ImmutableMap;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -12,9 +13,7 @@ import org.karina.lang.lsp.lib.VirtualFileTreeNode;
 
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Getter
 @Accessors(fluent = true)
@@ -37,22 +36,31 @@ public class DefaultVirtualFileTreeNode implements VirtualFileTreeNode {
         private FileTreeBuilder() {
         }
 
-        public VirtualFileTreeNode build(List<VirtualFile> files, URI projectRoot) {
+        public NodeMapping build(Collection<VirtualFile> files, URI projectRoot) {
             var rootPath = Optional.ofNullable(projectRoot)
                                    .map(Path::of).map(Path::toAbsolutePath)
                                    .map(Path::normalize).orElse(null);
 
             var root = DefaultVirtualFileTreeNode.root();
 
+            Map<VirtualFile, VirtualFileNode> mapping = new HashMap<>();
             for (var file : files) {
-                addToTree(root, file, rootPath);
+                addToTree(root, file, rootPath, mapping);
             }
 
-            return root;
+            return new NodeMapping(
+                    root,
+                    ImmutableMap.copyOf(mapping)
+            );
         }
 
         /// @param projectRoot Normalized and absolut path to the project root
-        private void addToTree(DefaultVirtualFileTreeNode root, VirtualFile file, Path projectRoot) {
+        private void addToTree(
+                DefaultVirtualFileTreeNode root,
+                VirtualFile file,
+                Path projectRoot,
+                Map<VirtualFile, VirtualFileNode> mapping
+        ) {
             var path = Path.of(file.uri());
             if (!path.startsWith(projectRoot)) {
                 return;
@@ -73,7 +81,6 @@ public class DefaultVirtualFileTreeNode implements VirtualFileTreeNode {
                                      .orElseGet(() -> new ObjectPath(name));
 
 
-
                 DefaultVirtualFileTreeNode next = null;
                 for (var child : current.children) {
                     if (child.name().equals(name)) {
@@ -85,6 +92,7 @@ public class DefaultVirtualFileTreeNode implements VirtualFileTreeNode {
                 if (next == null) {
                     if (isLeaf) {
                         var node = new VirtualFileNode(objectPath, name, file);
+                        mapping.put(file, node);
                         current.leafs.add(node);
                         // should exit
                     } else {

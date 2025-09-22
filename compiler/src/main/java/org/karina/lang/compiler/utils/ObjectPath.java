@@ -167,4 +167,10 @@ public final class ObjectPath {
         return Arrays.hashCode(elements);
     }
 
+    public boolean endsWith(String main) {
+        if (this.isEmpty()) {
+            return false;
+        }
+        return this.last().equals(main);
+    }
 }

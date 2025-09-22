@@ -2,6 +2,7 @@ package org.karina.lang.lsp.lib;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import karina.lang.Option;
+import org.eclipse.lsp4j.Range;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -9,7 +10,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 
 public interface VirtualFileSystem {
@@ -22,7 +23,7 @@ public interface VirtualFileSystem {
 
     @CheckReturnValue
     @Contract(mutates = "this")
-    Option<FileTransaction> updateFile(URI uri, String content, int version);
+    Option<FileTransaction> updateFile(URI uri, String content, @Nullable Range range, int version);
 
 
     @CheckReturnValue
@@ -56,9 +57,10 @@ public interface VirtualFileSystem {
 
     @Contract(pure = true)
     @UnmodifiableView
-    List<VirtualFile> files();
+    Collection<VirtualFile> files();
 
 
+    Option<VirtualFile> getFile(URI uri);
 
     /// @return normalized and absolute URI from a string representation.
     static URI toUri(String uri) {
@@ -69,5 +71,6 @@ public interface VirtualFileSystem {
         Path path = Paths.get(uriObj).toAbsolutePath().normalize();
         return path.toUri();
     }
+
 
 }

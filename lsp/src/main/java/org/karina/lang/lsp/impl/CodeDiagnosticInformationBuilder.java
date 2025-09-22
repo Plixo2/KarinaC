@@ -10,9 +10,14 @@ import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.RegionOf;
 import org.karina.lang.compiler.utils.Resource;
 import org.karina.lang.lsp.lib.VirtualFile;
+import org.karina.lang.lsp.lib.VirtualFileSystem;
 
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Accessors(fluent = true)
@@ -88,7 +93,7 @@ public class CodeDiagnosticInformationBuilder implements ErrorInformationBuilder
 
             relatedInfo.add(new DiagnosticRelatedInformation(
                             new Location(
-                                    relatedFile.uri().toString(),
+                                    relatedFile.toString(),
                                     regionToLSPRange(relatedRegion)
                             ),
                             related.value()
@@ -100,20 +105,35 @@ public class CodeDiagnosticInformationBuilder implements ErrorInformationBuilder
 
         return new DiagnosticForFile(file, diagnostic);
     }
-    public record DiagnosticForFile(VirtualFile file, Diagnostic diagnostic) {}
+    public record DiagnosticForFile(URI file, Diagnostic diagnostic) {}
 
 
 
     /// Returns null, when the resource is not a VirtualFile
-    public static @Nullable VirtualFile resourceToFile(Resource resource) {
+    public static @Nullable URI resourceToFile(Resource resource) {
         if (resource instanceof VirtualFile virtualFile) {
-            return virtualFile;
+            return virtualFile.uri();
+        } else {
+            try {
+                return URI.create(resource.identifier());
+//                Path path = Paths.get(uriObj).toAbsolutePath().normalize();
+//                return path.toUri();
+            } catch(Exception e) {
+                return null;
+            }
         }
-        return null;
 
     }
 
-    private static Range regionToLSPRange(Region region) {
+    public static Location regionToLSPLocation(Region region) {
+
+        return new Location(
+                region.source().resource().identifier(),
+                CodeDiagnosticInformationBuilder.regionToLSPRange(region)
+        );
+    }
+
+    public static Range regionToLSPRange(Region region) {
         var ordered = region.reorder();
         int offset = 0;
         var isSame = ordered.start().line() == ordered.start().column()

@@ -1,11 +1,10 @@
 package org.karina.lang.compiler.stages.imports;
 
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.stages.imports.table.ExtendableImportTable;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.Model;
 import org.karina.lang.compiler.model_api.pointer.ClassPointer;
-import org.karina.lang.compiler.stages.imports.table.ImportTable;
-import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.utils.logging.errors.ImportError;
 import org.karina.lang.compiler.model_api.ClassModel;
@@ -30,7 +29,7 @@ public class ImportHelper {
      * @param ctx previous import table to build upon
      * @return the new import table with the items added
      */
-    public static UserImportTable importItemsOfClass(ClassModel classModel, UserImportTable ctx) {
+    public static ExtendableImportTable importItemsOfClass(ClassModel classModel, ExtendableImportTable ctx) {
         var newCtx = ctx;
 
         //create 'buckets' for each method name, so they can be added all at once
@@ -67,7 +66,7 @@ public class ImportHelper {
      * @param owner the class that is currently importing the prelude,
      *              since we want to point to the start of the current file, if a error occurs
      */
-    public static ImportTable importPrelude(ClassModel owner, UserImportTable ctx, Prelude prelude) {
+    public static ExtendableImportTable importPrelude(ClassModel owner, ExtendableImportTable ctx, Prelude prelude) {
 
         var newCtx = ctx;
         for (var classPointer : prelude.classes()) {
@@ -92,7 +91,7 @@ public class ImportHelper {
         return newCtx;
     }
 
-    private static UserImportTable importItemsOfClassByName(Context c, ClassModel classModel, UserImportTable ctx, String namePredicate, Region importRegion) {
+    private static ExtendableImportTable importItemsOfClassByName(Context c, ClassModel classModel, ExtendableImportTable ctx, String namePredicate, Region importRegion) {
         var newCtx = ctx;
 
         boolean added = false;
@@ -159,7 +158,7 @@ public class ImportHelper {
 
     }
 
-    public static UserImportTable addImport(Context c, Region region, KImport kImport, UserImportTable ctx) {
+    public static ExtendableImportTable addImport(Context c, Region region, KImport kImport, ExtendableImportTable ctx) {
 
         var pointer = getUserClassPointer(ctx.model(), region, kImport.path());
         if (pointer == null) {
@@ -168,7 +167,7 @@ public class ImportHelper {
             throw new Log.KarinaException();
         }
         var modelClass = ctx.model().getClass(pointer);
-        UserImportTable newCtx = ctx;
+        ExtendableImportTable newCtx = ctx;
         switch (kImport.importType()) {
             case KImport.TypeImport.All all -> {
                 //inner classes and static fields and methods
@@ -194,7 +193,7 @@ public class ImportHelper {
                     ));
                     throw new Log.KarinaException();
                 }
-                if (!newCtx.classes().containsKey(name)) {
+                if (!newCtx.containsClass(name)) {
                     Log.error(c, new ImportError.UnnecessaryAlias(
                             baseAs.region(),
                             baseAs.alias()
@@ -259,31 +258,6 @@ public class ImportHelper {
             Log.invalidName(ctx, region, name);
             throw new Log.KarinaException();
         }
-    }
-
-    public static void logFullModel(Model model) {
-        if (!Log.LogTypes.LOADED_CLASSES.isVisible()) {
-            return;
-        }
-
-        Log.begin("full-model");
-
-        Log.begin("JVM Classes");
-        var jvmClasses = model.getBinaryClasses();
-        for (var userClass : jvmClasses) {
-            Log.record(userClass.pointer());
-        }
-        Log.end("JVM Classes", jvmClasses.size());
-
-        Log.begin("User Classes");
-        var userClasses = model.getUserClasses();
-        for (var userClass : userClasses) {
-            Log.record(userClass.pointer());
-        }
-        Log.end("User Classes", userClasses.size());
-
-
-        Log.end("full-model", model.getClassCount());
     }
 
 }

@@ -1,9 +1,7 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
-import org.karina.lang.compiler.model_api.FieldModel;
-import org.karina.lang.compiler.model_api.Generic;
-import org.karina.lang.compiler.model_api.Signature;
+import org.karina.lang.compiler.model_api.*;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
@@ -12,6 +10,7 @@ import org.karina.lang.compiler.model_api.pointer.ClassPointer;
 import org.karina.lang.compiler.utils.*;
 import org.karina.lang.compiler.stages.parser.RegionContext;
 import org.karina.lang.compiler.stages.parser.gen.KarinaParser;
+import org.karina.lang.compiler.utils.logging.Log;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
@@ -41,7 +40,7 @@ public class KarinaEnumVisitor implements IntoContext {
         var currentClassPointer = ClassPointer.of(region, path);
 
         // interfaces cannot be private
-        final var mods = (ctx.PUB() != null ? Modifier.PUBLIC : 0) | Modifier.INTERFACE | Modifier.ABSTRACT;
+        final var mods = (ctx.PUB() != null ? Modifier.PUBLIC : 0) | Modifier.INTERFACE | Modifier.ABSTRACT | ClassModel.SEALED_MODIFIER;
 
         KType.ClassType superClass = KType.ROOT;
 
@@ -73,11 +72,14 @@ public class KarinaEnumVisitor implements IntoContext {
 
         var constNames = new ArrayList<String>();
         var constValues = new ArrayList<KExpr>();
+        var regions = new ArrayList<Region>();
+
         for (var constContext : ctx.const_()) {
             var visitExpression = this.visitor.exprVisitor.visitExprWithBlock(constContext.exprWithBlock());
             var constModel = this.visitor.visitConst(constContext, visitExpression, currentClassPointer);
             constNames.add(constModel.name());
             constValues.add(visitExpression);
+            regions.add(this.conv.toRegion(constContext));
             fields.add(constModel);
         }
         if (!constNames.isEmpty()) {
@@ -86,7 +88,8 @@ public class KarinaEnumVisitor implements IntoContext {
                     region,
                     currentClassPointer,
                     constNames,
-                    constValues
+                    constValues,
+                    regions
             );
             methods.add(clinit);
         }
@@ -131,6 +134,10 @@ public class KarinaEnumVisitor implements IntoContext {
             var enumMember = innerEnumClass(classModel, currentClassPointer, path, enumMemberContext, generics, modelBuilder, ctx.PUB() != null);
             innerClassesToFill.add(enumMember);
             permittedSubClassesToFill.add(enumMember.pointer());
+        }
+        if (permittedSubClassesToFill.isEmpty()) {
+            Log.temp(this, region, "Enum cannot be empty");
+            throw new Log.KarinaException();
         }
         modelBuilder.addClass(this, classModel);
 
@@ -229,7 +236,11 @@ public class KarinaEnumVisitor implements IntoContext {
 
     // TODO generate function for common fields
     public static KMethodModel createGetterMethod(FieldModel fieldModel) {
-        var region = fieldModel.region();
+        var region = new Region(
+                fieldModel.region().source(),
+                fieldModel.region().start(),
+                fieldModel.region().start()
+        );
         var expr = new KExpr.GetMember(
                 region,
                 new KExpr.Self(region, null),

@@ -98,6 +98,18 @@ public final class DidYouMean {
         return entries.stream().map(e -> e.s).collect(Collectors.toList());
     }
 
+    public static List<String> sort(Set<String> available, String target) {
+        HashMap<String, Integer> map = new HashMap<>();
+        for (String s : available) {
+            map.put(s, calculate(s, target));
+        }
+
+        return available
+                .stream()
+                .sorted(Comparator.comparingInt(map::get)).toList();
+
+    }
+
     /// Bounded Levenshtein with early-abandon and two rolling rows.
     /// Returns threshold + 1 if it cannot beat the threshold.
     private static int levenshteinBounded(String x, char[] y, int threshold,
@@ -160,4 +172,38 @@ public final class DidYouMean {
     }
 
 
+    /**
+     * Calculate the Levenshtein distance between two strings.
+     * Source: <a href="https://github.com/eugenp/tutorials/tree/master/algorithms-modules/algorithms-miscellaneous-9/src/main/java/com/baeldung/algorithms/editdistance">github.com</a>
+     */
+    private static int calculate(String x, String y) {
+        int[][] dp = new int[x.length() + 1][y.length() + 1];
+
+        for (int i = 0; i <= x.length(); i++) {
+            for (int j = 0; j <= y.length(); j++) {
+                if (i == 0)
+                    dp[i][j] = j;
+
+                else if (j == 0)
+                    dp[i][j] = i;
+
+                else {
+                    var a = x.charAt(i - 1);
+                    var b = y.charAt(j - 1);
+                    var substitution = a == b ? 0 : 1;
+
+
+                    dp[i][j] = min(dp[i - 1][j - 1]
+                                    + substitution,
+                            dp[i - 1][j] + 1, dp[i][j - 1] + 1);
+                }
+            }
+        }
+
+        return dp[x.length()][y.length()];
+    }
+
+    static int min(int a, int b, int c) {
+        return Math.min(a, Math.min(b, c));
+    }
 }

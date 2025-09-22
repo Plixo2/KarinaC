@@ -2,16 +2,22 @@ package org.karina.lang.lsp.impl;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import karina.lang.Option;
+import lombok.RequiredArgsConstructor;
+import org.eclipse.lsp4j.Range;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.Nullable;
 import org.karina.lang.lsp.lib.FileTransaction;
 import org.karina.lang.lsp.lib.VirtualFile;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
+import org.karina.lang.lsp.lib.events.EventService;
 
 import java.net.URI;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
+@RequiredArgsConstructor
 public class DefaultVirtualFileSystem implements VirtualFileSystem {
+    private final EventService eventService;
     private final ConcurrentHashMap<URI, VirtualFile> files = new ConcurrentHashMap<>();
 
     @Override
@@ -37,15 +43,20 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
     @Override
     @CheckReturnValue
     @Contract(mutates = "this")
-    public synchronized Option<FileTransaction> updateFile(URI uri, String content, int version) {
+    public synchronized Option<FileTransaction> updateFile(URI uri, String content, @Nullable Range range, int version) {
         var existing = this.files.get(uri);
         if (existing != null) {
-            if (existing.content().equals(content)) {
-                return Option.none();
-            } else {
+            if (range == null) {
+                if (existing.content().equals(content)) {
+                    return Option.none();
+                }
                 existing.updateContent(content, version);
-                return Option.some(new FileTransaction.UpdateFile(existing, false));
+            } else {
+                // TODO check what has changed
+                existing.updateContent(range, content, version, this.eventService);
             }
+            return Option.some(new FileTransaction.UpdateFile(existing, false));
+
         }
         else {
             var newFile = new DefaultVirtualFile(uri, content, version, false);
@@ -123,8 +134,13 @@ public class DefaultVirtualFileSystem implements VirtualFileSystem {
     }
 
     @Override
-    public List<VirtualFile> files() {
-        return List.copyOf(this.files.values());
+    public Collection<VirtualFile> files() {
+        return this.files.values();
+    }
+
+    @Override
+    public Option<VirtualFile> getFile(URI uri) {
+        return Option.fromNullable(this.files.get(uri));
     }
 
 

@@ -10,6 +10,7 @@ import org.karina.lang.lsp.KarinaLSP;
 import org.karina.lang.lsp.impl.ClientConfiguration;
 import org.karina.lang.lsp.lib.VirtualFileSystem;
 import org.karina.lang.lsp.lib.events.EventService;
+import org.karina.lang.lsp.lib.events.RequestEvent;
 import org.karina.lang.lsp.lib.events.UpdateEvent;
 
 import java.io.IOException;
@@ -39,7 +40,6 @@ public final class EventWorkspaceService implements WorkspaceService {
             }
         }
 
-
     }
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
@@ -54,10 +54,10 @@ public final class EventWorkspaceService implements WorkspaceService {
                     // should get handled by the client and send via textDocument/didChange
                 }
                 case Created -> {
-                    this.eventService.update(new UpdateEvent.CreateWatchedFile(uri));
+                    this.eventService.update(new UpdateEvent.UpdateFileEvent.CreateWatchedFile(uri));
                 }
                 case Deleted -> {
-                    this.eventService.update(new UpdateEvent.DeleteWatchedFile(uri));
+                    this.eventService.update(new UpdateEvent.UpdateFileEvent.DeleteWatchedFile(uri));
                 }
             }
         }
@@ -70,7 +70,7 @@ public final class EventWorkspaceService implements WorkspaceService {
         var uris = params.getFiles().stream().map(FileCreate::getUri).toList();
         for (var uriStr : uris) {
             var uri = VirtualFileSystem.toUri(uriStr);
-            this.eventService.update(new UpdateEvent.CreateFile(uri));
+            this.eventService.update(new UpdateEvent.UpdateFileEvent.CreateFile(uri));
         }
     }
     @Override
@@ -78,7 +78,7 @@ public final class EventWorkspaceService implements WorkspaceService {
         var uris = params.getFiles().stream().map(FileDelete::getUri).toList();
         for (var uriStr : uris) {
             var uri = VirtualFileSystem.toUri(uriStr);
-            this.eventService.update(new UpdateEvent.DeleteFile(uri));
+            this.eventService.update(new UpdateEvent.UpdateFileEvent.DeleteFile(uri));
         }
     }
 
@@ -87,7 +87,7 @@ public final class EventWorkspaceService implements WorkspaceService {
         for (var file : params.getFiles()) {
             var oldUri = VirtualFileSystem.toUri(file.getOldUri());
             var newUri = VirtualFileSystem.toUri(file.getNewUri());
-            this.eventService.update(new UpdateEvent.RenameFile(oldUri, newUri));
+            this.eventService.update(new UpdateEvent.UpdateFileEvent.RenameFile(oldUri, newUri));
         }
 
     }
@@ -96,7 +96,6 @@ public final class EventWorkspaceService implements WorkspaceService {
     public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
         var command = params.getCommand();
         var args = Option.fromNullable(params.getArguments()).orElse(List.of());
-        this.eventService.update(new UpdateEvent.ExecuteCommand(command, args));
-        return CompletableFuture.completedFuture(null);
+        return this.eventService.request(new RequestEvent.RequestExecuteCommand(command, args));
     }
 }

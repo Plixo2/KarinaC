@@ -1,6 +1,7 @@
 package org.karina.lang.compiler.stages.parser.visitor.model;
 
 import com.google.common.collect.ImmutableList;
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
 import org.karina.lang.compiler.model_api.Signature;
@@ -61,7 +62,7 @@ public class KarinaMethodVisitor implements IntoContext {
         var mods = (isPublic ? Modifier.PUBLIC : Modifier.PRIVATE) | (isStatic ? Modifier.STATIC : 0) | (isAbstract ? Modifier.ABSTRACT : 0);
 
         if (this.isExtensionMethod(annotations)) {
-            mods |= KMethodModel.EXTENSION_MODIFIER;
+            mods |= ClassModel.EXTENSION_MODIFIER;
         }
 
         return new KMethodModel(

@@ -2,6 +2,7 @@ package org.karina.lang.compiler.jvm_loading.loading;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
+import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.MethodModel;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
@@ -197,7 +198,7 @@ public class InterfaceLinker {
             if (methodNode.invisibleAnnotations != null) {
                 for (var invisibleAnnotation : methodNode.invisibleAnnotations) {
                     if (invisibleAnnotation.desc.equals("L" + ClassPointer.EXTENSION_PATH.mkString("/") + ";")) {
-                        modifiers |= MethodModel.EXTENSION_MODIFIER;
+                        modifiers |= ClassModel.EXTENSION_MODIFIER;
                         break;
                     }
                 }

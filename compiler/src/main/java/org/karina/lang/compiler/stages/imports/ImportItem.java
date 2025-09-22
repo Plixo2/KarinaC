@@ -2,17 +2,17 @@ package org.karina.lang.compiler.stages.imports;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.Nullable;
-import org.karina.lang.compiler.model_api.ClassModel;
 import org.karina.lang.compiler.model_api.Generic;
 import org.karina.lang.compiler.model_api.impl.ModelBuilder;
+import org.karina.lang.compiler.stages.imports.table.ExtendableImportTable;
 import org.karina.lang.compiler.utils.logging.Log;
 import org.karina.lang.compiler.model_api.impl.karina.KClassModel;
 import org.karina.lang.compiler.model_api.impl.karina.KFieldModel;
 import org.karina.lang.compiler.model_api.impl.karina.KMethodModel;
+import org.karina.lang.compiler.utils.logging.Logging;
 import org.karina.lang.compiler.utils.logging.errors.AttribError;
 import org.karina.lang.compiler.model_api.Signature;
 import org.karina.lang.compiler.stages.imports.table.ImportTable;
-import org.karina.lang.compiler.stages.imports.table.UserImportTable;
 import org.karina.lang.compiler.utils.*;
 
 import java.lang.reflect.Modifier;
@@ -28,110 +28,138 @@ public class ImportItem {
      */
     public static KClassModel importClass(Context c, KClassModel classModel, @Nullable KClassModel outerClass, ImportTable ctx, ModelBuilder modelBuilder) {
 
-        ImportHelper.testName(c, classModel.region(), classModel.name());
-        var logName = "importing class " + classModel.name();
-        Log.beginType(Log.LogTypes.IMPORTS, logName);
-
-        ImportTable importTable;
-        if (ctx instanceof UserImportTable userImportTable) {
-            importTable = getFullUserImportTable(c, classModel, userImportTable);
+        boolean firstIteration = ctx instanceof ExtendableImportTable;
+        Context.OpenSection section;
+        if (firstIteration) {
+            section = c.section(Logging.Importing.Classes.class, classModel.name());
         } else {
-            importTable = ctx;
+            section = c.section(Logging.Importing.ClassesSecondPass.class, classModel.name());
         }
+        try(var _ = section) {
+            ImportHelper.testName(c, classModel.region(), classModel.name());
 
+            ImportTable importTable;
+            if (ctx instanceof ExtendableImportTable userImportTable) {
+                importTable = getFullUserImportTable(c, classModel, userImportTable);
+            } else {
+                importTable = ctx;
+            }
 
-        //now the import table is ready to import types
+            //now the import table is ready to import types
 
-        // import generics
-        for (var generic : classModel.generics()) {
-            importGeneric(c, generic, importTable);
-        }
+            // import generics
+            try (var fork = c.fork()) {
+                for (var generic : classModel.generics()) {
+                    fork.collect(subC -> {
+                        importGeneric(subC, generic, importTable.withNewContext(subC));
+                        return null;
+                    });
+                }
+                var _ = fork.dispatch();
+            }
 
-        //start by importing the super class
-        var superClass = classModel.superClass();
-        assert superClass != null;
-        var superClassImportedAny = importTable.importType(classModel.region(), superClass);
-        if (!(superClassImportedAny instanceof KType.ClassType superClassImported)) {
-            Log.temp(c, classModel.region(), "Invalid Super class");
-            throw new Log.KarinaException();
-        }
-
-        //importing interfaces
-        var interfaces = ImmutableList.<KType.ClassType>builder();
-        for (var anInterface : classModel.interfaces()) {
-            var imported = importTable.importType(classModel.region(), anInterface);
-            if (!(imported instanceof KType.ClassType interfaceImported)) {
-                Log.temp(c, classModel.region(), "Invalid Interface");
+            //start by importing the super class
+            var superClass = classModel.superClass();
+            assert superClass != null;
+            var superClassImportedAny = importTable.importType(classModel.region(), superClass);
+            if (!(superClassImportedAny instanceof KType.ClassType superClassImported)) {
+                Log.temp(c, classModel.region(), "Invalid Super class");
                 throw new Log.KarinaException();
             }
-            interfaces.add(interfaceImported);
-        }
 
-        //importing fields
-        var fields = ImmutableList.<KFieldModel>builder();
-        for (var field : classModel.fields()) {
-            if (!(field instanceof KFieldModel kField)) {
-                Log.temp(c, classModel.region(), "Invalid Field");
-                throw new Log.KarinaException();
+            //importing interfaces
+            var interfaces = ImmutableList.<KType.ClassType>builder();
+
+            try (var fork = c.<KType.ClassType>fork()){
+                for (var anInterface : classModel.interfaces()) {
+                    fork.collect(subC -> {
+                        var imported = importTable.withNewContext(subC).importType(classModel.region(), anInterface);
+                        if (!(imported instanceof KType.ClassType interfaceImported)) {
+                            Log.temp(subC, classModel.region(), "Invalid Interface");
+                            throw new Log.KarinaException();
+                        }
+                        return interfaceImported;
+                    });
+                }
+                interfaces.addAll(fork.dispatch());
             }
-            fields.add(importField(c, kField, importTable));
-        }
 
-        //importing methods
-        var methodsToBeFilled = new ArrayList<KMethodModel>();
-        for (var method : classModel.methods()) {
-            if (!(method instanceof KMethodModel kMethod)) {
-                Log.temp(c, classModel.region(), "Invalid Method");
-                throw new Log.KarinaException();
+            //importing fields
+
+            var fields = ImmutableList.<KFieldModel>builder();
+            try (var fork = c.<KFieldModel>fork()){
+                for (var field : classModel.fields()) {
+                    fork.collect(subC -> {
+                        if (!(field instanceof KFieldModel kField)) {
+                            Log.temp(subC, classModel.region(), "Invalid Field");
+                            throw new Log.KarinaException();
+                        }
+                        return importField(subC, kField, importTable.withNewContext(subC));
+                    });
+                }
+                fields.addAll(fork.dispatch());
             }
-            methodsToBeFilled.add(importMethod(c, kMethod, importTable));
-        }
 
-
-        var innerClassesToBeFilled = new ArrayList<KClassModel>();
-
-        UserImportTable toReference;
-        if (importTable instanceof UserImportTable toRef) {
-              toReference = toRef;
-        } else {
-            if (classModel.symbolTable() == null) {
-                Log.temp(c, classModel.region(), "No symbol table was created");
-                throw new Log.KarinaException();
+            //importing methods
+            var methodsToBeFilled = new ArrayList<KMethodModel>();
+            for (var method : classModel.methods()) {
+                if (!(method instanceof KMethodModel kMethod)) {
+                    Log.temp(c, classModel.region(), "Invalid Method");
+                    throw new Log.KarinaException();
+                }
+                methodsToBeFilled.add(importMethod(c, kMethod, importTable));
             }
-            toReference = classModel.symbolTable();
+
+
+            var innerClassesToBeFilled = new ArrayList<KClassModel>();
+
+            ExtendableImportTable toReference;
+            if (importTable instanceof ExtendableImportTable toRef) {
+                toReference = toRef;
+            } else {
+                if (classModel.symbolTable() == null) {
+                    Log.temp(c, classModel.region(), "No symbol table was created");
+                    throw new Log.KarinaException();
+                }
+                toReference = classModel.symbolTable();
+            }
+
+            var newClassModel = new KClassModel(
+                    classModel.name(),
+                    classModel.path(),
+                    classModel.modifiers(),
+                    superClassImported,
+                    outerClass,
+                    classModel.nestHost(),
+                    interfaces.build(),
+                    innerClassesToBeFilled,
+                    fields.build(),
+                    methodsToBeFilled,
+                    classModel.generics(),
+                    classModel.imports(),
+                    classModel.permittedSubclasses(),
+                    new ArrayList<>(classModel.nestMembers()),
+                    classModel.annotations(),
+                    classModel.resource(),
+                    classModel.region(),
+                    toReference
+            );
+
+            //recursively import inner classes, done after, so we can pass the new class model as the outer class
+            try (var fork = c.<KClassModel>fork()){
+                for (var innerClass : classModel.innerClasses()) {
+                    fork.collect(subC -> {
+                        return importClass(subC, innerClass, newClassModel, importTable.withNewContext(subC), modelBuilder);
+                    });
+                }
+                innerClassesToBeFilled.addAll(fork.dispatch());
+            }
+
+
+            modelBuilder.addClass(c, newClassModel);
+
+            return newClassModel;
         }
-
-        var newClassModel = new KClassModel(
-                classModel.name(),
-                classModel.path(),
-                classModel.modifiers(),
-                superClassImported,
-                outerClass,
-                classModel.nestHost(),
-                interfaces.build(),
-                innerClassesToBeFilled,
-                fields.build(),
-                methodsToBeFilled,
-                classModel.generics(),
-                classModel.imports(),
-                classModel.permittedSubclasses(),
-                new ArrayList<>(classModel.nestMembers()),
-                classModel.annotations(),
-                classModel.resource(),
-                classModel.region(),
-                toReference
-        );
-
-
-        //recursively import inner classes, done after, so we can pass the new class model as the outer class
-        for (var innerClass : classModel.innerClasses()) {
-            // also propagate the full import table, when ctx is not null
-            innerClassesToBeFilled.add(importClass(c, innerClass, newClassModel, importTable, modelBuilder));
-        }
-        modelBuilder.addClass(c, newClassModel);
-
-        Log.endType(Log.LogTypes.IMPORTS, logName);
-        return newClassModel;
     }
 
 
@@ -164,7 +192,7 @@ public class ImportItem {
 
         ImportHelper.testName(c, method.region(), method.name());
 
-        if (table instanceof UserImportTable userImportTable) {
+        if (table instanceof ExtendableImportTable userImportTable) {
             //remove generics for static methods from any outer class
             if (Modifier.isStatic(method.modifiers())) {
                 userImportTable = userImportTable.removeGenerics();
@@ -182,10 +210,6 @@ public class ImportItem {
 
         // import generics
         for (var generic : method.generics()) {
-//            if (!generic.bounds().isEmpty()) {
-//                Log.temp(c, generic.region(), "Method generics with bounds are not supported yet");
-//                throw new Log.KarinaException();
-//            }
             importGeneric(c, generic, table);
         }
 
@@ -288,30 +312,22 @@ public class ImportItem {
     /**
      * Adds user defined imports and generics to the import table.
      */
-    private static UserImportTable getFullUserImportTable(Context c, KClassModel classModel, UserImportTable ctx) {
+    private static ExtendableImportTable getFullUserImportTable(Context c, KClassModel classModel, ExtendableImportTable ctx) {
         var context = ctx;
+
         //remove generics for static inner classes
         if (Modifier.isStatic(classModel.modifiers())) {
             context = context.removeGenerics();
         }
 
-        Log.beginType(Log.LogTypes.IMPORTS, "inner items");
         //import all items of the current class
         context = ImportHelper.importItemsOfClass(classModel, context);
-        if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.debugImport();
-        Log.endType(Log.LogTypes.IMPORTS, "inner items");
 
-
-        Log.beginType(Log.LogTypes.IMPORTS, "generics");
         //add defined generics
         for (var generic : classModel.generics()) {
             context = context.addGeneric(classModel.region(), generic);
         }
 
-        if (Log.LogTypes.IMPORT_STAGES.isVisible())  context.debugImport();
-        Log.endType(Log.LogTypes.IMPORTS, "generics");
-
-        Log.beginType(Log.LogTypes.IMPORTS, "imports statements");
         //add manual imports
 
         var importTypeSplit = classModel.imports().stream().collect(Collectors.partitioningBy(
@@ -324,11 +340,6 @@ public class ImportItem {
             context = ImportHelper.addImport(c, classModel.region(), kImport, context);
         }
 
-        if (Log.LogTypes.IMPORT_STAGES.isVisible()) context.debugImport();
-        Log.endType(Log.LogTypes.IMPORTS, "imports statements");
-
-        if (!Log.LogTypes.IMPORT_STAGES.isVisible())
-            context.debugImport();
 
         return context;
     }

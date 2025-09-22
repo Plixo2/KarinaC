@@ -20,7 +20,7 @@ public class AttributionItem {
 
     public static KClassModel attribClass(Context c, Model model, @Nullable KClassModel outerClass, KClassModel classModel, ModelBuilder modelBuilder) {
 
-        try (var _ = c.section(Logging.ClassAttribution.class, "Attributing class '" + classModel.name() + "'")) {
+        try (var _ = c.section(Logging.Attribution.Classes.class, classModel.name())) {
             var fields = ImmutableList.<KFieldModel>builder();
             for (var field : classModel.fields()) {
                 if (field instanceof KFieldModel fieldModel) {
@@ -32,12 +32,24 @@ public class AttributionItem {
             var methodsToFill = new ArrayList<KMethodModel>();
             var innerToFill = new ArrayList<KClassModel>();
             var classModelNew = new KClassModel(
-                    classModel.name(), classModel.path(), classModel.modifiers(),
-                    classModel.superClass(), outerClass, classModel.nestHost(),
-                    classModel.interfaces(), innerToFill, fields.build(), methodsToFill,
-                    classModel.generics(), classModel.imports(), classModel.permittedSubclasses(),
-                    new ArrayList<>(classModel.nestMembers()), classModel.annotations(),
-                    classModel.resource(), classModel.region(), classModel.symbolTable()
+                    classModel.name(),
+                    classModel.path(),
+                    classModel.modifiers(),
+                    classModel.superClass(),
+                    outerClass,
+                    classModel.nestHost(),
+                    classModel.interfaces(),
+                    innerToFill,
+                    fields.build(),
+                    methodsToFill,
+                    classModel.generics(),
+                    classModel.imports(),
+                    classModel.permittedSubclasses(),
+                    new ArrayList<>(classModel.nestMembers()),
+                    classModel.annotations(),
+                    classModel.resource(),
+                    classModel.region(),
+                    classModel.symbolTable()
             );
 
             try (var fork = c.<KClassModel>fork()) {
@@ -53,10 +65,7 @@ public class AttributionItem {
                 Log.temp(c, classModelNew.region(), "No symbol table was created");
                 throw new Log.KarinaException();
             }
-            var importTable = StaticImportTable.fromImportTable(
-                    classModel.pointer(), model,
-                    classModelNew.symbolTable()
-            );
+            var importTable = classModelNew.symbolTable().intoStaticTable(classModel.pointer(), model);
 
 
             try (var fork = c.<KMethodModel>fork()) {
@@ -65,10 +74,15 @@ public class AttributionItem {
                         Log.temp(c, method.region(), "Invalid method");
                         throw new Log.KarinaException();
                     }
-                    fork.collect(subC -> attribMethod(
-                            subC, model, classModelNew, importTable,
-                            kMethodModel
-                    ));
+                    fork.collect(subC ->
+                        attribMethod(
+                                subC,
+                                model,
+                                classModelNew,
+                                importTable,
+                                kMethodModel
+                        )
+                    );
                 }
                 methodsToFill.addAll(fork.dispatch());
             }

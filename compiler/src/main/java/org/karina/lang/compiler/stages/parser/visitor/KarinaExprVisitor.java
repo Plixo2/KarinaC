@@ -379,8 +379,10 @@ public class KarinaExprVisitor implements IntoContext {
         if (ctx.dotPostFix() != null) {
             var dotNotation = ctx.dotPostFix();
             if (dotNotation.id() != null) {
-                var name = this.conv.region(dotNotation.id());
-                return new KExpr.GetMember(regionMerged, prev, name, false, null);
+                var regionWithDot = this.conv.toRegion(dotNotation);
+                var name = this.conv.escapeID(dotNotation.id());
+                var regionName = RegionOf.region(regionWithDot, name);
+                return new KExpr.GetMember(regionMerged, prev, regionName, false, null);
             } else if (dotNotation.CLASS() != null) {
                 var nameRegion = this.conv.toRegion(dotNotation.CLASS());
                 var name = RegionOf.region(nameRegion, "class");
@@ -457,22 +459,19 @@ public class KarinaExprVisitor implements IntoContext {
             var firstName = this.conv.region(ctx.id());
             var restOfNames = ctx.pathPostFix().stream().map(ref -> {
                 var pathID = ref.id();
-                var pathRegion = this.conv.toRegion(ref);
 
-                var name = switch (pathID) {
-                    //<unknown> to generate a report later
-                    case null -> {
-                        if (this.intoContext().infos().allowMissingFields()) {
-                            yield "<unknown>";
-                        } else {
-                            Log.syntaxError(this, region, "Missing path element");
-                            throw new Log.KarinaException();
-                        }
+                if (pathID == null) {
+                    if (this.intoContext().infos().allowMissingFields()) {
+                        return RegionOf.region(this.conv.toRegion(ref), "<unknown>");
+                    } else {
+                        Log.syntaxError(this, region, "Missing path element");
+                        throw new Log.KarinaException();
                     }
-                    default -> this.conv.escapeID(pathID);
-                };
-
-                return RegionOf.region(pathRegion, name);
+                } else {
+                    var regionOf = this.conv.toRegion(ref);
+                    var id = this.conv.escapeID(pathID);
+                    return RegionOf.region(regionOf, id);
+                }
 
             }).toList();
 

@@ -9,6 +9,7 @@ import org.karina.lang.compiler.stages.attrib.AttributionContext;
 import org.karina.lang.compiler.stages.attrib.AttributionExpr;
 import org.karina.lang.compiler.utils.Region;
 import org.karina.lang.compiler.utils.Types;
+import org.karina.lang.compiler.utils.logging.errors.ImportError;
 
 import java.util.ArrayList;
 
@@ -38,6 +39,17 @@ public class InstanceOfAttrib  {
     public static KType attribInner(AttributionContext ctx, Region region, KType isType) {
 
         var isTypeAttrib = isType.unpack();
+
+        var owningClass = ctx.model().getClass(ctx.owningClass());
+        if (!Types.isTypeAccessible(ctx.protection(), owningClass, isTypeAttrib)) {
+            Log.error(ctx, new ImportError.AccessViolation(
+                    region,
+                    owningClass.name(),
+                    null,
+                    isTypeAttrib
+            ));
+            throw new Log.KarinaException();
+        }
 
         //we replace non annotated generics with KType.ROOT, this is technically not necessary
         if (isType instanceof KType.ClassType classType) {

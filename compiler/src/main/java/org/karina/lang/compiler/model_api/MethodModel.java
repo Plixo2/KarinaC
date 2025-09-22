@@ -9,7 +9,6 @@ import org.karina.lang.compiler.utils.KType;
 import org.karina.lang.compiler.utils.Region;
 
 public interface MethodModel {
-    int EXTENSION_MODIFIER = 0x10000;
     int modifiers();
     String name();
     ImmutableList<String> parameters();
@@ -29,6 +28,6 @@ public interface MethodModel {
     }
 
     static boolean isExtension(int modifiers) {
-        return (modifiers & EXTENSION_MODIFIER) != 0;
+        return (modifiers & ClassModel.EXTENSION_MODIFIER) != 0;
     }
 }

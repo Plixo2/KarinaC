@@ -16,6 +16,9 @@ public record Region(TextSource source, Position start, Position end) {
         public boolean isBefore(Position other) {
             return this.line < other.line || (this.line == other.line && this.column < other.column);
         }
+        public boolean isBeforeOrEqual(Position other) {
+            return this.equals(other) || this.isBefore(other);
+        }
     }
 
     public Region merge(Region other) {
@@ -50,8 +53,11 @@ public record Region(TextSource source, Position start, Position end) {
         }
     }
 
-    public boolean overlaps(Region other) {
-        return !(this.end.isBefore(other.start) || other.end.isBefore(this.start));
+    public boolean intersects(Region other) {
+        return this.start.isBeforeOrEqual(other.end)
+                && other.start.isBeforeOrEqual(this.end);
+
+
     }
 
     @Override
