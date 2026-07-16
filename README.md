@@ -38,6 +38,13 @@ frameworks seamlessly while enjoying a modern programming experience.**
 
 <br>
 
+## Overview and Documentation
+
+You find an overview and examples [here](https://karina-lang.org/guide/overview.html).
+
+
+<br>
+
 <details>
 
 <summary>Outline</summary>
@@ -52,7 +59,7 @@ frameworks seamlessly while enjoying a modern programming experience.**
 
 <br>
 
-## Documentation
+## Getting Started
 
 The official documentation is available at
 [karina-lang.org](https://karina-lang.org/guide/hello.html).
